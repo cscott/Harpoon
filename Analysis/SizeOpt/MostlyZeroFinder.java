@@ -41,9 +41,9 @@ import java.util.Iterator;
  * which are mostly zero (or mostly 1, 2, etc).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.5 2002-09-03 14:43:06 cananian Exp $
  */
-public class MostlyZeroFinder extends MethodMutator {
+public class MostlyZeroFinder extends MethodMutator<Quad> {
     /** the mostly-zero analysis can actually find mostly-N fields.  this
      *  parameter lets you chose what 'N' should be. */
     final static int MOSTLY_WHAT =
@@ -70,8 +70,8 @@ public class MostlyZeroFinder extends MethodMutator {
 	this.dio = (MOSTLY_WHAT==0) ? null :
 	    new DefiniteInitOracle(parent, ch);
     }
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
 	// prevent instrumentation of the instrumentation code.
 	if ("harpoon.Runtime.Counters".equals
 	    (hc.getMethod().getDeclaringClass().getName()))
@@ -79,7 +79,7 @@ public class MostlyZeroFinder extends MethodMutator {
 	// use visitor.
 	Visitor v = new Visitor(hc);
 	// copy quads into array before visiting so as not to confuse iterator
-	Quad[] quads = (Quad[]) hc.getElements();
+	Quad[] quads = hc.getElements();
 	for (int i=0; i<quads.length; i++)
 	    quads[i].accept(v);
 	// done!
@@ -87,7 +87,7 @@ public class MostlyZeroFinder extends MethodMutator {
     }
     private class Visitor extends QuadVisitor {
 	final QuadFactory qf;
-	Visitor(HCode hc) { qf=((Quad)hc.getRootElement()).getFactory(); }
+	Visitor(HCode<Quad> hc) { qf=hc.getRootElement().getFactory(); }
 	public void visit(Quad q) { /* do nothing */ }
 	// xxx: should we treat fields of subclasses differently?
 	// perhaps a superclass never uses field x, but subclasses do?
@@ -99,9 +99,9 @@ public class MostlyZeroFinder extends MethodMutator {
 	    if (hc==null) return e; // recursion termination condition.
 	    assert !hc.isInterface() && !hc.isArray();
 	    // one counter per declared non-static field.
-	    for (Iterator it=new ArrayIterator(hc.getDeclaredFields());
-		 it.hasNext(); ) {
-		HField hf = (HField) it.next();
+	    for (Iterator<HField> it=new ArrayIterator<HField>
+		     (hc.getDeclaredFields()); it.hasNext(); ) {
+		HField hf = it.next();
 		assert hc==hf.getDeclaringClass();
 		if (hf.isStatic()) continue;
 		if (hf.getName().endsWith(suffix)) continue;//don't count bits
@@ -221,8 +221,8 @@ public class MostlyZeroFinder extends MethodMutator {
     // private helper functions.
     private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
     private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
-	Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	Quad frm = e.from(); int frm_succ = e.which_succ();
+	Quad to  = e.to();   int to_pred = e.which_pred();
 	Quad.addEdge(frm, frm_succ, q, which_pred);
 	Quad.addEdge(q, which_succ, to, to_pred);
 	return to.prevEdge(to_pred);

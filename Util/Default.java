@@ -29,7 +29,7 @@ import java.util.SortedSet;
  * <code>Collection</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.4 2002-08-30 22:57:23 cananian Exp $
+ * @version $Id: Default.java,v 1.5 2002-09-03 14:42:32 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -256,11 +256,11 @@ public abstract class Default  {
 	// serializable.
 	return new PairList<A,B>(left, right);
     }
-    private static class PairList<A,B> extends AbstractList
+    public static class PairList<A,B> extends AbstractList
 	implements java.io.Serializable {
 	private A left;
 	private B right;
-	PairList(A left, B right) {
+	public PairList(A left, B right) {
 	    this.left = left; this.right = right;
 	}
 	public int size() { return 2; }

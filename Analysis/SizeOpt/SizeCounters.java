@@ -34,9 +34,9 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.2 2002-02-25 21:00:05 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.3 2002-09-03 14:43:06 cananian Exp $
  */
-public class SizeCounters extends MethodMutator {
+public class SizeCounters extends MethodMutator<Quad> {
     final Frame frame;
     final Runtime.TreeBuilder tb;
     final BitWidthAnalysis bwa;
@@ -52,8 +52,8 @@ public class SizeCounters extends MethodMutator {
 	this.bwa = bwa;
     }
 
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
 	// prevent instrumentation of the instrumentation code. (sigh)
 	if ("harpoon.Runtime.Counters".equals
 	    (hc.getMethod().getDeclaringClass().getName()))
@@ -61,7 +61,7 @@ public class SizeCounters extends MethodMutator {
 	// total allocation counter.
 	Visitor v = new Visitor(hc);
 	// copy quads into array before visiting so as not to confuse iterator
-	Quad[] quads = (Quad[]) hc.getElements();
+	Quad[] quads = hc.getElements();
 	for (int i=0; i<quads.length; i++)
 	    quads[i].accept(v);
 	// done!
@@ -69,7 +69,7 @@ public class SizeCounters extends MethodMutator {
     }
     private class Visitor extends QuadVisitor {
 	final QuadFactory qf;
-	Visitor(HCode hc) { qf=((Quad)hc.getRootElement()).getFactory(); }
+	Visitor(HCode<Quad> hc) { qf=hc.getRootElement().getFactory(); }
 	public void visit(Quad q) { /* do nothing */ }
 	public void visit(ANEW q) {
 	    // do not insert code if none of the relevant counters are enabled.
@@ -130,9 +130,9 @@ public class SizeCounters extends MethodMutator {
 	    // how many pointer words allocated in objects?
 	    int pntr = 0;
 	    for (HClass hc=q.hclass(); hc!=null; hc=hc.getSuperclass()) {
-		for (Iterator it=new ArrayIterator(hc.getDeclaredFields());
-		     it.hasNext(); ) {
-		    HField hf = (HField) it.next();
+		for (Iterator<HField> it=new ArrayIterator<HField>
+			 (hc.getDeclaredFields()); it.hasNext(); ) {
+		    HField hf = it.next();
 		    if (hf.isStatic() || hf.getType().isPrimitive()) continue;
 		    pntr++;
 		}
@@ -145,9 +145,9 @@ public class SizeCounters extends MethodMutator {
 		int unread_bits=0, unread_rounded_bits=0;
 		int const_bits=0, const_rounded_bits=0;
 		for (HClass hc=q.hclass(); hc!=null; hc=hc.getSuperclass()) {
-		    for (Iterator it=new ArrayIterator(hc.getDeclaredFields());
-			 it.hasNext(); ) {
-			HField hf = (HField) it.next();
+		    for (Iterator<HField> it=new ArrayIterator<HField>
+			     (hc.getDeclaredFields()); it.hasNext(); ) {
+			HField hf = it.next();
 			if (hf.isStatic()) continue;
 			int mybits;
 			if (hf.getType()==HClass.Float)
@@ -200,8 +200,8 @@ public class SizeCounters extends MethodMutator {
     // private helper functions.
     private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
     private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	    Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
-	    Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	    Quad frm = e.from(); int frm_succ = e.which_succ();
+	    Quad to  = e.to();   int to_pred = e.which_pred();
 	    Quad.addEdge(frm, frm_succ, q, which_pred);
 	    Quad.addEdge(q, which_succ, to, to_pred);
 	    return to.prevEdge(to_pred);

@@ -24,6 +24,7 @@ import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
 import harpoon.Util.Default;
+import harpoon.Util.Default.PairList;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.ParseUtil.BadLineException;
 import harpoon.Util.ParseUtil.StringParser;
@@ -49,12 +50,12 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.5 2002-09-03 14:43:06 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
-    final Set callable = new HashSet();
-    final Set allClasses = new HashSet();
+    final Set<HMethod> callable = new HashSet<HMethod>();
+    final Set<HClass> allClasses = new HashSet<HClass>();
     
     /** Creates a <code>MZFCompressor</code>, using the field profiling
      *  information found in the resource at <code>resourcePath</code>.
@@ -66,17 +67,22 @@ public class MZFCompressor {
 	ConstructorClassifier cc = new ConstructorClassifier(hcf, ch);
         ProfileParser pp = new ProfileParser(linker, resourcePath);
 	// get 'stop list' of classes we should not touch.
-	Set stoplist = parseStopListResource(frame, "mzf-unsafe.properties");
+	Set<HClass> stoplist =
+	    parseStopListResource(frame, "mzf-unsafe.properties");
 	// process the profile data.
 	// collect all good fields; sort them (within class) by savedbytes.
-	Set flds = new HashSet();  Map listmap = new HashMap();
-	for (Iterator it=ch.instantiatedClasses().iterator(); it.hasNext(); ){
-	    HClass hc = (HClass) it.next();
+	Set<HField> flds = new HashSet<HField>();
+	Map<HClass,List<PairList<HField,Integer>>> listmap =
+	    new HashMap<HClass,List<PairList<HField,Integer>>>();
+	for (Iterator<HClass> it=ch.instantiatedClasses().iterator();
+	     it.hasNext(); ){
+	    HClass hc = it.next();
 	    if (stoplist.contains(hc)) continue; // skip this class.
-	    List sorted = sortFields(hc, pp, cc);
+	    List<PairList<HField,Integer>> sorted = sortFields(hc, pp, cc);
 	    if (sorted.size()>0) listmap.put(hc, sorted);
-	    for (Iterator it2=sorted.iterator(); it2.hasNext(); )
-		flds.add( (HField) ((List)it2.next()).get(0) );
+	    for (Iterator<PairList<HField,Integer>> it2=sorted.iterator();
+		 it2.hasNext(); )
+		flds.add( (HField) it2.next().get(0) );
 	}
 	flds = Collections.unmodifiableSet(flds);
 	listmap = Collections.unmodifiableMap(listmap);
@@ -84,8 +90,8 @@ public class MZFCompressor {
 	// pull all callable constructors through the ConstructorClassifier
 	// to cache their results.
 	this.callable.addAll(ch.callableMethods());
-	for (Iterator it=callable.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Iterator<HMethod> it=callable.iterator(); it.hasNext(); ) {
+	    HMethod hm = it.next();
 	    if (isConstructor(hm)) cc.isGood(hm);
 	}
 	// make accessors for the 'good' fields.
@@ -95,22 +101,22 @@ public class MZFCompressor {
 	callable.addAll(f2m.getter2field.keySet());
 	callable.addAll(f2m.setter2field.keySet());
 	// pull every callable method of each relevant class through hcf
-	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
-	    for (Iterator it2=Arrays.asList(hc.getDeclaredMethods())
+	for (Iterator<HClass> it=listmap.keySet().iterator(); it.hasNext(); ) {
+	    HClass hc = it.next();
+	    for (Iterator<HMethod> it2=Arrays.asList(hc.getDeclaredMethods())
 		     .iterator(); it2.hasNext(); ) {
-		HMethod hm = (HMethod) it2.next();
+		HMethod hm = it2.next();
 		if (callable.contains(hm))
 		    hcf.convert(hm);
 	    }
 	}
 	// okay.  foreach relevant class, split it.
-	Map field2class = new HashMap();
+	Map<HField,HClass> field2class = new HashMap<HField,HClass>();
 	this.allClasses.addAll(ch.classes());
-	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Iterator<HClass> it=listmap.keySet().iterator(); it.hasNext(); ) {
+	    HClass hc = it.next();
 	    splitOne(linker, (CachingCodeFactory) hcf,
-		     hc, (List)listmap.get(hc), f2m, field2class);
+		     hc, listmap.get(hc), f2m, field2class);
 	}
 	field2class = Collections.unmodifiableMap(field2class);
 	// chain through MZFWidenType to change INSTANCEOF, ANEW, and
@@ -132,7 +138,8 @@ public class MZFCompressor {
     /** Return a list.  element 0 of the list is the field most likely
      *  to save the most bytes. Elements are pairs; first element is
      *  the field; second element is the 'mostly value'. */
-    List sortFields(HClass hc, ProfileParser pp, ConstructorClassifier cc) {
+    List<PairList<HField,Integer>> sortFields(HClass hc, ProfileParser pp,
+					      ConstructorClassifier cc) {
 	// make a comparator that operates on Map.Entries contained in the
 	// ProfileParser's savedBytesMap map, which sorts on 'saved bytes'.
 	final Comparator c = new Comparator() {
@@ -173,7 +180,8 @@ public class MZFCompressor {
 	    });
 	// finally, create a final list by stripping the 'saved bytes' info
 	// (which we no longer need) and keeping only the field/mostlyN info.
-	List nl = new ArrayList(l.size());
+	List<PairList<HField,Integer>> nl =
+	    new ArrayList<PairList<HField,Integer>>(l.size());
 	for (Iterator it=l.iterator(); it.hasNext(); ) {
 	    List pair = (List) it.next();
 	    HField hf = (HField) pair.get(0);
@@ -188,12 +196,13 @@ public class MZFCompressor {
 
     // splits one class.
     void splitOne(Relinker relinker, CachingCodeFactory hcf,
-		  HClass hc, List sortedFields,
-		  Field2Method f2m, Map field2class) {
+		  HClass hc, List<PairList<HField,Integer>> sortedFields,
+		  Field2Method f2m, Map<HField,HClass> field2class) {
 	assert sortedFields.size()>0;
 	// for each entry in the sorted fields list, make a split.
-	for (Iterator it=sortedFields.iterator(); it.hasNext(); ) {
-	    List pair = (List) it.next();
+	for (Iterator<PairList<HField,Integer>> it=sortedFields.iterator();
+	     it.hasNext(); ) {
+	    List pair = it.next();
 	    hc = moveOne(relinker, hcf, hc,
 			 (HField)pair.get(0),
 			 ((Number)pair.get(1)).longValue(),
@@ -207,7 +216,7 @@ public class MZFCompressor {
      *  value <code>val</code>. */
     HClass moveOne(Relinker relinker, CachingCodeFactory hcf,
 		   HClass oldC, HField hf, long val,
-		   Field2Method f2m, Map field2class) {
+		   Field2Method f2m, Map<HField,HClass> field2class) {
 	assert !field2class.containsKey(hf);
 	// make a copy of our empty Template class.
 	HClass hcT = relinker.forClass(Template.class);
@@ -215,22 +224,25 @@ public class MZFCompressor {
 	    (oldC.getName()+"$$"+hf.getName(), hcT);
 	// remove all constructors from newC (since we're going to
 	// clone them from oldC)
-	for (Iterator it=Arrays.asList(newC.getConstructors()).iterator();
+	for (Iterator<HConstructor> it =
+		 Arrays.asList(newC.getConstructors()).iterator();
 	     it.hasNext(); )
-	    newC.getMutator().removeConstructor((HConstructor)it.next());
+	    newC.getMutator().removeConstructor(it.next());
 	// insert this new class between hcS and its superclass.
 	newC.getMutator().setSuperclass(oldC.getSuperclass());
 	oldC.getMutator().setSuperclass(newC);
 	// move interfaces from oldC to newC.
-	for (Iterator it=Arrays.asList(oldC.getInterfaces()).iterator();
+	for (Iterator<HClass> it =
+		 Arrays.asList(oldC.getInterfaces()).iterator();
 	     it.hasNext(); )
-	    newC.getMutator().addInterface((HClass)it.next());
+	    newC.getMutator().addInterface(it.next());
 	oldC.getMutator().removeAllInterfaces();
 	// fetch representations for everything callable before we start
 	// messing with the fields.
-	for (Iterator it=Arrays.asList(oldC.getDeclaredMethods()).iterator();
+	for (Iterator<HMethod> it =
+		 Arrays.asList(oldC.getDeclaredMethods()).iterator();
 	     it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	    HMethod hm = it.next();
 	    if (callable.contains(hm))
 		hcf.convert(hm);
 	}
@@ -246,8 +258,8 @@ public class MZFCompressor {
 	// (move static initializers to newC, since it has the static fields)
 	// copy the constructors.
 	HMethod[] allM = oldC.getDeclaredMethods();
-	HMethod getter = (HMethod) f2m.field2getter.get(hf);
-	HMethod setter = (HMethod) f2m.field2setter.get(hf);
+	HMethod getter = f2m.field2getter.get(hf);
+	HMethod setter = f2m.field2setter.get(hf);
 	for (int i=0; i<allM.length; i++) {
 	    if (allM[i].isStatic() && !(allM[i] instanceof HInitializer))
 		continue;
@@ -290,11 +302,12 @@ public class MZFCompressor {
     static class Template { }
 
     /** make a getter method that returns constant 'val'. */
-    HCode makeGetter(HCodeFactory hcf, HMethod getter, HField hf, long val) {
+    HCode<Quad> makeGetter(HCodeFactory hcf,
+			   HMethod getter, HField hf, long val) {
 	// xxx cheat: get old getter and replace GET with CONST.
 	// would be better to make this from scratch.
-	HCode hc = hcf.convert(getter);
-	Quad[] qa = (Quad[]) hc.getElements();
+	HCode<Quad> hc = hcf.convert(getter);
+	Quad[] qa = hc.getElements();
 	for (int i=0; i<qa.length; i++)
 	    if (qa[i] instanceof GET) {
 		GET q = (GET) qa[i];
@@ -335,11 +348,12 @@ public class MZFCompressor {
     }
     /** make a setter method that does nothing (but perhaps verifies
      *  that the value to set is equal to 'val'). */
-    HCode makeSetter(HCodeFactory hcf, HMethod setter, HField hf, long val) {
+    HCode<Quad> makeSetter(HCodeFactory hcf,
+			   HMethod setter, HField hf, long val) {
 	// xxx cheat: get old setter and remove the SET operand.
 	// would be better to make this from scratch.
-	HCode hc = hcf.convert(setter);
-	Quad[] qa = (Quad[]) hc.getElements();
+	HCode<Quad> hc = hcf.convert(setter);
+	Quad[] qa = hc.getElements();
 	for (int i=0; i<qa.length; i++)
 	    if (qa[i] instanceof SET)
 		qa[i].remove();
@@ -366,8 +380,8 @@ public class MZFCompressor {
     }
     //---------------------------------------------
     /** Parse a "stop list" of classes we should not attempt to optimize */
-    Set parseStopListResource(final Frame frame, String resname) {
-	final Set stoplist = new HashSet();
+    Set<HClass> parseStopListResource(final Frame frame, String resname) {
+	final Set<HClass> stoplist = new HashSet<HClass>();
 	try {
 	ParseUtil.readResource
 	    (frame.getRuntime().resourcePath(resname),

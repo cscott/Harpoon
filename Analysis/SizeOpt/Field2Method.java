@@ -28,6 +28,7 @@ import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.GenericInvertibleMultiMap;
 import harpoon.Util.Collections.InvertibleMultiMap;
+import harpoon.Util.Collections.SnapshotIterator;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -44,26 +45,30 @@ import java.util.Set;
  * to accessor getter/setter methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Field2Method.java,v 1.4 2002-04-10 03:01:36 cananian Exp $
+ * @version $Id: Field2Method.java,v 1.5 2002-09-03 14:43:03 cananian Exp $
  */
 public class Field2Method {
     // xxx declarations below *should* be 'invertibleMap' but the
     //     definitions aren't consistent yet.
     /** maps 'getter' methods to the field they get. MUTABLE. */
-    private final InvertibleMultiMap _getters= new GenericInvertibleMultiMap();
+    private final InvertibleMultiMap<HMethod,HField> _getters =
+	new GenericInvertibleMultiMap<HMethod,HField>();
     /** maps 'setter' methods to the field they set. MUTABLE. */
-    private final InvertibleMultiMap _setters= new GenericInvertibleMultiMap();
+    private final InvertibleMultiMap<HMethod,HField> _setters =
+	new GenericInvertibleMultiMap<HMethod,HField>();
     // these are public-visible unmodifiable versions of these.
     /** This maps 'getter' methods to the field they get. */
-    public final Map getter2field = Collections.unmodifiableMap(_getters);
+    public final Map<HMethod,HField> getter2field =
+	Collections.unmodifiableMap(_getters);
     /** This maps 'setter' methods to the field they set. */
-    public final Map setter2field = Collections.unmodifiableMap(_setters);
+    public final Map<HMethod,HField> setter2field =
+	Collections.unmodifiableMap(_setters);
     /** This maps fields to 'getter' methods. */
-    public final Map field2getter = Collections.unmodifiableMap
-	(_getters.invert());
+    public final Map<HField,HMethod> field2getter =
+	Collections.unmodifiableMap(_getters.invert());
     /** This maps fields to 'setter' methods. */
-    public final Map field2setter = Collections.unmodifiableMap
-	(_setters.invert());
+    public final Map<HField,HMethod> field2setter =
+	Collections.unmodifiableMap(_setters.invert());
     
     /** Creates a <code>Field2Method</code> code factory which converts
      *  all <code>GET</code> and <code>SET</code> operations on the
@@ -71,10 +76,10 @@ public class Field2Method {
      *  calls to accessor getter/setter methods.  The input may be
      *  in Quad SSI/SSA/NoSSA/RSSx forms.  The output will be in
      *  Quad-SSI form. */
-    public Field2Method(final HCodeFactory hcf, Set fields2convert) {
+    public Field2Method(final HCodeFactory hcf, Set<HField> fields2convert) {
 	// okay, create the appropriate new methods.
-	for (Iterator it=fields2convert.iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
+	for (Iterator<HField> it=fields2convert.iterator(); it.hasNext(); ) {
+	    HField hf = it.next();
 	    HClass hc = hf.getDeclaringClass();
 	    String name = "$$$"+
 		hf.getDeclaringClass().getName()+".."+hf.getName();
@@ -113,7 +118,7 @@ public class Field2Method {
     public HCodeFactory codeFactory() { return hcf; }
     /** This mutator class turns GETs and SETs into calls to accessor methods.
      */
-    class Mutator extends MethodMutator {
+    class Mutator extends MethodMutator<Quad> {
 	Mutator(HCodeFactory hcf) { super(hcf); }
 	protected String mutateCodeName(String codeName) {
 	    /** XXX: do we need to turn SSI into RSSx form?
@@ -121,13 +126,13 @@ public class Field2Method {
 	    */
 	    return codeName;
 	}
-	protected HCode mutateHCode(HCodeAndMaps input) {
-	    HCode hc = input.hcode();
+	protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	    HCode<Quad> hc = input.hcode();
 	    // only mutate if this is not itself a setter/getter!
 	    if (getter2field.containsKey(hc.getMethod()) ||
 		setter2field.containsKey(hc.getMethod())) return hc; // bail!
 	    // List of THROWs which need to be added to the FOOTER.
-	    final List fixup = new ArrayList();
+	    final List<THROW> fixup = new ArrayList<THROW>();
 	    // visitor class to effect the transformation.
 	    QuadVisitor qv = new QuadVisitor() {
 		    public void visit(Quad q) {/* do nothing for most quads */}
@@ -135,7 +140,7 @@ public class Field2Method {
 			if (!field2getter.containsKey(q.field())) return;
 			assert !q.field().isStatic();
 			Temp retex = new Temp(q.getFactory().tempFactory());
-			CALL call = new CALL(q.getFactory(), q, (HMethod)
+			CALL call = new CALL(q.getFactory(), q,
 					     field2getter.get(q.field()),
 					     new Temp[] { q.objectref() },
 					     q.dst(), retex,
@@ -148,7 +153,7 @@ public class Field2Method {
 			if (!field2setter.containsKey(q.field())) return;
 			assert !q.field().isStatic();
 			Temp retex = new Temp(q.getFactory().tempFactory());
-			CALL call = new CALL(q.getFactory(), q, (HMethod)
+			CALL call = new CALL(q.getFactory(), q,
 					     field2setter.get(q.field()),
 					     new Temp[]{q.objectref(),q.src()},
 					     null, retex,
@@ -161,8 +166,8 @@ public class Field2Method {
 		    private void replace(Quad q, CALL call) {
 			assert q.prevLength()==1 && q.nextLength()==1;
 			Edge in = q.prevEdge(0), out = q.nextEdge(0);
-			Quad.addEdge((Quad)in.from(), in.which_succ(), call,0);
-			Quad.addEdge(call,0, (Quad)out.to(), out.which_pred());
+			Quad.addEdge(in.from(), in.which_succ(), call, 0);
+			Quad.addEdge(call,0, out.to(), out.which_pred());
 			THROW thr = new THROW(call.getFactory(), call, 
 					      call.retex());
 			Quad.addEdge(call, 1, thr, 0);
@@ -170,15 +175,16 @@ public class Field2Method {
 		    }
 		};
 	    // use the visitor to replace them boys!
-	    for (Iterator it=hc.getElementsI(); it.hasNext(); )
-		((Quad)it.next()).accept(qv);
+	    for (Iterator<Quad> it=new SnapshotIterator<Quad>
+		     (hc.getElementsI()); it.hasNext(); )
+		it.next().accept(qv);
 	    // fixup throws by adding to footer.
 	    if (fixup.size()>0) {
 		FOOTER oldF = (FOOTER) ((HEADER)hc.getRootElement()).next(0);
 		FOOTER newF = oldF.resize(oldF.arity()+fixup.size());
 		int n = newF.arity();
-		for (Iterator it=fixup.iterator(); it.hasNext(); ) {
-		    THROW thr = (THROW) it.next();
+		for (Iterator<THROW> it=fixup.iterator(); it.hasNext(); ) {
+		    THROW thr = it.next();
 		    Quad.addEdge(thr, 0, newF, --n);
 		}
 	    }
@@ -187,8 +193,8 @@ public class Field2Method {
 	}
     }
     /** Make a getter method. */
-    HCode makeGetter(HMethod hm, String codename) {
-	HField hf = (HField) getter2field.get(hm);
+    HCode<Quad> makeGetter(HMethod hm, String codename) {
+	HField hf = getter2field.get(hm);
 	MyCode hc = new MyCode(hm, codename);
 	// make quads.
 	QuadFactory qf = hc.getQF();
@@ -209,8 +215,8 @@ public class Field2Method {
 	return hc;
     }
     /** Make a setter method. */
-    HCode makeSetter(HMethod hm, String codename) {
-	HField hf = (HField) setter2field.get(hm);
+    HCode<Quad> makeSetter(HMethod hm, String codename) {
+	HField hf = setter2field.get(hm);
 	MyCode hc = new MyCode(hm, codename);
 	// make quads.
 	QuadFactory qf = hc.getQF();
@@ -241,7 +247,7 @@ public class Field2Method {
 	QuadFactory getQF() { return this.qf; }
 	// implementation of Code abstract methods.
 	public String getName() { return codename; }
-	public HCodeAndMaps clone(HMethod newMethod) {
+	public HCodeAndMaps<Quad> clone(HMethod newMethod) {
 	    return cloneHelper(new MyCode(newMethod, codename));
 	}
     }

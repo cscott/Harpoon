@@ -96,6 +96,14 @@ Analysis/ReachingDefsAltImpl.java
 Analysis/ReachingDefsCachingImpl.java
 Analysis/ReachingDefsImpl.java
 Analysis/Realtime/RealtimeRuntime.java
+Analysis/SizeOpt/Field2Method.java
+Analysis/SizeOpt/FieldReducer.java
+Analysis/SizeOpt/MostlyZeroFinder.java
+Analysis/SizeOpt/MZFChooser.java
+Analysis/SizeOpt/MZFCompressor.java
+Analysis/SizeOpt/MZFExternalize.java
+Analysis/SizeOpt/MZFWidenType.java
+Analysis/SizeOpt/SizeCounters.java
 Analysis/SSxReachingDefsImpl.java
 Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/DominatingCheckOracle.java

@@ -52,9 +52,9 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.5 2002-09-03 14:43:04 cananian Exp $
  */
-public class FieldReducer extends MethodMutator {
+public class FieldReducer extends MethodMutator<Quad> {
     private static final boolean no_mutate =
 	Boolean.getBoolean("harpoon.sizeopt.no-field-reducer");
     private static final boolean DEBUG = false;
@@ -75,19 +75,20 @@ public class FieldReducer extends MethodMutator {
 	this.linker = frame.getLinker();
 	// pull all our classes through the mutator.
 	this.hcf = super.codeFactory();
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); )
-	    hcf.convert((HMethod)it.next());
+	for (Iterator<HMethod> it=ch.callableMethods().iterator();
+	     it.hasNext(); )
+	    hcf.convert(it.next());
 	// now munge class fields (after we've rewritten all field references)
 
 	// first, collect all non-static fields of this application.
-	Set flds = new HashSet(7*ch.classes().size());
-	for (Iterator it=ch.classes().iterator(); it.hasNext(); )
-	    flds.addAll(Arrays.asList(((HClass)it.next()).getFields()));
-	for (Iterator it=flds.iterator(); it.hasNext(); )
-	    if (((HField)it.next()).isStatic()) it.remove();
+	Set<HField> flds = new HashSet<HField>(7*ch.classes().size());
+	for (Iterator<HClass> it=ch.classes().iterator(); it.hasNext(); )
+	    flds.addAll(Arrays.asList(it.next().getFields()));
+	for (Iterator<HField> it=flds.iterator(); it.hasNext(); )
+	    if (it.next().isStatic()) it.remove();
 	// now munge fields!
-	for (Iterator it=flds.iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
+	for (Iterator<HField> it=flds.iterator(); it.hasNext(); ) {
+	    HField hf = it.next();
 	    if (no_mutate) continue;
 	    // remove all unread and constant fields.
 	    // (which should have no more references in any HCode)
@@ -124,8 +125,9 @@ public class FieldReducer extends MethodMutator {
 	    this.hcf = new CachingCodeFactory
 		(new SizeCounters(this.hcf, frame, bwa).codeFactory());
 	    // pull everything through.
-	    for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); )
-		hcf.convert((HMethod)it.next());
+	    for (Iterator<HMethod> it=ch.callableMethods().iterator();
+		 it.hasNext(); )
+		hcf.convert(it.next());
 	}
 	// done!
     }
@@ -133,20 +135,20 @@ public class FieldReducer extends MethodMutator {
     private HCodeFactory hcf;
     public HCodeFactory codeFactory() { return hcf; }
 
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
 	final Wrapper w = new Wrapper(input);
 
 	// optimize only methods which this analysis knows are callable.
 	// (non-callable methods will be entirely eliminated by dead-code
 	//  elimination, resulting in invalid quad hcodes)
 	boolean isCallable =
-	    w.execMap((METHOD)((Quad)hc.getRootElement()).next(1));
+	    w.execMap((METHOD)hc.getRootElement().next(1));
 	if (!isCallable) return eviscerate(hc);
 	new SCCOptimize(w, w, w).optimize(hc);
 	if (no_mutate) return hc;
 
-	Quad[] quads = (Quad[]) hc.getElements();
+	Quad[] quads = hc.getElements();
 	for (int i=0; i<quads.length; i++) {
 	    if (quads[i] instanceof GET) {
 		GET q = (GET) quads[i];
@@ -175,7 +177,7 @@ public class FieldReducer extends MethodMutator {
 	return hc;
     }
     // Eviscerate this uncallable method, replacing with a simple throw.
-    private HCode eviscerate(HCode hc) {
+    private HCode<Quad> eviscerate(HCode<Quad> hc) {
 	HEADER header = (HEADER) hc.getRootElement();
 	FOOTER footer = (FOOTER) header.next(0);
 	METHOD method = (METHOD) header.next(1);
@@ -217,40 +219,40 @@ public class FieldReducer extends MethodMutator {
 	return c;
     }
     // wrapper to redirect maps through the hcodeandmaps
-    class Wrapper implements ExactTypeMap, ConstMap, ExecMap {
-	final Map aem; final TempMap atm;
-	Wrapper(HCodeAndMaps hcam) {
+    class Wrapper implements ExactTypeMap<Quad>, ConstMap<Quad>, ExecMap<Quad>{
+	final Map<Quad,Quad> aem; final TempMap atm;
+	Wrapper(HCodeAndMaps<Quad> hcam) {
 	    this.aem = hcam.ancestorElementMap();
 	    this.atm = hcam.ancestorTempMap();
 	}
-	HCodeElement map(HCodeElement hce) {
-	    return (HCodeElement) aem.get(hce);
+	Quad map(Quad hce) {
+	    return aem.get(hce);
 	}
 	Temp map(Temp t) { return atm.tempMap(t); }
 	// ExactTypeMap
-	public boolean isExactType(HCodeElement hce, Temp t) {
+	public boolean isExactType(Quad hce, Temp t) {
 	    return bwa.isExactType(map(hce), map(t));
 	}
 	// TypeMap
-	public HClass typeMap(HCodeElement hce, Temp t) {
+	public HClass typeMap(Quad hce, Temp t) {
 	    return bwa.typeMap(map(hce), map(t));
 	}
 	// ConstMap
-	public boolean isConst(HCodeElement hce, Temp t) {
+	public boolean isConst(Quad hce, Temp t) {
 	    return bwa.isConst(map(hce), map(t));
 	}
-	public Object constMap(HCodeElement hce, Temp t) {
+	public Object constMap(Quad hce, Temp t) {
 	    return bwa.constMap(map(hce), map(t));
 	}
 	// ExecMap
-	public boolean execMap(HCodeElement hce) {
+	public boolean execMap(Quad hce) {
 	    if (hce instanceof HEADER || hce instanceof FOOTER) return true;
 	    return bwa.execMap(map(hce));
 	}
-	public boolean execMap(HCodeEdge edge) {
+	public boolean execMap(HCodeEdge<Quad> edge) {
 	    Edge e = (Edge) edge;
 	    if (e.from() instanceof HEADER) return true;
-	    Edge ne = ((Quad)map((Quad)e.from())).nextEdge(e.which_succ());
+	    Edge ne = map(e.from()).nextEdge(e.which_succ());
 	    return bwa.execMap(ne);
 	}
     }

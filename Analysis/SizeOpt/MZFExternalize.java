@@ -44,7 +44,7 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.5 2002-09-03 14:43:06 cananian Exp $
  */
 class MZFExternalize {
     public static final double THRESHOLD =
@@ -58,7 +58,7 @@ class MZFExternalize {
     
     /** Creates a <code>MZFExternalize</code>. */
     MZFExternalize(HCodeFactory hcf, Linker linker, ProfileParser pp,
-		   Set stoplist, Set doneFields) {
+		   Set<HClass> stoplist, Set<HField> doneFields) {
 	//first initialize the HMethods which define the external map interface
 	this.linker = linker;
 	HClass HCexmap = linker.forClass(harpoon.Runtime.MZFExternalMap.class);
@@ -83,7 +83,7 @@ class MZFExternalize {
 	this.ptrSET = HCexmap.getDeclaredMethod
 	    ("ptrSET", "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V");
 	// okay, not collect a list of fields which we want to transform.
-	Map myfields = new HashMap();
+	Map<HField,Number> myfields = new HashMap<HField,Number>();
 	for (Iterator it=pp.fieldsAboveThresh(THRESHOLD).iterator();
 	     it.hasNext(); ) {
 	    List pair = (List) it.next();
@@ -100,19 +100,19 @@ class MZFExternalize {
 	hcf = f2m.codeFactory();
 	// except now we implement the getters/setters ourselves.
 	hcf = new CachingCodeFactory(hcf);
-	for (Iterator it=myfields.keySet().iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
-	    HMethod getter = (HMethod) f2m.field2getter.get(hf);
-	    HMethod setter = (HMethod) f2m.field2setter.get(hf);
-	    Number mostly = (Number) myfields.get(hf);
+	for (Iterator<HField> it=myfields.keySet().iterator(); it.hasNext(); ){
+	    HField hf = it.next();
+	    HMethod getter = f2m.field2getter.get(hf);
+	    HMethod setter = f2m.field2setter.get(hf);
+	    Number mostly = myfields.get(hf);
 	    ((CachingCodeFactory)hcf).put
 		(getter, makeGetter(hcf, getter, hf, mostly));
 	    ((CachingCodeFactory)hcf).put
 		(setter, makeSetter(hcf, setter, hf, mostly));
 	}
 	// okay, it should now be safe to go ahead and remove those fields.
-	for (Iterator it=myfields.keySet().iterator(); it.hasNext(); ) {
-	    HField hf = (HField) it.next();
+	for (Iterator<HField> it=myfields.keySet().iterator(); it.hasNext(); ){
+	    HField hf = it.next();
 	    hf.getDeclaringClass().getMutator().removeDeclaredField(hf);//ta-da
 	}
 	// set the externally-visible code factory.
@@ -130,13 +130,13 @@ class MZFExternalize {
     // that we just have three types: 32-bit word, 64-bit word, and pointer.
     // we'll do the appropriate conversions in java-land.
 
-    HCode makeGetter(HCodeFactory hcf, HMethod getter,
+    HCode<Quad> makeGetter(HCodeFactory hcf, HMethod getter,
 		     HField hf, Number mostly) {
 	// xxx cheat: get old getter and replace GET with our cruft.
 	// would be better to make this from scratch.
-	HCode hc = hcf.convert(getter);
+	HCode<Quad> hc = hcf.convert(getter);
 	assert hc.getName().equals(QuadRSSx.codename) : hc;
-	Quad[] qa = (Quad[]) hc.getElements();
+	Quad[] qa = hc.getElements();
 	for (int i=0; i<qa.length; i++) {
 	    if (qa[i] instanceof GET) {
 		GET q = (GET) qa[i];
@@ -163,7 +163,7 @@ class MZFExternalize {
 		Quad q3 = new THROW(qf, q, retexT);
 		// okay, link all these together.
 		Edge in = q.prevEdge(0), out = q.nextEdge(0);
-		Quad.addEdge((Quad)in.from(), in.which_succ(), q0, 0);
+		Quad.addEdge(in.from(), in.which_succ(), q0, 0);
 		Quad.addEdges(new Quad[] { q0, q1, q2 });
 		Quad.addEdge(q2, 0, (Quad)out.to(), out.which_pred());
 		Quad.addEdge(q2, 1, q3, 0);
@@ -188,7 +188,7 @@ class MZFExternalize {
 		    Quad.addEdges(new Quad[] { q2, q4, q5, q6, q7, q8, q10 });
 		    Quad.addEdge(q6, 1, q9, 0);
 		    Quad.addEdge(q8, 1, q9, 1);
-		    Quad.addEdge(q9, 0, (Quad)out.to(), out.which_pred());
+		    Quad.addEdge(q9, 0, out.to(), out.which_pred());
 		    Quad.addEdge(q10, 0, q10, 1);
 		}
 	    }
@@ -196,13 +196,13 @@ class MZFExternalize {
 	// done!
 	return hc;
     }
-    HCode makeSetter(HCodeFactory hcf, HMethod setter,
+    HCode<Quad> makeSetter(HCodeFactory hcf, HMethod setter,
 		     HField hf, Number mostly) {
 	// xxx cheat: get old setter and replace SET with our cruft.
 	// would be better to make this from scratch.
-	HCode hc = hcf.convert(setter);
+	HCode<Quad> hc = hcf.convert(setter);
 	assert hc.getName().equals(QuadRSSx.codename) : hc;
-	Quad[] qa = (Quad[]) hc.getElements();
+	Quad[] qa = hc.getElements();
 	for (int i=0; i<qa.length; i++) {
 	    if (qa[i] instanceof SET) {
 		SET q = (SET) qa[i];
@@ -243,8 +243,8 @@ class MZFExternalize {
     // private helper functions.
     private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
     private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
-	Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	Quad frm = e.from(); int frm_succ = e.which_succ();
+	Quad to  = e.to();   int to_pred = e.which_pred();
 	Quad.addEdge(frm, frm_succ, q, which_pred);
 	Quad.addEdge(q, which_succ, to, to_pred);
 	return to.prevEdge(to_pred);

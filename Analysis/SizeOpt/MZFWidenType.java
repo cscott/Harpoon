@@ -18,6 +18,7 @@ import harpoon.IR.Quads.INSTANCEOF;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.TYPESWITCH;
+import harpoon.Util.Default.PairList;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
@@ -35,21 +36,23 @@ import java.util.Set;
  * field and method signatures.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFWidenType.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
+ * @version $Id: MZFWidenType.java,v 1.5 2002-09-03 14:43:06 cananian Exp $
  */
-class MZFWidenType extends MethodMutator {
+class MZFWidenType extends MethodMutator<Quad> {
     /** the linker to use */
     final Linker linker;
     /** a map from HClasses to a list of sorted fields; the splitting has
      *  been done in the order of the list. */
-    final Map listmap;
+    final Map<HClass,List<PairList<HField,Integer>>> listmap;
     /** a map from <code>HField</code>s to the <code>HClass</code> which
      *  eliminates that field. */
-    final Map field2class;
+    final Map<HField,HClass> field2class;
     /** Creates a <code>MZFWidenType</code>. */
     public MZFWidenType(HCodeFactory hcf,
-			Linker linker, Map listmap, Map field2class,
-			Set callableMethods, Set allClasses) {
+			Linker linker,
+			Map<HClass,List<PairList<HField,Integer>>> listmap,
+			Map<HField,HClass> field2class,
+			Set<HMethod> callableMethods, Set<HClass> allClasses) {
         super(hcf);
 	this.linker = linker;
 	this.listmap = listmap;
@@ -57,8 +60,9 @@ class MZFWidenType extends MethodMutator {
 	// widen parameter and return types of all callable methods.
 	// (also, of all interfaces which these callable methods implement,
 	//  and all superclass methods which these callable methods override)
-	for (Iterator it=allMethods(allClasses).iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Iterator<HMethod> it=allMethods(allClasses).iterator();
+	     it.hasNext(); ) {
+	    HMethod hm = it.next();
 	    hm.getMutator().setReturnType(widen(hm.getReturnType()));
 	    HClass[] paramTypes = hm.getParameterTypes();
 	    for (int i=0; i<paramTypes.length; i++)
@@ -66,24 +70,24 @@ class MZFWidenType extends MethodMutator {
 		    hm.getMutator().setParameterType(i, widen(paramTypes[i]));
 	}
 	// widen types of all fields
-	for (Iterator it=allClasses.iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Iterator<HClass> it=allClasses.iterator(); it.hasNext(); ) {
+	    HClass hc = it.next();
 	    HField[] hfa = hc.getDeclaredFields();
 	    for (int i=0; i<hfa.length; i++)
 		if (widen(hfa[i].getType())!=hfa[i].getType())
 		    hfa[i].getMutator().setType(widen(hfa[i].getType()));
 	}
     }
-    private Set allMethods(Set allClasses) {
-	Set result = new HashSet();
-	for (Iterator it=allClasses.iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+    private Set<HMethod> allMethods(Set<HClass> allClasses) {
+	Set<HMethod> result = new HashSet<HMethod>();
+	for (Iterator<HClass> it=allClasses.iterator(); it.hasNext(); ) {
+	    HClass hc = it.next();
 	    result.addAll(Arrays.asList(hc.getMethods()));
 	}
 	return result;
     }
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
 	QuadVisitor qv = new QuadVisitor() {
 		public void visit(Quad q) { /* booring. */ }
 		public void visit(ANEW q) {
@@ -106,7 +110,7 @@ class MZFWidenType extends MethodMutator {
 					   q.hasDefault()));
 		}
 	    };
-	Quad[] qa = (Quad[]) hc.getElements();
+	Quad[] qa = hc.getElements();
 	for (int i=0; i<qa.length; i++)
 	    qa[i].accept(qv);
 	// done.
@@ -118,11 +122,12 @@ class MZFWidenType extends MethodMutator {
 	if (hc.isArray())
 	    return HClassUtil.arrayClass
 		(linker, widen(HClassUtil.baseClass(hc)), HClassUtil.dims(hc));
-	List sortedFields = (List) listmap.get(hc);
+	List<PairList<HField,Integer>> sortedFields = listmap.get(hc);
 	if (sortedFields==null) return hc; // not a split class.
-	List lastpair = (List) sortedFields.get(sortedFields.size()-1);
+	PairList<HField,Integer> lastpair =
+	    sortedFields.get(sortedFields.size()-1);
 	HField lastF = (HField) lastpair.get(0);
-	HClass broadest = (HClass) field2class.get(lastF);
+	HClass broadest = field2class.get(lastF);
 	assert broadest!=null;
 	return broadest;
     }

@@ -26,6 +26,7 @@ import harpoon.IR.Quads.QuadRSSx;
 import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
+import harpoon.Util.Default.PairList;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -39,20 +40,21 @@ import java.util.Set;
  * MZF-compressed version of a class at run-time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFChooser.java,v 1.4 2002-04-10 03:01:37 cananian Exp $
+ * @version $Id: MZFChooser.java,v 1.5 2002-09-03 14:43:04 cananian Exp $
  */
-class MZFChooser extends MethodMutator {
+class MZFChooser extends MethodMutator<Quad> {
     /** an oracle to determine the properties of constructors. */
     final ConstructorClassifier cc;
     /** a map from HClasses to a list of sorted fields; the splitting has
      *  been done in the order of the list. */
-    final Map listmap;
+    final Map<HClass,List<PairList<HField,Integer>>> listmap;
     /** a map from <code>HField</code>s to the <code>HClass</code> which
      *  eliminates that field. */
-    final Map field2class;
+    final Map<HField,HClass> field2class;
     /** Creates a <code>MZFChooser</code>. */
     public MZFChooser(HCodeFactory hcf, ConstructorClassifier cc,
-		      Map listmap, Map field2class) {
+		      Map<HClass,List<PairList<HField,Integer>>> listmap,
+		      Map<HField,HClass> field2class) {
         super(QuadSSA.codeFactory(hcf));
 	this.cc = cc;
 	this.listmap = listmap;
@@ -62,37 +64,39 @@ class MZFChooser extends MethodMutator {
 	// input SSA, output RSSx.
 	return QuadRSSx.codename;
     }
-    protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
+    protected HCodeAndMaps<Quad> cloneHCode(HCode<Quad> hc, HMethod newmethod){
 	// make SSA into RSSx.
 	assert hc.getName().equals(QuadSSA.codename);
 	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
 	private MyRSSx(HMethod m) { super(m, null); }
-	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+	public static HCodeAndMaps<Quad> cloneToRSSx(harpoon.IR.Quads.Code c,
 					       HMethod m) {
 	    MyRSSx r = new MyRSSx(m);
 	    return r.cloneHelper(c, r);
 	}
     }
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	HCode hc = input.hcode();
+    protected HCode<Quad> mutateHCode(HCodeAndMaps<Quad> input) {
+	HCode<Quad> hc = input.hcode();
 	// first, find set of constructor-calls in this HCode.
 	QuadFinder qfinder = new QuadFinder();
-	for (Iterator it=hc.getElementsI(); it.hasNext(); )
-	    ((Quad)it.next()).accept(qfinder);
+	for (Iterator<Quad> it=hc.getElementsI(); it.hasNext(); )
+	    it.next().accept(qfinder);
 	// for each constructor:
-	for (Iterator it=qfinder.constructors.iterator(); it.hasNext(); ) {
-	    CALL qC = (CALL) it.next();
+	for (Iterator<CALL> it=qfinder.constructors.iterator();
+	     it.hasNext(); ) {
+	    CALL qC = it.next();
 	    assert !qC.isVirtual();
 	    // match it to a 'NEW'.
-	    NEW qN = (NEW) qfinder.temp2new.get(qC.params(0));
+	    NEW qN = qfinder.temp2new.get(qC.params(0));
 	    if (qN==null) continue; // typically call to super-constructor.
 	    // if we know anything about this constructor...
 	    if (!cc.isGood(qC.method())) continue;
 	    assert qN.hclass().equals(qC.method().getDeclaringClass()) : qN+" / "+qC;
 	    // fetch field list for this class.
-	    List sortedFields = (List) listmap.get(qN.hclass());
+	    List<PairList<HField,Integer>> sortedFields =
+		listmap.get(qN.hclass());
 	    if (sortedFields==null) continue; // nothing known about this class
 	    // delete the NEW.
 	    qN.remove();
@@ -103,9 +107,9 @@ class MZFChooser extends MethodMutator {
     }
     static class QuadFinder extends QuadVisitor {
 	/** map temps to 'NEW's where they are defined. */
-	Map temp2new = new HashMap();
+	Map<Temp,NEW> temp2new = new HashMap<Temp,NEW>();
 	/** set of constructor CALLs. */
-	Set constructors = new HashSet();
+	Set<CALL> constructors = new HashSet<CALL>();
 	public void visit(Quad q) { /* not interesting */ }
 	public void visit(NEW q) {
 	    assert !temp2new.containsKey(q.dst()) : "SSx form";
@@ -133,7 +137,8 @@ class MZFChooser extends MethodMutator {
 	    return false;
 	}
     }
-    void refactor(HMethod constructor, CALL qC, List sortedFields) {
+    void refactor(HMethod constructor, CALL qC,
+		  List<PairList<HField,Integer>> sortedFields) {
 	QuadFactory qf = qC.getFactory();
 	if (sortedFields.size()==0) { // base case.
 	    Quad qN = new NEW(qf, qC, qC.params(0),
@@ -141,11 +146,11 @@ class MZFChooser extends MethodMutator {
 	    addAt(qC.prevEdge(0), qN);
 	    return;
 	}
-	List pair = (List) sortedFields.get(0);
+	PairList<HField,Integer> pair = sortedFields.get(0);
 	HField hf = (HField) pair.get(0); // field
 	Number num = (Number) pair.get(1); // 'mostly-what?'
 	// lookup 'spiffy constructor'
-	HClass newC = (HClass) field2class.get(hf);
+	HClass newC = field2class.get(hf);
 	HMethod newM = newC.getDeclaredMethod
 	    (constructor.getName(), constructor.getDescriptor());
 	// check whether this field is constant w/ this constructor.
@@ -229,8 +234,8 @@ class MZFChooser extends MethodMutator {
     // private helper functions.
     private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
     private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
-	Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	Quad frm = e.from(); int frm_succ = e.which_succ();
+	Quad to  = e.to();   int to_pred = e.which_pred();
 	Quad.addEdge(frm, frm_succ, q, which_pred);
 	Quad.addEdge(q, which_succ, to, to_pred);
 	return to.prevEdge(to_pred);
