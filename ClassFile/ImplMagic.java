@@ -25,7 +25,7 @@ import java.util.Map;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.11 2000-03-30 00:44:57 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.12 2000-03-30 09:50:35 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -165,7 +165,13 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	// Add the default code representation, if method is not native.
 	if (!Modifier.isNative(_this.getModifiers()) &&
 	    !Modifier.isAbstract(_this.getModifiers()))
-	    repository.put(_this, methodinfo);
+	    repository.put(meth2str(_this), methodinfo);
+    }
+
+    // keys in repository are strings, to avoid conflict-of-linker problems.
+    private static String meth2str(HMethod m) {
+	return m.getDeclaringClass().getName()+"."+m.getName()+
+	    m.getDescriptor();
     }
 
     static final Map repository = new HashMap();
@@ -175,7 +181,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	public HCode convert(HMethod m)
 	{
 	    harpoon.IR.RawClass.MethodInfo methodinfo =
-	    (harpoon.IR.RawClass.MethodInfo) repository.get(m);
+	    (harpoon.IR.RawClass.MethodInfo) repository.get(meth2str(m));
 	    if (methodinfo==null) return null;
 	    else return new harpoon.IR.Bytecode.Code(m, methodinfo);
 	}
