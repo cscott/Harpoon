@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.23 1998-08-08 12:26:43 cananian Exp $
+ * @version $Id: HClass.java,v 1.24 1998-08-08 13:46:16 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -422,9 +422,14 @@ public class HClass {
    */
   public HMethod[] getDeclaredMethods() {
     if (declaredMethods==null) {
-      if (isPrimitive() || isArray())
+      if (isPrimitive()) {
 	declaredMethods = new HMethod[0];
-      else {
+      } else if (isArray()) {
+	declaredMethods = new HMethod[] {
+	  new HArrayMethod(this,"get","(I)"+getDescriptor().substring(1)),
+	  new HArrayMethod(this,"set","(I"+getDescriptor().substring(1)+")V"),
+	  new HArrayMethod(this,"clone","()V") };
+      } else {
 	declaredMethods = new HMethod[classfile.methods.length];
 	for (int i=0; i<declaredMethods.length; i++) {
 	  if (classfile.methods[i].name().equals("<init>")) // constructor
@@ -545,6 +550,9 @@ public class HClass {
       if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
 	if (!supm[i].getDeclaringClass().getPackage().equals(frmPackage))
 	  continue; // skip this (inaccessible) method.
+      // skip superclass constructors.
+      if (supm[i] instanceof HConstructor)
+	  continue;
       // all's good.  Add this one.
       v.addElement(supm[i]);
     }
