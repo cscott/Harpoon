@@ -30,6 +30,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.NoSuchClassException;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -57,7 +58,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.9 2003-06-05 22:14:03 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.10 2003-10-03 19:45:14 cananian Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -1237,11 +1238,13 @@ public abstract class InterProcPA implements java.io.Serializable {
     private static Collection getMethods(String c_name, String m_name,
 					 Linker linker) {
 	List retval = new LinkedList();
+	try {
 	HClass hclass = linker.forName(c_name);
 	HMethod[] hms = hclass.getDeclaredMethods();
 	for(int i = 0; i < hms.length; i++)
 	    if(m_name.equals(hms[i].getName()))
 		retval.add(hms[i]);
+	} catch (NoSuchClassException e) { /* ignore this class */ }
 	return retval;
     }
 
