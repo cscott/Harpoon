@@ -7,10 +7,10 @@ package harpoon.IR.Assem;
  * <code>InstrList</code> is the data representation for a
  * list of Instrs.  From the Appel book.
  *
- * @deprecated Felix is deprecating this, since `find . -iname "*.java" | xargs grep InstrList -n` told him that its not actually used anywhere else in the compiler.  Use an <code>Instr</code>[] instead.
+ * @deprecated Felix is deprecating this, since `find . -iname "*.java" | xargs grep InstrList -n` told him that its not actually used anywhere else in the compiler.  Use a <code>harpoon.Backend.Generic.Code</code> or an <code>Instr</code>[] instead.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrList.java,v 1.1.2.3 1999-04-09 12:34:44 pnkfelix Exp $
+ * @version $Id: InstrList.java,v 1.1.2.4 1999-04-09 12:39:35 pnkfelix Exp $
  */
 public class InstrList {
     public Instr head; 
