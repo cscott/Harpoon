@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.38 2000-03-29 03:32:17 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.39 2000-03-29 05:03:45 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -442,10 +442,10 @@ public class PointerAnalysis {
 	    // analyze_intra_proc
 
 	    //lbb2pig.clear(); // annotation
-	    LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
-	    LightBasicBlock.Factory lbbf = 
-		lbbconv.convert2lbb(mm_work.getHMethod());
-	    clear_lbb2pig(lbbf);
+	    //LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
+	    //LightBasicBlock.Factory lbbf = 
+	    //	lbbconv.convert2lbb(mm_work.getHMethod());
+	    //clear_lbb2pig(lbbf);
 	    // end annotation
 
 	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(mm_work);
@@ -475,9 +475,13 @@ public class PointerAnalysis {
 	    }
 	}
 
+	// enable some GC:
+	// 1. get rid of the cache from the scc_lbb factory; anyway, it is
+	// unsuseful, since the methods from scc are never reanalyzed. 
 	scc_lbb_factory.clear();
-
-	// the meta methods of this SCC will never be revisited, so the
+	// 2. clear the info attached to the BBs of the methods from scc
+	clear_lbb_info(scc);
+	// 3. the meta methods of this SCC will never be revisited, so the
 	// specializations generated for the call sites inside them are not
 	// usefull any more
 	if(CALL_CONTEXT_SENSITIVE)
@@ -1109,6 +1113,19 @@ public class PointerAnalysis {
 	LightBasicBlock[] lbbs = lbbf.getAllBBs();
 	for(int i = 0; i < lbbs.length; i++)
 	    lbbs[i].user_info = null;
+    }
+
+    // clears all the info attached to LBBs belonging to the code of
+    // methods from the strongly connected component scc.
+    private final void clear_lbb_info(SCComponent scc){
+	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
+
+	for(Iterator it = scc.nodes(); it.hasNext(); ){
+	    MetaMethod mm_work = (MetaMethod) it.next();
+	    LightBasicBlock.Factory lbbf = 
+		lbbconv.convert2lbb(mm_work.getHMethod());
+	    clear_lbb2pig(lbbf);
+	}
     }
 
     /** Returns the set of the nodes pointed by the temporary <code>t</code>
