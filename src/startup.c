@@ -26,7 +26,7 @@ void FNI_java_lang_Thread_finishMain(JNIEnv *env);
 #define CHECK_EXCEPTIONS(env) \
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
 
-extern char *name_of_binary;
+char *name_of_binary;
 
 int main(int argc, char *argv[]) {
   int top_of_stack; /* special variable holding the top-of-stack position */

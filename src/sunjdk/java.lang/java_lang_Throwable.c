@@ -6,7 +6,7 @@
 #include "java_lang_Throwable.h"
 #include <config.h> /* for HAVE_STACK_TRACE_FUNCTIONS */
 
-char *name_of_binary;
+extern char *name_of_binary;
 
 /* Print the printf-style formatted string using the println() method of
  * java object 'sobj'. */
