@@ -1,4 +1,5 @@
 #include <signal.h> /* for signal(), to ignore SIGPIPE */
+#include <string.h> /* for strcmp */
 #include <jni.h>
 #include <jni-private.h>
 #include "java.lang/thread.h"
