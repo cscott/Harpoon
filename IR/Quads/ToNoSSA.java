@@ -15,16 +15,18 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.Quads.Edge;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Default;
 import harpoon.Util.DisjointSet;
-import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
  
 /**
@@ -32,7 +34,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.37 2001-09-20 18:18:04 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.38 2001-09-25 22:57:56 cananian Exp $
  */
 public class ToNoSSA
 {
@@ -61,7 +63,7 @@ public class ToNoSSA
 	    Util.assert(hce!=null && t!=null);
 	    Util.assert(t.tempFactory() ==
 			((Quad)hce).getFactory().tempFactory());
-	    Object type = dT.get(new Tuple(new Object[] { hce, t }));
+	    Object type = dT.get(Default.pair(hce, t));
 	    if (type instanceof HClass) return null;
 	    if (type instanceof DList) return (DList) type;
 	    throw new TypeNotKnownException(hce, t);
@@ -70,7 +72,7 @@ public class ToNoSSA
 	    Util.assert(hce!=null && t!=null);
 	    Util.assert(t.tempFactory() ==
 			((Quad)hce).getFactory().tempFactory());
-	    Object type = dT.get(new Tuple(new Object[] { hce, t }));
+	    Object type = dT.get(Default.pair(hce, t));
 	    if (type instanceof HClass) return (HClass)type;
 	    if (type instanceof DList) return null;
 	    throw new TypeNotKnownException(hce, t);
@@ -124,7 +126,7 @@ public class ToNoSSA
     }
 
     /**
-     * Translates the code in the supplied codeview from SSA to No-SSA form, 
+     * Translates the code in the supplied codeview from SSx to No-SSA form, 
      * returning the new root <code>Quad</code>.  The <code>Map</code>
      * parameter is used to maintain derivation information.
      * 
@@ -323,51 +325,47 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 
     public void visit(LABEL q)
     {
-	LABEL label = new LABEL(m_qf, q, q.label(), new Temp[0], q.arity());
-
-	int numPhis = q.numPhis(), arity = q.arity();
-	for (int i=0; i<numPhis; i++)
-	    for (int j=0; j<arity; j++)
-		pushBack(q, i, j); // Adds moves & updates derivation table
-      
-	Quad.replace(q, label);
+	pushBack(q);
+	Quad.replace(q, new LABEL(m_qf, q, q.label(), new Temp[0], q.arity()));
     }
       
     public void visit(PHI q)
     {
-	PHI phi = new PHI(q.getFactory(), q, new Temp[0], q.arity());
-
-	int numPhis = q.numPhis(), arity = q.arity();
-	for (int i=0; i<numPhis; i++) {
-	    for (int j=0; j<arity; j++)
-		pushBack(q, i, j); // Adds moves & updates derivation table
-	    // remove unneeded derivation table entry for q.dst(i)
-	    if (m_dT!=null)
-		m_dT.remove(new Tuple(new Object[] { q, q.dst(i) }));
-	}
-
-	Quad.replace(q, phi);
+	pushBack(q);
+	Quad.replace(q, new PHI(q.getFactory(), q, new Temp[0], q.arity()));
     }
 
+    private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
+    private static Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
+	Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
+	Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	Quad.addEdge(frm, frm_succ, q, which_pred);
+	Quad.addEdge(q, which_succ, to, to_pred);
+	return to.prevEdge(to_pred);
+    }
+    private Edge addMoveAt(Edge e, HCodeElement source, Temp dst, Temp src,
+				  Object type) {
+	MOVE m = new MOVE(m_qf, source, dst, src);
+	if (type!=null) m_dT.put(Default.pair(m, dst), type);
+	return addAt(e, m);
+    }
     // insert MOVE on edge into PHI & update derivation table.
-    private void pushBack(PHI q, int dstIndex, int srcIndex)
-    {
-	Edge e    = q.prevEdge(srcIndex);
-	MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
-			     q.src(dstIndex, srcIndex));
-	Quad.addEdge((Quad)e.from(), e.which_succ(), m, 0);
-	Quad.addEdge(m, 0, (Quad)e.to(), e.which_pred());
-
-	if (m_dT != null) { // skip this if we're not maintaining type info
-	    // update the derivation table to reflect the new def points.
-	    Tuple oldtup = new Tuple(new Object[] { q, m.dst() });
-	    Object type = m_dT.get(oldtup);
-	    Util.assert(type!=null, "No type for "+m.dst()+" in "+q);
-	    Tuple newtup = new Tuple(new Object[] { m, m.dst() });
-	    m_dT.put(newtup, type);
+    private void pushBack(PHI q) {
+	Edge[] in = q.prevEdge();
+	Edge out = q.nextEdge(0);
+	for (int i=0; i<q.numPhis(); i++) {
+	    Temp Tdst = q.dst(i);
+	    Temp Tt = new Temp(Tdst);
+	    Object type = null;
+	    if (m_dT!=null) {
+		type = m_dT.remove(Default.pair(q, Tdst));
+		Util.assert(type!=null, "No type for "+Tdst+" in "+q);
+	    }
+	    for (int j=0; j<in.length; j++)
+		in[j] = addMoveAt(in[j], q, Tt, q.src(i, j), type);
+	    out = addMoveAt(out, q, Tdst, Tt, type);
 	}
     }
-
 }
 
 
@@ -409,7 +407,7 @@ static class QuadMap // this is an inner class
 
 	Temp[] defs = qOld.def();
 	for (int i=0; i<defs.length; i++) {
-	    Tuple tuple = new Tuple(new Object[] { qNew, map(defs[i]) });
+	    List tuple = Default.pair( qNew, map(defs[i]) );
 	    HClass hc = m_derivation.typeMap(qOld, defs[i]);
 	    if (hc!=null) { // not a derived pointer.
 		m_dT.put(tuple, hc);
