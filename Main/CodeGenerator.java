@@ -66,18 +66,16 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.6 2003-04-18 16:20:51 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.7 2003-04-19 01:08:19 salcianu Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
     public CodeGenerator() { super("code-generator"); }
 
-    private static final boolean DEBUG = false;
-
     public List/*<Option>*/ getOptions() {
 	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
 
-	if(DEBUG)
+	if(Boolean.getBoolean("debug.reg-alloc"))
 	    add_debug_options(opts);
 
 	opts.add(new Option("L", "Outputs Local Register Allocated Instr IR") {
