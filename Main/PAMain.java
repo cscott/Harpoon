@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.53 2000-06-07 04:28:40 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.54 2000-06-07 23:00:06 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -783,8 +783,11 @@ public abstract class PAMain {
 	else {
 	    Set tops = new HashSet(mcg.getRunMetaMethods());
 	    tops.add(mroot);
-	    if(DEBUG)
-		System.out.println("TOP METHODS:\n" + tops); 
+	    //if(DEBUG) { ////// TODO: remove
+		System.out.println("TOP METHODS:");
+		for(Iterator it = tops.iterator(); it.hasNext(); )
+		    System.out.println(it.next());
+		//} 
 	    for(Iterator it = tops.iterator(); it.hasNext(); )
 		pa.getIntParIntGraph( (MetaMethod) it.next());
 	}
