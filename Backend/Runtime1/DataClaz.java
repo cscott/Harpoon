@@ -36,7 +36,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.4 1999-10-20 07:05:57 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.5 1999-10-23 00:30:05 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -73,6 +73,9 @@ public class DataClaz extends Data {
 	    stmlist.add(_DATA(new CONST(tf, null)));
 	// the interface list is generated elsewhere
 	stmlist.add(_DATA(m_nm.label(hc, "interfaces")));
+	// object size.
+	int size = m_tb.objectSize(hc) + m_tb.OBJECT_HEADER_SIZE;
+	stmlist.add(_DATA(new CONST(tf, null, size)));
 	// class depth.
 	int depth = m_tb.cdm.classDepth(hc);
 	stmlist.add(_DATA(new CONST(tf, null, m_tb.POINTER_SIZE * depth)));

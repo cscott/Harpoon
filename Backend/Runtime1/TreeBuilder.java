@@ -55,7 +55,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.6 1999-10-21 13:36:15 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.7 1999-10-23 00:30:05 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -79,6 +79,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     final int CLAZ_CLAZINFO;
     final int CLAZ_COMPONENT_OFF;
     final int CLAZ_INTERFZ_OFF;
+    final int CLAZ_SIZE_OFF;
     final int CLAZ_DEPTH_OFF;
     final int CLAZ_DISPLAY_OFF;
     final int CLAZ_METHODS_OFF;
@@ -127,12 +128,13 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_CLAZINFO    = 0 * POINTER_SIZE;
 	CLAZ_COMPONENT_OFF=1 * POINTER_SIZE;
 	CLAZ_INTERFZ_OFF = 2 * POINTER_SIZE;
-	CLAZ_DEPTH_OFF   = 3 * POINTER_SIZE;
-	CLAZ_DISPLAY_OFF = 3 * POINTER_SIZE + 1 * WORD_SIZE;
+	CLAZ_SIZE_OFF	 = 3 * POINTER_SIZE;
+	CLAZ_DEPTH_OFF   = 3 * POINTER_SIZE + 1 * WORD_SIZE;
+	CLAZ_DISPLAY_OFF = 3 * POINTER_SIZE + 2 * WORD_SIZE;
 	CLAZ_METHODS_OFF = CLAZ_DISPLAY_OFF + cdm.maxDepth()*POINTER_SIZE;
     }
-    // use the field offset map to get the object size.
-    private int objectSize(HClass hc) {
+    // use the field offset map to get the object size (not including header)
+    int objectSize(HClass hc) {
 	List l = cfm.fieldList(hc);
 	if (l.size()==0) return 0;
 	HField lastfield = (HField) l.get(l.size()-1);
