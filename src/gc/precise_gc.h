@@ -34,6 +34,17 @@
 # define internal_free_memory   copying_free_memory
 # define internal_get_heap_size copying_get_heap_size
 # define internal_malloc        copying_malloc
+#elif defined(WITH_GENERATIONAL_GC)
+# include "generational.h"
+# define internal_malloc        generational_malloc
+# define add_to_root_set        generational_handle_reference
+# define internal_gc_init       generational_gc_init
+# define internal_print_stats()
+# define internal_register_inflated_obj generational_register_inflated_obj
+# define handle_reference       generational_handle_reference
+# define internal_collect()
+# define internal_free_memory()
+# define internal_get_heap_size()
 #endif
 
 #ifdef WITH_MASKED_POINTERS
@@ -41,6 +52,8 @@
 #else
 # define TAG_HEAP_PTR(x) ((void*) (x))
 #endif
+
+#define CLAZ_OKAY(x) (&claz_start <= (x)->claz && (x)->claz < &claz_end)
 
 /* the number of bits in the in-line gc bitmap is platform-dependent */
 #define BITS_IN_GC_BITMAP (SIZEOF_VOID_P*8)
@@ -77,7 +90,6 @@ void cleanup_after_threaded_GC();
 void trace(jobject_unwrapped obj);
 
 /* ---- functions for POINTER-REVERSED MARKSWEEP GC ---- */
-
 ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index);
 
 #endif
