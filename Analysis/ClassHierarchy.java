@@ -20,7 +20,7 @@ import java.util.Set;
  * and methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.1.2.5 2000-12-17 20:01:58 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.1.2.6 2001-01-19 00:40:49 cananian Exp $
  */
 public abstract class ClassHierarchy {
     // tree of callable classes
@@ -52,12 +52,14 @@ public abstract class ClassHierarchy {
 	HClass su = base.getSuperclass();
 	HClass[] interfaces = base.getInterfaces();
 	boolean isObjArray = c.getDescriptor().endsWith("[Ljava/lang/Object;");
+	boolean isPrimArray = c.isArray() && base.isPrimitive();
 	// root interface inheritance hierarchy at Object.
 	if (interfaces.length==0 && base.isInterface())
 	    su = c.getLinker().forName("java.lang.Object");// c not prim.
 	// create return value array.
 	HClass[] parents = new HClass[interfaces.length +
-				      ((su!=null || isObjArray) ? 1 : 0)];
+				      ((su!=null || isObjArray || isPrimArray)
+				       ? 1 : 0)];
 	int n=0;
 	if (su!=null)
 	    parents[n++] = HClassUtil.arrayClass(c.getLinker(),//c not prim.
@@ -69,6 +71,9 @@ public abstract class ClassHierarchy {
 	// (but remember also Object[][]->Cloneable->Object)
 	if (isObjArray)
 	    parents[n++] = HClassUtil.arrayClass(c.getLinker(), base, dims-1);
+	// also!  int[] -> Object.
+	if (isPrimArray) // c not prim.
+	    parents[n++] = c.getLinker().forName("java.lang.Object");
 	// okay, done.  Did we size the array correctly?
 	Util.assert(n==parents.length);
 	// okay, return as Set.
