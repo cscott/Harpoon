@@ -1,12 +1,15 @@
 #!/bin/bash
 
-echo -n "Compiling everything in $1 ..."
+echo "Compiling everything in $1"
 
 export CLASSPATH=$CLASSPATH:`pwd`
 
 cd $1 && \
 rm -f *.class && \
 rm -f *~ && \
-javac -classpath $CLASSPATH *.java 
+for file in *.java; do \
+    echo -n "  Compiling $file ..."; \
+    javac -classpath $CLASSPATH $file; \
+    echo done; \
+done;
 
-echo done
