@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.10 1998-08-20 22:42:20 cananian Exp $
+ * @version $Id: Code.java,v 1.11 1998-08-20 22:47:24 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -159,7 +159,7 @@ public class Code extends HCode {
   public ExceptionEntry[] getTryBlocks() { getElements(); return tryBlocks; }
 
   /** Represents exception handlers in this code view. */
-  public class ExceptionEntry {
+  public static class ExceptionEntry {
     UniqueVector tryBlock;
     HClass caughtException;
     Instr handler;
