@@ -23,6 +23,7 @@ import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
+import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.Debug;
@@ -40,7 +41,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.3 2002-04-24 23:48:26 salcianu Exp $
+ * @version $Id: MemOptMain.java,v 1.4 2002-05-02 22:11:45 salcianu Exp $
  */
 public abstract class MemOptMain {
     
@@ -72,7 +73,6 @@ public abstract class MemOptMain {
     }
 
 
-
     // Return an IncompatibilityAnalysis object
     private static IncompatibilityAnalysis get_ia() {
 	CallGraph cg = build_call_graph();
@@ -92,6 +92,8 @@ public abstract class MemOptMain {
 
     // build a (smart) call graph for hcf_no_ssa
     private static CallGraph build_call_graph() {
+	MetaCallGraphImpl.COLL_HACK = true;
+
 	ClassHierarchy ch = 
 	    new QuadClassHierarchy(linker, mroots, hcf_no_ssa);
 
@@ -109,7 +111,7 @@ public abstract class MemOptMain {
                 mroots.add(hm);
         }
 
-        return new SmartCallGraph(hcf_no_ssa, ch, mroots);
+        return new SmartCallGraph(hcf_no_ssa, linker, ch, mroots);
     }
 
 
@@ -149,7 +151,6 @@ public abstract class MemOptMain {
     }
 
 
-
     private static void read_an(String filename) throws Exception {
 	ObjectInputStream ois = 
 	    new ObjectInputStream(new FileInputStream(filename));
@@ -175,7 +176,8 @@ public abstract class MemOptMain {
 	int size = new Integer(br.readLine()).intValue();
 
 	for(int i = 0; i < size; i++) {
-	    id2counter.put(new Integer(i), new Integer(br.readLine()));
+	    Integer count = new Integer(br.readLine());
+	    id2counter.put(new Integer(i), count);
 	}
 
 	alloc2counter = new HashMap();
@@ -185,15 +187,17 @@ public abstract class MemOptMain {
 		(q, (Integer) id2counter.get(new Integer(an.allocID(q))));
 	}
 
-	/*
 	System.out.println("alloc2counter BEGIN");
 	for(Iterator it = alloc2counter.entrySet().iterator();
 	    it.hasNext(); ) {
 	    Map.Entry entry = (Map.Entry) it.next();
-	    System.out.println(entry.getKey() + " -> " + entry.getValue());
+	    Quad q = (Quad) entry.getKey();
+	    Integer count = (Integer) entry.getValue();
+	    if((count != null) && (count.intValue() != 0))
+		System.out.println(Debug.code2str(q) + " -> " + count +
+				   " | " + q.getFactory().getMethod());
 	}
 	System.out.println("alloc2counter END");
-	*/
     }
     
     
@@ -224,11 +228,12 @@ public abstract class MemOptMain {
     }
     private static Map hclass2stat = new HashMap();
 
-
+    // return # times q was executed
     private static int alloc2int(Quad q) {
 	Integer i = (Integer) alloc2counter.get(q);
 	if(i == null) {
-	    System.out.println("#WARNING: " + q);
+	    // instruction never executed; it wasn't even included
+	    // in the allocation statistics -> return 0
 	    return 0;
 	}
 	return i.intValue();

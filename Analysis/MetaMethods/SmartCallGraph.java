@@ -13,13 +13,13 @@ import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.CALL;
 
 import harpoon.Util.Util;
 
 import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
+import harpoon.Util.DataStructs.RelationImpl;
 
 /** <code>SmartCallGraph</code> is an improved call graph produced by
     compressing a meta call graph, ie, all metamethods are shrinked
@@ -35,7 +35,8 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
     connected component in the call graph) decreased from 53 to 8.
 
     @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
-    @version $Id: SmartCallGraph.java,v 1.4 2002-04-17 04:49:03 salcianu Exp $ */
+    @version $Id: SmartCallGraph.java,v 1.5 2002-05-02 22:11:39 salcianu Exp $
+*/
 public class SmartCallGraph implements CallGraph {
     
     /** Creates a <code>SmartCallGraph</code>.
@@ -45,18 +46,18 @@ public class SmartCallGraph implements CallGraph {
 	construct(mcg);
     }
 
-
     /** Convenient constructor for use in cases when a meta call graph
 	does not already exist.
 
 	@param hcf Caching code factory used to produce the code of the methods
+	@param linker Linker to get classes
 	@param ch  Class hierarchy 
 	@param mroots Set of method roots (entry points into the program: usually the main method, static initializers and methods called by the JVM before main. 
 	
 	The parameters of this constructor are used to construct a
 	meta call graph that is used to create <code>this</code> smart
 	call graph. */
-    public SmartCallGraph(CachingCodeFactory hcf,
+    public SmartCallGraph(CachingCodeFactory hcf, Linker linker,
 			  ClassHierarchy ch, Set mroots) {
 	assert
 	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename) ||
@@ -64,7 +65,7 @@ public class SmartCallGraph implements CallGraph {
 	    hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename) :
 	    "unsupported quad factory " + hcf;
 	// can't call this(...) because this is not the first statement ...
-	construct(new MetaCallGraphImpl(hcf, ch, mroots));
+	construct(new MetaCallGraphImpl(hcf, linker, ch, mroots));
     }
 
     // empty array to return in case of no callee
@@ -119,39 +120,45 @@ public class SmartCallGraph implements CallGraph {
 
     // Does the main computation: fill the hm2callees and hm2cs2callees
     // structures using the info from mcg.
-    private final void construct(final MetaCallGraph mcg){
-	final Relation split = mcg.getSplitRelation();
+    private final void construct(final MetaCallGraph mcg) {
+	Relation split = mcg.getSplitRelation();
 
-	for(Iterator ithm = split.keys().iterator(); ithm.hasNext(); ){
-	    HMethod hm = (HMethod) ithm.next();
-	    // vc stores all the callees of hm
-	    Set sc = new HashSet();
-	    // map stores the association cs -> callees (cs is from
-	    // the code of hm)
-	    Map map = new HashMap();
+	for(Iterator it_hm = split.keys().iterator(); it_hm.hasNext(); ) {
+	    HMethod hm = (HMethod) it_hm.next();
+	    // ac stores all the callees of hm
+	    Set ac = new HashSet();
+	    // rel stores associations cs -> callees(cs)
+	    // where cs is a call site from hm
+	    Relation rel = new RelationImpl();
 
-	    Iterator itmm = split.getValues(hm).iterator();
-	    while(itmm.hasNext()) {
-		MetaMethod mm = (MetaMethod) itmm.next();
+	    // iterate over all metamethods corresponding to hm
+	    for(Iterator im = split.getValues(hm).iterator(); im.hasNext(); ) {
+		MetaMethod mm = (MetaMethod) im.next();
 
-		Iterator itcs = mcg.getCallSites(mm).iterator();
-		while(itcs.hasNext()){
-		    CALL cs = (CALL) itcs.next();
-		    // vc_cs stores all the callers at site cs
-		    Set sc_cs = new HashSet();
-		    // get the meta-method whih are called at cs
-		    MetaMethod[] callees = mcg.getCallees(mm,cs);
-		    for(int i = 0; i < callees.length; i++){
+		for(Iterator it_cs = mcg.getCallSites(mm).iterator();
+		    it_cs.hasNext(); ) {
+		    CALL cs = (CALL) it_cs.next();
+		    // get meta-methods called at cs
+		    MetaMethod[] callees = mcg.getCallees(mm, cs);
+		    for(int i = 0; i < callees.length; i++) {
 			HMethod hm_callee = callees[i].getHMethod();
-			sc.add(hm_callee);
-			sc_cs.add(hm_callee);
+			rel.add(cs, hm_callee);
+			ac.add(hm_callee);
 		    }
-		    map.put(cs, 
-		       (HMethod[]) sc_cs.toArray(new HMethod[sc_cs.size()]));
 		}
 	    }
-
-	    hm2callees.put(hm, (HMethod[])sc.toArray(new HMethod[sc.size()])); 
+	    
+	    hm2callees.put(hm, ac.toArray(new HMethod[ac.size()])); 
+	    
+	    // map stores the association cs -> array of callees,
+	    // where cs is a call site from the code of hm
+	    Map map = new HashMap();
+	    // iterate over the call sites from hm to build "map"
+	    for(Iterator it_cs = rel.keys().iterator(); it_cs.hasNext(); ) {
+		CALL cs = (CALL) it_cs.next();
+		Set callees = rel.getValues(cs);
+		map.put(cs, callees.toArray(new HMethod[callees.size()]));
+	    }
 	    hm2cs2callees.put(hm, map);
 	}
     }

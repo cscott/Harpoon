@@ -78,7 +78,7 @@ import harpoon.Util.Collections.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.4 2002-04-10 03:06:09 cananian Exp $
+ * @version $Id: EDMain.java,v 1.5 2002-05-02 22:11:45 salcianu Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -169,7 +169,7 @@ public class EDMain extends harpoon.IR.Registration {
 	    mroots.add(mo);
 
 	    mcg = new MetaCallGraphImpl
-		(new CachingCodeFactory(hco), stage1.chx, mroots);
+		(new CachingCodeFactory(hco), linker, stage1.chx, mroots);
 	    //using hcf for now!
 	}
     }

@@ -25,7 +25,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>MetaCallGraph</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphAbstr.java,v 1.2 2002-02-25 20:58:16 cananian Exp $
+ * @version $Id: MetaCallGraphAbstr.java,v 1.3 2002-05-02 22:11:39 salcianu Exp $
  */
 public abstract class MetaCallGraphAbstr implements MetaCallGraph {
     // Map<MetaMethod,MetaMethod[]>
@@ -81,7 +81,7 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 	return map.keySet();
     }
 
-    // set of all the encountered meta methods
+    // set of all encountered meta methods
     protected final Set all_meta_methods = new HashSet();
 
     /** Returns the set of all the meta methods that might be called during the

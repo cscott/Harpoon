@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.7 2002-04-24 23:04:09 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.8 2002-05-02 22:11:46 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -291,6 +291,7 @@ public class SAMain extends harpoon.IR.Registration {
 		addToRootSet(roots, rootSetFilename);
 	    } catch (IOException ex) {
 		System.err.println("Error reading "+rootSetFilename+": "+ex);
+		ex.printStackTrace();
 		System.exit(1);
 	    }
 	    // okay, we've got the roots, make a rough class hierarchy.
@@ -334,7 +335,8 @@ public class SAMain extends harpoon.IR.Registration {
 					 runtimeCallableMethods());
 		mroots.add(mainM);
 		mcg = new MetaCallGraphImpl
-		    (new CachingCodeFactory(hcf), classHierarchy, mroots);
+		    (new CachingCodeFactory(hcf), linker,
+		     classHierarchy, mroots);
 	    }
 
 	    if (ROLE_INFER && !alexhack) {

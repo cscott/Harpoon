@@ -28,7 +28,6 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
-import harpoon.ClassFile.Loader;
 
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.QuadVisitor;
@@ -81,9 +80,20 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.7 2002-04-22 02:03:13 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.8 2002-05-02 22:11:39 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
+
+    public static boolean COLL_HACK = false;
+    private static boolean DEBUG_COLL_HACK = true;
+
+    // true if a collection may be stored into a collection
+    private boolean no_coll_in_coll = true;
+
+    // If a call might call a native, we don't try to detect all the
+    // methods that are called there: pointer analysis would anyway
+    // skip that call (and consider it a source of escapability)
+    public static boolean TOUGH_ON_NATIVES = false;
 
     private static boolean DEBUG = false;
     private static boolean DEBUG_CH = false;
@@ -101,6 +111,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     
     private CachingCodeFactory hcf;
     private ClassHierarchy ch;
+    private Linker linker;
 
     // the set of the classes T such that a new T instruction might be executed
     // by the analyzed application.
@@ -109,10 +120,19 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // indicates whether we use the SSA / SSI format
     private boolean ssx_form = false;
 
+    // Any method can throw an exception that is subclass of these
+    // two classes (without explicitly declaring it).
+    private HClass jl_RuntimeException;
+    private HClass jl_Error;
+    private HClass jl_Thread;
+    private HClass jl_Runnable;
+    private HClass jl_Object;
+    private HMethod hm_HashtablePut;
+
     /** Creates a <code>MetaCallGraphImpl</code>. It must receive, in its
 	last parameter, the <code>main</code> method of the program. */
-    public MetaCallGraphImpl(CachingCodeFactory hcf, ClassHierarchy ch,
-			     Set hmroots) {
+    public MetaCallGraphImpl(CachingCodeFactory hcf, Linker linker,
+			     ClassHierarchy ch, Set hmroots) {
 
 	assert
 	    hcf.getCodeName().equals(QuadNoSSA.codename) ||
@@ -125,11 +145,91 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    hcf.getCodeName().equals(QuadSSI.codename);
 
 	System.out.println("MetaCallGraphImpl started with " +
-			   hcf.getCodeName() + " ssx = " + ssx_form);
+			   hcf.getCodeName() + " ssx = " + ssx_form +
+			   (COLL_HACK ? "COLL_HACK" : ""));
 
         this.hcf = hcf;
 	this.ch  = ch;
+	this.linker = linker;
+	init_class_handlers();
 
+	build_meta_call_graph(hmroots);
+	// convert the big format (Set oriented) into the compact one (arrays)
+	compact();
+	// clean up temporary data to free up some space
+	cleanup_temp_data();
+    }
+
+
+    private void build_meta_call_graph(Set hmroots) {
+	compute_instantiated_classes();
+
+	if(COLL_HACK)
+	    init_coll_hack();
+
+	if(COUNTER)
+	    System.out.println();
+
+	// analyze all the roots
+	for(Iterator it = hmroots.iterator(); it.hasNext(); )
+	    analyze(new MetaMethod((HMethod) it.next(), true));
+
+	if(COLL_HACK) {
+	    // remove some unrealizable edges from the call graph
+	    trim_call_graph();
+	    // print some debug info
+	    if(DEBUG_COLL_HACK)
+		print_coll_hack_debug();
+	}
+    }
+
+
+    private void cleanup_temp_data() {
+	// activate the GC
+	callees1    = null;
+	callees2    = null;
+	this.ch     = null;
+	this.hcf    = null;
+	cleanup_class_handlers();
+
+	ets2et      = null;
+	mh2md       = null;
+	param_types = null;
+
+	// null these out so that we can serialize the object [CSA]
+	// (alternatively, could mark all of these as 'transient')
+	qvis_dd     = null;
+	qvis_ti     = null;
+	ets2et      = null;
+	ets_test    = null;
+	implementers = null;
+	kids         = null;
+	instantiated_classes = null;
+
+	if(COLL_HACK)
+	    cleanup_coll_hack();
+
+	// okay, now garbage-collect.
+	System.gc();
+    }
+
+
+    private void init_class_handlers() {
+	jl_Thread           = linker.forName("java.lang.Thread");
+	jl_Runnable         = linker.forName("java.lang.Runnable");
+	jl_RuntimeException = linker.forName("java.lang.RuntimeException");
+	jl_Error            = linker.forName("java.lang.Error");
+    }
+
+    private void cleanup_class_handlers() {
+	jl_Thread           = null;
+	jl_Runnable         = null;
+	jl_RuntimeException = null;
+	jl_Error            = null;
+    }
+
+
+    private void compute_instantiated_classes() {
 	// HACK: Normally, the call graph and the set instantiated_classes
 	// should be computed simultaneously; we use the ClassHierarchy
 	// to get the latter.
@@ -162,49 +262,13 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		System.out.println("  " + ((HClass) it.next()));
 	    System.out.println("}");
 	}
-
-	if(COUNTER)
-	    System.out.println();
-	
-	// analyze all the roots
-	for(Iterator it = hmroots.iterator(); it.hasNext(); )
-	    analyze((HMethod) it.next());
-
-	System.out.println("Avg. call site processing time " +
-			   ((double) call_time / nb_calls));
-	System.out.println("#calls = " + nb_calls);
-	System.out.println("#BIG calls = " + nb_big_calls);
-
-	// convert the big format (Set oriented) into the compact one (arrays)
-	compact();
-	// activate the GC
-	callees1    = null;
-	callees2    = null;
-	this.ch     = null;
-	this.hcf = null;
-	analyzed_mm = null;
-	WMM         = null;
-	mm_work     = null;
-	ets2et      = null;
-	mh2md       = null;
-	param_types = null;
-	// null these out so that we can serialize the object [CSA]
-	// (alternatively, could mark all of these as 'transient')
-	qvis_dd     = null;
-	qvis_ti     = null;
-	ets2et      = null;
-	ets_test    = null;
-	implementers = null;
-	kids = null;
-	instantiated_classes = null;
-	// okay, now garbage-collect.
-	System.gc();
     }
+
 
     // Converts the big format (Set oriented) into the compact one (arrays)
     // Takes the data from callees1(2) and puts it into callees1(2)_cmpct
-    private void compact(){
-	for(Iterator it = callees1.keys().iterator(); it.hasNext();){
+    private void compact() {
+	for(Iterator it = callees1.keys().iterator(); it.hasNext();) {
 	    MetaMethod mm = (MetaMethod) it.next();
 	    Set callees = callees1.getValues(mm);
 	    MetaMethod[] mms = 
@@ -214,7 +278,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    callees1_cmpct.put(mm, mms);
 	}
 
-	for(Iterator it = callees2.keySet().iterator(); it.hasNext();){
+	for(Iterator it = callees2.keySet().iterator(); it.hasNext();) {
 	    MetaMethod mm = (MetaMethod) it.next();
 	    Relation  rel = (Relation) callees2.get(mm);
 	    Map map_cmpct = (Map) callees2_cmpct.get(mm);
@@ -244,12 +308,30 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // Build up the meta call graph, starting from a "root" method.
     // The classic example of a root method is "main", but there could
     // be others called by the JVM before main.
-    private void analyze(HMethod main_method){
+    private void analyze(HMethod root) {
+	if(COLL_HACK && root.equals(hm_HashtablePut)) {
+	    if(DEBUG_COLL_HACK)
+		System.out.println("COLL_HACK: treat Hashtable.put: " + 
+				   "java.util.Properties x String x String");
+
+	    GenType hashmap_gt =
+		new GenType(linker.forName("java.util.Properties"),
+			    GenType.MONO);
+	    GenType key_gt =
+		new GenType(linker.forName("java.lang.String"), GenType.POLY);
+	    GenType value_gt = key_gt;
+	    GenType[] gts = new GenType[]{hashmap_gt, key_gt, value_gt};
+	    analyze(new MetaMethod(root, gts));
+
+	    return;
+	}
+
 	// we are extremely conservative: a root method could be called
 	// with any subtypes for its arguments, so we treat it as a 
 	// polymorphic one.
-	analyze(new MetaMethod(main_method, true));
+	analyze(new MetaMethod(root, true));
     }
+
 
     private PAWorkList WMM = null;
     private Set analyzed_mm = null;
@@ -267,6 +349,11 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	while(!WMM.isEmpty()){
 	    mm_work = (MetaMethod) WMM.remove();
 
+	    /*
+	    if(COLL_HACK == true)
+		coll_hack_examine_method(mm_work);
+	    */
+
 	    if(COUNTER) {
 		mm_count++;
 		if(mm_count % 10 == 0)
@@ -279,6 +366,11 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	all_meta_methods.addAll(analyzed_mm);
 
+	// enable some GC!
+	analyzed_mm = null;
+	WMM = null; 
+	mm_work = null;
+
 	if(COUNTER)
 	    System.out.println(" " + mm_count + " analyzed meta-method(s)");
     }
@@ -286,7 +378,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     private Collection calls = null;
 
     private void analyze_meta_method() {
-	if(DEBUG)
+	//if(DEBUG)
 	    System.out.println("\n\n%%: " + mm_work);
 
 	HMethod hm = mm_work.getHMethod();
@@ -357,12 +449,352 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		System.out.print(param_types[i] + " ");
 	    System.out.println("]");
 	}
-	MetaMethod mm_callee = new MetaMethod(hm,param_types);
+
+	if(COLL_HACK)
+	    coll_hack_fix_params(hm, cs);
+
+	MetaMethod mm_callee = new MetaMethod(hm, param_types);
 	nb_meta_methods++;
 	record_call(mm_work, cs, mm_callee);
-	if(!analyzed_mm.contains(mm_callee))
+	if(!analyzed_mm.contains(mm_callee)) {
+
+	    // TODO: MOVE it TO THE WMM loop
+	    if(COLL_HACK == true)
+		coll_hack_examine_method(mm_callee);
+
 	    WMM.add(mm_callee);
+	}
     }
+
+
+    // COLL_HACK methods BEGIN
+
+    // HashSet is implemented as a HashMap where all values are equal
+    // to a preallocated Object. Therefore, when Map.put is called
+    // from HashSet, the second parameter is not any Object, but
+    // exactly Object. If we were able to infere the concrete types
+    // stored in object fields, this hack wouldn't be necessary :)
+    // TODO: implement a real analysis for field concrete types
+    private void coll_hack_fix_params(HMethod hm, CALL cs) {
+	HMethod caller = mm_work.getHMethod();
+
+	assert hm != null;
+	assert caller != null;
+	assert jl_Map != null;
+	assert jl_Object != null;
+
+	if(caller.getDeclaringClass().equals(ju_HashSet) &&
+	   hm.getName().equals("put") &&
+	   jl_Map.isSuperinterfaceOf(hm.getDeclaringClass()))
+	    param_types[2] = new GenType(jl_Object, GenType.MONO);
+    }
+
+
+    private void coll_hack_examine_method(MetaMethod mm) {
+	if(// Collection.add(ELEMENT);
+	   test_coll(mm, "java.util.Collection", "add", 1, 1) ||
+	   // Map.put(KEY, value);
+	   test_coll(mm, "java.util.Map", "put", 2, 1) ||
+	   // Map.put(key, VALUE);
+	   test_coll(mm, "java.util.Map", "put", 2, 2) ||
+	   // List.add(index, ELEMENT);
+	   test_coll(mm, "java.util.List", "add", 2, 2) ||
+	   // Vector.addElement(ELEMENT);
+	   test_coll(mm, "java.util.Vector", "addElement", 1, 1) ||
+	   // Vector.copyInto(ELEMENT[]);
+	   test_coll2(mm, "java.util.Vector", "copyInto", 1, 1)) {
+	    // you can put some debug message here
+	}
+    }
+
+    private boolean test_coll2(MetaMethod mm, String cls, String mthd,
+			       int arity, int index) {
+	
+	if(!is_this_method(mm, cls, mthd, arity))
+	    return false;
+	   
+	GenType gt = mm.getType(index);
+	HClass hclass = gt.getHClass();
+
+	assert hclass.getComponentType() == null :
+	    "mm.getType(index) is expected to be an array: " + mm;
+
+	Set els = 
+	    get_instantiated_children(new GenType(hclass, GenType.POLY));
+	put_in_colls.addAll(els);
+	
+	if(mthd.equals("put"))
+	    if(index == 1) keys_put_in_maps.addAll(els);
+	    else if(index == 2) values_put_in_maps.addAll(els);
+	    else assert false : "unexpected index " + index;
+	
+	return 
+	    intersect(els, inst_colls);
+    }
+
+
+    // Checks whether mm corresponds to a method called "mthd" from a
+    // subclass of "cls" and having "arity" arguments.
+    private boolean is_this_method(MetaMethod mm, String cls, String mthd,
+				   int arity) {
+	HMethod hm = mm.getHMethod();
+
+	if(hm.isStatic() || 
+	   !hm.getName().equals(mthd) ||
+	   (hm.getParameterNames().length != arity)) return false;
+	
+	// name2colls stores the most popular classes
+	HClass hcoll = (HClass) name2coll.get(cls);
+
+	if(hcoll == null)
+	    hcoll = linker.forName(cls);
+	
+	return
+	    ((hcoll.isInterface() && 
+	      hcoll.isSuperinterfaceOf(hm.getDeclaringClass()))
+	     ||
+	     (!hcoll.isInterface() && 
+	      hcoll.isSuperclassOf(hm.getDeclaringClass())));
+    }
+
+
+    // Checks whether mm is a method of a subclass of "cls", has name
+    // "mthd", arity "arity" and param_types[index] might be a
+    // collection (ie, it implements java.util.Collection or
+    // java.util.Map).
+    //
+    // Also the type of the argument is stored in the appropriate set:
+    // hash keys, hash values and / or collection elements.
+    //
+    // Note: We start counting parameters from 1 (0 is this).
+    private boolean test_coll(MetaMethod mm, String cls, String mthd,
+			      int arity, int index) {
+	if(!is_this_method(mm, cls, mthd, arity))
+	    return false;
+
+	GenType gt = mm.getType(index);
+
+	System.out.println
+	    ("test_coll:\n\t mm = " + mm + "\n\t gt = " + gt);
+
+	Set els = get_instantiated_children(gt);
+	if(put_in_colls.addAll(els)) {
+	    System.out.println
+		("COLL_HACK: new put_in_colls:" +
+		 "\n caller = " + mm_work +
+		 "\n callee = " + mm +
+		 "\n index = " + index +
+		 "\n els = " + els);
+	}
+	
+	if(mthd.equals("put"))
+	    if(index == 1) keys_put_in_maps.addAll(els);
+	    else if(index == 2) values_put_in_maps.addAll(els);
+	    else assert false : "unexpected index " + index;
+	
+	return 
+	    intersect(els, inst_colls);
+    }
+
+    // auxiliary data for COLL_HACK
+    private static Map name2coll = null;
+    // instr_collections = inst_colls + inst_maps
+    private static Set inst_colls = null;
+    // Set of types put into collections: maps, sets, lists etc.
+    private Set put_in_colls;
+    // Set of types used as keys in maps
+    private Set keys_put_in_maps;
+    // Set of types used as values in maps
+    private Set values_put_in_maps;
+
+
+    // initialize data structs used by COLL_HACK activated code
+    private void init_coll_hack() {
+
+	jl_Object = linker.forName("java.lang.Object");
+	ju_HashSet = linker.forName("java.util.HashSet");
+
+	hm_HashtablePut = 
+	    linker.forName("java.util.Hashtable").
+	    getMethod("put", new HClass[] {jl_Object, jl_Object});
+
+	assert hm_HashtablePut != null;
+
+	name2coll  = new HashMap();
+	inst_colls = new HashSet();
+	for(int i = 0; i < relv_colls.length; i++) {
+	    HClass hclass = linker.forName(relv_colls[i]);
+	    inst_colls.addAll(get_instantiated_children(hclass));
+	    name2coll.put(relv_colls[i], hclass);
+	}
+	put_in_colls       = new HashSet();
+	keys_put_in_maps   = new HashSet();
+	values_put_in_maps = new HashSet();
+
+	jl_Collection = (HClass) name2coll.get("java.util.Collection");
+	jl_Map = (HClass) name2coll.get("java.util.Map");
+
+	if(DEBUG_COLL_HACK)
+	    Util.print_collection(inst_colls, "Inst. collections");
+
+	for(Iterator it = inst_colls.iterator(); it.hasNext(); ) {
+	    HClass coll = (HClass) it.next();
+	    if(!"java.util".equals(coll.getPackage())) {
+		System.out.println
+		    ("COLL_HACK: Non java.util collections created: " + 
+		     coll + "\n\t=> COLL_HACK turned off!");
+		COLL_HACK = false;
+	    }
+	}
+    }
+    private static String[] relv_colls = {
+	"java.util.Collection", "java.util.Map",
+	"java.util.List",       "java.util.Vector"
+    };
+
+    private HClass jl_Collection;
+    private HClass jl_Map;
+    private HClass ju_HashSet;
+
+    private void cleanup_coll_hack() {
+	name2coll  = null;
+	inst_colls = null;
+	put_in_colls = null;
+	keys_put_in_maps = null;
+	values_put_in_maps = null;
+	jl_Object = null;
+	ju_HashSet = null;
+	hm_HashtablePut = null;
+	jl_Collection = null;
+	jl_Map = null;
+	map_upcalls = null;
+	coll_upcalls = null;
+    }
+
+    // checks whether set1 and set2 have a common element
+    private boolean intersect(Set set1, Set set2) {
+	for(Iterator it = set1.iterator(); it.hasNext(); )
+	    if(set2.contains(it.next()))
+		return true;
+	return false;
+    }
+
+
+    private void trim_call_graph() {
+	if(DEBUG_COLL_HACK)
+	    System.out.println("\nCOLL_HACK: trim_call_graph");
+
+	init_upcalls_sets();
+
+	for(Iterator it = all_meta_methods.iterator(); it.hasNext(); ) {
+	    MetaMethod mm = (MetaMethod) it.next();
+	    Set upcalls = allowed_upcalls_methods(mm.getHMethod());
+	    // upcalls == nulls means mm is not a collection method
+	    // any upcalls are possible
+	    if(upcalls == null)
+		continue;
+
+	    trim_callees(mm, upcalls);
+	}
+    }
+
+    private void trim_callees(MetaMethod mm, Set upcalls) {
+	if(!callees2.containsKey(mm))
+	    return;
+
+	Relation rel = (Relation) callees2.get(mm);
+	Set calls = new HashSet(rel.keys());
+	for(Iterator it_cs = calls.iterator(); it_cs.hasNext(); ) {
+	    CALL cs = (CALL) it_cs.next();
+	    // non-virtual call sites cannot be trimmed
+	    if(!cs.isVirtual())
+		continue;
+	    Set to_remove = new HashSet();
+	    for(Iterator it = rel.getValues(cs).iterator(); it.hasNext(); ) {
+		MetaMethod mm_callee = (MetaMethod) it.next();
+		HMethod hm_callee = mm_callee.getHMethod();
+		if((hm_callee.getName().equals("equals") ||
+		    hm_callee.getName().equals("hashCode")) &&
+		   !upcalls.contains(hm_callee))
+		    to_remove.add(mm_callee);
+	    }
+	    rel.removeAll(cs, to_remove);
+	}
+
+	// computes in callees the set of all mm's callees
+	Set callees = new HashSet();
+	for(Iterator it_cs = calls.iterator(); it_cs.hasNext(); ) {
+	    CALL cs = (CALL) it_cs.next();
+	    callees.addAll(rel.getValues(cs));
+	}
+	
+	// update callees1
+	callees1.removeKey(mm);       // 1. remove all old methods
+	callees1.addAll(mm, callees); // 2. add new ones (fewer)
+    }
+
+
+    // "equals" & "hashCode" methods that may NOT be called from
+    // collections = complement of equals/hashCode methods of classes
+    // from put_in_colls
+    private Set coll_upcalls;
+    // "equals" & "hashCode" methods that may NOT be called from maps
+    // = complement of equals/hashCode methods of classes from
+    // keys/values_put_in_maps
+    private Set map_upcalls;
+    
+    // initialize the sets collection_upcalls and map_upcalls
+    private void init_upcalls_sets() {
+	HClass[] empty_args = new HClass[0];
+	HClass[] one_obj = new HClass[]{jl_Object};
+
+	coll_upcalls = new HashSet();
+	map_upcalls = new HashSet();
+
+	for(Iterator it = instantiated_classes.iterator(); it.hasNext(); ) {
+	    HClass hclass = (HClass) it.next();
+	    if(put_in_colls.contains(hclass)) {
+		coll_upcalls.add(hclass.getMethod("equals", one_obj));
+		coll_upcalls.add(hclass.getMethod("hashCode", empty_args));
+	    }
+	}
+
+	for(Iterator it = instantiated_classes.iterator(); it.hasNext(); ) {
+	    HClass hclass = (HClass) it.next();
+	    if(keys_put_in_maps.contains(hclass) ||
+	       values_put_in_maps.contains(hclass)) {
+		map_upcalls.add(hclass.getMethod("equals", one_obj));
+		map_upcalls.add(hclass.getMethod("hashCode", empty_args));
+	    }
+	}
+
+	if(DEBUG_COLL_HACK) {
+	    Util.print_collection(coll_upcalls, "coll_upcalls");
+	    Util.print_collection(map_upcalls,  "map_upcalls");
+	}
+    }
+
+    // returns the set of methods that cannot be called from hm
+    private Set allowed_upcalls_methods(HMethod hm) {
+	HClass hclass = hm.getDeclaringClass();
+	
+	if(jl_Map.isSuperinterfaceOf(hclass) &&
+	   "java.util".equals(hclass.getPackage()))
+	    return map_upcalls;
+	else if((jl_Collection.isSuperinterfaceOf(hclass)) &&
+		"java.util".equals(hclass.getPackage()))
+	    return coll_upcalls;
+	else
+	    return null;
+    }
+
+    private void print_coll_hack_debug() {
+	Util.print_collection(put_in_colls, "COLL_HACK: Put into collections");
+	Util.print_collection(keys_put_in_maps, "COLL_HACK: Map keys");
+	Util.print_collection(values_put_in_maps, "COLL_HACK: Map values");
+    }
+
+    // COLL_HACK methods END
 
     // "rec" generates all the possible combinations of types for the
     // parameters of "hm", generates metamethods, records the caller-callee
@@ -398,11 +830,6 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     }
 
-
-    private HClass jl_Thread =
-	Loader.systemLinker.forName("java.lang.Thread");
-    private HClass jl_Runnable =
-	Loader.systemLinker.forName("java.lang.Runnable");
 
     // Checks whether calling "hm" starts a thread or not.
     private boolean thread_start_site(HMethod hm){
@@ -500,10 +927,11 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	int nb_params = cs.paramsLength();
 	param_types = new GenType[nb_params];
 
-	if(DEBUG) System.out.println("$$:analyze_call(" + cs + ")");
+	if(DEBUG)
+	    System.out.println("$$:analyze_call(" + cs + ")");
 	
 	// for 'special' invocations, we know the method exactly
-	if(!cs.isVirtual() || cs.isStatic()){
+	if(!cs.isVirtual() || cs.isStatic()) {
 	    if(DEBUG) System.out.println("//: " + cs);
 	    if(Modifier.isNative(hm.getModifiers()))
 		check_thread_start_site(cs);
@@ -511,11 +939,13 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    return;
 	}
 
+	check_thread_start_site(cs);
+
 	// for native methods, specialization doesn't make any sense
 	// because we cannot analyze their body.
-	if(Modifier.isNative(hm.getModifiers())){
-	    check_thread_start_site(cs);
-	    param_types[0] = new GenType(hm.getDeclaringClass(),GenType.POLY);
+	if(TOUGH_ON_NATIVES && Modifier.isNative(hm.getModifiers())) {
+	    param_types[0] =
+		new GenType(hm.getDeclaringClass(), GenType.POLY);
 	    HClass[] types = hm.getParameterTypes();
 	    for(int i = 0; i < types.length; i++)
 		param_types[i+1] = new GenType(types[i],GenType.POLY);
@@ -624,13 +1054,6 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		if(c.equals(impl[i]))
 		    kids[nb_kids++] = cls[i];
 
-	    /*
-	    System.out.print("  " + c + " -> kids = [ ");
-	    for(int i = 0; i < nb_kids; i++)
-		System.out.print(kids[i] + " ");
-	    System.out.println("]");
-	    */
-
 	    if(nb_kids > SPEC_BOUND) {
 		param_types[0] = new GenType(c, GenType.POLY);
 		rec(callee, cs, 1, cs.paramsLength());
@@ -655,6 +1078,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     private Set get_possible_classes(HClass root, HMethod hm) {
 	Set children = 
 	    get_instantiated_children(root);
+
 	Set possible_classes = new HashSet();
 
 	for(Iterator it = children.iterator(); it.hasNext(); ) {
@@ -673,6 +1097,16 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 	
 	return possible_classes;
+    }
+
+    private Set get_instantiated_children(GenType gt) {
+	HClass hclass = gt.getHClass();
+	if(gt.isPOLY())
+	    return get_instantiated_children(hclass);
+	else if(instantiated_classes.contains(hclass))
+	    return Collections.singleton(hclass);
+	else
+	    return Collections.EMPTY_SET;
     }
     
     // Returns the set of all the subclasses of class root that could
@@ -778,7 +1212,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // Map<HMethod,MethodData>
     private Map mh2md = new HashMap();
     // Adds some caching over "compute_md".
-    private MethodData get_method_data(HMethod hm){
+    private MethodData get_method_data(HMethod hm) {
 	MethodData md = (MethodData) mh2md.get(hm);
 	if(md == null) {  // if not in the cache, build it from scratch
 	    HCode hcode = hcf.convert(hm);
@@ -1238,7 +1672,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	ets_test.q  = q;
 	ets_test.ud = ud;
 	ExactTemp et = (ExactTemp) ets2et.get(ets_test);
-	if(et == null){
+	if(et == null) {
 	    et = new ExactTemp(t, q, ud);
 	    ExactTempS ets = new ExactTempS(t, q, ud);
 	    ets2et.put(ets, et);
@@ -1393,14 +1827,6 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    }
 	}
 	
-	// Aux. data for visit(CALL q).
-	// Any method can throw an exception that is subclass of these
-	// two classes (without explicitly declaring it).
-	private final HClass jl_RuntimeException =
-	    Loader.systemLinker.forName("java.lang.RuntimeException");
-	private final HClass jl_Error =
-	    Loader.systemLinker.forName("java.lang.Error");
-
 	public void visit(CALL q) {
 	    if(et.ud == ExactTemp.DEF) {
 		if(t.equals(q.retval())) {

@@ -96,7 +96,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.7 2002-04-17 04:49:22 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.8 2002-05-02 22:11:45 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -795,7 +795,8 @@ public abstract class PAMain {
 	    new LongOpt("rtj_debug",     LongOpt.NO_ARGUMENT,       null, 38),
 	    new LongOpt("rtjri",         LongOpt.REQUIRED_ARGUMENT, null, 39),
 	    new LongOpt("rtjstats",      LongOpt.NO_ARGUMENT,       null, 40),
-	    new LongOpt("ssi",           LongOpt.NO_ARGUMENT,       null, 41)
+	    new LongOpt("ssi",           LongOpt.NO_ARGUMENT,       null, 41),
+	    new LongOpt("collhack",      LongOpt.NO_ARGUMENT,       null, 42)
 	};
 
 	String option;
@@ -1026,6 +1027,9 @@ public abstract class PAMain {
 	    case 41:
 		USE_SSI = true;
 		break;
+	    case 42:
+		MetaCallGraphImpl.COLL_HACK = true;
+		break;
 	    }
 
 	return g.getOptind();
@@ -1088,6 +1092,9 @@ public abstract class PAMain {
 
 	if(SHOW_DETAILS)
 	    System.out.println("\tSHOW_DETAILS");
+
+	if(MetaCallGraphImpl.COLL_HACK)
+	    System.out.println("\tMetaCallGraphImpl.COLL_HACK");
 
 	if(DO_ANALYSIS){
 	    if(mm_to_analyze.size() == 1){
@@ -1579,12 +1586,8 @@ public abstract class PAMain {
 	mroots.addAll(get_static_initializers());
 	mroots.add(hroot);
 
-	if(SHOW_DETAILS) {
-	    System.out.println("Method roots: {");
-	    for(Iterator it = mroots.iterator(); it.hasNext(); )
-		System.out.println(" " + it.next());
-	    System.out.println("}");
-	}
+	if(SHOW_DETAILS)
+	    Util.print_collection(mroots, "Method roots");
     }
 
 
@@ -1596,7 +1599,8 @@ public abstract class PAMain {
 	if(METAMETHODS){ // real meta-methods
 	    System.out.print("MetaCallGraph ... ");
 	    tstart = time();
-	    mcg = new MetaCallGraphImpl((CachingCodeFactory) hcf, ch, mroots);
+	    mcg = new MetaCallGraphImpl
+		((CachingCodeFactory) hcf, linker, ch, mroots);
 	    System.out.println((time() - tstart) + "ms");
 
 	    System.out.print("MetaAllCallers ... ");
@@ -1613,7 +1617,8 @@ public abstract class PAMain {
 		System.out.print("MetaCallGraph ... ");
 		tstart = time();
 		MetaCallGraph fmcg = 
-		    new MetaCallGraphImpl((CachingCodeFactory) hcf, ch,mroots);
+		    new MetaCallGraphImpl
+		    ((CachingCodeFactory) hcf, linker, ch, mroots);
 		System.out.println((time() - tstart) + "ms");
 
 		run_mms = fmcg.getRunMetaMethods();
