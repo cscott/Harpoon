@@ -6,7 +6,7 @@ package harpoon.Analysis.TypeInference;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Analysis.UseDef;
 import harpoon.ClassFile.*;
-import harpoon.IR.QuadSSA.*;
+import harpoon.IR.Quads.*;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
 import harpoon.Temp.*;
@@ -18,13 +18,13 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.2 1998-12-03 04:26:37 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.3 1998-12-03 07:36:05 marinov Exp $
  */
 
 public class IntraProc {
     InterProc environment;
     HMethod method;
-    Code code;
+    QuadSSA code;
     UseDefMap usedef;
             
     SetHClass[] parameterTypes;
@@ -35,7 +35,7 @@ public class IntraProc {
     public IntraProc(InterProc e, HMethod m) { 
 	environment = e;
 	method = m;
-	code = (Code)m.getCode("quad-ssa");
+	code = (QuadSSA)m.getCode("quad-ssa");
 	usedef = new UseDef();
 	parameterTypes = new SetHClass[m.getParameterTypes().length+(m.isStatic()?0:1)];
 	for (int i=0; i<parameterTypes.length; i++)
