@@ -51,7 +51,8 @@ libflexc1_la_LIBADD = \
 	java.util/libjavautil.la \
 	java.util.zip/libjavautilzip.la \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB)
-libflexc1_la_LDFLAGS = -version-info 0:0:0 -lbfd -liberty
+libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
+# this library depends on -lbfd and -liberty, but these ought to be in $LIBS
 
 # backwards compatibility: a.out targets ####################
 if AOUT_BUILD
@@ -67,4 +68,5 @@ libflexc_la_LIBADD = \
 	java.net/libjavanet.la \
 	java.util/libjavautil.la \
         java.util.zip/libjavautilzip.la
-libflexc_la_LDFLAGS = -version-info 0:0:0 -lbfd -liberty
+libflexc_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
+# this library depends on -lbfd and -liberty, but these ought to be in $LIBS
