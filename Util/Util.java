@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.12 1999-10-15 20:59:13 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.13 1999-11-04 03:58:49 bdemsky Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -101,6 +101,37 @@ public abstract class Util {
   static boolean isSafelyPrintable(char c) {
     // always escape backslash
     if (c=='\\') return false;
+    // define 'safe' characters.
+    if (' ' <= c && c <= '~') return true;
+    // all others are 'unsafe'
+    return false;
+  }
+
+  /** Escape the contents of a String so they are safe to print. */
+  public static final String jasminEscape(String str) {
+    StringBuffer sb = new StringBuffer();
+    for (int i=0; i<str.length(); i++) {
+      char c = str.charAt(i);
+      if (!jasminIsSafelyPrintable(c)) {
+	if (c < 256) {
+	  String octval=Integer.toOctalString((int)c);
+	  while(octval.length()<3) octval="0"+octval;
+	  sb.append('\\'); sb.append(octval);
+	} else {
+	  String hexval=Integer.toHexString((int)c);
+	  while(hexval.length()<4) hexval="0"+hexval;
+	  sb.append('\\'); sb.append('u'); sb.append(hexval);
+	}
+      }
+      else sb.append(c);
+    }
+    return sb.toString();
+  }
+  /** Determine if we should escape this character or print it as-is. */
+  static boolean jasminIsSafelyPrintable(char c) {
+    // always escape backslash
+    if (c=='\\') return false;
+    if (c=='"') return false;
     // define 'safe' characters.
     if (' ' <= c && c <= '~') return true;
     // all others are 'unsafe'
