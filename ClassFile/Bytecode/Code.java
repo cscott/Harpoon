@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.12 1998-09-02 03:17:55 cananian Exp $
+ * @version $Id: Code.java,v 1.13 1998-09-04 09:14:15 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -73,6 +73,10 @@ public class Code extends HCode {
 	if (!Op.isUnconditionalBranch(code[pc]))
 	  merge[pc+Op.instrSize(code, pc)]++;
       }
+      // try handlers count as targets, too
+      for (int i=0; i<getCode().exception_table.length; i++)
+	merge[getCode().exception_table[i].handler_pc]++;
+
       // now all pc's for which merge>1 are merge nodes.
       Instr[] sparse = new Instr[code.length]; // index by pc still. 
       // crank through and add instrs without making links.
