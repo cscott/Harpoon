@@ -43,8 +43,8 @@ elif [ -n "$USE_MINILIB" ]; then
 else
     # use GNU classpath.  First look for the CLASSPATH_HOME variable, which
     # should specify a classpath CVS pull.
-    if [ -n "$CLASSPATH_HOME" -a -f "$CLASSPATH_HOME/lib/glibj.zip" ]; then
-	FLEX_SUPPORT_FILES="$CLASSPATH_HOME/lib/glibj.zip"
+    if [ -n "$CLASSPATH_HOME" -a -f "$CLASSPATH_HOME/share/classpath/glibj.zip" ]; then
+	FLEX_SUPPORT_FILES="$CLASSPATH_HOME/share/classpath/glibj.zip"
     # Otherwise look for the classpath-config script on your path.
     elif [ -n "$(which classpath-config)" ]; then
 	FLEX_SUPPORT_FILES="$(classpath-config --classpath)"
