@@ -8,11 +8,13 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
+import harpoon.Util.Default;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.33 2001-07-19 16:35:49 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.34 2001-11-06 19:24:38 cananian Exp $
  */
 final class UnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS
@@ -47,6 +49,8 @@ final class UnHandler {
 		Quad.addEdge(qm.getFoot((Quad)el[i].from()),el[i].which_succ(),
 			     qm.getHead((Quad)el[i].to()), el[i].which_pred());
 	}
+	// fixup optimized instanceof.
+	ss.iofm.fixup(ss);
 	// fixup try blocks.
 	Temp[] qMp = ((METHOD)qm.getHead(old_method)).params();
 	final METHOD qM = new METHOD(qf, old_method, qMp,
@@ -378,6 +382,24 @@ final class UnHandler {
 	    return v;
 	}
     }
+    /** Fixup information for optimized INSTANCEOFs. */
+    private static final class InstanceOfFixupMap extends HashSet {
+	void put(CJMP cjmp, PHI phi) { this.add(Default.pair(cjmp, phi)); }
+	void fixup(StaticState ss) {
+	    for (Iterator it=this.iterator(); it.hasNext(); ) {
+		List pair = (List) it.next();
+		CJMP cjmp = (CJMP) pair.get(0);
+		PHI phi = (PHI) pair.get(1);
+		// get new version of the cjmp.
+		cjmp = (CJMP) ss.qm.getFoot(cjmp);
+		// add 0-PHI-0 to 0-edge of CJMP.
+		Edge e = cjmp.nextEdge(0);
+		Quad.addEdge((Quad)e.from(), e.which_succ(), phi, 0);
+		Quad.addEdge(phi, 0, (Quad)e.to(), e.which_pred());
+		// done!
+	    }
+	}
+    }
 
     /** Static state for visitor. */
     private static final class StaticState {
@@ -385,6 +407,7 @@ final class UnHandler {
 	final QuadMap qm;
 	final HandlerMap hm;
 	final CloningTempMap ctm;
+	final InstanceOfFixupMap iofm = new InstanceOfFixupMap();
 	final boolean coalesce;
 	final List extra = new ArrayList(4);
 	StaticState(QuadFactory qf, QuadMap qm, HandlerMap hm,
@@ -430,6 +453,7 @@ final class UnHandler {
 
 	/** By default, just clone and set all destinations to top. */
 	public void visit(Quad q) {
+	    Util.assert(!ss.qm.contains(q));
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    ss.qm.put(q, nq, nq);
 	    Temp d[] = q.def();
@@ -597,6 +621,18 @@ final class UnHandler {
 		Quad.addEdge(q2, 1, q3, 0);
 		Quad.addEdge(q3, 0, q4, 1);
 		head = q0; nq = q4;
+		// optimize: if INSTANCEOF directly feeds a CJMP, then we
+		// can change q2 to directly jump to proper dest, removing
+		// need to second test. (also, analysis works better on
+		// this version, due to the way the value merges are arranged)
+		if (q.next(0) instanceof CJMP &&
+		    ((CJMP)q.next(0)).test().equals(q.dst())) {
+		    CJMP cjmp = (CJMP) q.next(0);
+		    // translation of this quad will resume after instanceof
+		    nq = q2.next(0);
+		    // add to fixup map.
+		    ss.iofm.put(cjmp, (PHI) q4);
+		}
 	    }
 	    ss.qm.put(q, head, nq);
 	    ti.put(q.dst(), Type.top);
