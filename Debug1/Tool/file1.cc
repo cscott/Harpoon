@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 {
   ptr=createdisk();
 
-  calltool("After mount disk");
+  //calltool("After mount disk");
 
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
@@ -189,7 +189,6 @@ int openfile(struct block *ptr, char *filename)
   files[fd].inode=inode;
   files[fd].offset=0;
 
-  msync(&ptr, LENGTH, MS_SYNC);
 
   return fd;
 }
@@ -219,18 +218,30 @@ void removefile(char *filename, struct block *ptr)
 	      db->entries[j].inodenumber=0;
 	      
 	      struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];
-	      itb->entries[inode].referencecount--;	     
+	      itb->entries[inode].referencecount--;
 
 	      if (itb->entries[inode].referencecount==0) {
 		for(int i=0;i<((itb->entries[inode].filesize+BLOCKSIZE-1)/BLOCKSIZE);i++) {
 		  int blocknum=itb->entries[inode].Blockptr[i];
 		  bbb->blocks[blocknum/8]^=(1<<(blocknum%8));
+		  
+		  struct SuperBlock *sb=(struct SuperBlock*) &ptr[0];
+		  sb->FreeBlockCount++;
+    
+		  struct GroupBlock *gb=(struct GroupBlock *) &ptr[1];
+		  gb->GroupFreeBlockCount++;
 		}
+
 		ibb->inode[inode/8]^=(1<<(inode%8));
+
+		struct SuperBlock *sb=(struct SuperBlock*) &ptr[0];
+		sb->FreeInodeCount++;
+    
+		struct GroupBlock *gb=(struct GroupBlock *) &ptr[1];
+		gb->GroupFreeInodeCount++;
 	      }
 	    }	
     }
-  msync(&ptr, LENGTH, MS_SYNC);
 }
 
 
@@ -250,14 +261,12 @@ void createlink(struct block *ptr, char *filename, char *linkname)
 	      addtode(ptr, inode, linkname);
 	    }
     }
-  msync(&ptr, LENGTH, MS_SYNC);
 }
 
 
 void closefile(struct block *ptr, int fd) 
 {
   struct InodeTable * itb=(struct InodeTable *) &ptr[4];  
-  msync(&itb->entries[fd],sizeof(DirectoryEntry),MS_SYNC);
   files[fd].used=false;
 }
 
@@ -302,14 +311,12 @@ int writefile(struct block *ptr, int fd, char *s, int len)
       if (tocopy>(BLOCKSIZE-noffset))
 	tocopy=BLOCKSIZE-noffset;
       memcpy(&fchar[noffset],&s[i],tocopy);
-      msync(&fchar[noffset],tocopy,MS_SYNC);
       i+=tocopy;
       tfd->offset+=tocopy;
     }
   if (itb->entries[files[fd].inode].filesize<files[fd].offset)
     itb->entries[files[fd].inode].filesize=files[fd].offset;
 
-  msync(&ptr, LENGTH, MS_SYNC);
   return len;
 }
 
@@ -325,11 +332,9 @@ void addtode(struct block *ptr, int inode, char *filename)
 	  {
 	    strncpy(db->entries[j].name,filename,124);
 	    db->entries[j].inodenumber=inode;
-	    msync(&db->entries[j],sizeof(DirectoryEntry),MS_SYNC);
 	    return;
 	  }    
     }
-  msync(&ptr, LENGTH, MS_SYNC);
 }
 
 
@@ -340,6 +345,13 @@ int getinode(struct block *ptr)
     if (!(ibb->inode[i/8]&(1<<(i%8))))
       {
 	ibb->inode[i/8]=ibb->inode[i/8]|(1<<(i%8));
+
+	struct SuperBlock *sb=(struct SuperBlock*) &ptr[0];
+	sb->FreeInodeCount--;
+    
+	struct GroupBlock *gb=(struct GroupBlock *) &ptr[1];
+	gb->GroupFreeInodeCount--;
+
 	return i;
       }
   
@@ -353,6 +365,13 @@ int getblock(struct block * ptr)
     if (!(bbb->blocks[i/8]&(1<<(i%8))))
       {
 	bbb->blocks[i/8]=bbb->blocks[i/8]|(1<<(i%8));
+
+	struct SuperBlock *sb=(struct SuperBlock*) &ptr[0];
+	sb->FreeBlockCount--;
+    
+	struct GroupBlock *gb=(struct GroupBlock *) &ptr[1];
+	gb->GroupFreeBlockCount--;
+	
 	return i;
       }
   
