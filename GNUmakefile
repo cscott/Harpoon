@@ -7,9 +7,9 @@ export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
 	pldi03 oopsla02 oqe lctes03 pldi04 ecoop04 popl05 hpec \
-	oxygen3-talk
+	oxygen3-talk phd-proposal
 
-default: popl05.ps
+default: phd-proposal.ps
 .PRECIOUS: %.dvi
 
 ## funky stuff for martin.
