@@ -7,26 +7,38 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
+import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
 import java.util.Stack;
 import java.util.Enumeration;
+import java.util.Map;
 /**
  * <code>Peephole</code> performs peephole optimizations (mostly
  * <code>MOVE</code> collation) on <code>QuadWithTry</code> and
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.10 1999-09-19 16:17:33 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.11 1999-09-20 19:32:14 bdemsky Exp $
  */
 
 final class Peephole  {
     final static void normalize(Quad head) {
-	SwapVisitor sv = new SwapVisitor();
+	SwapVisitor sv = new SwapVisitor(null);
 	sv.optimize(head); // usually things are screwy after trans.
     }
+
+    final static void normalize(Quad head, Map typemap) {
+	SwapVisitor sv = new SwapVisitor(typemap);
+	sv.optimize(head); // usually things are screwy after trans.
+    }
+
     final static void optimize(Quad head, boolean allowFarMoves) {
+	optimize(head, allowFarMoves, null);
+    }
+
+    final static void optimize(Quad head, boolean allowFarMoves, Map typemap) {
 	WorkSet protectedquads=new WorkSet();
 	if (!allowFarMoves) {
 	    METHOD m=(METHOD)head.next(1);
@@ -36,10 +48,11 @@ final class Peephole  {
 		    protectedquads.add(enum.nextElement());
 	    }
 	}
-	PeepholeVisitor pv = new PeepholeVisitor(allowFarMoves, protectedquads);
+	PeepholeVisitor pv = new PeepholeVisitor(allowFarMoves, protectedquads, typemap);
 	while (pv.optimize(head))
 	    /*repeat*/;
     }
+
     private static class CheckStack extends Stack {
 	public Object push(Object o) {
 	    Util.assert(o!=null);
@@ -70,6 +83,12 @@ final class Peephole  {
 	}
     }
     private final static class SwapVisitor extends SuperVisitor {
+	private Map typemap;
+
+	public SwapVisitor(Map typemap) {
+	    this.typemap=typemap;
+	}
+
 	public void visit(Quad q) {
 	    Quad[] ql=q.next();
 	    // very specific case for swaparoo.
@@ -81,6 +100,19 @@ final class Peephole  {
 		TempMap tm1 = new OneToOneMap(Qm.dst(), Qm.src());
 		Quad q1 = q.rename(q.qf, tm0, null);
 		Quad q2 = Qm.rename(Qm.qf, tm1, tm0);
+		if (typemap!=null) {
+		    typemap.put(new Tuple(new Object[]{q1,Qm.dst() }),
+				typemap.get(new Tuple(new Object[]{Qm, Qm.dst()})));
+		    Temp uses[]=q.use();
+		    for (int i=0;i<uses.length;i++)
+			typemap.put(new Tuple(new Object[]{q1, uses[i]}),
+				    typemap.get(new Tuple(new Object[] {q, uses[i]})));
+		    typemap.put(new Tuple(new Object[]{q2, Qm.src()}),
+				typemap.get(new Tuple(new Object[] {Qm, Qm.src()})));
+		    typemap.put(new Tuple(new Object[]{q2, Qm.dst()}),
+				typemap.get(new Tuple(new Object[] {Qm, Qm.dst()})));
+
+		}
 		Quad.replace(q, q1);
 		Quad.replace(Qm, q2);
 		visited.union(q1); visited.union(q2);
@@ -97,15 +129,40 @@ final class Peephole  {
     private final static class PeepholeVisitor extends SuperVisitor {
 	final boolean allowFarMoves;
 	final WorkSet pquads;
-	PeepholeVisitor(boolean afm, WorkSet pquads) { 
+	private Map typemap;
+
+	PeepholeVisitor(boolean afm, WorkSet pquads, Map typemap) { 
 	    this.allowFarMoves=afm; 
-	    this.pquads=pquads;}
+	    this.pquads=pquads;
+	    this.typemap=typemap;
+	}
+
 	public void visit(Quad q) {
 	    Quad[] ql=q.next();
 	    for (int i=0; i<ql.length; i++)
 		todo.push(ql[i]);
 	    visited.union(q);
 	}
+
+	void fixmap(Quad old, Quad newq, TempMap tm) {
+	    if (typemap!=null) {
+		Temp[] defs=old.def();
+		for (int i=0;i<defs.length;i++) {
+		    typemap.put(new Tuple(new Object[]{newq, defs[i]}),
+				typemap.get(new Tuple(new Object[]{old, defs[i]})));
+		}
+		Temp[] uses=old.use();
+		for (int i=0;i<uses.length;i++) {
+		    if (tm.tempMap(uses[i])==uses[i])
+			typemap.put(new Tuple(new Object[]{newq, uses[i]}),
+				    typemap.get(new Tuple(new Object[]{old, uses[i]})));
+		    else
+			typemap.put(new Tuple(new Object[]{newq, tm.tempMap(uses[i])}),
+				    typemap.get(new Tuple(new Object[]{old, uses[i]})));
+		}
+	    }
+	}
+
 	public void visit(final MOVE q) {
 	    final Quad Qnext = q.next(0);
 	    if (q.dst() == q.src()) {
@@ -115,7 +172,9 @@ final class Peephole  {
 	    } else if (isMember(q.dst(), Qnext.def())) {
 		// rename Qnext & delete MOVE.
 		TempMap tm = new OneToOneMap(q.dst(), q.src());
-		Quad.replace(Qnext, Qnext.rename(Qnext.qf, null, tm));
+		Quad newquad=Qnext.rename(Qnext.qf, null, tm);
+		fixmap(Qnext, newquad, tm);
+		Quad.replace(Qnext, newquad);
 		// unlink MOVE
 		todo.push(unlink(q));
 		changed=true;
@@ -175,7 +234,9 @@ final class Peephole  {
 		    Edge lstE;
 		    for (lstE=q.nextEdge(0); lstE.to() != Qp; ) {
 			Quad qq = (Quad)lstE.to();
-			Quad.replace(qq, qq.rename(qq.qf, null, tm));
+			Quad newquad=qq.rename(qq.qf, null, tm);
+			fixmap(qq,newquad,tm);
+			Quad.replace(qq, newquad);
 			lstE=((Quad)lstE.from()).next(0).nextEdge(0);
 		    }
 		    todo.push(unlink(q));
@@ -189,6 +250,7 @@ final class Peephole  {
 			  (q.src()==((CALL)Qp).retval() ||
 			   q.src()==((CALL)Qp).retex()))) {
 			SIGMA Qs = (SIGMA) Qp.rename(Qp.qf, null, tm);
+			fixmap(Qp, Qs, tm);
 			todo.removeElement(Qp); // remove old SIGMA from todo
 			Quad.replace(Qp, Qs);
 			// we can just delete the MOVE if the CALL

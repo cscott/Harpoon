@@ -15,7 +15,7 @@ import java.util.Map;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.19 1999-09-16 20:17:22 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.20 1999-09-20 19:32:14 bdemsky Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
@@ -41,8 +41,8 @@ public class QuadWithTry extends Code /* which extends HCode */ {
 	ReHandler.QuadMapPair qmp = ReHandler.rehandler(this.qf, quad);
 	quads = qmp.quad;
 	Map map=qmp.map;
-	Peephole.normalize(quads);
-	Peephole.optimize(quads, false);
+	Peephole.normalize(quads,map);
+	Peephole.optimize(quads, false, map);
 	ReHandler.clean(this);
 	Pattern.patternMatch(this);
     }
