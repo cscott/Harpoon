@@ -31,7 +31,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #endif
 	(sizeof(*infl));
 #if (!defined(WITH_TRANSACTIONS)) || (!defined(BDW_CONSERVATIVE_GC))
-    INCREMENT_MALLOC(sizeof(*infl));
+    INCREMENT_MEM_STATS(sizeof(*infl));
 #endif
     /* initialize infl */
     memset(infl, 0, sizeof(*infl));
@@ -106,7 +106,7 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data) {
 #endif
 	(infl);
 #if (!defined(WITH_TRANSACTIONS)) || (!defined(BDW_CONSERVATIVE_GC))
-    DECREMENT_MALLOC(sizeof(*infl));
+    DECREMENT_MEM_STATS(sizeof(*infl));
 #endif
 }
 #endif

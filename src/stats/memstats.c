@@ -1,6 +1,6 @@
 #include "config.h"
 
-#ifdef WITH_MEMORYSTATISTICS
+#ifdef WITH_MEMORY_STATISTICS
 #include "flexthread.h"
 #include "gc.h"
 #include <time.h> /* time,localtime for time zone information */

@@ -9,7 +9,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-arm32-linux-1.0.c,v 1.3 2001-01-17 18:48:34 bdemsky Exp $";
+static const char rcsid[] = "$Id: engine-arm32-linux-1.0.c,v 1.4 2001-01-26 17:40:51 cananian Exp $";
 #endif
 
 #include "config.h"
@@ -89,7 +89,7 @@ void machdep_pthread_start(void)
  */
 void __machdep_stack_free(void * stack)
 {  
-  /*  DECREMENT_MALLOC(STACKSIZE);*/
+  /*  DECREMENT_MEM_STATS(STACKSIZE);*/
   free(stack);
 }
 
@@ -99,7 +99,7 @@ void __machdep_stack_free(void * stack)
 void * __machdep_stack_alloc(size_t size)
 {
     void * stack;
-    /*    INCREMENT_MALLOC(STACKSIZE);*/
+    /*    INCREMENT_MEM_STATS(STACKSIZE);*/
     return(malloc(size));
 }
 

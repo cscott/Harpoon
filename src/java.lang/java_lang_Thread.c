@@ -41,7 +41,7 @@ static pthread_cond_t running_threads_cond = PTHREAD_COND_INITIALIZER;
 static void add_running_thread(const pthread_t thr) {
   /* safe to use malloc -- no pointers to garbage collected memory in here */
   struct thread_list *nlist = malloc(sizeof(struct thread_list));
-  INCREMENT_MALLOC(sizeof(struct thread_list));
+  INCREMENT_MEM_STATS(sizeof(struct thread_list));
   nlist->prev = &running_threads;
   nlist->pthread = thr;
   pthread_mutex_lock(&running_threads_mutex);
@@ -59,7 +59,7 @@ static void remove_running_thread(void *cl) {
   pthread_cond_signal(&running_threads_cond);
   pthread_mutex_unlock(&running_threads_mutex);
   free(nlist);
-  DECREMENT_MALLOC(sizeof(struct thread_list));
+  DECREMENT_MEM_STATS(sizeof(struct thread_list));
 }  
 static void wait_on_running_thread() {
   pthread_mutex_lock(&running_threads_mutex);
@@ -515,7 +515,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
 
   
   //build stack and stash it
-  INCREMENT_MALLOC(sizeof(struct thread_list));
+  INCREMENT_MEM_STATS(sizeof(struct thread_list));
   tl=malloc(sizeof(struct thread_list));
 
   stackptr = __machdep_stack_alloc(STACKSIZE);

@@ -45,10 +45,10 @@ clheap_t clheap_create() {
 #endif
   INCREMENT_STATS(thread_heaps_created, 1);
 
-  INCREMENT_MALLOC(sizeof(*clh));
+  INCREMENT_MEM_STATS(sizeof(*clh));
 
 #if !defined(BDW_CONSERVATIVE_GC)
-  INCREMENT_MALLOC(HEAPSIZE);
+  INCREMENT_MEM_STATS(HEAPSIZE);
 #endif
 
   clh = (clheap_t) malloc(sizeof(*clh));
@@ -113,9 +113,9 @@ void clheap_detach(clheap_t clh) {
 #endif
   free(clh);
 
-  DECREMENT_MALLOC(sizeof(*clh));
+  DECREMENT_MEM_STATS(sizeof(*clh));
 #if !defined(BDW_CONSERVATIVE_GC)
-  DECREMENT_MALLOC(HEAPSIZE);
+  DECREMENT_MEM_STATS(HEAPSIZE);
 #endif
 
 #endif

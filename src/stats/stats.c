@@ -90,7 +90,7 @@ void print_statistics(void) {
 	 FS(threads_created) ? FS(thr_bytes_alloc)/FS(threads_created) : 0LL,
 	 FS(thr_bytes_overflow));
 #endif /* WITH_CLUSTERED_HEAPS */
-#ifdef WITH_MEMORYSTATISTICS
+#ifdef WITH_MEMORY_STATISTICS
   printf("Malloc Memory usage: %ld\n", memorystat);
   printf("Peak Total Memory usage: %ld\n", peakusage);
   printf("Peak Actual Memory usage: %ld\n", peakusagea);

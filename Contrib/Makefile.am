@@ -11,7 +11,7 @@ if CROSS_COMPILING
 	@echo "  ****** GARBAGE COLLECTOR MUST BE COMPILED NATIVELY. ******"
 	@echo
 else
-	make -C gc CC=$(CC) AS=$(AS) gc.a
+	make -C gc CC="$(CC)" AS="$(AS)" HOSTCC="$(HOSTCC)" gc.a
 endif
 #
 endif
@@ -21,9 +21,15 @@ if CONSERVATIVE_GC
 # do 'make test' in gc subdir.
 if CROSS_COMPILING
 else
-	make -C gc CC=$(CC) AS=$(AS) test
+	make -C gc CC="$(CC)" AS="$(AS)" HOSTCC="$(HOSTCC)" test
 endif
 #
+endif
+
+clean:
+if CONSERVATIVE_GC
+# do 'make clean' in gc subdir.
+	make -C gc CC="$(CC)" AS="$(AS)" HOSTCC="$(HOSTCC)" clean
 endif
 
 dist-hook:
