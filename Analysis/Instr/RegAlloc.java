@@ -28,8 +28,6 @@ import harpoon.Util.LinearMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.DefaultMultiMap;
 
-
-
 import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
 import harpoon.Analysis.DataFlow.InstrSolver;
@@ -52,9 +50,13 @@ import java.util.HashMap;
  * <code>RegAlloc</code> performs Register Allocation for a set of
  * <code>Instr</code>s in a <code>Backend.Generic.Code</code>.  After
  * register allocation is completed for a set of <code>Instr</code>s,
- * the only references to non-register <code>Temp</code>s in the
- * <code>Instr</code>s will be <code>InstrMEM</code> instructions to
- * move values from the register file to data memory and vice-versa.
+ * references to non-register <code>Temp</code>s in the
+ * <code>Instr</code>s will have been replaced by references to
+ * machine registers.  Since the number of simultaneously live
+ * temporaries will exceed the space in the register file, spill code
+ * will also be inserted to maintain the state of the register file at
+ * each instruction, storing values to the stack and reloading them as
+ * needed. 
  * 
  * <BR> <B>DESIGN NOTE:</B> This method relies on the subclasses of
  * <code>RegAlloc</code> to perform actual allocation.  This causes a
@@ -68,7 +70,8 @@ import java.util.HashMap;
  * used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.64 2000-01-27 20:23:35 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.65 2000-01-27 23:52:18 pnkfelix Exp $ 
+ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -190,7 +193,7 @@ p     */
 
 	@see RegAlloc#resolveOutstandingTemps(HCode)
     */
-    protected abstract Code generateRegAssignment();
+    protected abstract void generateRegAssignment();
 
     
     /** Returns the root of the <code>BasicBlock</code> hierarchy for
@@ -245,16 +248,13 @@ p     */
 
 		// System.out.print("Gra");
 
-		Code currentCode = globalCode.generateRegAssignment();
-
+		globalCode.generateRegAssignment();
+		
 		// System.out.print("Rot");
 
-		currentCode = 
-		    (Code) globalCode.
-		            resolveOutstandingTemps( currentCode );
-		
-		
-		return currentCode;
+		globalCode.resolveOutstandingTemps();
+
+		return globalCode.code;
 	    }
 	    public String getCodeName() {
 		return parent.getCodeName();
@@ -291,7 +291,25 @@ p     */
 						     final Frame frame) {
 	return new IntermediateCodeFactory() {
 	    HCodeFactory p = parent;
-	    public HCode convert(HMethod m) { return p.convert(m); }
+	    public HCode convert(HMethod m) { 
+		Code preAllocCode = (Code) p.convert(m);
+		if (preAllocCode == null) {
+		    return null;
+		}
+		
+		RegAlloc localCode, globalCode;
+
+		localCode = new LocalCffRegAlloc(preAllocCode);
+		
+		globalCode = localCode; // no global reg alloc yet
+		
+		globalCode.generateRegAssignment();
+		
+		globalCode.resolveOutstandingTemps();
+		
+		return globalCode.code;
+	    }
+
 	    public String getCodeName() { return p.getCodeName(); }
 	    public void clear(HMethod m) { p.clear(m); }
 	    public Derivation getDerivation() {
@@ -318,17 +336,17 @@ p     */
     
 
 
-    /** Transforms Temp references in 'in' into appropriate offsets
+    /** Transforms Temp references for <code>this</code> into appropriate offsets
 	from the Stack Pointer in the Memory. 
-        <BR> <B>modifies:</B> inHc
+        <BR> <B>modifies:</B> this
 	<BR> <B>effects:</B> Replaces the <code>SpillLoad</code> and
 	     <code>SpillStore</code>s with memory instructions for the
 	     appropriate <code>Frame</code>.
     */
-    protected final HCode resolveOutstandingTemps(HCode in) {
+    protected final void resolveOutstandingTemps() {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
-
+	Code in = code;
 	Util.assert(in != null, "Don't try to resolve Temps for null HCodes");
 
 	class TempFinder extends InstrVisitor {
@@ -475,16 +493,8 @@ p     */
 	// might be off by one here (trying to be conservative)
 	final int locals = tf.nextOffset; 
 
-	Code currentCode = (Code) in;
-
-	frame.getCodeGen().procFixup(currentCode.getMethod(),
-				     currentCode,
-				     locals, 
-				     computeUsedRegs(instr));
-
-
-
-	return in;
+	frame.getCodeGen().procFixup(in.getMethod(), in,
+				     locals, computeUsedRegs(instr));
     }
     
     private Set computeUsedRegs(Instr instrs) {
@@ -668,15 +678,13 @@ class BrainDeadLocalAlloc extends RegAlloc {
 	regFile will be clean in between each instruction in this
 	(very dumb) allocation strategy. 
     */
-    protected Code generateRegAssignment() {
+    protected void generateRegAssignment() {
 	Iterator instrs = code.getElementsI();
 	InstrVisitor memVisitor = new BrainDeadInstrVisitor();
 	
 	while(instrs.hasNext()) {
 	    ((Instr)instrs.next()).accept(memVisitor);
 	}
-	
-	return code;
     }
 
 }

@@ -53,7 +53,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.66 2000-01-27 20:23:35 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.67 2000-01-27 23:52:18 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -95,7 +95,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    sb.toString();
     }
     
-    protected Code generateRegAssignment() {
+    protected void generateRegAssignment() {
 	LiveTemps liveTemps = 
 	    doLVA(BasicBlock.basicBlockIterator(rootBlock));
 	
@@ -110,8 +110,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    if (VERIFY) verify(b, liveOnExit);
 	    if (TIME) System.out.print("#");
 	}
-	
-	return code;
     }
 
 

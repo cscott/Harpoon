@@ -25,7 +25,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.8 1999-09-20 16:06:23 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.9 2000-01-27 23:52:18 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -62,7 +62,7 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	bbToLiveVarMap = findLiveVars(code); // invariant during allocation
     }
    
-    protected Code generateRegAssignment() {
+    protected void generateRegAssignment() {
 
 	/* procedure for register allocation for a procedure (taken from
 	   Demand-Driven Register Allocation):
@@ -124,7 +124,6 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	*/
 
 
-	return code;
     }
     
 
