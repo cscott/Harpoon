@@ -14,7 +14,7 @@ import java.util.Vector;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.8 1999-02-05 08:26:34 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.9 1999-02-25 03:42:19 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -226,34 +226,25 @@ final class UnHandler {
 		HANDLER h = (HANDLER) e.nextElement();
 		Vector v = get(Hhandler, h); // note that v can be size 0.
 		Edge ed; Quad tail;
-		if (v.size()==0) {
-		    // MAKE impossible CJMP
-		    Temp Te = Quad.map(ctm, h.exceptionTemp());
-		    Quad q0 = new CONST(qf, h, Te, null, HClass.Void);
-		    Quad q1 = new OPER(qf, h, Qop.ACMPEQ, Textra,
-				       new Temp[] { Te, Te });
-		    Quad q2 = new CJMP(qf, h, Textra, new Temp[0]);
-		    // link immediately following METHOD (it better be safe)
-		    ed = newQm.nextEdge(0);
-		    Quad.addEdges(new Quad[] { newQm, q0, q1, q2 });
-		    Quad.addEdge(q2, 1, (Quad)ed.to(), ed.which_pred());
-		    // link into handler.
-		    ed = qm.getFoot(h).nextEdge(0); tail = q2;
-		} else {
-		    PHI  q0 = new PHI(qf, h, new Temp[0], v.size() /*arity*/);
-		    for (int i=0; i<v.size(); i++) {
-			ed = ((NOP)v.elementAt(i)).prevEdge(0);
-			Quad.addEdge((Quad)ed.from(), ed.which_succ(), q0, i);
-		    }
-		    MOVE q1 = new MOVE(qf, h, Quad.map(ctm, h.exceptionTemp()),
-				       Tex);
-		    Quad.addEdge(q0, 0, q1, 0);
-		    // link into handler.
-		    ed = qm.getFoot(h).nextEdge(0); tail = q1;
+		// note that v.size() may be equal to zero.
+		// if this is the case, then the unreachable code elimination
+		// below will take care of it.
+		PHI  q0 = new PHI(qf, h, new Temp[0], v.size() /*arity*/);
+		for (int i=0; i<v.size(); i++) {
+		    ed = ((NOP)v.elementAt(i)).prevEdge(0);
+		    Quad.addEdge((Quad)ed.from(), ed.which_succ(), q0, i);
 		}
+		MOVE q1 = new MOVE(qf, h, Quad.map(ctm, h.exceptionTemp()),
+				   Tex);
+		Quad.addEdge(q0, 0, q1, 0);
+		// link into handler.
+		ed = qm.getFoot(h).nextEdge(0); tail = q1;
+
 		Quad.addEdge(tail, 0, (Quad)ed.to(), ed.which_pred());
 	    }
-	    // done. (need to trim unreachable?)
+	    // trim unreachables (those 0-input phis in the above)
+	    Unreachable.prune(newQh);
+	    // done.
 	}
 
 	// make hashtables appear to map directly to vectors.
