@@ -1,14 +1,12 @@
 #!/usr/bin/env perl
 
-# missing: trsize.201.1, trsize.{201,222}.10,
-#          trsize.{201,202,205,209,213,222}.100
+# missing: trsize.{201,209,213,222}.100
 
 @benchmarks = ( 201, 202, 205, 209, 213, 222, 228 );
 %fullname = ( 200 => "check", 201 => "compress", 202 => "jess",
 	      205 => "raytrace", 209 => "db", 213 => "javac",
 	      222 => "mpegaudio", 227 => "mtrt", 228 => "jess" );
-# replace '200' with '201' when it completes.
-%runsize = ( 200=>100, 202 => 10, 205 => 10, 209 => 10, 213 => 10, 222 => 1 , 228 => 100);
+%runsize = ( 201=>10, 202 => 100, 205 => 100, 209 => 10, 213 => 10, 222 => 10, 228 => 100);
 
 foreach my $run (keys %runsize) {
     my $file = "trsize.".$run.".".$runsize{$run}.".txt";
