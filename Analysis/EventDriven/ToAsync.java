@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.25 2000-03-23 21:28:45 salcianu Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.26 2000-03-24 06:15:35 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -52,13 +52,14 @@ public class ToAsync {
     protected boolean optimistic;
     protected HCodeFactory hcf;
     protected boolean recycle;
+    protected Set classes;
 
     Set blockingmm;
     MetaCallGraph mcg;
 
 
     /** Creates a <code>ToAsync</code>. */
-    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic, MetaCallGraph mcg, boolean recycle) {
+    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic, MetaCallGraph mcg, boolean recycle, Set classes) {
 	this.linker=linker;
         this.ucf = ucf;
 	this.hc = hc;
@@ -66,6 +67,7 @@ public class ToAsync {
 	this.optimistic=optimistic;
 	this.mcg=mcg;
 	this.recycle=recycle;
+	this.classes=classes;
     }
     
     public void metaStuff(BMethod bm) {
@@ -114,7 +116,7 @@ public class ToAsync {
 
 	HashMap old2new=new HashMap();
 	HMethod nhm=AsyncCode.makeAsync(old2new, hc.getMethod(),
-					ucf,linker);
+					ucf,linker,optimistic);
 	
 	WorkSet async_todo=new WorkSet();
 	async_todo.push(hc);
@@ -141,7 +143,7 @@ public class ToAsync {
 	    AsyncCode.buildCode(selone, old2new, async_todo,
 				ql,blockingcalls,ucf,  bm, hc.getMethod(), 
 				linker,ch,other, done_other,status, typemap, 
-				optimistic,recycle);
+				optimistic,recycle,classes);
 	}
 	return nhm;
     }
@@ -395,8 +397,8 @@ public class ToAsync {
 	    final HClass HCthrd = linker.forName("java.lang.Thread");
 
 	    return new HMethod[] {
-		fd.getMethod("sync", new HClass[0]),
-		is.getMethod("skip", new HClass[]{HClass.Long}),
+		//fd.getMethod("sync", new HClass[0]),
+		//is.getMethod("skip", new HClass[]{HClass.Long}),
 		HCthrd.getMethod("join", new HClass[0]),
 		    
 		is.getDeclaredMethod("read", new HClass[0]),
@@ -417,7 +419,7 @@ public class ToAsync {
 		    new HClass[] {HClassUtil.arrayClass(b, 1),
 				  HClass.Int, HClass.Int}),
 
-		os.getDeclaredMethod("write", new HClass[]{HClass.Int}),
+		    /*os.getDeclaredMethod("write", new HClass[]{HClass.Int}),
 
 	        os.getDeclaredMethod("write", 
 		    new HClass[] {HClassUtil.arrayClass(b, 1)}),
@@ -434,7 +436,7 @@ public class ToAsync {
 		fos.getDeclaredMethod("write", 
 		    new HClass[] {HClassUtil.arrayClass(b, 1),
 		    HClass.Int, HClass.Int}),
-
+		    */
 		ss.getDeclaredMethod("accept", new HClass[0])
 		    };
 	}
@@ -455,7 +457,7 @@ public class ToAsync {
 
 	    HMethod retval = (HMethod)cache.get(m);
 	    if (retval == null) {
-		if(m.equals(fd.getMethod("sync",
+		/*if(m.equals(fd.getMethod("sync",
 					 new HClass[0]))) {
 		    retval=fd.getMethod("syncAsyncO", new HClass[0]);
 		    cache.put(m,retval);
@@ -463,7 +465,7 @@ public class ToAsync {
 						 new HClass[]{HClass.Long}))) {
 		    retval=is.getMethod("skipAsyncO", new HClass[]{HClass.Long});
 		    cache.put(m,retval);
-		    } else if (m.equals(HCthrd.getMethod("join",
+		    } else*/ if (m.equals(HCthrd.getMethod("join",
 						new HClass[0]))) {
 			retval=HCthrd.getMethod("join_AsyncO",
 					    new HClass[0]);
@@ -517,7 +519,7 @@ public class ToAsync {
 			    cache.put(m, retval);
 			}
 		    }
-		} else if (os.equals(m.getDeclaringClass())){
+		} /*else if (os.equals(m.getDeclaringClass())){
 		    if (m.getName().equals("write")) {
 			final HMethod bm1 = 
 			    os.getDeclaredMethod("write", new HClass[]{HClass.Int});
@@ -569,7 +571,7 @@ public class ToAsync {
 			    cache.put(m, retval);
 			}
 		    }
-		    } else if (ss.equals(m.getDeclaringClass())) {
+		    }*/ else if (ss.equals(m.getDeclaringClass())) {
 		    final HMethod bm4 = 
 			ss.getDeclaredMethod("accept", new HClass[0]);
 		    if (bm4.equals(m)) {

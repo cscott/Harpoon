@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.56 2000-03-22 19:29:33 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.57 2000-03-24 06:15:34 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -97,7 +97,7 @@ public class AsyncCode {
 			   HMethod mroot, Linker linker, ClassHierarchy ch,
 			   Set other, Set done_other, boolean methodstatus,
 			   TypeMap typemap, boolean optimistic,
-			   boolean recycle) 
+			   boolean recycle, Set classes) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -124,7 +124,7 @@ public class AsyncCode {
 					   blockingcalls, hc.getMethod(), 
 					   hc, ucf,bm,mroot, linker,ch,
 					   other, done_other,methodstatus,
-					   typemap,optimistic,recycle);
+					   typemap,optimistic,recycle,classes);
 	    quadc.accept(cv);
 	}
     }
@@ -150,7 +150,7 @@ public class AsyncCode {
 			   Linker linker, ClassHierarchy ch,
 			   Set other, Set done_other, boolean methodstatus,
 			   TypeMap typemap, boolean optimistic,
-			   boolean recycle) {
+			   boolean recycle, Set classes) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -168,7 +168,8 @@ public class AsyncCode {
 					       async_todo, old2new,
 					       hc,ucf,bm,mroot, linker,ch,
 					       other, done_other,methodstatus,
-					       typemap,optimistic,recycle);
+					       typemap,optimistic,recycle,
+					       classes);
 	}
 
 	void addCode(HMethod hm, HCode hc) {
@@ -343,7 +344,7 @@ public class AsyncCode {
     // create asynchronous version of HMethod to replace blocking version
     // does not create HCode that goes w/ it...
     static HMethod makeAsync(Map old2new, HMethod original,
-			      CachingCodeFactory ucf, Linker linker)
+			      CachingCodeFactory ucf, Linker linker,boolean optimistic)
     {
 	//	final HMethod original = blocking.method();
 	HClass originalClass = original.getDeclaringClass();
@@ -359,7 +360,7 @@ public class AsyncCode {
 	    ("harpoon.Analysis.ContBuilder." + pref + "Continuation");
 
 	// find a unique name for the replacement HMethod
-	String methodNamePrefix = original.getName() + "_Async";
+	String methodNamePrefix = original.getName() + ((optimistic)?"AsyncO":"Async");
 	String newMethodName = methodNamePrefix;
 	boolean threadrun=false;
 	if (linker.forName("java.lang.Runnable").

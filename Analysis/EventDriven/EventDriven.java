@@ -23,12 +23,13 @@ import harpoon.Temp.Temp;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import harpoon.Util.WorkSet;
 /**
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.10 2000-03-22 19:29:34 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.11 2000-03-24 06:15:35 bdemsky Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;
@@ -38,6 +39,7 @@ public class EventDriven {
     protected final Linker linker;
     protected boolean optimistic;
     protected boolean recycle;
+    protected Set classes;
 
     /** Creates a <code>EventDriven</code>. The <code>CachingCodeFactory</code>
      *  needs to have been created from a <code>QuadSSI</code> that contains
@@ -52,6 +54,11 @@ public class EventDriven {
 	this.linker=linker;
 	this.optimistic=optimistic;
 	this.recycle=recycle;
+	this.classes=new WorkSet();
+    }
+
+    public Set classes() {
+	return classes;
     }
 
     /** Returns the converted main
@@ -79,7 +86,7 @@ public class EventDriven {
 //  	    }
 //  	}
 
-	ToAsync as = new ToAsync(ucf,hc ,ch ,linker,optimistic,mcg,recycle);
+	ToAsync as = new ToAsync(ucf,hc ,ch ,linker,optimistic,mcg,recycle,classes);
 	// transform main to mainAsync
 	HMethod newmain = as.transform();
 
@@ -87,7 +94,7 @@ public class EventDriven {
 						"newmain is null");
 
 	Temp[] params = null;
-	HEADER header=(HEADER) (this.hc.getRootElement());
+	HEADER header=(HEADER) (hc.getRootElement());
 	METHOD method=(METHOD) (header.next(1));
 	params=method.params();
 

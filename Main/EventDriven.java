@@ -39,7 +39,7 @@ import harpoon.Util.BasicBlocks.CachingBBConverter;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.14 2000-03-23 21:29:04 salcianu Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.15 2000-03-24 06:15:44 bdemsky Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -181,7 +181,8 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 
 	//========================================================
 	//Jasmin stuff below here:
-	Set cmx=ch1.classes();
+	Set cmx=new WorkSet(ch1.classes());
+	cmx.addAll(ed.classes());
 	Iterator iterate=cmx.iterator();
 	WorkSet classes=new WorkSet();
 	while(iterate.hasNext()) {

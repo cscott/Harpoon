@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.15 2000-03-22 20:29:01 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.16 2000-03-24 06:15:35 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -91,6 +91,7 @@ public class CloningVisitor extends QuadVisitor {
     boolean recycle;
     Set blocking;
     CALL origCall;
+    Set cclasses;
 
     public CloningVisitor(Set blockingcalls, Set cont_todo,
 			  Map cont_map, Map env_map, 
@@ -101,7 +102,7 @@ public class CloningVisitor extends QuadVisitor {
 			  Linker linker, ClassHierarchy ch,
 			  Set other, Set done_other, 
 			  boolean methodstatus, TypeMap typemap,
-			  boolean optimistic, boolean recycle) {
+			  boolean optimistic, boolean recycle, Set cclasses) {
 	this.liveness=liveness;
 	this.blockingcalls=blockingcalls;
 	this.cont_todo=cont_todo;
@@ -121,6 +122,7 @@ public class CloningVisitor extends QuadVisitor {
 	this.typemap=typemap;
 	this.optimistic=optimistic;
 	this.recycle=recycle;
+	this.cclasses=cclasses;
     }
 
     public void reset(HMethod nhm, TempFactory otf, boolean isCont, CALL origCall) {
@@ -253,6 +255,8 @@ public class CloningVisitor extends QuadVisitor {
 		//Build Class for the continuation
 		HClass hclass=AsyncCode.createContinuation(hc.getMethod(),  q,
 						 ucf, linker,getEnv(q)); 
+		//Force output in case we have a dangling reference
+		cclasses.add(hclass);
 		//Add mapping of call->class
 		cont_map.put(q,hclass);
 		//Schedule blocking method for transformation
@@ -755,19 +759,24 @@ public class CloningVisitor extends QuadVisitor {
 			    hm=null;
 			    continue;
 			}
+			if (!ch.callableMethods().contains(hm))
+			    continue;
+			//don't need to build subclass methods that aren't
+			//callable
 		    }
 		    if (bm.swop(hm)!=null) {
 			//handle actual blocking call swapping
 			old2new.put(hm, bm.swop(hm));
 		    } else {
 			if (hm.getName().compareTo("<init>")!=0) {
+			    cclasses.add(hm.getDeclaringClass());
 			    HCode toConvert=ucf.convert(hm);
 			    if (toConvert!=null)
 				async_todo.add(toConvert);
 			    else if (Modifier.isNative(hm.getModifiers()))
 				System.out.println("XXX:ERROR Native blocking: "+hm);
 			    HMethod temp=AsyncCode.makeAsync(old2new, hm,
-						   ucf,linker);
+							     ucf,linker,optimistic);
 			} else {
 			    System.out.println("XXX:ERROR "+hm+" is blocking!");
 			}
@@ -1149,9 +1158,9 @@ public class CloningVisitor extends QuadVisitor {
 	if (old.equals(fis.getConstructor(new HClass[] {linker.forName("java.lang.String")}))||
 	    old.equals(fis.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
 	    return fis.getDeclaredMethod("makeAsync", new HClass[0]);
-	//	if (old.equals(fos.getConstructor(new HClass[] {linker.forName("java.lang.String"), HClass.Boolean}))||
-	//   old.equals(fos.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
-	//   return fos.getDeclaredMethod("makeAsync", new HClass[0]);
+	//if (old.equals(fos.getConstructor(new HClass[] {linker.forName("java.lang.String"), HClass.Boolean}))||
+	    //old.equals(fos.getConstructor(new HClass[] {linker.forName("java.io.FileDescriptor")})))
+	    //return fos.getDeclaredMethod("makeAsync", new HClass[0]);
 	return null;
     }
     
