@@ -185,6 +185,12 @@ public abstract class Scheduler {
     /** Switch every <code>microsecs</code> microseconds */
     protected final native void setQuanta(long microsecs);
 
+    /** Force a context switch at the earliest legal time */
+    protected final native void contextSwitch();
+
+    /** Turns on/off timed thread switching */
+    protected final native void setTimer(boolean state);
+
     /** Print out the status of the scheduler */
     public final static void print() {
 	Scheduler sched = RealtimeThread.currentRealtimeThread().getScheduler();
