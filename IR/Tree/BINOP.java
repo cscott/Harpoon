@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.4 1999-02-05 11:48:44 cananian Exp $
+ * @version $Id: BINOP.java,v 1.1.2.5 1999-02-05 12:02:44 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -20,25 +20,25 @@ public class BINOP extends OPER {
     public Exp right;
     /** Constructor. */
     public BINOP(TreeFactory tf, HCodeElement source,
-		 int type, int binop, Exp left, Exp right) {
-	super(tf, source, type, binop);
+		 int optype, int binop, Exp left, Exp right) {
+	super(tf, source, optype, binop);
 	this.left=left; this.right=right;
 	Util.assert(Bop.isValid(binop));
     }
     // binops defined in harpoon.IR.Tree.Bop.
-    public int resultType() {
+    public int type() {
 	switch(op) {
 	case Bop.CMPLT: case Bop.CMPLE: case Bop.CMPEQ:
 	case Bop.CMPGE: case Bop.CMPGT:
 	    return INT; // boolean comparison result
 	default:
-	    return type();
+	    return optype;
 	}
     }
 
     public ExpList kids() {return new ExpList(left, new ExpList(right,null));}
     public Exp build(ExpList kids) {
-	return new BINOP(tf, this, type, op, kids.head, kids.tail.head);
+	return new BINOP(tf, this, optype, op, kids.head, kids.tail.head);
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }

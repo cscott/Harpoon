@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.5 1999-02-05 10:40:45 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.6 1999-02-05 12:02:46 cananian Exp $
  */
 public class Print 
 {
@@ -70,7 +70,7 @@ public class Print
       {
 	indent(m_indent++);
 	say("BINOP(");
-	say(Type.toString(e.type));
+	say(Type.toString(e.optype));
 	say(", ");
 	say(Bop.toString(e.op));
 	sayln(",");
@@ -195,7 +195,7 @@ public class Print
     public void visit(UNOP e)
       {
 	indent(m_indent++); say("UNOP("); 
-	say(Type.toString(e.type));
+	say(Type.toString(e.optype));
 	say(", ");
 	say(Uop.toString(e.op));
 	sayln(",");

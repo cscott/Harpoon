@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * <code>OPER</code>, and <code>UNOP</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Typed.java,v 1.1.2.2 1999-02-05 10:40:45 cananian Exp $
+ * @version $Id: Typed.java,v 1.1.2.3 1999-02-05 12:02:47 cananian Exp $
  */
 public interface Typed  {
     // enumerated constants.
@@ -20,4 +20,11 @@ public interface Typed  {
     /** Returns enumerated constant (INT, LONG, FLOAT, DOUBLE, or POINTER)
      *  corresponding to the type of the expression. */
     public int type();
+
+    /** Returns <code>true</code> if the expression corresponds to a
+     *  64-bit value. */
+    public boolean isDoubleWord();
+    /** Returns <code>true</code> if the expression corresponds to a
+     *  floating-point value. */
+    public boolean isFloatingPoint();
 }

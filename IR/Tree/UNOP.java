@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.4 1999-02-05 11:48:57 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.5 1999-02-05 12:02:48 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -18,13 +18,13 @@ public class UNOP extends OPER {
     public Exp operand;
     /** Constructor. */
     public UNOP(TreeFactory tf, HCodeElement source,
-		int type, int unop, Exp operand) {
-	super(tf, source, type, unop);
+		int optype, int unop, Exp operand) {
+	super(tf, source, optype, unop);
 	this.operand = operand;
 	Util.assert(Uop.isValid(unop));
     }
     // Unops defined in harpoon.IR.Tree.Uop
-    public int resultType() {
+    public int type() {
 	switch(op) {
 	case Uop._2B: case Uop._2C: case Uop._2S: case Uop._2I:
 	    return INT;
@@ -35,13 +35,13 @@ public class UNOP extends OPER {
 	case Uop._2D:
 	    return DOUBLE;
 	default:
-	    return type();
+	    return optype;
 	}
     }
 
     public ExpList kids() { return new ExpList(operand, null); }
     public Exp build(ExpList kids) {
-	return new UNOP(tf, this, type, op, kids.head);
+	return new UNOP(tf, this, optype, op, kids.head);
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
