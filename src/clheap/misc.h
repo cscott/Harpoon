@@ -4,7 +4,7 @@
 #define INCLUDED_NIFTY_MISC_H
 
 #define POOLSIZE 1 /* how many threads share a heap */
-#define HEAPSIZE 65536
+#define HEAPSIZE 80000
 #define ALIGNMENT 4
 #define ALIGN(x) (((x)+(ALIGNMENT-1)) & ~(ALIGNMENT-1))
 
