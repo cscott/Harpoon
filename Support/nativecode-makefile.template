@@ -3,7 +3,7 @@
 #    HOST_PREFIX=arm-unknown-linuxelf-
 # so that, for example, the cross-compiling gcc is arm-unknown-linuxelf-gcc.
 # this is probably best set on the command-line, as:
-#   make HOST_PREFIX=arm-unknown-linuxelf
+#   make HOST_PREFIX=arm-unknown-linuxelf-
 # instead of editing this (pretty generic and general-purpose, yay) file.
 HOST_PREFIX=
 CC:=$(HOST_PREFIX)$(CC)
