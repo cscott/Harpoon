@@ -64,6 +64,21 @@ static struct vinfo *CreateNewVersion(struct inflated_oobj *infl,
     return nv;
 }
 
+/* get the state of a version, doing pruning. (StateP') */
+static inline jint StateP1(struct commitrec **cp) {
+  struct commitrec *c = *cp;
+  jint s = COMMITTED;
+  jboolean l = JNI_FALSE;
+  while (c!=NULL) {
+    s = c->state; /* atomic */
+    if (s!=COMMITTED) break;
+    c = c->parent;
+    l = JNI_TRUE;
+  }
+  if (l) { *cp=c; /* atomic, one hopes */ }
+  return s;
+}
+
 /* get the state of a version, pruning as we go. */
 static inline jint StateP2(struct inflated_oobj *infl, struct vinfo *v) {
     struct commitrec *c = v->transid;
@@ -76,7 +91,7 @@ static inline jint StateP2(struct inflated_oobj *infl, struct vinfo *v) {
 	l=JNI_TRUE;
     }
     if (l) { v->transid=c; }
-    /* below this point it is the StateP' function from the writeup */
+    /* below this point it is the StateP'' function from the writeup */
     switch (s) {
     case WAITING:
 #if 0
@@ -144,7 +159,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     struct commitrec *c = (struct commitrec *) FNI_UNWRAP(commitrec);
     struct inflated_oobj *infl;
     struct vinfo *v;
-    struct tlist *r;
+    struct tlist *r, *rp;
     if (!FNI_IS_INFLATED(_this)) FNI_InflateObject(env, _this);
     /* get first_version */
     infl = FNI_UNWRAP(_this)->hashunion.inflated;
@@ -153,10 +168,13 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     /* make sure we're on the readers list */
     again:
     if (v->transid==c) goto has_version_and_listed;
-    r = &(v->readers);
+    r = &(v->readers); rp=NULL;
     do {
 	if (r->transid==c) goto has_version_and_listed; /* we're on! */
-	r = r->next;
+	/* list maintenance: prune this link out if not WAITING */
+	if (StateP1(&r->transid)!=WAITING)
+	  if (rp) rp->next=r->next; else r->transid=NULL; /* XXX: race here */
+	rp = r; r = r->next;
     } while (r!=NULL);
     /* gasp! we're not on the readers list */
     switch (StateP2(infl, v)) {
