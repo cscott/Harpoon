@@ -1,0 +1,172 @@
+
+new issues - it is not always possible to precalculate (or even
+calculate) an offset for a particular field... this would be the case if
+a field relied on a particular structure's fields and that fields'
+offset relied upon itself or something beyond it in its own
+structure... 
+
+compilation plan xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. determine preconditions (required sets/relations), post conditions
+   (generated sets), and measures of difficult in checking constraints
+
+2. find best ordering of rule building to minimize the cost of space
+   and time. 
+
+3. build ordering and generate code.
+
+
+
+set traversal xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. when accessing set traversal costs assume that sets do not have
+   cycles and that set traversal can occur in constant time if necessary.
+
+2. on first run, do a linear space traversal to determine a time bound
+   on which the set traversal should finish. from then on use a constant
+   space traversal with a dynamic time bound.
+
+
+
+accessing ease of relation building xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. rank ease of relation building by whether the relation is a field
+or a constant time countable function of the fields. 
+
+
+
+changing lattices xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. examine how relations are built. for instance, if we can guarantee
+   that duplicates shouldn't occur, and we might be able to if we use a
+   hash just in case.
+
+2. if a relation is only used for counting and we are guaranteed not
+   to double count than just keep the count around (saves massive space)
+
+
+
+plan of action xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. determine rules for generating pre/post conditions and cost measures
+   for rule building. 
+
+2. devise an algorithm to schedule these rule building and constraint
+   checking mechanisms. 
+
+3. be warned about tight coupling of set building and consistency
+   checking. it may be better to decouple them and set up pre/post
+   conditions on the consistency checks (per quantifier)
+
+4. test scheduler against file example and compare to hand coded
+
+
+
+plan of action revised xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. perform topological sort of all rules, TS[nodes]
+
+2. mark sets that need to be built in linear space if
+   a. it appears inside a guard expression or inclusion expr
+   b. it is marked "build" in the spec (see redundant)
+   c. if it appears as the range in a relation that is not 
+      statically type safe
+
+3. mark relations that need to be built in linear space if
+   a. they appear in constraints and are difficult to build 
+   b. a cycle has been found
+
+4. detect singletons and replace with constants and wrap traversals with
+   'if-else' checks. upon failure define sets that the quantifier
+   appears in as empty and check as usual
+
+5. for all sets that appear in constraints and relations that need to be
+   built, sort them topologically by TS and the generate each one in order.
+
+6. pile up set building on top of previous set traversals unless a set
+   is marked 'build'. then build it and each traversal dependent on build
+   should begin afresh.
+
+7. at each interface point, assess what can be checked and check it. the
+   idea is that since we are guaranteeing that everything that needs to
+   traversed is traversed if we check whenever we can, what we can then
+   we should end up doing a complete check.
+
+
+
+hacks xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. statically find singleton sets and optimize them out of quantifiers
+
+
+
+issues xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+1. domain type problems with relations during fast traversal
+
+   S(node*);
+   R(S->S);
+   [], true => root in S
+   [forall s in S], s.next != null => <s, s.next> in R
+   [forall s in S], s.next != null AND s.flag = 1 => s.next in S
+
+   the problem here is that if you have a simple linked list,
+   root(1)->element(0) where the parantheses mark the value of .flag
+   then the above system will add <root, element> to R but element is
+   not in S because flag = 0. In brian's system the relations undergo a
+   post process to determine if any elements exist don't exist in the
+   domain/range of the relation. 
+
+   the problem appears when the relation is being quickly traversed (via
+   pattern matching). now it is possible for a relation to be returned
+   that is not truly a match. the solution we have determined at this
+   point is to assume that most specs won't have this problem (its
+   arguably a problem in the spec!) and to basically do perform these
+   two static tests:
+
+   if [forall s in S], s.next != null => <s, s.next> in R
+      AND  s.next != null => s.next in S
+
+   then R is safe and no fast traversal should return non-elements,
+   regardless of the state of the data structure. If it can not be
+   determined whether a relation is type safe, then a linear space
+   storage of S must be done so that the relations can be
+   existence-checked against the stored set
+
+2. redundancy in sets may result in slowdown
+
+   assume we have a set of file references (set R) which reference files
+   (set F). These files can contain a large amount of block
+   references (set B). Now assume that we have one file but thousands of
+   references to that file. If there a test on the blocks of a file than
+   there can be a slow down caused by a constant space traversal of the
+   sets that is disproportiate to the gain seen.
+
+   clarification. lets assume that we test that blocks are marked as
+   used. if sets R and F and B were generated in linear space than the
+   number of checks done to test the constraint on B would be O(B). 
+
+   now assume that we traverse R, F, and B in constant space. Because
+   each reference points to the same file and we have no way of knowing
+   in constant space whether we are rechecking each file over and over, 
+   we will check the constraints on B O(R*B) times. this is much worse
+   and represents a jump in the time complexity.
+
+   static analysis of the specs will not be able to determine such a
+   problem as a broken data structure is a perfectly viable input to the
+   system. therefore it is necessary to have the program be given hints
+   about the redundancy of structures. If a structure is highly
+   redundant than that structure should be stored in linear space to
+   fight the problem of quadratic blow up.
+
+   the hint could be in the form of a keyword addition to the space file
+   language. another option is to allow the checker to dynamically
+   detect redundancy (how? maybe hash table? maybe sparse linear time
+   checks) and change the way its builds sets realtime. for simplicity,
+   the spec hint will be used. 
+
+3. how do page accesses translate to incremental model checks?
+
+   TBD. 
+
+
