@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.13 2000-02-10 23:54:03 kkz Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.14 2000-03-27 13:27:37 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -233,7 +233,8 @@ public class DataClaz extends Data {
 	for (Iterator it=methods.iterator(); it.hasNext(); order++) {
 	    HMethod hm = (HMethod) it.next();
 	    Util.assert(cmm.methodOrder(hm)==order); // should be no gaps.
-	    if (callable.contains(hm))
+	    if (callable.contains(hm) &&
+		!Modifier.isAbstract(hm.getModifiers()))
 		stmlist.add(_DATUM(m_nm.label(hm)));
 	    else
 		stmlist.add(_DATUM(new CONST(tf, null))); // null pointer
@@ -271,7 +272,8 @@ public class DataClaz extends Data {
 	for (Iterator it=methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    HMethod cm = hc.getMethod(hm.getName(), hm.getDescriptor());
-	    if (!ch.callableMethods().contains(cm))
+	    if (!ch.callableMethods().contains(cm) ||
+		Modifier.isAbstract(cm.getModifiers()))
 		it.remove();
 	}
 	// okay, now sort by InterfaceMethodMap ordering.
