@@ -303,6 +303,8 @@ ptr_t arg;
     if (++random_no % 13 == 0) {
 	limit = sp;
 	MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
+        limit &= ~0xf;	/* Make it sufficiently aligned for assembly	*/
+        		/* implementations of GC_clear_stack_inner.	*/
 	return GC_clear_stack_inner(arg, limit);
     } else {
 	BZERO(dummy, SMALL_CLEAR_SIZE*sizeof(word));

@@ -1050,7 +1050,7 @@
 #     define DATASTART ( (ptr_t) (&__data_start))
       extern int   _end;
 #     define DATAEND ( (ptr_t) (&_end))
-#     define MPROTECT_VDB
+/* #     define MPROTECT_VDB  Not quite working yet? */
 #     define DYNAMIC_LOADING
 #   endif
 # endif

@@ -122,8 +122,10 @@
 # include <fcntl.h>
 #endif
 
-#ifdef SUNOS5SIGS
-# include <sys/siginfo.h>
+#if defined(SUNOS5SIGS) || defined (HURD) || defined(LINUX)
+# ifdef SUNOS5SIGS
+#  include <sys/siginfo.h>
+# endif
 # undef setjmp
 # undef longjmp
 # define setjmp(env) sigsetjmp(env, 1)
@@ -337,7 +339,7 @@ void GC_enable_signals(void)
       && !defined(MSWINCE) \
       && !defined(MACOS) && !defined(DJGPP) && !defined(DOS4GW)
 
-#   if defined(sigmask) && !defined(UTS4)
+#   if defined(sigmask) && !defined(UTS4) && !defined(HURD)
 	/* Use the traditional BSD interface */
 #	define SIGSET_T int
 #	define SIG_DEL(set, signal) (set) &= ~(sigmask(signal))
@@ -2341,7 +2343,7 @@ void GC_dirty_init()
       struct sigaction	act, oldact;
       /* We should probably specify SA_SIGINFO for Linux, and handle 	*/
       /* the different architectures more uniformly.			*/
-#     if defined(IRIX5) || defined(LINUX) || defined(OSF1)
+#     if defined(IRIX5) || defined(LINUX) || defined(OSF1) || defined(HURD)
     	act.sa_flags	= SA_RESTART;
         act.sa_handler  = (SIG_PF)GC_write_fault_handler;
 #     else
@@ -2404,7 +2406,7 @@ void GC_dirty_init()
 #     else
       	sigaction(SIGSEGV, &act, &oldact);
 #     endif
-#     if defined(_sigargs)
+#     if defined(_sigargs) || defined(HURD)
 	/* This is Irix 5.x, not 6.x.  Irix 5.x does not have	*/
 	/* sa_sigaction.					*/
 	GC_old_segv_handler = oldact.sa_handler;

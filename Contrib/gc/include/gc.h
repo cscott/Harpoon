@@ -348,6 +348,10 @@ GC_API void GC_end_stubborn_change GC_PROTO((GC_PTR));
 
 /* Return a pointer to the base (lowest address) of an object given	*/
 /* a pointer to a location within the object.				*/
+/* I.e. map an interior pointer to the corresponding bas pointer.	*/
+/* Note that with debugging allocation, this returns a pointer to the	*/
+/* actual base of the object, i.e. the debug information, not to	*/
+/* the base of the user object.						*/
 /* Return 0 if displaced_pointer doesn't point to within a valid	*/
 /* object.								*/
 GC_API GC_PTR GC_base GC_PROTO((GC_PTR displaced_pointer));
