@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.23 2001-01-23 22:06:47 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.24 2001-01-23 23:45:15 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -384,10 +384,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	_DEFAULT_RULES.add(doubleNegative); 
 	_DEFAULT_RULES.add(negZero); 
 	_DEFAULT_RULES.add(mulToShift); // non-canonical
-	// CSA: divToMul turned off because broken (cf "x / 100")
-	//_DEFAULT_RULES.add(divToMul); // non-canonical
-	// (also, mulToShift should be run on output of divToMul for
-	//  best results)
+	_DEFAULT_RULES.add(divToMul); // non-canonical
 
 	// and re-canonicalize
 	_DEFAULT_RULES.addAll(Canonicalize.RULES);
@@ -507,11 +504,11 @@ public abstract class AlgebraicSimplification extends Simplification {
 	// m_low = floor((2^(N+l))/d)
 	// we compute it as m_low = 2^N + (m_low-2^N) to avoid overflow
 	// in the numerator.
-	long m_low = (1L<<N) + ((((1L<<l)-d)/d)<<N);
-	// m_high = floor((2^(N+l)+2^(N+l+prec))/d)
+	long m_low = (1L<<N) + ((((1L<<l)-d)<<N)/d);
+	// m_high = floor((2^(N+l)+2^(N+l-prec))/d)
 	// as above, m_high = 2^N + (m_high-2^N) to avoid overflow.
 	long m_high= (1L<<N) + 
-	    (((1L<<(l+prec))+(1L<<l)-(((long)d)<<prec))<<(N-prec)); 
+	    ((((1L<<(l+prec))+(1L<<l)-(((long)d)<<prec))<<(N-prec))/d); 
 	Util.assert(m_low < m_high);
 	while ((m_low/2) < (m_high/2) && sh_post > 0) {
 	    m_low/=2; m_high/=2; sh_post--;
