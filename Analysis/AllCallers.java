@@ -22,7 +22,7 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.4 2000-01-12 01:38:12 salcianu Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.5 2000-01-18 16:27:18 bdemsky Exp $
  */
 
 public class AllCallers {
@@ -38,7 +38,14 @@ public class AllCallers {
     public AllCallers(ClassHierarchy ch, HCodeFactory hcf) {
 	this.hcf = hcf;
 	this.ch = ch;
-	this.g = buildGraph();
+	CallGraph cg = new CallGraph(this.ch, this.hcf);
+	this.g = buildGraph(cg);
+    }
+
+    public AllCallers(ClassHierarchy ch, HCodeFactory hcf, CallGraph cg) {
+	this.hcf = hcf;
+	this.ch = ch;
+	this.g = buildGraph(cg);
     }
 
     /** <code>getCallers</code> returns a <code>Set</code> that contains
@@ -84,9 +91,8 @@ public class AllCallers {
      *  with which the <code>this</code> object was created.
      *  Returns the call graph as a Hashtable.
      */
-    private Hashtable buildGraph() {
+    private Hashtable buildGraph(CallGraph cg) {
 	Hashtable ht = new Hashtable();
-	CallGraph cg = new CallGraph(this.ch, this.hcf);
 	for (Iterator cm = this.ch.callableMethods().iterator(); 
 	     cm.hasNext(); ) {
 	    HMethod m = (HMethod)cm.next();
@@ -109,3 +115,10 @@ public class AllCallers {
     }
 
 }
+
+
+
+
+
+
+
