@@ -25,7 +25,7 @@ package harpoon.IR.Tree;
  * <code>Uop.NOT</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Bop.java,v 1.1.2.2 1999-02-05 12:19:28 cananian Exp $
+ * @version $Id: Bop.java,v 1.1.2.3 1999-03-29 05:07:05 duncan Exp $
  */
 public abstract class Bop  {
     public final static int
@@ -70,4 +70,17 @@ public abstract class Bop  {
 	default:	throw new RuntimeException("Unknown Bop type: "+op);
 	}
     }
+
+    // wrapper functions.
+    private static Integer _i(int i)     { return new Integer(i); }
+    private static Long    _l(long l)    { return new Long(l);    }
+    private static Float   _f(float f)   { return new Float(f);   }
+    private static Double  _d(double d)  { return new Double(d);  }
+    private static Boolean _b(boolean b) { return new Boolean(b); }
+    // unwrapper functions.
+    private static int    _i(Object o) { return ((Integer)o).intValue(); }
+    private static long   _l(Object o) { return ((Long)o)   .longValue(); }
+    private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
+    private static double _d(Object o) { return ((Double)o) .doubleValue(); }
+
 }
