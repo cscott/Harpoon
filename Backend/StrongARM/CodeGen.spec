@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.145 2000-02-24 01:24:11 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.146 2000-02-28 16:36:24 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -670,9 +670,13 @@ import java.util.Iterator;
     }
 
     // now define our little InstrENTRY and InstrEXIT sub-types.
-    private static class InstrENTRY extends InstrDIRECTIVE {
+    private class InstrENTRY extends Instr {
 	public InstrENTRY(InstrFactory inf, HCodeElement src) {
-	    super(inf, src, "@ --method entry point--");
+	    // defines SP, FP, and PC providing reaching defs for
+	    // InstrEXIT uses.
+	    super(inf, src, "@ --method entry point--",
+		  new Temp[] { SP, FP, PC },
+		  null, false, null);
 	}
     }
     private class InstrEXIT extends Instr {
@@ -1701,6 +1705,9 @@ UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 /* STATEMENTS */
 METHOD(params) %{
     // mark entry point.
+    declare(PC, HClass.Void);
+    declare(SP, HClass.Void);
+    declare(FP, HClass.Void);
     emit(new InstrENTRY( instrFactory, ROOT ));
     // move arguments to temporaries.
     int loc=0;
