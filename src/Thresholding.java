@@ -5,7 +5,7 @@ public class Thresholding extends Node {
     public int T1; /* Magic number */
     public int T2; /* Another magic number */  
 
-    public Thresholding(Node out, int T1, int T2) {
+    public Thresholding(int T1, int T2, Node out) {
 	super(out);
 	this.T1 = T1;
 	this.T2 = T2;

@@ -10,17 +10,18 @@ import org.omg.CosNaming.NamingContextExtHelper;
 import org.omg.CosNaming.NameComponent;
 
 public class Server extends Node {
-    private String args, name;
+    private String[] args;
+    private String name;
 
-    public Server(String args, String name, Node out) {
+    public Server(String name, String[] args, Node out) {
 	super(out);
 	this.args = args;
-	this.corbaName = name;
+	this.name = name;
     }
 
     public synchronized void process(ImageData id) {
 	try {
-	    ORB orb = ORB.init(args, null);
+	    final ORB orb = ORB.init(args, null);
 	    POA poa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
 	    poa.the_POAManager().activate();
 	    NamingContextExt namingContext = 
@@ -34,11 +35,14 @@ public class Server extends Node {
 					    Server.super.process(id);
 					}
 				    })));
-	    orb.run();
+	    (new Thread() {
+		public void run() {
+		    orb.run();
+		}
+	    }).start();
 	} catch (Exception e) {
-
+	    throw new Error(e);
 	}
-	super.process(id);
     }
 
 }

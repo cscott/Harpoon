@@ -9,7 +9,7 @@ import java.io.Serializable;
  * 
  */
 
-public class Node implements Serializable {
+public class Node implements Serializable, Runnable {
     private Node out1, out2;
 
     public Node() {
@@ -40,5 +40,9 @@ public class Node implements Serializable {
 		this.out2.process(id);
 	    }
 	}
+    }
+
+    public void run() {
+	process(null);
     }
 }

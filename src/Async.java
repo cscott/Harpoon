@@ -1,6 +1,8 @@
 package imagerec;
 
 public class Async extends Node {
+    private Node out;
+
     public Async(Node out) {
 	super(out);
     }

@@ -8,11 +8,10 @@ import org.omg.CosNaming.NameComponent;
 
 public class Client extends Node {
     private ORB orb;
-    private ClientServer cs;
+    private final ClientServer cs;
 
     public Client(String name, String[] args) {
 	super();
-	this.corbaName = corbaName;
 	try {
 	    orb = ORB.init(args, null);
 	    cs = ClientServerHelper.narrow(
@@ -20,12 +19,15 @@ public class Client extends Node {
 			       .resolve_initial_references("NameService"))
 		.resolve(new NameComponent[] {new NameComponent(name, "")}));
 	} catch (Exception e) {
-	    System.out.println(e);
-	    System.exit(-1);
+	    throw new Error(e);
 	}
     }
 
-    public synchronized void process(ImageData id) {
-	cs.process(id);
+    public synchronized void process(final ImageData id) {
+	(new Thread() {
+	    public void run() {
+		cs.process(id);
+	    }
+	}).start();
     }
 }

@@ -1,5 +1,6 @@
-package imagerec;
+package imagerec.rtj;
 
+import imagerec.*;
 import javax.realtime.*;
 
 public class ImageRec {

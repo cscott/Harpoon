@@ -22,7 +22,7 @@ module imagerec
     sequence<long> bvals;
     long width;
     long height;
-    long time;
+    unsigned long long time;
     long id;
   };
 
