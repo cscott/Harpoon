@@ -16,6 +16,7 @@ public class Main {
     ErrorMsg e = new ErrorMsg(args[0]);
     Lexer l = new Lexer(r, e);
     Parser p = new Parser(l, e);
-    p./*debug_*/parse();
+    Spec s = (Spec) p./*debug_*/parse().value;
+    System.out.println(s);
   }
 }

@@ -53,6 +53,8 @@ private int prevState;
 
 ALPHA=[A-Za-z]
 DIGIT=[0-9]
+INTEGER={DIGIT}+
+FLOAT=(({DIGIT}*"."{DIGIT}+)|({DIGIT}+"."{DIGIT}*))
 ID=[A-Za-z_][A-Za-z0-9_\$]*
 HEXDIGIT=[0-9A-Fa-f]
 WS=[\ \t\012\b]
@@ -60,14 +62,14 @@ NL=([\r]|[\r]?[\n])
 
 %%
 
-<YYINITIAL>	^%%		{ yybegin(CLASS_SCOPE);
+<YYINITIAL>	^"%%"{WS}*{NL}	{ yybegin(CLASS_SCOPE);
 				  String global = strText.toString();
 				  strText = new StringBuffer();
 				  strStart = yychar;
 				  return tok(Sym.GLOBAL_STATEMENTS,
 					     0, yychar, global);
 				}
-<CLASS_SCOPE>	^%%		{ yybegin(RULES);
+<CLASS_SCOPE>	^"%%"{WS}*{NL}	{ yybegin(RULES);
 				  return tok(Sym.CLASS_STATEMENTS,
 					     strStart, yychar,
 					     strText.toString());
@@ -176,8 +178,10 @@ NL=([\r]|[\r]?[\n])
 <RULES>		NOT		{ return tok(Sym.NOT); }
 
 <RULES>		{ID}		{ return tok(Sym.ID, yytext()); }
-<RULES>		{DIGIT}+	{ return tok(Sym.NUMBER,
+<RULES>		{INTEGER}	{ return tok(Sym.NUMBER,
 				             new Integer(yytext())); }
+<RULES>		{FLOAT}		{ return tok(Sym.FLOAT,
+				             new Float(yytext())); }
 
 <RULES>		"{"		{ return tok(Sym.LBRACE); }
 <RULES>		"}"		{ return tok(Sym.RBRACE); }
