@@ -43,9 +43,8 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.4 2002-04-10 03:02:02 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.5 2002-06-06 17:44:12 cananian Exp $
  */
-// XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
     // hide constructor
     private AlgebraicSimplification() { }
@@ -65,6 +64,49 @@ public abstract class AlgebraicSimplification extends Simplification {
     // Static initialization: add all available rules to the rule set. 
     // 
     static { 
+	// -K1 --> K2
+	// ~K1 --> K2
+	// (byte)K1 --> K2
+	// (char)K1 --> K2
+	// (short)K1 --> K2
+	Rule simplifyConstants = new Rule("simplifyConstants") { 
+	    public boolean match(Exp e) { 
+		if (_KIND(e) != _UNOP) { return false; } 
+		else { 
+		    UNOP u = (UNOP)e; 
+		    return 
+		    (u.op==Uop.NEG || u.op==Uop.NOT ||
+		     u.op==Uop.I2B || u.op==Uop.I2C || u.op==Uop.I2S) &&
+		    contains(_KIND(u.getOperand()), _CONST) &&
+		    (!u.isFloatingPoint()) &&
+		    // 'null' is only pointer const but we can't be sure
+		    // than null==0 (may have alternate value w/ pointer
+		    // twiddling, etc).
+		    u.getOperand().type() != Type.POINTER;
+		}
+	    }
+	    
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
+		UNOP u  = (UNOP)e; 
+		CONST k1 = (CONST)u.getOperand();
+
+		Object k2 = harpoon.IR.Tree.UNOP.evalValue
+		    (tf, u.op, u.optype, k1.value);
+
+
+		switch (u.type()) { 
+		    case Type.POINTER:
+		    assert k1.type()==Type.INT;
+		    case Type.INT: 
+		        return new CONST(tf,u,((Integer)k2).intValue());
+		    case Type.LONG: 
+		        return new CONST(tf,u,((Long)k2).longValue());
+		    default: 
+		        throw new Error("Invalid type: " + u.type());
+		}
+	    }
+	};  
+
 	// K1 + K2 --> K3
 	// K1 * K2 --> K3
 	// K1 << K2 --> K3
@@ -381,6 +423,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 
 	// Add rules to the rule set.  
 	// 
+	_DEFAULT_RULES.add(simplifyConstants); 
 	_DEFAULT_RULES.add(combineConstants); 
 	_DEFAULT_RULES.add(makeZero); // non-canonical
 	_DEFAULT_RULES.add(removeZero); 
