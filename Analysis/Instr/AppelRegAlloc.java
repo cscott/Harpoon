@@ -52,7 +52,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.13 2001-07-08 20:15:32 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.14 2001-07-08 20:21:19 pnkfelix Exp $
  */
 public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
@@ -73,11 +73,6 @@ public abstract class AppelRegAlloc extends AppelRegAllocClasses {
 		return new AppelRegAllocStd(c);
 	    }
 	};
-
-    // FSK todo: shouldn't use instanceof here, because a prepass
-    // could have inserted spill code ahead of time and we want to
-    // preserve those spills.  Instead, maintain a set of inserted
-    // instructions locally.
 
     /** Removes all spill code, resets statistical info, and turns off cleaning. 
      */
