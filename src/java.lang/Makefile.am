@@ -3,4 +3,4 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 LIBS =
 
-EXTRA_DIST = class.h object.h runtime.h system.h
+EXTRA_DIST = class.h object.h properties.h runtime.h system.h

@@ -5,7 +5,7 @@
 
 #include <assert.h>
 #include "../../java.lang/runtime.h" /* useful library-indep implementations */
-
+#include "../../java.lang/properties.h" /* same, for setting up properties */
 
 /*
  * Class:     java_lang_Runtime
@@ -217,5 +217,5 @@ JNIEXPORT jobject JNICALL Java_java_lang_Runtime_execInternal
  */
 JNIEXPORT void JNICALL Java_java_lang_Runtime_insertSystemProperties
   (JNIEnv *env, jclass runtime, jobject properties) {
-    assert(0); /* unimplemented */
+    fni_properties_init(env, properties, JNI_TRUE);
 }
