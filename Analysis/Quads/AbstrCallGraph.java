@@ -23,7 +23,7 @@ import harpoon.IR.Quads.CALL;
  * implementations of <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrCallGraph.java,v 1.6 2003-06-04 16:03:39 salcianu Exp $
+ * @version $Id: AbstrCallGraph.java,v 1.7 2004-02-08 04:53:33 cananian Exp $
  */
 abstract class AbstrCallGraph extends CallGraph {
 
@@ -56,9 +56,7 @@ abstract class AbstrCallGraph extends CallGraph {
         <code>java.lang.Thread</code>. */
     public Set<HMethod> getRunMethods() {
 	Set<HMethod> runs = new HashSet<HMethod>();
-	for(Iterator<HMethod> it = callableMethods().iterator();
-	    it.hasNext(); ) {
-	    HMethod hm = it.next();
+	for(HMethod hm : callableMethods()) {
 	    if((hm.getParameterNames().length == 0) &&
 	       hm.getName().equals("run") && 
 	       isThread(hm.getDeclaringClass()))

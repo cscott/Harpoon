@@ -7,9 +7,10 @@ import java.util.Collections;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Iterator;
 
 import harpoon.Util.DataStructs.Relation;
@@ -45,9 +46,9 @@ import harpoon.Util.DataStructs.RelationImpl;
  * Created: Sun May  4 20:56:57 2003
  *
  * @author Alexandru Salcianu <salcianu@mit.edu>
- * @version $Id: DiGraph.java,v 1.6 2003-10-26 16:35:11 salcianu Exp $ 
+ * @version $Id: DiGraph.java,v 1.7 2004-02-08 04:53:35 cananian Exp $ 
  */
-public abstract class DiGraph/*<Vertex extends Object>*/ {
+public abstract class DiGraph<Vertex extends Object> {
     
     /** Returns a set that includes (but is not necessarily limited
         to) the roots of <code>this</code> directed graph.  By
@@ -56,7 +57,7 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
         navigating on their outgoing arcs (using the
         <code>next</code> method of the navigator).  It is OK to
         return ALL the vertices from the digraph. */
-    public abstract Set/*<Vertex>*/ getDiGraphRoots();
+    public abstract Set<Vertex> getDiGraphRoots();
 
     /** Returns a navigator that, together with the set of roots,
         defines <code>this</code> digraph.  By default, obtains the
@@ -67,23 +68,20 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 	<p><strong>Note:</strong> You MUST overwrite at least one of
 	<code>getDiGraphNavigator</code> and
 	<code>getDiGraphForwardNavigator</code>. */
-    public Navigator/*<Vertex>*/ getDiGraphNavigator() {
+    public Navigator<Vertex> getDiGraphNavigator() {
 	final Relation/*<Vertex,Vertex>*/ prevRel = 
 	    new RelationImpl/*<Vertex,Vertex>*/();
-	final ForwardNavigator/*<Vertex>*/ fnav = getDiGraphForwardNavigator();
+	final ForwardNavigator<Vertex> fnav = getDiGraphForwardNavigator();
 	
-	for(Iterator/*<Vertex>*/ it = allVertices().iterator();it.hasNext();) {
-	    Object vertex = it.next();
-	    Object next[] = fnav.next(vertex);
-	    for(int i = 0; i < next.length; i++)
+	for(Vertex vertex : allVertices())
+	    for (Vertex next : fnav.next(vertex))
 		prevRel.add(next, vertex);
-	}
 
-	return new Navigator() {
-	    public Object[] next(Object vertex) { return fnav.next(vertex); }
-	    public Object[] prev(Object vertex) {
+	return new Navigator<Vertex>() {
+	    public Vertex[] next(Vertex vertex) { return fnav.next(vertex); }
+	    public Vertex[] prev(Vertex vertex) {
 		Set prev = prevRel.getValues(vertex);
-		return prev.toArray(new Object[prev.size()]);
+		return (Vertex[]) prev.toArray(new Object[prev.size()]);
 	    }
 	};
     }
@@ -94,34 +92,34 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 	<p><strong>Note:</strong> You MUST overwrite at least one of
 	<code>getDiGraphNavigator</code> and
 	<code>getDiGraphForwardNavigator</code>. */
-    public ForwardNavigator/*<Vertex>*/ getDiGraphForwardNavigator() {
+    public ForwardNavigator<Vertex> getDiGraphForwardNavigator() {
 	return getDiGraphNavigator();
     }
 
 
     /** @return Set of all transitive and reflexive successors of
         <code>vertex</code>. */
-    public Set/*<Vertex>*/ transitiveSucc(Object vertex) {
+    public Set<Vertex> transitiveSucc(Vertex vertex) {
     	return transitiveSucc(Collections.singleton(vertex));
     }
 
     /** @return Set of all transitive and reflexive successors of the
         vertices from <code>roots</code>. */
-    public Set/*<Vertex>*/ transitiveSucc(Collection/*<Vertex>*/ roots) {
+    public Set<Vertex> transitiveSucc(Collection<Vertex> roots) {
 	return reachableVertices(roots, getDiGraphForwardNavigator());
     }
 
     /** @return Set of all transitive and reflexive
         predecessors of <code>vertex</code> */
-    public Set/*<Vertex>*/ transitivePred(Object vertex) {
+    public Set<Vertex> transitivePred(Vertex vertex) {
     	return transitivePred(Collections.singleton(vertex));
     }
 
     /** @return Set of all transitive and reflexive predecessors of
         the vertices from <code>roots</code>. */
-    public Set/*<Vertex>*/ transitivePred(Collection/*<Vertex>*/ roots) {
+    public Set<Vertex> transitivePred(Collection<Vertex> roots) {
 	return reachableVertices(roots, 
-				 new ReverseNavigator(getDiGraphNavigator()));
+				 new ReverseNavigator<Vertex>(getDiGraphNavigator()));
     }
 
 
@@ -129,24 +127,21 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
         the vertices from <code>roots</code>, where the
         predecessors of a vertex are given by method <code>next</code>
         of <code>navigator</code>. */
-    public static Set/*<Vertex>*/ reachableVertices
-	(Collection/*<Vertex>*/ roots,
-	 ForwardNavigator/*<Vertex>*/ navigator) {
+    public static <Vertex> Set<Vertex> reachableVertices
+	(Collection<Vertex> roots,
+	 ForwardNavigator<Vertex> navigator) {
 
-	Set/*<Vertex>*/ reachables = new HashSet/*<Vertex>*/();
+	Set<Vertex> reachables = new HashSet<Vertex>();
 
-	LinkedList/*<Vertex>*/ w = new LinkedList/*<Vertex>*/();
-	for(Iterator/*<Vertex>*/ it = roots.iterator(); it.hasNext(); ) {
-	    Object vertex = it.next();
+	LinkedList<Vertex> w = new LinkedList<Vertex>();
+	for (Vertex vertex : roots ) {
 	    if(reachables.add(vertex))
 		w.addLast(vertex);
 	}
 
 	while(!w.isEmpty()) {
-	    Object vertex = w.removeFirst();
-	    Object succs[] = navigator.next(vertex);
-	    for(int i = 0; i < succs.length; i++) {
-		Object succ = succs[i];
+	    Vertex vertex = w.removeFirst();
+	    for (Vertex succ : navigator.next(vertex) ) {
 		if(reachables.add(succ))
 		    w.addLast(succ);
 	    }
@@ -160,21 +155,19 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 	to <code>dest</code>, along edges indicated by
 	<code>navigator</code>; returns <code>null</code> if no such
 	path exists.  */
-    public static List/*<Vertex>*/ findPath(Object source, Object dest,
-					    ForwardNavigator navigator) {
-	Hashtable/*<Vertex,Vertex>*/ pred = new Hashtable();
-	Set/*<Vertex>*/ reachables = new HashSet/*<Vertex>*/();
-	LinkedList/*<Vertex>*/ w = new LinkedList/*<Vertex>*/();
+    public static <Vertex> List<Vertex> findPath(Vertex source, Vertex dest,
+					ForwardNavigator<Vertex> navigator) {
+	Map<Vertex,Vertex> pred = new HashMap<Vertex,Vertex>();
+	Set<Vertex> reachables = new HashSet<Vertex>();
+	LinkedList<Vertex> w = new LinkedList<Vertex>();
 
 	reachables.add(source);
 	w.addLast(source);
 
 	boolean found = false;
 	while(!w.isEmpty() && !found) {
-	    Object vertex = w.removeFirst();
-	    Object succs[] = navigator.next(vertex);
-	    for(int i = 0; i < succs.length; i++) {
-		Object succ = succs[i];
+	    Vertex vertex = w.removeFirst();
+	    for (Vertex succ : navigator.next(vertex) ) {
 		if(!pred.containsKey(succ)) {
 		    pred.put(succ, vertex);
 		    if(succ.equals(dest)) {
@@ -189,11 +182,11 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 
 	if(!found) return null;
 
-	LinkedList/*<Vertex>*/ path = new LinkedList();
+	LinkedList<Vertex> path = new LinkedList<Vertex>();
 	path.addFirst(dest);
-	Object curr = dest;
+	Vertex curr = dest;
 	while(true) {
-	    Object vertex = pred.get(curr);
+	    Vertex vertex = pred.get(curr);
 	    path.addFirst(vertex);
 	    curr = vertex;
 	    if(source.equals(curr))
@@ -205,31 +198,28 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
     /** @return one shortest path of vertices from <code>source</code>
 	to <code>dest</code>, along edges from <code>this</code>
 	graph; returns <code>null</code> if no such path exists.  */
-    public List/*<Vertex>*/ findPath(Object source, Object dest) {
+    public List<Vertex> findPath(Vertex source, Vertex dest) {
 	return findPath(source, dest, getDiGraphForwardNavigator());
     }
 
     /** Interface for passing a method as parameter to a
      *  <code>forAllReachableVertices</code> object.
      *  @see forAllReachableVertices */
-    public static interface VertexAction/*<Vertex>*/ {
-	public void visit(Object obj);
+    public static interface VertexAction<Vertex> {
+	public void visit(Vertex obj);
     }
 
 
     /** Executes an action exactly once for each vertex from
         <code>this</code> directed graph. */
-    public void forAllVertices(VertexAction action) {
+    public void forAllVertices(VertexAction<Vertex> action) {
 	// We could have invoked the static forAllReachableVertices.
 	// However, I think it's better to rely on allVertices
 	// instead: for immutable digraphs, the implementor might
 	// override allVertices to cache its result, thus resulting in
 	// improved efficiency.
-	for(Iterator /*<Vertex>*/ it = allVertices().iterator();
-	    it.hasNext(); ) {
-	    Object vertex = it.next();
+	for (Vertex vertex : allVertices() )
 	    action.visit(vertex);
-	}
     }
     
 
@@ -249,17 +239,13 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 
 	If you want to execute an action for all vertices from a
 	digraph, use the non-static version of this method. */
-    public static void forAllReachableVertices
-	(Collection/*<Vertex>*/ roots,
-	 ForwardNavigator/*<Vertex>*/ navigator,
-	 VertexAction/*<Vertex>*/ action) {
+    public static <Vertex> void forAllReachableVertices
+	(Collection<Vertex> roots,
+	 ForwardNavigator<Vertex> navigator,
+	 VertexAction<Vertex> action) {
 
-	for(Iterator/*<Vertex>*/ it = 
-		reachableVertices(roots, navigator).iterator();
-	    it.hasNext(); ) {
-	    Object vertex = it.next();
+	for (Vertex vertex : reachableVertices(roots, navigator) )
 	    action.visit(vertex);
-	}
     }
 
 
@@ -267,13 +253,13 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
         &quot;component graph&quot; of a graph <code>G</code> is the
         directed, acyclic graph consisting of the strongly connected
         components of <code>G</code>.  */
-    public DiGraph/*<SCComponent<Vertex>>*/ getComponentGraph() {
-	final Set/*<SCComponent<Vertex>>*/ sccs = SCComponent.buildSCC(this);
-	return new DiGraph/*<SCComponent<Vertex>>*/() {
-	    public Set/*<SCComponent<Vertex>*/ getDiGraphRoots() { 
+    public DiGraph<SCComponent/*<Vertex>*/> getComponentGraph() {
+	final Set<SCComponent/*<Vertex>*/> sccs = SCComponent.buildSCC(this);
+	return new DiGraph<SCComponent/*<Vertex>*/>() {
+	    public Set<SCComponent/*<Vertex>*/> getDiGraphRoots() { 
 		return sccs;
 	    }
-	    public Navigator/*<SCComponent<Vertex>>*/ getDiGraphNavigator() {
+	    public Navigator<SCComponent/*<Vertex>*/> getDiGraphNavigator() {
 		return SCComponent.SCC_NAVIGATOR;
 	    }
 	};
@@ -297,7 +283,7 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 
     
     /** @return set of vertices from <code>this</code> directed graph. */
-    public Set/*<Vertex>*/ allVertices() {
+    public Set<Vertex> allVertices() {
 	return transitiveSucc(getDiGraphRoots());
     }
 
@@ -307,14 +293,14 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
         arc from <code>v1</code> to <code>v2</code> iff
         <code>this</code> graph contains an arc from <code>v2</code>
         to <code>v1</code>. */
-    public DiGraph/*<Vertex>*/ reverseGraph() {
-	return new DiGraph/*<Vertex>*/() {
-	    public Set/*<Vertex>*/ getDiGraphRoots() {
+    public DiGraph<Vertex> reverseGraph() {
+	return new DiGraph<Vertex>() {
+	    public Set<Vertex> getDiGraphRoots() {
 		return DiGraph.this.allVertices();
 	    }
-	    public Navigator/*<Vertex>*/ getDiGraphNavigator() {
+	    public Navigator<Vertex> getDiGraphNavigator() {
 		return 
-		    new ReverseNavigator(DiGraph.this.getDiGraphNavigator());
+		    new ReverseNavigator<Vertex>(DiGraph.this.getDiGraphNavigator());
 	    }
 	    // the default implementation of
 	    // getDiGraphForwardNavigator() is precisely what we want.

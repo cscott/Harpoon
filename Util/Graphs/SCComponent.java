@@ -41,18 +41,18 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.9 2003-06-04 16:11:04 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.10 2004-02-08 04:53:35 cananian Exp $
  */
-public final class SCComponent implements Comparable, Serializable {
+public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<Vertex>*/>, Serializable {
 
     /** Default navigator through a component graph (a dag of strongly
         connected components).  */
-    public static final Navigator SCC_NAVIGATOR = new Navigator() {
-	public Object[] next(Object node) {
-	    return ((SCComponent) node).next;
+    public static final Navigator<SCComponent> SCC_NAVIGATOR = new Navigator<SCComponent>() {
+	public SCComponent[] next(SCComponent node) {
+	    return node.next;
 	}
-	public Object[] prev(Object node) {
-	    return ((SCComponent) node).prev;
+	public SCComponent[] prev(SCComponent node) {
+	    return node.prev;
 	}
     };
 
@@ -100,8 +100,8 @@ public final class SCComponent implements Comparable, Serializable {
 
 	@return set of <code>graph</code>'s strongly connected
 	components */
-    public static final Set/*<SCComponent<Node>>*/
-	buildSCC(final DiGraph/*<Node>*/ graph) {
+    public static final <Node> Set<SCComponent/*<Node>*/>
+	buildSCC(final DiGraph<Node> graph) {
 	return buildSCC(graph.getDiGraphRoots(), graph.getDiGraphNavigator());
     }
     
@@ -117,9 +117,9 @@ public final class SCComponent implements Comparable, Serializable {
 
 	@return set of strongly connected components of the graph
 	defined by <code>roots</code> and <code>navigator</code> */
-    public static final Set/*<SCComponent<Node>>*/
-	buildSCC(final Set/*<Node>*/ roots,
-		 final Navigator/*<Node>*/ navigator) {
+    public static final <Node> Set<SCComponent/*<Node>*/>
+	buildSCC(final Set<Node> roots,
+		 final Navigator<Node> navigator) {
 	return buildSCC(roots.toArray(new Object[roots.size()]), navigator);
     }
 
@@ -372,8 +372,7 @@ public final class SCComponent implements Comparable, Serializable {
     //The only way to produce SCCs is through SCComponent.buildSSC !
     SCComponent() { id = count++; }
 
-    public int compareTo(Object o) {
-	SCComponent scc2 = (SCComponent) o;
+    public int compareTo(SCComponent/*<Vertex>*/ scc2) {
 	int id2 = scc2.id;
 	if(id  < id2) return -1;
 	if(id == id2) return 0;

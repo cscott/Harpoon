@@ -12,10 +12,10 @@ package harpoon.Util.Graphs;
  * @see Navigator
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: ForwardNavigator.java,v 1.1 2003-05-09 15:44:13 salcianu Exp $ */
-public interface ForwardNavigator/*<Vertex extends Object>*/ {
+ * @version $Id: ForwardNavigator.java,v 1.2 2004-02-08 04:53:35 cananian Exp $ */
+public interface ForwardNavigator<Vertex> {
     
     /** Returns the successors of <code>vertex</code>. */
-    Object[] next(Object vertex);
+    Vertex[] next(Vertex vertex);
 
 }

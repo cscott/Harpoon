@@ -11,11 +11,10 @@ package harpoon.Util.Graphs;
     not directly stored in the structure of the vertices.
 
    @author  Alexandru SALCIANU <salcianu@MIT.EDU>
-   @version $Id: Navigator.java,v 1.2 2003-05-09 15:44:13 salcianu Exp $ */
-public interface Navigator/*<Vertex extends Object>*/ 
-    extends ForwardNavigator/*<Vertex>*/ {
+   @version $Id: Navigator.java,v 1.3 2004-02-08 04:53:35 cananian Exp $ */
+public interface Navigator<Vertex> extends ForwardNavigator<Vertex> {
     
     /** Returns the predecessors of <code>vertex</code>. */
-    Object[] prev(Object vertex);
+    Vertex[] prev(Vertex vertex);
     
 }
