@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.10 2001-06-14 20:31:12 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.11 2001-06-14 20:57:50 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -608,7 +608,8 @@ public class CacheEquivalence {
 	/** returns the positive value of a mod b, even when a is negative. */
 	static long mymod(long a, long b) {
 	    Util.assert(b>0);
-	    return (a>=0) ? (a%b) : (b+(a%b));
+	    long r = a % b;
+	    return (a>=0 || r==0) ? r : (b+r);
 	}
 	/*------------------------------------------------------------- */
 	/* both pointers in temps and pointer constants can be def points */
