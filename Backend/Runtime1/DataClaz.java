@@ -35,7 +35,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.2 1999-10-15 21:00:10 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.3 1999-10-16 20:12:41 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -60,8 +60,9 @@ public class DataClaz extends Data {
 	}
 	// this is where the class pointer points.
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc), true));
-	// at the moment, the classinfo is null (scott is lazy)
-	stmlist.add(_DATA(new CONST(tf, null))); // null pointer constant.
+	// class info points at a class object for this class
+	// (which is generated in DataReflection1)
+	stmlist.add(_DATA(m_nm.label(hc, "classobj")));
 	// component type pointer.
 	if (hc.isArray())
 	    stmlist.add(_DATA(m_nm.label(hc.getComponentType())));
