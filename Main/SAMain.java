@@ -111,7 +111,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.41 2003-04-01 15:48:33 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.42 2003-04-02 00:44:36 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -171,7 +171,6 @@ public class SAMain extends harpoon.IR.Registration {
     static String methodName;
 
     static ClassHierarchy classHierarchy;
-    static CallGraph callGraph;
     static Frame frame;
 
     static File ASSEM_DIR = null;
@@ -201,28 +200,20 @@ public class SAMain extends harpoon.IR.Registration {
     // static WriteBarrierQuadPass writeBarrier = null;
 
     public static void main(String[] args) {
-	hcf = // default code factory.
-	    new CachingCodeFactory(harpoon.IR.Quads.QuadWithTry.codeFactory());
-
-	// the new mover will try to put NEWs closer to their constructors.
-	// in the words of a PLDI paper, this reduces "drag time".
-	// it also improves some analysis results. =)
-	hcf = new harpoon.Analysis.Quads.NewMover(hcf).codeFactory();
-
-	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
-				       "malloc").equalsIgnoreCase("precise");
 	parseOpts(args);
+
 	if(className == null) {
 	    System.err.println("must pass a class to be compiled");
 	    printHelp();
 	    System.exit(1);
 	}
+
 	checkOptionConsistency();
 
-	mainM = getMainMethod();
-
-	// create the target Frame way up here!
-	frame = construct_frame(mainM);
+	// create a compiler context
+	mainM = getMainMethod();        // main method
+	frame = construct_frame(mainM); // target frame
+	roots = getRoots(mainM);        // set of roots
 
 	do_it();
     }
@@ -285,6 +276,51 @@ public class SAMain extends harpoon.IR.Registration {
     }
     
 
+
+    // construct the set of roots for the program we compile
+    static Set getRoots(HMethod mainM) {
+	// ask the runtime which roots it requires.
+	Set roots = new java.util.HashSet
+	    (frame.getRuntime().runtimeCallableMethods());
+	
+	// and our main method is a root, too...
+	roots.add(mainM);
+	// load roots from file (if any)
+	if (rootSetFilename!=null) try {
+	    addToRootSet(roots, rootSetFilename);
+	} catch (IOException ex) {
+	    System.err.println("Error reading "+rootSetFilename+": "+ex);
+	    ex.printStackTrace();
+	    System.exit(1);
+	}
+
+	// other optimization specific roots
+	if (EVENTDRIVEN) {
+	    roots.add(linker.forName
+		      ("harpoon.Analysis.ContBuilder.Scheduler")
+		      .getMethod("loop",new HClass[0]));
+	}
+	if (Realtime.REALTIME_JAVA) {
+	    roots.addAll(Realtime.getRoots(linker));
+	}
+	
+	return roots;
+    }
+
+    static void addToRootSet(final Set roots, String filename) 
+	throws IOException {
+	ParseUtil.readResource(filename, new ParseUtil.StringParser() {
+	    public void parseString(String s)
+		throws ParseUtil.BadLineException {
+		if (s.indexOf('(') < 0) // parse as class name.
+		    roots.add(ParseUtil.parseClass(linker, s));
+		else // parse as method name.
+		    roots.add(ParseUtil.parseMethod(linker, s));
+	    }
+	});
+    }
+
+
     private static AllocationStrategyFactory getAllocationStrategyFactory() {
 
 	return new AllocationStrategyFactory() {
@@ -292,8 +328,7 @@ public class SAMain extends harpoon.IR.Registration {
 		
 		System.out.print("Allocation strategy: ");
 		
-		if((INSTRUMENT_ALLOCS || INSTRUMENT_ALLOCS_STUB) && 
-		   (INSTRUMENT_ALLOCS_TYPE==2)) {
+		if(INSTRUMENT_ALLOCS && (INSTRUMENT_ALLOCS_TYPE == 2)) {
 		    System.out.println("InstrumentedAllocationStrategy");
 		    return new harpoon.Instrumentation.AllocationStatistics.
 			InstrumentedAllocationStrategy(frame);
@@ -354,10 +389,13 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
-
     // top level method for compiling a program
-    // TODO: find a more appropriate name here
+    // TODO: find a more appropriate name for this method
     static void do_it() {
+	build_quad_form();
+	// Now, we have a full compiler context (including class
+	// hierarchy). Let it roll!
+
 	quad_form_processing();
 
 	tree_form_processing();
@@ -366,19 +404,30 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
-    // hcf is QuadWithTry at the beginning of do_it();
-    private static void quad_form_processing() {
+    // build quad with try representation of the program, and a class
+    // hierrachy
+    private static void build_quad_form() {
+	hcf = // default code factory.
+	    new CachingCodeFactory(harpoon.IR.Quads.QuadWithTry.codeFactory());
+	
+	// the new mover will try to put NEWs closer to their constructors.
+	// in the words of a PLDI paper, this reduces "drag time".
+	// it also improves some analysis results. =)
+	hcf = new harpoon.Analysis.Quads.NewMover(hcf).codeFactory();
+
 	if (Realtime.REALTIME_JAVA)
 	    Realtime.setupObject(linker); 
 	
 	if (THREAD_INLINER)
 	    hcf = harpoon.IR.Quads.ThreadInliner.codeFactory
 		(hcf, startset, joinset);
-	
-	// needed for creating the class hierarchy
-	roots = getRoots(mainM);
 
-	// okay, we've got the roots, make a rough class hierarchy.
+	if(PreallocOpt.PREALLOC_OPT) {
+	    PreallocOpt.updateRoots(roots, linker);
+	    hcf = PreallocOpt.getHCFWithEmptyInitCode(hcf);
+	}
+
+	// make a rough class hierarchy.
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	
@@ -389,63 +438,30 @@ public class SAMain extends harpoon.IR.Registration {
 	     classHierarchy).codeFactory();
 
 	handle_class_initializers();
-	
-	if (EVENTDRIVEN)
-	    event_driven_step_one();
-	
-	if (ROLE_INFER) 
-	    role_inference();
-	
-	handleAllocationInstrumentation(roots, mainM);
+    }
 
-	if(PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL) {
-	    hcf = PreallocOpt.preallocAnalysis
-		(linker, hcf, classHierarchy, mainM, roots, as, frame);
-	}
-	
-	if (DO_TRANSACTIONS)
-	    do_transactions_step_one();
-	
-	if (Realtime.REALTIME_JAVA) {
-	    hcf = Realtime.setupCode(linker, classHierarchy, hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
-	}
 
-	// fancy stuff: not part of the normal flow
-	handle_mzf_stuff();
-	
-	if (BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP)
-	    quad_form_mips_specific_optimizations();
+    // Normal processing on the quad form.
+    // hcf is QuadWithTry at the beginning, low quad at the end
+    // DO NOT PUT YOUR CALLS TO FANCY ANALYSES HERE: PUT THEM INTO
+    // quad_form_fancy_processing() INSTEAD.
+    private static void quad_form_processing() {
 
-	if (OPTIMIZE)
-	    fancy_optimizations();
-
-	if (EVENTDRIVEN) {
-	    event_driven_step_two();
-	} else if (true) {
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    callGraph = new CallGraphImpl2(classHierarchy, hcf);
-	} else {
-	    callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
-	}
-
-	if (WRITEBARRIERS)
-	    write_barriers_step_one();
-	
-	if (DYNAMICWBS)
-	    dynamic_wb_step_one();
+	// execute the relevant fancy analyses
+	quad_form_fancy_processing();
 
 	// now we can finally set the (final?) classHierarchy and callGraph
 	// which the frame will use (among other things, for vtable numbering)
 	frame.setClassHierarchy(classHierarchy);
 	if (USE_OLD_CLINIT_STRATEGY) {
+	    // construct a call graph
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    CallGraph callGraph = new CallGraphImpl2(classHierarchy, hcf);
 	    frame.setCallGraph(callGraph);
 	    System.getProperties().put
 		("harpoon.runtime1.order-initializers","true");
 	}
-	callGraph=null;// memory management.
  
 	// virtualize any uncallable methods using the final classhierarchy
 	// (this keeps us from later getting link errors)
@@ -463,6 +479,50 @@ public class SAMain extends harpoon.IR.Registration {
 	    loop_optimizations();
 
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
+    }
+
+
+    private static void quad_form_fancy_processing() {
+	if (EVENTDRIVEN)
+	    event_driven_step_one();
+	
+	if (ROLE_INFER)
+	    role_inference();
+
+	if (INSTRUMENT_ALLOCS || READ_ALLOC_STATS)
+	    handle_alloc_instr();
+
+	if (PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL) {
+	    hcf = PreallocOpt.preallocAnalysis
+		(linker, hcf, classHierarchy, mainM, roots, as, frame);
+	}
+	
+	if (DO_TRANSACTIONS)
+	    do_transactions();
+
+	if (Realtime.REALTIME_JAVA) {
+	    hcf = Realtime.setupCode(linker, classHierarchy, hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
+	}
+
+	// Scott's fancy stuff: not part of the normal flow
+	handle_mzf_stuff();
+	
+	if (BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP)
+	    quad_form_mips_specific_optimizations();
+
+	if (OPTIMIZE)
+	    fancy_optimizations();
+
+	if (EVENTDRIVEN)
+	    event_driven_step_two();
+
+	if (WRITEBARRIERS)
+	    write_barriers_step_one();
+	
+	if (DYNAMICWBS)
+	    dynamic_wb_step_one();
     }
 
 
@@ -563,9 +623,8 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
 //  	hcf = (new harpoon.Backend.Analysis.GCTraceStore()).codeFactory(hcf);
 
-	if (WRITEBARRIERS || DYNAMICWBS) {
+	if (WRITEBARRIERS || DYNAMICWBS)
 	    write_barriers_step_two();
-	}
 
 	if(PreallocOpt.PREALLOC_OPT)
 	    hcf = PreallocOpt.addMemoryPreallocation(linker, hcf, frame);
@@ -573,122 +632,130 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = PreallocOpt.BOGUSaddMemoryPreallocation(linker, hcf, frame);
 
 	if(Realtime.REALTIME_JAVA)
-	{
-	    hcf = Realtime.addNoHeapChecks(hcf);
-	    hcf = Realtime.addQuantaChecker(hcf);
-	    hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	}
+	    realtime_tree_form_manipulations();
 
 	hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
 	//hcf = harpoon.Analysis.Tree.DeadCodeElimination.codeFactory(hcf);
 	//hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
-	if (DO_TRANSACTIONS) {
+	if (DO_TRANSACTIONS)
 	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
-	}
 
 	if (MULTITHREADED) {
 	    /* pass to insert GC polling calls */
-	    System.out.println("Compiling with precise gc for multiple threads.");
+	    System.out.println
+		("Compiling with precise gc for multiple threads.");
 	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
 		codeFactory(hcf, frame);
 	}
 
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 
-	if(BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP) {
-	    hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
-	    hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess
-		(hcf, frame, classHierarchy).codeFactory();
-	}
+	if(BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP)
+	    tree_form_mips_specific_optimizations();
+
 	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);    
     }
 
 
+    private static void tree_form_mips_specific_optimizations() {
+	hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
+	hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess
+	    (hcf, frame, classHierarchy).codeFactory();
+    }
+
+
+    // take a tree code factory and generete native / preciseC code
     private static void generate_code() {
+	// QUESTION: what does "sahcf" stand for?
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
-	if (sahcf!=null)
+	if (sahcf != null)
 	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
 	
-	if (LOCAL_REG_ALLOC) 
-	    regAllocFactory = RegAlloc.LOCAL;
-	else 
-	    regAllocFactory = RegAlloc.GLOBAL;
+	regAllocFactory = LOCAL_REG_ALLOC ? RegAlloc.LOCAL : RegAlloc.GLOBAL;
 	regAllocFactory = (new RegAllocOpts
 			   (regAllocOptionsFilename)).factory(regAllocFactory);
 
-	Set methods = classHierarchy.callableMethods();
+	Set callableMethods = classHierarchy.callableMethods();
 	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
-	String filesuffix = (BACKEND == Backend.PRECISEC) ? ".c" : ".s";
 	if (ONLY_COMPILE_MAIN)
 	    classes = Default.singletonIterator(mainM.getDeclaringClass());
-	if (singleClassStr!=null) {
+	if (singleClassStr != null) {
 	    singleClass = linker.forName(singleClassStr);
-	    classes=Default.singletonIterator(singleClass);
+	    classes = Default.singletonIterator(singleClass);
 	}
 
 	while(classes.hasNext()) {
 	    HClass hclass = (HClass) classes.next();
-	    if (singleClass!=null && singleClass!=hclass) continue;//skip
+	    if (singleClass != null && singleClass != hclass) continue; //skip
 	    messageln("Compiling: " + hclass.getName());
-	    
 	    try {
-		String filename = frame.getRuntime().getNameMap().mangle(hclass);
-		java.io.Writer w;
-		try {
-		    w = new FileWriter
-			(new File(ASSEM_DIR, filename+filesuffix));
-		} catch (java.io.FileNotFoundException ffe) {
-		    // filename too long?  try shorter, unique, name.
-		    // XXX: sun's doc for File.createTempFile() states
-		    // "If the prefix is too long then it will be
-		    // truncated" but it is actually not.  We must
-		    // truncate it ourselves, for now.  200-chars?
-		    if (filename.length()>200)
-			filename=filename.substring(0, 200);
-		    w = new FileWriter
-			(File.createTempFile(filename, filesuffix,
-					     ASSEM_DIR));
-		}
-		out = new PrintWriter(new BufferedWriter(w));
-		
-		if (BACKEND == Backend.PRECISEC)
-		    out = new harpoon.Backend.PreciseC.TreeToC(out);
-		
-		HMethod[] hmarray = hclass.getDeclaredMethods();
-		Set hmset = new TreeSet(Arrays.asList(hmarray));
-		hmset.retainAll(methods);
-		Iterator hms = hmset.iterator();
-		if (ONLY_COMPILE_MAIN)
-		    hms = Default.singletonIterator(mainM);
-		message("\t");
-		while(hms.hasNext()) {
-		    HMethod m = (HMethod) hms.next();
-		    message(m.getName());
-		    if (!Modifier.isAbstract(m.getModifiers()))
-			outputMethod(m, hcf, sahcf, out);
-		    if (hms.hasNext()) message(", ");
-		}
-		messageln("");
-		
-		//out.println();
-		messageln("Writing data for " + hclass.getName());
-		outputClassData(hclass, out);
-		
-		out.close();
+		generate_code_for_class(hclass, callableMethods, sahcf);
 	    } catch (IOException e) {
 		System.err.println("Error outputting class "+
-				   hclass.getName()+": "+e);
+				   hclass.getName() + ": " + e);
 		System.exit(1);
 	    }
 	}
 	
-	if (Realtime.REALTIME_JAVA) {
+	if (Realtime.REALTIME_JAVA)
 	    Realtime.printStats();
-	}
 
 	generate_Makefile();
+    }
+
+
+    // Generate class data + code for all methods of
+    // <code>hclass</code> that are in the set
+    // <code>callableMethods</code>.
+    // QUESTION: What's <code>sahcf</code>.
+    private static void generate_code_for_class
+	(HClass hclass, Set callableMethods, HCodeFactory sahcf)
+	throws IOException {
+
+	String filesuffix = (BACKEND == Backend.PRECISEC) ? ".c" : ".s";
+	String filename = frame.getRuntime().getNameMap().mangle(hclass);
+	java.io.Writer w;
+	try {
+	    w = new FileWriter
+		(new File(ASSEM_DIR, filename + filesuffix));
+	} catch (java.io.FileNotFoundException ffe) {
+	    // filename too long?  try shorter, unique, name.
+	    // XXX: sun's doc for File.createTempFile() states
+	    // "If the prefix is too long then it will be
+	    // truncated" but it is actually not.  We must
+	    // truncate it ourselves, for now.  200-chars?
+	    if (filename.length()>200)
+		filename=filename.substring(0, 200);
+	    w = new FileWriter
+		(File.createTempFile(filename, filesuffix, ASSEM_DIR));
+	}
+	out = new PrintWriter(new BufferedWriter(w));
+	
+	if (BACKEND == Backend.PRECISEC)
+	    out = new harpoon.Backend.PreciseC.TreeToC(out);
+	
+	HMethod[] hmarray = hclass.getDeclaredMethods();
+	Set hmset = new TreeSet(Arrays.asList(hmarray));
+	hmset.retainAll(callableMethods);
+	Iterator hms = hmset.iterator();
+	if (ONLY_COMPILE_MAIN)
+	    hms = Default.singletonIterator(mainM);
+	message("\t");
+	while(hms.hasNext()) {
+	    HMethod m = (HMethod) hms.next();
+	    message(m.getName());
+	    if (!Modifier.isAbstract(m.getModifiers()))
+		outputMethod(m, hcf, sahcf, out);
+	    if (hms.hasNext()) message(", ");
+	}
+	messageln("");
+	
+	//out.println();
+	messageln("Writing data for " + hclass.getName());
+	outputClassData(hclass, out);
+       
+	out.close();
     }
 
 
@@ -726,57 +793,10 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
-    // construct the set of roots for the program we compile
-    static Set getRoots(HMethod mainM) {
-	// ask the runtime which roots it requires.
-	Set roots = new java.util.HashSet
-	    (frame.getRuntime().runtimeCallableMethods());
-	
-	if(PreallocOpt.PREALLOC_OPT) {
-	    PreallocOpt.updateRoots(roots, linker);
-	    hcf = PreallocOpt.getHCFWithEmptyInitCode(hcf);
-	}
-	
-	// and our main method is a root, too...
-	roots.add(mainM);
-	// other realtime and event-driven-specific roots.
-	if (EVENTDRIVEN) {
-	    roots.add(linker.forName
-		      ("harpoon.Analysis.ContBuilder.Scheduler")
-		      .getMethod("loop",new HClass[0]));
-	}
-	if (Realtime.REALTIME_JAVA) {
-	    roots.addAll(Realtime.getRoots(linker));
-	}
-	if (rootSetFilename!=null) try {
-	    addToRootSet(roots, rootSetFilename);
-	} catch (IOException ex) {
-	    System.err.println("Error reading "+rootSetFilename+": "+ex);
-	    ex.printStackTrace();
-	    System.exit(1);
-	}
-	
-	return roots;
-    }
-
-    static void addToRootSet(final Set roots, String filename) 
-	throws IOException {
-	ParseUtil.readResource(filename, new ParseUtil.StringParser() {
-	    public void parseString(String s)
-		throws ParseUtil.BadLineException {
-		if (s.indexOf('(') < 0) // parse as class name.
-		    roots.add(ParseUtil.parseClass(linker, s));
-		else // parse as method name.
-		    roots.add(ParseUtil.parseMethod(linker, s));
-	    }
-	});
-    }
-
     public static void outputMethod(final HMethod hmethod, 
 				    final HCodeFactory hcf,
 				    final HCodeFactory sahcf,
-				    final PrintWriter out) 
-	throws IOException {
+				    final PrintWriter out) throws IOException {
 	if (PRINT_ORIG) {
 	    HCode hc = hcf.convert(hmethod);
 	    
@@ -801,7 +821,7 @@ public class SAMain extends harpoon.IR.Registration {
 		((harpoon.IR.Assem.Code)hc).myPrint(out,false); 
 	    } else {
 		info("null returned for " + hmethod);
-	    } 
+	    }
 	    info("\t--- end INSTR FORM (no register allocation)  ---");
 	    out.println();
 	    out.flush();
@@ -835,14 +855,16 @@ public class SAMain extends harpoon.IR.Registration {
 	    regAllocCF = RegAlloc.codeFactory(sahcf,frame,regAllocFactory);
 
 	    HCode rhc = regAllocCF.convert(hmethod);
-        if(BACKEND == Backend.MIPSYP && rhc != null) {
-           harpoon.Backend.Generic.Code cd = (harpoon.Backend.Generic.Code)rhc;
-           harpoon.Backend.MIPS.BypassLatchSchedule b = 
-              new harpoon.Backend.MIPS.BypassLatchSchedule(cd, frame);
-        }
+	    if(BACKEND == Backend.MIPSYP && rhc != null) {
+		harpoon.Backend.Generic.Code cd = 
+		    (harpoon.Backend.Generic.Code) rhc;
+		harpoon.Backend.MIPS.BypassLatchSchedule b = 
+		    new harpoon.Backend.MIPS.BypassLatchSchedule(cd, frame);
+	    }
+	    
 	    if (rhc != null) {
-		info("Codeview \""+rhc.getName()+"\" for "+
-		     rhc.getMethod()+":");
+		info("Codeview \"" + rhc.getName() + "\" for " +
+		     rhc.getMethod() + ":");
 		rhc.print(out);
 	    } else {
 		info("null returned for " + hmethod);
@@ -851,17 +873,17 @@ public class SAMain extends harpoon.IR.Registration {
 	    out.println();
 	    out.flush();
 	}
-
+	
 	if (HACKED_REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
 	    info("\t--- INSTR FORM (hacked register allocation)  ---");
 	    HCode rhc = (hc==null) ? null :
 		new harpoon.Backend.CSAHack.RegAlloc.Code
 		(hmethod, (Instr) hc.getRootElement(),
-		 ((harpoon.IR.Assem.Code)hc).getDerivation(), frame);
+		 ((harpoon.IR.Assem.Code) hc).getDerivation(), frame);
 	    if (rhc != null) {
-		info("Codeview \""+rhc.getName()+"\" for "+
-		     rhc.getMethod()+":");
+		info("Codeview \"" + rhc.getName() + "\" for " +
+		     rhc.getMethod() + ":");
 		rhc.print(out);
 	    } else {
 		info("null returned for " + hmethod);
@@ -873,8 +895,8 @@ public class SAMain extends harpoon.IR.Registration {
 
 	if (BACKEND == Backend.PRECISEC) {
 	    HCode hc = hcf.convert(hmethod);
-	    if (hc!=null)
-		((harpoon.Backend.PreciseC.TreeToC)out).translate(hc);
+	    if (hc != null)
+		((harpoon.Backend.PreciseC.TreeToC) out).translate(hc);
 	}
 
 	// free memory associated with this method's IR:
@@ -917,17 +939,22 @@ public class SAMain extends harpoon.IR.Registration {
 	if (data.getRootElement()==null) continue; // nothing to do here.
 
 	final Instr instr = 
-	    frame.getCodeGen().genData((harpoon.IR.Tree.Data)data, new InstrFactory() {
+	    frame.getCodeGen().genData((harpoon.IR.Tree.Data) data,
+				       new InstrFactory() {
 		private int id = 0;
 		public TempFactory tempFactory() { return null; }
-		public harpoon.IR.Assem.Code getParent() { return null/*data*/; }// FIXME!
-		public harpoon.Backend.Generic.Frame getFrame() { return frame; }
+		public harpoon.IR.Assem.Code getParent() {
+		    return null /*data*/;  // FIXME!
+		}
+		public harpoon.Backend.Generic.Frame getFrame() {return frame;}
 		public synchronized int getUniqueID() { return id++; }
 		public HMethod getMethod() { return null; }
 		public int hashCode() { return data.hashCode(); }
 	    });
 	
-	assert instr != null : "no instrs generated; check that CodeGen.java was built from spec file";
+	assert instr != null : 
+	    "no instrs generated; check that CodeGen.java was built " +
+	    "from spec file";
 	// messageln("First data instruction " + instr);
 
 
@@ -943,70 +970,6 @@ public class SAMain extends harpoon.IR.Registration {
       }
     }
 
-
-    private static void handleAllocationInstrumentation(Set roots,
-							HMethod mainM) {
-	if (INSTRUMENT_ALLOCS || INSTRUMENT_ALLOCS_STUB) {
-	    hcf = QuadNoSSA.codeFactory(hcf);
-	    hcf = new CachingCodeFactory(hcf, true);
-	    // create the allocation numbering
-	    AllocationNumbering an =
-		new AllocationNumbering
-		((CachingCodeFactory) hcf, classHierarchy, INSTRUMENT_CALLS);
-	    try {
-		if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
-		    System.out.println
-			("Writing AllocationNumbering into " + IFILE);
-		    AllocationNumberingStub.writeToFile(an, IFILE, linker);
-		}
-		else { // classic INSTRUMENT_ALLOCS: serialize serious stuff
-		    ObjectOutputStream oos =
-			new ObjectOutputStream(new FileOutputStream(IFILE));
-		    oos.writeObject(hcf);
-		    oos.writeObject(linker);
-		    oos.writeObject(roots);
-		    oos.writeObject(mainM);
-		    oos.writeObject(an);
-		    oos.close();
-		}
-	    } catch (java.io.IOException e) {
-		System.out.println(e + " was thrown:");
-		e.printStackTrace(System.out);
-		System.exit(1);
-	    }
-	    switch(INSTRUMENT_ALLOCS_TYPE) {
-	    case 1:
-		hcf = (new InstrumentAllocs(hcf, mainM, linker, an,
-					    INSTRUMENT_SYNCS,
-					    INSTRUMENT_CALLS)).codeFactory();
-		break;
-	    case 2:
-		hcf = (new InstrumentAllocs2(hcf, mainM,
-					     linker, an)).codeFactory();
-		roots.add(InstrumentAllocs.getMethod
-			  (linker,
-			   "harpoon.Runtime.CounterSupport", "count2",
-			   new HClass[]{HClass.Int, HClass.Int}));
-		break;
-	    default:
-		assert false : "Illegal INSTRUMENT_ALLOCS_TYPE" +
-		    INSTRUMENT_ALLOCS_TYPE;		    
-	    }
-
-	    hcf = new CachingCodeFactory(hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}
-	else if(READ_ALLOC_STATS) {
-	    hcf = QuadNoSSA.codeFactory(hcf);
-	    as = new AllocationStatistics(linker,
-					  allocNumberingFileName,
-					  instrumentationResultsFileName);
-	    if(!PreallocOpt.PREALLOC_OPT)
-		as.printStatistics(AllocationStatistics.getAllocs
-				   (classHierarchy.callableMethods(), hcf));
-	}
-    }
-
     protected static void message(String msg) {
 	if(!QUIET) System.out.print(msg);
     }
@@ -1014,8 +977,88 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void messageln(String msg) {
 	if(!QUIET) System.out.println(msg);
     }
+
+
+    private static void handle_alloc_instr() {
+	if (INSTRUMENT_ALLOCS)
+	    instrument_allocations();
+	// Try not to add anything in between instrument_allocs and
+	// read_allocation_statistics.  When we load the allocation
+	// stats, we want to be in the same place where we were when
+	// we instrumented the code.
+	if (READ_ALLOC_STATS)
+	    read_allocation_statistics();
+    }
+
+    private static void instrument_allocations() {
+	hcf = QuadNoSSA.codeFactory(hcf);
+	hcf = new CachingCodeFactory(hcf, true);
+	// create the allocation numbering
+	AllocationNumbering an =
+	    new AllocationNumbering
+	    ((CachingCodeFactory) hcf, classHierarchy, INSTRUMENT_CALLS);
+
+	try {
+	    if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
+		System.out.println
+		    ("Writing AllocationNumbering into " + IFILE);
+		AllocationNumberingStub.writeToFile(an, IFILE, linker);
+	    }
+	    else { // classic INSTRUMENT_ALLOCS: serialize serious stuff
+		ObjectOutputStream oos =
+		    new ObjectOutputStream(new FileOutputStream(IFILE));
+		oos.writeObject(hcf);
+		oos.writeObject(linker);
+		oos.writeObject(roots);
+		oos.writeObject(mainM);
+		oos.writeObject(an);
+		oos.close();
+	    }
+	} catch (java.io.IOException e) {
+	    System.out.println(e + " was thrown:");
+	    e.printStackTrace(System.out);
+	    System.exit(1);
+	}
+
+	switch(INSTRUMENT_ALLOCS_TYPE) {
+	case 1:
+	    hcf = (new InstrumentAllocs(hcf, mainM, linker, an,
+					INSTRUMENT_SYNCS,
+					INSTRUMENT_CALLS)).codeFactory();
+	    break;
+	case 2:
+	    hcf = (new InstrumentAllocs2(hcf, mainM,
+					 linker, an)).codeFactory();
+	    roots.add(InstrumentAllocs.getMethod
+		      (linker,
+		       "harpoon.Runtime.CounterSupport", "count2",
+		       new HClass[]{HClass.Int, HClass.Int}));
+	    break;
+	default:
+	    assert false :
+		"Illegal INSTRUMENT_ALLOCS_TYPE" + INSTRUMENT_ALLOCS_TYPE;
+	}
+	
+	hcf = new CachingCodeFactory(hcf);
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+    }
+
+
+    private static void read_allocation_statistics() {
+	hcf = QuadNoSSA.codeFactory(hcf);
+	as = new AllocationStatistics(linker,
+				      allocNumberingFileName,
+				      instrumentationResultsFileName);
+	if(!PreallocOpt.PREALLOC_OPT)
+	    as.printStatistics(AllocationStatistics.getAllocs
+			       (classHierarchy.callableMethods(), hcf));
+    }
+
     
     protected static void parseOpts(String[] args) {
+	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
+				       "malloc").equalsIgnoreCase("precise");
+	
 	LongOpt[] longopts = new LongOpt[] {
 	    new LongOpt("prealloc-opt", LongOpt.NO_ARGUMENT, null, 1000),
 	    new LongOpt("ia-only-sync-removal", LongOpt.NO_ARGUMENT,
@@ -1141,7 +1184,8 @@ public class SAMain extends harpoon.IR.Registration {
 		IFILE=g.getOptarg();
 		break;
 	    case 'W':
-		INSTRUMENT_ALLOCS_STUB=true;
+		INSTRUMENT_ALLOCS = true;
+		INSTRUMENT_ALLOCS_STUB = true;
 		IFILE=g.getOptarg();
 		break;
 	    case 'l':
@@ -1248,7 +1292,7 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	if (linker==null) {
 	    linker = Loader.systemLinker;
-	    if (!USE_OLD_CLINIT_STRATEGY)
+	    if (!USE_OLD_CLINIT_STRATEGY || EVENTDRIVEN)
 		linker = new AbstractClassFixupRelinker(linker);
 	}
     }
@@ -1385,10 +1429,8 @@ public class SAMain extends harpoon.IR.Registration {
 
 
 
-    ///////////////////////////////////////////////////////////////////
     // DO_TRANSACTIONS BEGIN
-
-    private static void do_transactions_step_one() {
+    private static void do_transactions() {
 	String resource = frame.getRuntime().resourcePath
 	    ("transact-safe.properties");
 	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
@@ -1414,9 +1456,7 @@ public class SAMain extends harpoon.IR.Registration {
 	frame.getRuntime().configurationSet.add
 	    ("check_with_transactions_needed");
     }
-
     // DO_TRANSACTIONS END
-    ///////////////////////////////////////////////////////////////////
 
 
     // MZF BEGIN
@@ -1614,7 +1654,6 @@ public class SAMain extends harpoon.IR.Registration {
 	eroots.add(mainM);
 	hcf = new CachingCodeFactory(hcf);
 	classHierarchy = new QuadClassHierarchy(linker, eroots, hcf);
-	callGraph=new CallGraphImpl2(classHierarchy, hcf);
     }
     // EVENTDRIVEN END
 
@@ -1627,4 +1666,14 @@ public class SAMain extends harpoon.IR.Registration {
 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
     }
     // ROLE_INFER END
+
+    
+    // REALTIME BEGIN
+    private static void realtime_tree_form_manipulations() {
+	hcf = Realtime.addNoHeapChecks(hcf);
+	hcf = Realtime.addQuantaChecker(hcf);
+	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+    }
+    // REALTIME END
 }
