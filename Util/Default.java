@@ -3,11 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import java.util.AbstractList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -18,7 +20,7 @@ import java.util.Set;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.8 1999-11-13 18:49:39 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.9 2000-02-11 18:02:59 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -81,4 +83,29 @@ public abstract class Default  {
 	public Collection values() { return Collections.EMPTY_SET; }
 	public String toString() { return "{}"; }
     };
+    /** A pair constructor method.  Pairs implement <code>hashCode()</code>
+     *  and <code>equals()</code> "properly" so they can be used as keys
+     *  in hashtables and etc.  They are implemented as mutable lists of
+     *  fixed size 2. */
+    public static List pair(final Object left, final Object right) {
+	return new AbstractList() {
+	    private Object _left = left, _right = right;
+	    public int size() { return 2; }
+	    public Object get(int index) {
+		switch(index) {
+		case 0: return this._left;
+		case 1: return this._right;
+		default: throw new IndexOutOfBoundsException();
+		}
+	    }
+	    public Object set(int index, Object element) {
+		Object prev;
+		switch(index) {
+		case 0: prev=this._left; this._left=element; return prev;
+		case 1: prev=this._right; this._right=element; return prev;
+		default: throw new IndexOutOfBoundsException();
+		}
+	    }
+	};
+    }
 }
