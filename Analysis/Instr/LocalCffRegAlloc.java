@@ -58,7 +58,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.90 2000-06-29 01:38:27 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.91 2000-06-30 21:57:39 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -722,6 +722,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    }
 
 		    code.assignRegister(i, t, regList);
+
 		    regfile.assign(t, regList);
 		    
 		    
@@ -769,6 +770,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		    if (regfile.isEmpty(reg)) { 
 			Temp preassign = new RegFileInfo.PreassignTemp(reg);
+
 			regfile.assign( preassign, list(reg) );
 			preassignTempSet.add(preassign);
 		    }
@@ -876,7 +878,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		    if (isRegister(u) || isRegister(d)) {
 			instrsToReplace.add(i);
-			Instr proxy = new InstrMOVEproxy(i, d, u);
+			Instr proxy = new InstrMOVEproxy(i);
 			instrsToReplace.add(proxy);
 			checked.add(proxy);
 			if (isRegister(u)) {
@@ -922,6 +924,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	    
 	    private void remove(Instr i, int n, boolean pr) {
+		/*
+		instrsToReplace.add(i);
+		Instr proxy = new InstrMOVEproxy(i);
+		instrsToReplace.add(proxy);
+		List l = regfile.getAssignment(i.use()[0]);
+		code.assignRegister(proxy, i.use()[0], l);
+		code.assignRegister(proxy, i.def()[0], l);
+		*/
 		instrsToRemove.add(i);
 		if (pr) System.out.println("removing"+n+" "+i+" rf: "+regfile);
 	    }
@@ -1184,7 +1194,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// else, ret arbitrary elem suggs 
 		do {
 		    suggL = (List) suggs.next();
-		    
+
 		    if (suggL.size() == 1) {
 			Temp suggReg = (Temp) suggL.get(0);
 			if (suggReg.equals(reg)) {
@@ -1286,21 +1296,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     // *** DEBUGGING ROUTINES ***
 
-    private static String toAssem(Instr i, Code code) {
-	// SpillLoads and SpillStores do not put the appropriate
-	// suffixes on Temps (because they are just
-	// placeholders for actual load and store
-	// instructions) so we don't attempt to convert them
-	// to assembly form
-	if (i instanceof SpillLoad ||
-	    i instanceof SpillStore) {
-	    return i.toString();
-	} else {
-	    return code.toAssem(i);
-	}
-    }
-
-
     // lazyInfo(..) family of methods return an object that prints out
     // the basic block in a demand driven fashion, so that we do not
     // incur the cost of constructing the string representation of the
@@ -1373,7 +1368,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 
 	    // put actual instr in
-	    sb.append(toAssem(i2, code)+
+	    sb.append(code.toAssem(i2)+
 		      " \t { " + i2 + 
 		      " }");
 	    
@@ -1424,10 +1419,11 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
 
     class InstrMOVEproxy extends Instr {
-	public InstrMOVEproxy(Instr src, Temp def, Temp use) {
+	public InstrMOVEproxy(Instr src) {
 	    super(src.getFactory(), src, 
 		  "", //" @proxy "+def+" <- "+use,
-		  new Temp[]{ def }, new Temp[]{ use });
+		  (Temp[])src.def().clone(), 
+		  (Temp[])src.use().clone());
 	}
     }
 }

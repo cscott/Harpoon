@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.76 2000-06-21 07:22:32 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.77 2000-06-30 21:57:44 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -677,15 +677,17 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 
     /** Returns the <code>Temp</code>s used by this <code>Instr</code>. */
     public final Temp[] use() { 
-	return (Temp[]) Util.safeCopy(Temp.arrayFactory, src); 
+	Collection u = useC();
+	return (Temp[]) u.toArray(new Temp[u.size()]);
     }
 
     /** Returns the <code>Temp</code>s defined by this <code>Instr</code>. */
     public final Temp[] def() { 
-	return (Temp[]) Util.safeCopy(Temp.arrayFactory, dst);
+	Collection d = defC();
+	return (Temp[]) d.toArray(new Temp[d.size()]);
     }
-    public final Collection useC() { return Collections.unmodifiableList(Arrays.asList(src)); }
-    public final Collection defC() { return Collections.unmodifiableList(Arrays.asList(dst)); }
+    public Collection useC() { return Collections.unmodifiableList(Arrays.asList(src)); }
+    public Collection defC() { return Collections.unmodifiableList(Arrays.asList(dst)); }
 
     // ******************* HCodeElement interface
 

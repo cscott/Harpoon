@@ -83,6 +83,8 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
     }
     */
     public void visit(final Instr i, boolean multAssignAllowed) {
+	// if (i.toString().equals("")) return;
+
 	Iterator uses = i.useC().iterator();
 	while(uses.hasNext()) {
 	    Temp use = (Temp) uses.next();
@@ -93,7 +95,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    List fileRegs = getAssignment(use);
 	    
 	    { // ASSERTION CODE
-		Util.assert(codeRegs != null, "codeRegs!=null ");
+		Util.assert(codeRegs != null, "codeRegs!=null {"+i.toString()+"} use:"+use);
 		Util.assert(!fileRegs.contains(null), "no null allowed in fileRegs");
 		Util.assert(!codeRegs.contains(null), "no null allowed in codeRegs");
 		Util.assert(codeRegs.containsAll(fileRegs),
@@ -138,7 +140,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    Util.assert(!regfile.hasAssignment(i.use()[0]), 
 			lra.lazyInfo("if we're loading, why in regfile?",
 				 block, i,i.use()[0],regfile,false));
-	    assign(i.use()[0], i.defC());
+	    assign(i.use()[0], ((RegAlloc.SpillLoad)i).my_defC());
 	} else if (i instanceof RegAlloc.SpillStore) {
 	    // temp <- regs
 	    spillDefsV.add(i.def()[0]);

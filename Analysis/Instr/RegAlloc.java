@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.91 2000-06-29 01:31:47 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.92 2000-06-30 21:57:40 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -127,6 +127,19 @@ public abstract class RegAlloc  {
 	    this(i.getFactory(), i, assem, dsts, src);
 	}
 
+	// FSK: added these overrides to help workaround a fundamental
+	// bug in the use/def properties for code produced by
+	// IntermediateCodeFactorys.  Need to review and document
+	// carefully 
+	public Collection defC() { return useC(); }
+	Temp[] my_def() { return super.def(); }
+	Collection my_defC() { return super.defC(); }
+
+	public String toString() {
+	    return super.toString() + 
+		" { "+new ArrayList(my_defC())+
+		", "+new ArrayList(useC())+" }"; 
+	}
     }
 
     /** Class for <code>RegAlloc</code> usage in spilling registers. 
@@ -168,6 +181,14 @@ public abstract class RegAlloc  {
 	SpillStore(Instr i, String assem, Temp dst, Collection srcs) {
 	    this(i.getFactory(), i, assem, dst, srcs);
 	}
+
+	// FSK: added these overrides to help workaround a fundamental
+	// bug in the use/def properties for code produced by
+	// IntermediateCodeFactorys.  Need to review and document
+	// carefully 
+	public Collection useC() { return defC(); }
+	Temp[] my_use() { return super.use(); }
+	Collection my_useC() { return super.useC(); }
     }
 
     /** Creates a <code>RegAlloc</code>.  <code>RegAlloc</code>s are
@@ -334,14 +355,14 @@ public abstract class RegAlloc  {
 	    private void visitStore(SpillStore m) {
 		StackOffsetTemp def = (StackOffsetTemp) m.def()[0];
 		List instrs = frame.getInstrBuilder().
-		    makeStore(Arrays.asList(m.use()), def.offset, m);
+		    makeStore(Arrays.asList(m.my_use()), def.offset, m);
 		Instr.replaceInstrList(m, instrs);		
 	    }
 	    
 	    private void visitLoad(SpillLoad m) {
 		StackOffsetTemp use = (StackOffsetTemp) m.use()[0];
 		List instrs = frame.getInstrBuilder().
-		    makeLoad(Arrays.asList(m.def()), use.offset, m);
+		    makeLoad(Arrays.asList(m.my_def()), use.offset, m);
 		Instr.replaceInstrList(m, instrs);
 	    }
 	    
@@ -550,6 +571,7 @@ public abstract class RegAlloc  {
 	Set s = new HashSet();
 	for (Instr il = instrs; il!=null; il=il.getNext()) {
 	    if (il instanceof SpillStore) continue;
+	    if (il instanceof SpillLoad) continue;
 	    Temp[] d = il.def();
 	    for (int i=0; i<d.length; i++) {
 		if (isRegister(d[i])) {

@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.158 2000-06-26 15:43:55 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.159 2000-06-30 21:57:41 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1435,7 +1435,7 @@ MEM<l,d>(e) = i %{
 NAME(id) = i %{
     // produces a pointer
 
-    Label target = new Label("2"+id);
+    Label target = new Label(); // new Label("2"+id);
     Instr i2 = new Instr(instrFactory, ROOT,
 			 "ldr `d0, 1f\n" + "b 2f", 
 			 new Temp[]{ i }, null, false, 
@@ -1450,7 +1450,7 @@ NAME(id) = i %{
 
     // these may need to be included in the previous instr to preserve
     // ordering semantics, but for now this way they indent properly
-    emitNoFallLABEL( ROOT, "1:", new Label("1"));
+    emitNoFallLABEL( ROOT, "1:", new Label());
     emitNoFallDIRECTIVE( ROOT, "\t.word " + id);
     // FSK: changed above to NoFall emits so that this is not treated
     // as the start of a new basic block.
