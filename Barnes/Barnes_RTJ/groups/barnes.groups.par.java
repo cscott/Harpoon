@@ -1553,7 +1553,7 @@ class NBodySystem {
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new maketreeThread(nb, first+i,
 				      ((i+(int)(num/numThreads))<num)?
-				      (first+i+(int)(num/numThreads)):(first+num));
+				      (first+i+(int)(num/numThreads)):(first+num), j+1);
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1564,7 +1564,7 @@ class NBodySystem {
 	    }
 	  }
 	}
-      });
+      }, 0);
   }
 
   void maketreeLoop(final int first, final int num) {
@@ -1575,7 +1575,7 @@ class NBodySystem {
 	    nb.maketreeIteration(first+i);
 	  }
 	}
-      });
+      }, 0);
   }
   
   void maketree() throws java.lang.InterruptedException {
@@ -1602,7 +1602,7 @@ class NBodySystem {
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new AdvanceThread(nb, hts, ts, first+i,
 				     ((i+(int)(num/numThreads))<num)?
-				     (first+i+(int)(num/numThreads)):(first+num));
+				     (first+i+(int)(num/numThreads)):(first+num), j+1);
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1613,7 +1613,7 @@ class NBodySystem {
 	    }
 	  }
 	}
-      });
+      }, 0);
   }
 
   void AdvanceLoop(final double hts, final double ts, final int first, final int num) {
@@ -1624,7 +1624,7 @@ class NBodySystem {
 	    nb.AdvanceIteration(hts, ts, first+i);
 	  }
 	}
-      });
+      }, 0);
   }
 
   void Advance(double hts, double ts) throws java.lang.InterruptedException {
@@ -1651,7 +1651,7 @@ class NBodySystem {
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new SwapAccsThread(nb, first+i,
 				      ((i+(int)(num/numThreads))<num)?
-				      (first+i+(int)(num/numThreads)):(first+num));
+				      (first+i+(int)(num/numThreads)):(first+num), j+1);
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1662,7 +1662,7 @@ class NBodySystem {
 	    }
 	  }
 	}
-      });
+      }, 0);
   }
 
   void SwapAccsLoop(final int first, final int num) {
@@ -1673,7 +1673,7 @@ class NBodySystem {
 	    nb.SwapAccsIteration(first+i);
 	  }
 	}
-      });
+      }, 0);
   }
 
   void SwapAccs() throws java.lang.InterruptedException {
@@ -1700,7 +1700,7 @@ class NBodySystem {
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new ComputeAccelsThread(nb, tol, eps, first+i,
 					   ((i+(int)(num/numThreads))<num)?
-					   (first+i+(int)(num/numThreads)):(first+num));
+					   (first+i+(int)(num/numThreads)):(first+num), j+1);
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1711,7 +1711,7 @@ class NBodySystem {
 	    }
 	  }
 	}
-      });
+      }, 0);
   }
 
   void ComputeAccelsLoop(final double tol, final double eps, final int first, final int num) {
@@ -1722,7 +1722,7 @@ class NBodySystem {
 	    nb.ComputeAccelsIteration(tol, eps, first+i);
 	  }
 	}
-      });
+      }, 0);
   }
 
   void ComputeAccels(double tol, double eps) throws java.lang.InterruptedException {
@@ -1749,7 +1749,7 @@ class NBodySystem {
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new StartVelsThread(nb, hts, first+i,
 				       ((i+(int)(num/numThreads))<num)?
-				       (first+i+(int)(num/numThreads)):(first+num));
+				       (first+i+(int)(num/numThreads)):(first+num), j+1);
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1760,7 +1760,7 @@ class NBodySystem {
 	    }
 	  }
 	}
-      });
+      }, 0);
   }
 
   void StartVelsLoop(final double hts, final int first, final int num) {
@@ -1771,7 +1771,7 @@ class NBodySystem {
 	    nb.StartVelsIteration(hts, first+i);
 	  }
 	}
-      });
+      }, 0);
   }
   
   void StartVels(double hts) throws java.lang.InterruptedException {
@@ -1821,16 +1821,22 @@ class random {
 
 class maketreeThread extends Thread {
   NBodySystem nb;
-  int i, j;
+  int i, j, num;
 
-  maketreeThread(NBodySystem n, int i, int j) {
+  maketreeThread(NBodySystem n, int i, int j, int num) {
     nb = n;
     this.i = i;
     this.j = j;
+    this.num = num;
   }
   public void run() {
-    for (int idx=i; idx<j; idx++) { 
-      nb.maketreeIteration(idx);
+    for (int k=i; k<j; k++) { 
+      final int idx = k;
+      barnes.run(new Runnable() {
+	  public void run() {
+	    nb.maketreeIteration(idx);
+	  }
+	}, num);
     }
   }
 }
@@ -1838,19 +1844,25 @@ class maketreeThread extends Thread {
 class AdvanceThread extends Thread {
   NBodySystem nb;
   double hts, ts;
-  int i, j;
+  int i, j, num;
 
-  AdvanceThread(NBodySystem b, double h, double t, int i, int j) { 
+  AdvanceThread(NBodySystem b, double h, double t, int i, int j, int num) { 
     nb = b;
     hts = h;
     ts = t;
     this.i = i;
     this.j = j;
+    this.num = num;
   }
 
   public void run() { 
-    for (int idx=i; idx<j; idx++) {
-      nb.AdvanceIteration(hts,ts,idx);
+    for (int k=i; k<j; k++) {
+      final int idx = k;
+      barnes.run(new Runnable() {
+	  public void run() {
+	    nb.AdvanceIteration(hts,ts,idx);
+	  }
+	}, num);
     }
   }
 }
@@ -1858,34 +1870,46 @@ class AdvanceThread extends Thread {
 class ComputeAccelsThread extends Thread {
   NBodySystem nb;
   double tol, eps;
-  int i, j;
+  int i, j, num;
 
-  ComputeAccelsThread(NBodySystem b, double t, double e, int i, int j) { 
+  ComputeAccelsThread(NBodySystem b, double t, double e, int i, int j, int num) { 
     nb = b;
     tol = t;
     eps = e;
     this.i = i;
     this.j = j;
+    this.num = num;
   }
   public void run() { 
-    for (int idx=i; idx<j; idx++) {
-      nb.ComputeAccelsIteration(tol,eps,idx);
+    for (int k=i; k<j; k++) {
+      final int idx = k;
+      barnes.run(new Runnable() {
+	  public void run() {
+	    nb.ComputeAccelsIteration(tol,eps,idx);
+	  }
+	}, num);
     }
   }
 }
 
 class SwapAccsThread extends Thread {
   NBodySystem nb;
-  int i, j;
+  int i, j, num;
 
-  SwapAccsThread(NBodySystem n, int i, int j) {
+  SwapAccsThread(NBodySystem n, int i, int j, int num) {
     nb = n;
     this.i = i;
     this.j = j;
+    this.num = num;
   }
   public void run() {
-    for (int idx=i; idx<j; idx++) {
-      nb.SwapAccsIteration(idx);
+    for (int k=i; k<j; k++) {
+      final int idx = k;
+      barnes.run(new Runnable() {
+	  public void run() {
+	    nb.SwapAccsIteration(idx);
+	  }
+	}, num);
     }
   }
 }
@@ -1893,18 +1917,24 @@ class SwapAccsThread extends Thread {
 class StartVelsThread extends Thread {
   NBodySystem nb;
   double hts;
-  int i, j;
+  int i, j, num;
 
-  StartVelsThread(NBodySystem b, double h, int i, int j) { 
+  StartVelsThread(NBodySystem b, double h, int i, int j, int num) { 
     nb = b;
     hts = h;
     this.i = i;
     this.j = j;
+    this.num = num;
   }
 
   public void run() { 
-    for (int idx=i; idx<j; idx++) {
-      nb.StartVelsIteration(hts, idx);
+    for (int k=i; k<j; k++) {
+      final int idx = k;
+      barnes.run(new Runnable() {
+	  public void run() {
+	    nb.StartVelsIteration(hts, idx);
+	  }
+	}, num);
     }
   }
 }
@@ -1918,25 +1948,39 @@ class barnes {
   public static long ctsize = 0;
   public static int RTJ_alloc_method;
   public static int numThreads;
+  public static javax.realtime.CTMemory[] ct = null;
+  public static final boolean RTJ_support = false;
 
-  public static void run(Runnable r) {
-    switch (RTJ_alloc_method) {
-    case NO_RTJ: {
-      r.run();
-      break;
-    }
-    case CT_MEMORY: {
-      (new javax.realtime.CTMemory(ctsize)).enter(r);
-      break;
-    }
-    case VT_MEMORY: {
-      (new javax.realtime.VTMemory(1000, 1000)).enter(r);
-      break;
-    } 
-    default: {
-      System.out.println("Invalid memory area type!");
-      System.exit(1);
-    }
+  public static void run(Runnable r, int i) {
+    if (RTJ_support) {
+      switch (RTJ_alloc_method) {
+      case NO_RTJ: {
+	r.run();
+	break;
+      }
+      case CT_MEMORY: {
+	if (ct != null) {
+	  ct[i].enter(r);
+	} else {
+	  (new javax.realtime.CTMemory(ctsize)).enter(r);
+	}
+	break;
+      }
+      case VT_MEMORY: {
+	(new javax.realtime.VTMemory(1000, 1000)).enter(r);
+	break;
+      } 
+      default: {
+	System.out.println("Invalid memory area type!");
+	System.exit(1);
+      }
+      }
+    } else {
+      if (RTJ_alloc_method != NO_RTJ) {
+	System.out.println("Please set RTJ_support = true");
+      } else {
+	r.run();
+      }
     }
   }
     
@@ -1945,18 +1989,22 @@ class barnes {
       System.out.print("usage: java barnes <input filename> <numThreads> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
       return;
     }
+    numThreads = Integer.parseInt(args[1]);
     if (args[2].equalsIgnoreCase("noRTJ")) {
       RTJ_alloc_method = NO_RTJ;
     } else if (args[2].equalsIgnoreCase("CT")) {
       RTJ_alloc_method = CT_MEMORY;
       ctsize = Long.parseLong(args[4]);
+      ct = new javax.realtime.CTMemory[numThreads+1];
+      for (int i = 0; i<numThreads+1; i++) {
+	ct[i] = new javax.realtime.CTMemory(ctsize, true);
+      }
     } else if (args[2].equalsIgnoreCase("VT")) {
       RTJ_alloc_method = VT_MEMORY;
     } else {
       System.out.println("Invalid memory area type argument");
       return;
     }
-    numThreads = Integer.parseInt(args[1]);
 
     simparms.readParameterFile(args[0]);
     Nbody.init();
@@ -1970,6 +2018,12 @@ class barnes {
     Nbody.output(simparms);
     if (simparms.getiparam("dump") == 1) { 
       Nbody.dump();
+    }
+    
+    if (ct != null) {
+      for (int i = 0; i<numThreads+1; i++) {
+	ct[i].done();
+      }
     }
 
     if ((RTJ_alloc_method != NO_RTJ) &&
