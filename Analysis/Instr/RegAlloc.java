@@ -19,6 +19,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
+import harpoon.Util.LinearMap;
 
 import java.util.Hashtable;
 import java.util.Set;
@@ -40,7 +41,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.14 1999-08-03 23:53:17 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.15 1999-08-04 17:57:13 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -332,6 +333,58 @@ public abstract class RegAlloc  {
 	    }
 	}
 	return yes;
+    }
+
+    class BrainDeadLocalAlloc extends RegAlloc {
+	BrainDeadLocalAlloc(Code code) {
+	    super(code);
+	}
+	
+	/** For each instruction:
+	        1. Load every use from memory into the register file.
+		2. Execute the instruction
+		3. Store every dest from the register file
+	    regFile will be clean in between each instruction in this
+	    (very dumb) allocation strategy. 
+	*/
+	protected Code generateRegAssignment() {
+	    Instr root = (Instr) code.getRootElement();
+
+	    InstrVisitor memVisitor = new InstrVisitor(){
+		Temp[] regs = frame.getGeneralRegisters();
+
+		public void visit(Instr instr) {
+		    try {
+			Map regFile = new LinearMap();
+
+			// load srcs
+			for(int i=0; i<instr.use().length; i++) {
+			    Temp preg = instr.use()[i];
+			    Iterator iter = 
+			        frame.suggestRegAssignment(preg,
+							   regFile);
+			    List regList = (List) iter.next();
+			    for(int j=0; j<regList.size(); j++) {
+				regFile.put(regList.get(j), preg);
+				
+			    }
+			    code.assignRegister(instr, preg, regList);
+			    
+			}
+			
+		    } catch (Frame.SpillException e) {
+			Util.assert(false, "One Instr uses more registers "+
+				    "than we have in RegFile!");
+		    }
+		}
+		
+	    };
+	    // InstrMEM loadSrc1 = new FskLoad(inf, null, "FSK-LOAD `d0, `s0", reg, src1);
+	    // InstrMEM loadSrc2 = new FskLoad(inf, null, "FSK-LOAD `d0, `s0", reg, src2);
+	    //InstrMEM storeDst = new FskStore(inf, null, "FSK-STORE `d0, `s0",  dst, reg ); 
+
+	    return null;
+	}
     }
    
 }

@@ -17,8 +17,10 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.ListFactory;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Iterator;
 
@@ -33,7 +35,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.22 1999-08-03 05:10:57 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.23 1999-08-04 17:57:14 pnkfelix Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -96,17 +98,94 @@ public abstract class Frame {
     }
 
     /** Generates a new set of <code>Instr</code>s for memory traffic
-	from RAM to the register file.
-	@param <code>reg</code> The register <code>Temp</code> holding
-	       the value that will be loaded from <code>offset</code>
-	       in memory. 
+	from RAM to multiple registers in the register file.  This
+	method's default implementation simply calls
+	<code>makeLoad(Temp,int,Instr)</code> for each element of
+	<code>regs</code> and concatenates the returned
+	<code>List</code>s of <code>Instr</code>s, so architectures
+	with more efficient memory-to-multiple-register operations
+	should override this implementation with a better one.
+	@param <code>regs</code> The target register <code>Temp</code>s
+	       to hold the values that will be loaded from
+	       <code>startingOffset</code> in memory.
+	@param <code>startingOffset</code> The stack offset.  This is
+	       an ordinal number, it is NOT meant to be a multiple of
+	       some byte size.  Note that this method will load values
+	       starting at <code>startingOffset</code> and go up to
+	       <code>startingOffset</code> +
+	       <code>regs.size()-1</code> (with the first register in
+	       <code>regs</code> corresponding to
+	       <code>startingOffset</code> + 0, the second to
+	       <code>startingOffset</code> + 1, and so on), so code
+	       planning to reference the locations corresponding to
+	       the sources for the data in the register file should 
+	       account for any additional offsets.
+	@param <code>template</code> An <code>Instr</code> to derive
+	       the generated <code>List</code> from.
+	       <code>template</code> gives <code>this</code> the
+	       ability to incorporate additional information into the
+	       produced <code>List</code> of <code>Instr</code>s.
+	@see Frame#makeLoad(Temp, int, Instr)
+    */ 
+    public List makeLoad(List regs, int startingOffset, Instr template) { 
+        ArrayList lists = new ArrayList();
+	for (int i=0; i<regs.size(); i++) {
+	    lists.add(makeLoad((Temp)regs.get(i), startingOffset+i, template));
+	}
+	return ListFactory.concatenate(lists);
+    }
+
+    /** Generates a new set of <code>Instr</code>s for memory traffic
+	from multiple registers in the register file to RAM.  This
+	method's default implementation simply calls
+	<code>makeStore(Temp,int,Instr)</code> for each element of
+	<code>regs</code> and concatenates the returned
+	<code>List</code>s of <code>Instr</code>s, so architectures
+	with more efficient multiple-register-to-memory operations
+	should override this implementation with a better one.
+	@param <code>regs</code> The register <code>Temp</code>s
+	       holding the values that will be stored starting at
+	       <code>startingOffset</code> in memory.
+	@param <code>startingOffset</code> The stack offset.  This is
+	       an ordinal number, it is NOT meant to be a multiple of
+	       some byte size.  Note that this method will store values
+	       starting at <code>startingOffset</code> and go up to
+	       <code>startingOffset</code> +
+	       <code>regs.size()-1</code> (with the first register in
+	       <code>regs</code> corresponding to
+	       <code>startingOffset</code> + 0, the second to
+	       <code>startingOffset</code> + 1, and so on), so code
+	       planning to reference the locations corresponding to
+	       the targets for the data in the register file should
+	       account for any additional offsets. 
+	@param <code>template</code> An <code>Instr</code> to derive
+	       the generated <code>List</code> from.
+	       <code>template</code> gives <code>this</code> the
+	       ability to incorporate additional information into the
+	       produced <code>List</code> of <code>Instr</code>s.
+	@see Frame#makeStore(Temp, int, Instr)
+    */ 
+    public List makeStore(List regs, int startingOffset, Instr template) { 
+        ArrayList lists = new ArrayList();
+	for (int i=0; i<regs.size(); i++) {
+	    lists.add(makeStore((Temp)regs.get(i), startingOffset+i, template));
+	}
+	return ListFactory.concatenate(lists);
+    }
+
+
+    /** Generates a new set of <code>Instr</code>s for memory traffic
+	from RAM to one register in the register file.
+	@param <code>reg</code> The target register <code>Temp</code>
+	       to hold the value that will be loaded from
+	       <code>offset</code> in memory. 
 	@param <code>offset</code> The stack offset.  This is an
 	       ordinal number, it is NOT meant to be a multiple of
 	       some byte size.  This frame should perform the
 	       necessary magic to turn the number into an appropriate
 	       stack offset. 
 	@param <code>template</code> An <code>Instr</code> to derive
-	       the generated <code>List</code> from
+	       the generated <code>List</code> from.
 	       <code>template</code> gives <code>this</code> the
 	       ability to incorporate additional information into the
 	       produced <code>List</code> of <code>Instr</code>s.   
