@@ -17,6 +17,7 @@ import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.SET;
+import harpoon.Temp.Temp;
 import harpoon.Util.Collections.AggregateMapFactory;
 import harpoon.Util.Collections.MapFactory;
 import harpoon.Util.Util;
@@ -33,7 +34,7 @@ import java.util.Set;
  * of several 'mostly-zero field' transformations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstructorClassifier.java,v 1.1.2.2 2001-11-09 22:13:24 cananian Exp $
+ * @version $Id: ConstructorClassifier.java,v 1.1.2.3 2001-11-10 00:24:20 cananian Exp $
  */
 public class ConstructorClassifier {
     /* Definitions:
@@ -127,6 +128,16 @@ public class ConstructorClassifier {
 		this.param=-1; this.constant=null;
 	    }
 	}
+	/** Take this classification and filter it through a mapping
+	 *  of params to other classifications. */
+	void map(Classification[] mapping) {
+	    if (this.param==-1) return; // not a parameter! nothing to do!
+	    int p = this.param; // entry in the mapping to utilize.
+	    // make this a clone of mapping[p]
+	    this.param = mapping[p].param;
+	    this.constant = mapping[p].constant;
+	    return; // done.
+	}
 	public String toString() {
 	    Util.assert(!(param>0 && constant!=null));
 	    if (param>0) return "PARAM#"+param;
@@ -134,6 +145,15 @@ public class ConstructorClassifier {
 	    return "NO INFO";
 	}
     }
+    Classification makeClassification(SCCAnalysis scc, MustParamOracle mpo,
+				      HCodeElement hce, Temp t) {
+	if (scc.isConst(hce, t)) // constant value?
+	    return new Classification(scc.constMap(hce, t));
+	if (mpo.isMustParam(t)) // must be a parameter?
+	    return new Classification(mpo.whichMustParam(t));
+	return new Classification(); // no info
+    }
+
     /** caching infrastructure around 'doOne' */
     Map classifyMethod(HMethod hm) {
 	Util.assert(isConstructor(hm));
@@ -166,14 +186,9 @@ public class ConstructorClassifier {
 		// field set.
 		if (qq.field().getDeclaringClass().equals(thisClass)) {
 		    Classification oc = (Classification) map.get(qq.field());
-		    Classification nc = new Classification();
 		    // okay, is the value we're setting a constant? or param?
-		    if (scc.isConst(qq, qq.src()))
-			// it's a constant.
-			nc = new Classification(scc.constMap(qq, qq.src()));
-		    else if (mpo.isMustParam(qq.src()))
-			// it must be a parameter.
-			nc = new Classification(mpo.whichMustParam(qq.src()));
+		    Classification nc =
+			makeClassification(scc, mpo, qq, qq.src());
 		    // XXX: CAN MERGE const with param if the const is
 		    // the 'right' value (the one we're optimizing for)
 		    if (oc!=null) //null means we haven't seen this field yet.
@@ -187,13 +202,20 @@ public class ConstructorClassifier {
 		if (isThisConstructor(qq.method(), qq)) {
 		    // recursively invoke!
 		    Map m = classifyMethod(qq.method()); // this should cache.
+		    // construct parameter mapping.
+		    Classification pc[]= new Classification[qq.paramsLength()];
+		    for (int i=0; i<pc.length; i++)
+			pc[i] = makeClassification(scc, mpo, qq, qq.params(i));
+		    // filter method's classifications through the mapping and
+		    // merge with our previous classifications.
 		    for (Iterator it2=m.entrySet().iterator(); it2.hasNext();){
 			Map.Entry me = (Map.Entry) it2.next();
 			HField hf = (HField) me.getKey();
 			Classification oc = (Classification) map.get(hf);
 			Classification nc = (Classification) me.getValue();
+			nc.map(pc); // map method's params to this' params.
 			if (oc!=null)
-			    nc.merge(oc);
+			    nc.merge(oc); // merge if necessary.
 			map.put(hf, nc);
 		    }
 		}
