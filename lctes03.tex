@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.9 2003-04-25 07:09:26 cananian Exp $
+% $Id: lctes03.tex,v 1.10 2003-04-25 07:18:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -1128,12 +1128,11 @@ field could then provide information about bounds checks on accesses
 to the array.  This technique could be used to infer additional
 bitwidth information on related fields from our analysis.
 
-Marinov and O'Callahan have submitted a paper for publication
-\cite{marinov03} which determines when several instances of an
-object may be safely represented by a single representative instance.
-Using this information to combine objects is an
-additional and orthogonal memory-saving technique which
-could be applied in addition to the ones described here.
+Marinov and O'Callahan have presented Object Equality Profiling
+\cite{marinov03}, a technique which identifies when several instances
+of an object may be safely merged to a single representative instance.
+The merging which is suggested is an orthogonal memory-saving
+measure which could be used in addition to the ones described here.
 
 Zhang and Gupta describe a runtime technique that recognizes two
 special cases when an integer or a pointer field in a designated C
