@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.87 $)dnl
+AC_REVISION($Revision: 1.88 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -170,7 +170,7 @@ stubs)	AC_MSG_RESULT([stubs])
 	;;
 esac
 AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java = yes -o $with_realtime_java = stubs)
-AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java = yes)
+AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java = stubs)
 
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])
