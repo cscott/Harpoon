@@ -23,6 +23,7 @@ Research ideas:
    >   minimum bit changes in the instruction stream (like sort
    >   all the add instructions together, for example). Use this
    >   to get a smaller processor with less power consumption.
+ - handle exceptions as java-to-java translation.
 
 ------------------------------
 TODO: fill in details!
