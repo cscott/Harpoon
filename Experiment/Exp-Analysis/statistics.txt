@@ -1,0 +1,62 @@
+Note:  When computing average times, we ignore incorrect solutions and unreported times
+
+Program 1
+========= (DS corruption)
+Correct solutions:
+   TOOL:   9/15 (60%)
+   NOTOOL: 5/15 (33%)
+
+Total time to fix/participant:
+   TOOL:   1:19:54
+   NOTOOL: 1:10:34
+
+Total time to localize/participant:
+   TOOL:   0:51:34
+   NOTOOL: 0:36:20
+
+
+Program 2
+========= (DS corruption)
+Correct solutions:
+   TOOL:   11/15 (73%)
+   NOTOOL: 9/15 (60%)
+
+Total time to fix/participant:
+   TOOL:   0:28:07
+   NOTOOL: 0:19:37
+
+Total time to localize/participant:
+   TOOL:   0:12:33
+   NOTOOL: 0:13:00
+
+
+Program 3
+=========
+Correct solutions:
+   TOOL:   14/15 (93%)
+   NOTOOL: 14/15 (93%)
+
+Total time to fix/participant:
+   TOOL:   1:20:35
+   NOTOOL: 1:08:41
+
+Total time to localize/participant:
+   TOOL:   0:44:17
+   NOTOOL: 0:34:30
+
+
+Program 4
+=========
+Correct solutions:
+   TOOL:   11/15 (73%)
+   NOTOOL: 10/15 (66%)
+
+Total time to fix/participant:
+   TOOL:   0:18:05
+   NOTOOL: 0:21:13
+
+Total time to localize/participant:
+   TOOL:   0:10:30
+   NOTOOL: 0:11:48
+
+
