@@ -15,6 +15,9 @@ public interface OffsetMap
   /** Maps an <code>HField</code> to an offset (in bytes) */
   public int offset(HField hf, InlineMap iMap);
 
-  /** Maps an <code>HMethodM</code> to an offset (in bytes) */
+  /** Maps an <code>HMethod</code> to an offset (in bytes) */
   public int offset(HMethod hm);
+
+  /** Maps an <code>HClass</code> to a size (in bytes) */
+  public int size(HClass hc);
 }
