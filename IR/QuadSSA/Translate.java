@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.79 1998-09-24 23:14:08 cananian Exp $
+ * @version $Id: Translate.java,v 1.80 1998-10-08 10:37:56 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -994,8 +994,8 @@ class Translate  { // not public.
 	    Quad.addEdge(q,  0, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
 	    last = q2; which_succ = 1;
-	    // null dereference check.
-	    if (!isStatic) {
+	    // null dereference check (JVM disallows on uninit objects)
+	    if (!isStatic && !(opd.value() instanceof HConstructor)) {
 		HClass HCex = HClass.forClass(NullPointerException.class);
 
 		// test objectref against null.
