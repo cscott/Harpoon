@@ -18,6 +18,8 @@ public abstract class Timer extends AsyncEvent {
     protected Clock defaultClock;
     protected RelativeTime fireAfter;
     protected AsyncEventHandler handler;
+    protected RelativeTime timePassed = new RelativeTime(0, 0);
+    protected AbsoluteTime lastUpdated = new AbsoluteTime();
 
     /** Create a timer that fires at time <code>t</code>, according
      *  to <code>Clock c</code> and is handled by the specified handler.
@@ -120,7 +122,14 @@ public abstract class Timer extends AsyncEvent {
     /** A Timer starts measuring time from when it is started. */
     public void start() {
 	started = true;
-	// TODO
+	Clock.getRealtimeClock().getTime(lastUpdated);
+	while (started) {
+	    AbsoluteTime temp = new AbsoluteTime();
+	    Clock.getRealtimeClock().getTime(temp);
+	    RelativeTime difference = temp.subtract(lastUpdated);
+	    timePassed = timePassed.add(difference);
+	    lastUpdated = temp;
+	}
     }
 
     /** Stops a timer that is running and changes its state to
@@ -131,8 +140,6 @@ public abstract class Timer extends AsyncEvent {
     public boolean stop() {
 	boolean wasStarted = started && enabled;
 	started = false;
-	// TODO
-
 	return wasStarted;
     }
 }

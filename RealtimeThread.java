@@ -13,11 +13,9 @@ public class RealtimeThread extends Thread implements Schedulable {
     public static Scheduler currentScheduler = null;
 
     /** Contains the cactus stack of previous memoryAreas... */
-
     MemAreaStack memAreaStack;
 
-    /** The top of the stack for this RealtimeThread 
-     */
+    /** The top of the stack for this RealtimeThread. */
     int heapMemCount;
 
     MemAreaStack topStack;
@@ -28,7 +26,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     private boolean blocked = false;
 
     /** Contains the memoryArea associated with this mem. */
-
     MemoryArea mem, original;
 
     /** Realtime parameters for this thread */
@@ -37,9 +34,7 @@ public class RealtimeThread extends Thread implements Schedulable {
     SchedulingParameters schedulingParameters = null;
     ProcessingGroupParameters processingGroupParameters = null;
 
-    /** Specifies whether the initialization code has finished setting up RTJ. 
-     */
-    
+    /** Specifies whether the initialization code has finished setting up RTJ. */
     static boolean RTJ_init_in_progress;
 
     /** The target to run. */
@@ -390,6 +385,7 @@ public class RealtimeThread extends Thread implements Schedulable {
      */
     public void setScheduler(Scheduler scheduler)
 	throws IllegalThreadStateException {
+	if (currentScheduler != null) currentScheduler.removeFromFeasibility(this);
 	currentScheduler = scheduler;
     }
     

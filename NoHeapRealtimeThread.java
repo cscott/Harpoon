@@ -17,6 +17,7 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 	throws IllegalArgumentException {
 	schedulingParameters = sp;
 	memoryArea = ma;
+	noHeap = true;
     }
 
     public NoHeapRealtimeThread(SchedulingParameters sp, ReleaseParameters rp,
