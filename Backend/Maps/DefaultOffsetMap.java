@@ -7,14 +7,13 @@ package harpoon.Backend.Maps;
  * Someone should fill it in at some point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultOffsetMap.java,v 1.1.2.1 1999-01-17 02:51:28 cananian Exp $
+ * @version $Id: DefaultOffsetMap.java,v 1.1.2.2 1999-01-23 08:25:29 cananian Exp $
  */
 public abstract class DefaultOffsetMap  {
     /** Creates a <code>DefaultOffsetMap</code>. */
     public DefaultOffsetMap(MethodMap class_method_map,
 			    MethodMap interface_method_map,
 			    ClassDepthMap display_map,
-			    FieldMap static_field_map,
 			    FieldMap class_field_map,
 			    InlineMap inline_map) {
         // do something intelligent with all these maps.

@@ -1,12 +1,40 @@
 ---- Jan-23-98
 FLEX native backend TODO:
-- implement OffsetMap
-- write garbage-collector in C
+- implement OffsetMap:
+  - for reuseability, implement an abstract class on top of OffsetMap that
+    only implements the two label() functions, which are likely to be
+    portable even when field offsets may vary.  Use the Java Native Interface
+    standard for class/field mangling to come up with Label names:  see
+      http://www.javasoft.com/products/jdk/1.2/docs/guide/jni/
+    Specification section 2, "Resolving Native Method Names"
+  - The class_method_map MethodMap, which will order non-interface methods.
+    [I think Duncan is doing this?]
+  - The interface_method_map MethodMap, which orders interface methods.
+    [Felix is doing this]
+  - The ClassDepthMap, which I've all but written for y'all in
+    DefaultClassDepthMap.  Please use a Hashtable to cache the depth to
+    bring performance back to linear in the depth of the class hierarchy.
+    (DefaultClassDepthMap as written takes time proportional to the square
+     of the depth of the class hierarchy)
+  - The class_field_map FieldMap, which will be very similar to the
+    class_method_map MethodMap.
+  - Write OffsetMap to map all these orderings into byte offsets.  For
+    simplicity, you should have your field map take care of allocating two
+    entries for longs and doubles, so that offsetmap doesn't have to
+    figure out storage allocation itself.  You can also ignore the InlineMap
+    at this point, although you get bonus points if you write an OffsetMap
+    that takes the InlineMap into account (not that hard).
+- write garbage-collector in C.  Don't forget finalization and weak references.
+  Use the semi-depth-first copying algorithm from appel.
 - write Quad-to-LowQuad translator (Scott will do)
-- write LowQuad-to-Tree translator.  Remember to preserve derivation.
+- write LowQuad-to-Tree translator.  Remember to preserve Derivation.
+  (see harpoon.IR.Properties.Deriviation)
 - write Tree-to-Instr pass (instruction selection)
+  should be in harpoon.Backend.<architecture>.InSel?
+  Scott will write an abstract superclass for this eventually.
 - do register allocation on Instrs (allocation, then construct stack frames,
   then assignment)
+- tie everything together (write minimal native code libraries)
 ---- Dec-31-98
 X Make TempMap in QuadNoSSA/QuadSSA consistent with QuadFactory.tempFactory();
 Reclaim INSTANCEOF optimization opportunities by adding NULL check ahead of it.
