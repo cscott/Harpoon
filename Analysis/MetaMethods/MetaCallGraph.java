@@ -16,7 +16,7 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraph.java,v 1.1.2.3 2000-03-28 23:51:33 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.1.2.4 2000-04-03 02:28:52 salcianu Exp $
  */
 
 public interface MetaCallGraph {
@@ -46,6 +46,10 @@ public interface MetaCallGraph {
 	<code>MetaMethod</code>s specialized from it. */
     public Relation getSplitRelation();
 
+    /** Returns the set of the meta-methods that could be called as the 
+	body of some thread. */
+    public Set getRunMetaMethods();
+
     /** Nice pretty-printer for debug purposes. */
-    public void print(PrintWriter pw, boolean detailed_view);
+    public void print(PrintWriter pw, boolean detailed_view, MetaMethod root);
 }

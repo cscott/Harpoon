@@ -22,7 +22,7 @@ import harpoon.ClassFile.HCodeElement;
  <code>MetaCallGraph</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.6 2000-03-30 05:13:53 salcianu Exp $
+ * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.7 2000-04-03 02:28:52 salcianu Exp $
  */
 public abstract class MetaCallGraphAbstr implements MetaCallGraph, 
 						    java.io.Serializable {
@@ -104,9 +104,28 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph,
     // keeps the split relation
     private Relation split = null;
 
+
+    protected Set runmms = new HashSet();
+    public Set getRunMetaMethods(){
+	return runmms;
+    }
+
+
     /** Nice pretty-printer for debug purposes. */
-    public void print(PrintWriter pw, boolean detailed_view){	
-	Set mms = getAllMetaMethods();
+    public void print(PrintWriter pw, boolean detailed_view, MetaMethod root){
+
+	Set mms = new HashSet();
+	Set roots = new HashSet(getRunMetaMethods());
+	roots.add(root);
+
+	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    MetaMethod mm = (MetaMethod) it.next();
+	    mms.add(mm);
+	    mms.addAll(getTransCallees(mm));
+	}
+
+	pw.println("MetaCallGraph rooted in " + root);
+	
 	for(Iterator itmm = mms.iterator(); itmm.hasNext();){
 	    MetaMethod mm = (MetaMethod) itmm.next();
 	    pw.println();

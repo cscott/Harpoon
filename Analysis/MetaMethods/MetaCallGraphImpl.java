@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.11 2000-03-30 03:05:06 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.12 2000-04-03 02:28:52 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -391,6 +391,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	MetaMethod mm  = new MetaMethod(run,new GenType[]{gtbase});
 	if(!analyzed_mm.contains(mm))
 	    WMM.add(mm);
+
+	runmms.add(mm);
 
 	if(DEBUG)
 	    System.out.println("THREAD START SITE:" + cs + " => " + mm);

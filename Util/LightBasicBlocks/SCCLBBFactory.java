@@ -14,7 +14,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCLBBFactory.java,v 1.1.2.2 2000-03-24 22:33:02 salcianu Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.1.2.3 2000-04-03 02:29:11 salcianu Exp $
  */
 public class SCCLBBFactory {
 
@@ -45,11 +45,11 @@ public class SCCLBBFactory {
 	    };
 
     /** Generates the code of the method <code>hm</code> using the 
-     <code>HCodeFactory</code> passed to the constructor of
-     <code>this</code> object, cut it into pieces (i.e. 
-     <code>LightBasicBlock</code>s), build the strongly connected componnets
-     of <code>LightBasicBlock</code>s and sort them topologically.
-     Returns the sorted graph. */
+	<code>HCodeFactory</code> passed to the constructor of
+	<code>this</code> object, cut it into pieces (i.e. 
+	<code>LightBasicBlock</code>s), build the strongly connected componnets
+	of <code>LightBasicBlock</code>s and sort them topologically.
+	Returns the sorted graph. */
     public SCCTopSortedGraph computeSCCLBB(HMethod hm){
 
         LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(hm);

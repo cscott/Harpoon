@@ -16,7 +16,7 @@ import java.util.Map;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.16 2000-04-02 19:48:00 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.17 2000-04-03 02:29:06 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -67,6 +67,7 @@ public class PAEscapeFunc {
     public boolean addMethodHole(PANode node){
 	// System.out.println("addMethodHole " + node);
 	// Hack: we suppose no native method can modify an object
+	// (arraycopy is specially treated)
 	if(true) return false;
 	return escaped_into_mh.add(node);
     }

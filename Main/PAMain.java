@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.33 2000-04-02 07:15:21 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.34 2000-04-03 02:29:09 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -293,7 +293,8 @@ public abstract class PAMain {
 
 	if(SHOW_CG){
 	    System.out.println("MetaCallGraph:");
-	    mcg.print(new java.io.PrintWriter(System.out, true), true);
+	    mcg.print(new java.io.PrintWriter(System.out, true), true,
+		      new MetaMethod(hroot, true));
 	}
 
 	if(SHOW_SPLIT){

@@ -27,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.26 2000-04-02 19:47:59 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.27 2000-04-03 02:29:06 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -68,9 +68,9 @@ abstract class InterProcPA {
 	}
 
 	// treat specially some native methods
-	//	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
-	//if(pair != null)
-	//   return pair;
+	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
+	if(pair != null)
+	    return pair;
 
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	NodeRepository node_rep = pa.getNodeRepository(); 
@@ -602,15 +602,15 @@ abstract class InterProcPA {
 	int mod = hm.getModifiers();
 	if(!Modifier.isNative(hm.getModifiers())) return null;
 
-	System.out.println("NATIVE: " + q);
+	// System.out.println("NATIVE: " + q);
 
 	ParIntGraphPair pair = treat_arraycopy(pa, q, pig_before);
 	if(pair != null) return pair;
 
-	pair = treat_fillInStackTrace(pa, q, pig_before);
-	if(pair != null) return pair;
-
-	pair = treat_setPriority0(pa, q, pig_before);
+	// pair = treat_fillInStackTrace(pa, q, pig_before);
+	// if(pair != null) return pair;
+	//
+	// pair = treat_setPriority0(pa, q, pig_before);
 	return pair;
     }
 

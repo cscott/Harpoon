@@ -19,6 +19,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HCode;
+
 
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.AllCallers;
@@ -51,6 +53,8 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
+import harpoon.Util.TypeInference.CachingArrayInfo;
+
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
@@ -66,7 +70,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.46 2000-04-02 19:48:00 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.47 2000-04-03 02:29:06 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -398,6 +402,9 @@ public class PointerAnalysis {
 			  (System.currentTimeMillis() - begin_time) + "ms");
     }
 
+    // information about the interesting AGET quads
+    CachingArrayInfo cai = new CachingArrayInfo();
+
     // inter-procedural analysis of a group of mutually recursive methods
     private void analyze_inter_proc_scc(SCComponent scc){
 
@@ -494,6 +501,8 @@ public class PointerAnalysis {
 	// usefull any more
 	if(CALL_CONTEXT_SENSITIVE)
 	    cs_specs.clear();
+	// 3. clear the array info
+	cai.clear();
 
 	long total_time = 0;
 	if(TIMING)
@@ -506,12 +515,21 @@ public class PointerAnalysis {
     private MetaMethod current_intra_mmethod = null;
     private ParIntGraph initial_pig = null;
 
+    // the set of the AGETs from arrays of non-primitive types.
+    private Set good_agets = null;
+
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(MetaMethod mm){
 	//if(DEBUG2)
 	    System.out.println("META METHOD: " + mm);
 
 	if(STATS) Stats.record_mmethod_pass(mm);
+
+	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
+	LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(mm.getHMethod());
+	HCode hcode = lbbf.getHCode();
+
+	good_agets = cai.getInterestingAGETs(mm.getHMethod(), hcode);
 
 	current_intra_mmethod = mm;
 
@@ -537,6 +555,8 @@ public class PointerAnalysis {
 	    analyze_intra_proc_scc(scc);
 	    scc = scc.nextTopSort();
 	}
+
+	good_agets = null;
     }
 
     // Intra-procedural analysis of a strongly connected component of
@@ -652,6 +672,9 @@ public class PointerAnalysis {
 	
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
+	    // AGET from an array of primitive objects (int, float, ...)
+	    if(!good_agets.contains(q))
+		lbbpig.G.I.removeEdges(q.dst());
 	    // All the elements of an array are collapsed in a single
 	    // node, referenced through a conventional named field
 	    process_load(q, q.dst(), q.objectref(), ARRAY_CONTENT);
