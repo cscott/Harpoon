@@ -34,7 +34,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.42 2000-02-08 23:31:02 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.43 2000-02-14 21:56:45 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -261,8 +261,7 @@ public abstract class Code extends HCode {
 	    // Pred has no parents, it must be the root of the tree. 
 	    Util.assert(pred == this.tree); 
 	    this.tree         = newPred; 
-	    this.tree.parent  = null;
-	    this.tree.sibling = null; 
+	    this.tree.unlink();
 	}
 	else { 
 	    this.replace(pred, newPred); 

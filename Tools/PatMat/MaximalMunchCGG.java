@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.53 2000-02-14 04:00:29 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.54 2000-02-14 21:56:46 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -151,10 +151,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    // initialize params
 	    append(initStms, TEMP_Temp+"[] "+s.params+" = new "+TEMP_Temp+"["+
-		           "(("+TREE_METHOD+")"+stmPrefix+").params.length];");
+		           "(("+TREE_METHOD+")"+stmPrefix+").getParamsLength()];");
 	    append(initStms, "for (int _i_=0; _i_<"+s.params+".length; _i_++)");
 	    append(initStms, "  "+s.params+"[_i_] = munchExp("+
-		           "(("+TREE_METHOD+")"+stmPrefix+").params[_i_]);");
+		           "(("+TREE_METHOD+")"+stmPrefix+").getParams(_i_));");
 	}
 	
 	public void visit(Spec.StmCall s) {

@@ -17,7 +17,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.33 2000-01-11 18:34:15 pnkfelix Exp $
+ * @version $Id: Print.java,v 1.1.2.34 2000-02-14 21:56:45 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -224,8 +224,9 @@ public class Print {
 	public void visit(METHOD s) { 
 	    indent(indlevel++);
 	    pw.print("METHOD(");
-	    for (int i=0; i<s.params.length; i++)
-		s.params[i].accept(this);
+	    TEMP[] params = s.getParams();
+	    for (int i=0; i<params.length; i++)
+		params[i].accept(this);
 	    pw.print(")");
 	    indlevel--;
 	}

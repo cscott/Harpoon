@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.19 2000-01-31 22:16:15 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.20 2000-02-14 21:56:45 cananian Exp $
  */
 public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -515,7 +515,7 @@ public final class Method extends Debug {
 	public void visit(METHOD s) { 
 	    if (DEBUG) db("Visiting: " + s);
 
-	    TEMP[] tParams = s.params;
+	    TEMP[] tParams = s.getParams();
 	    for (int i=1; i<tParams.length; i++) {
 		sf.update(tParams[i].temp, toNonNativeFormat(params[i-1]));
 	    }
