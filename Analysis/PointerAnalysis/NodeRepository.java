@@ -19,7 +19,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.13 2000-03-19 23:50:04 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.14 2000-03-20 00:45:23 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -298,7 +298,7 @@ public class NodeRepository {
 	    }
 
 	if(PointerAnalysis.WEAKLY_THREAD_SENSITIVE){
-	    PANode snode = node.ts_specialize();
+	    PANode snode = node.getWTSpec();
 	    if(snode != null){
 		for(int i = 0; i < ident ; i++)
 		    System.out.print(" ");

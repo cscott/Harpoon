@@ -28,7 +28,7 @@ import harpoon.Analysis.MetaMethods.GenType;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.16 2000-03-18 05:24:31 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.17 2000-03-20 00:45:23 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -235,7 +235,13 @@ abstract class InterThreadPA {
 			       PANode nt, MetaMethod op, PointerAnalysis pa){
 	ParIntGraph pig[] = new ParIntGraph[2];
 	pig[0] = pig_starter;
-	pig[1] = pa.getExtParIntGraph(op);
+
+	// some thread specialization if necessary
+	if(PointerAnalysis.THREAD_SENSITIVE ||
+	   PointerAnalysis.WEAKLY_THREAD_SENSITIVE)
+	    pig[1] = pa.getSpecializedExtParIntGraph(op);
+	else
+	    pig[1] = pa.getExtParIntGraph(op);
 
 	if(DEBUG2){
 	    System.out.println("interact_once_op:");

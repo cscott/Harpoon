@@ -14,12 +14,13 @@ import java.util.Collections;
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Quads.CALL;
+import harpoon.Analysis.MetaMethods.MetaMethod;
 
 /**
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.19 2000-03-19 23:50:04 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.20 2000-03-20 00:45:23 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -241,14 +242,44 @@ public class ParIntGraph {
 
     /* Specialize <code>this</code> <code>ParIntGraph</code> for the call
        site <code>q</code>. */
-    public final ParIntGraph specialize(CALL q){
-	Map map = new HashMap();
+    final ParIntGraph specialize(final CALL q){
+	final Map map = new HashMap();
 	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
 	    PANode node = (PANode) itn.next();
 	    if(node.type == PANode.INSIDE)
-		map.put(node, node.cs_specialize(q));
+		map.put(node, node.csSpecialize(q));
 	} 
 	
+	return specialize(map);
+    }
+
+    // full thread specialization
+    final ParIntGraph tSpecialize(final MetaMethod mm){
+	final Map map = new HashMap();
+
+	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
+	    PANode node  = (PANode) itn.next();
+	    if(node.type != PANode.PARAM){
+		PANode node2 = node.tSpecialize(mm);
+		map.put(node, node2);
+	    }
+	}
+
+	return specialize(map);
+    }
+
+    // weak thread specialization
+    final ParIntGraph wtSpecialize(){
+	Map map = new HashMap();
+
+	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
+	    PANode node  = (PANode) itn.next();
+	    if(node.type != PANode.PARAM){
+		PANode node2 = node.wtSpecialize();
+		map.put(node, node2);
+	    }
+	}
+
 	return specialize(map);
     }
 
@@ -256,7 +287,7 @@ public class ParIntGraph {
        to <code>map</code>, a mapping from <code>PANode<code> to
        <code>PANode</code>. Each node which is not explicitly mapped is
        considered to be mapped to itself. */
-    public final ParIntGraph specialize(final Map map){
+    final ParIntGraph specialize(final Map map){
 	return
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
 			    ar.specialize(map), eo.specialize(map),

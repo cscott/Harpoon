@@ -20,7 +20,7 @@ import harpoon.Tools.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.10 2000-03-19 23:50:04 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.11 2000-03-20 00:45:23 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -104,10 +104,10 @@ final public class PANode {
 
     /** Returns the specialized node of <code>this</code> node for
 	<code>call_site</code>. This method is guarranteed to return the
-	same node if it's called on the same node, with the same argument.
+	same node if it's called on the same node, with the same argument.<br>
 	This method makes sense iff
 	<code>PointerAnalysis.CALL_CONTEXT_SENSITIVE</code> is on. */
-    public final PANode cs_specialize(final CALL call_site){
+    public final PANode csSpecialize(final CALL call_site){
 	if(CAUTION)
 	    Util.assert(PointerAnalysis.CALL_CONTEXT_SENSITIVE,
 			"Turn on CALL_CONTEXT_SENSITIVE!");
@@ -127,7 +127,7 @@ final public class PANode {
     /** Returns all the call site specializations of <code>this</code> node.
 	It returns a set of <code>Map.Entry</code>s, each element consisting
 	of a mapping from a <code>CALL</code> quad (the call site) to the
-	specialized node.
+	specialized node.<br>
 	This method makes sense iff
 	<code>PointerAnalysis.CALL_CONTEXT_SENSITIVE</code> is on. */
     public final Set getAllCSSpecs(){
@@ -139,10 +139,10 @@ final public class PANode {
     /** Returns the specialized node of <code>this</code> node for the
 	thread body (ie the <code>run()</code> method) <code>run</code>.
 	This method is guarranteed to return the same node if it's called
-	on the same node, with the same argument.
+	on the same node, with the same argument.<br>
 	This method makes sense iff
 	<code>PointerAnalysis.THREAD_SENSITIVE</code> is on. */
-    public final PANode ts_specialize(final MetaMethod run){
+    public final PANode tSpecialize(final MetaMethod run){
 	if(CAUTION){
 	    Util.assert(!thread_spec, "Repeated thread specialization!");
 	    Util.assert(PointerAnalysis.THREAD_SENSITIVE,
@@ -161,7 +161,7 @@ final public class PANode {
     /** Returns all the thread specializations of <code>this</code> node.
 	It returns a set of <code>Map.Entry</code>s, each element consisting
 	of a mapping from a <code>MetaMethod</code> (the body of a thread)
-	to the specialized node.
+	to the specialized node.<br>
 	This method makes sense iff
 	<code>PointerAnalysis.THREAD_SENSITIVE</code> is on. */
     public final Set getAllTSpecs(){
@@ -171,10 +171,10 @@ final public class PANode {
     
     ////////////////////// WEAKLY_THREAD_SENSITIVE /////////////////////////
 
-    /** Returns the thread specialization of <code>this</code> node.
+    /** Returns the thread specialization of <code>this</code> node.<br>
 	This method makes sense iff
 	<code>PointerAnalysis.WEAKLY_THREAD_SENSITIVE</code> is on. */
-    public final PANode ts_specialize(){
+    public final PANode wtSpecialize(){
 	if(CAUTION){
 	    Util.assert(!thread_spec, "Repeated thread specialization!");
 	    Util.assert(PointerAnalysis.THREAD_SENSITIVE,
@@ -187,11 +187,12 @@ final public class PANode {
 	return wtspec;
     }
 
-    /** Checks whether <code>this</code> node was produced as a weak
-	thread specialization of some other node. This method makes sense iff
+    /** Returns the weak thread specialization of <code>this</code> node.
+	(returns <code>null</code> if none).<br>
+	This method makes sense iff
 	<code>PointerAnalysis.WEAKLY_THREAD_SENSITIVE</code> is on. */
-    public final boolean isWTSpecialized(){
-	return wtspec != null;
+    public final PANode getWTSpec(){
+	return wtspec;
     }
 
     /////////////////////////////////////////////////////////////////////////

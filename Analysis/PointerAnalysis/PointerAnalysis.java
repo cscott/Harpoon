@@ -56,6 +56,8 @@ import harpoon.Tools.Graphs.SCComponent;
 import harpoon.Tools.Graphs.SCCTopSortedGraph;
 import harpoon.Tools.UComp;
 
+import harpoon.Util.Util;
+
 /**
  * <code>PointerAnalysis</code> is the main class of the Pointer Analysis
  package. It is designed to act as a <i>query-object</i>: after being
@@ -63,7 +65,7 @@ import harpoon.Tools.UComp;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.26 2000-03-19 23:50:04 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.27 2000-03-20 00:45:23 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -183,20 +185,17 @@ public class PointerAnalysis {
     }
 
 
-    // Map<MetaMethod, Map<CALL,ParIntGraph>>
-    private Map specs = new Hashtable();
-
-    // Returns a version of the external graph for method hm that is
+    // Returns a version of the external graph for meta-method hm that is
     // specialized for the call site q
     ParIntGraph getSpecializedExtParIntGraph(MetaMethod mm, CALL q){
 	// first, search in the cache
-	Map map_mm = (Map) specs.get(mm);
+	Map map_mm = (Map) cs_specs.get(mm);
 	if(map_mm == null){
 	    map_mm = new Hashtable();
-	    specs.put(mm,map_mm);
+	    cs_specs.put(mm,map_mm);
 	}
-	if(map_mm.containsKey(q))
-	    return (ParIntGraph) map_mm.get(q);
+	ParIntGraph pig = (ParIntGraph) map_mm.get(q);
+	if(pig != null) return pig;
 
 	// if the specialization was not already in the cache,
 	// try to recover the original ParIntGraph (if it exists) and
@@ -210,6 +209,38 @@ public class PointerAnalysis {
 
 	return new_pig;	
     }
+    // cache for call site sensitivity: Map<MetaMethod, Map<CALL,ParIntGraph>>
+    private Map cs_specs = new Hashtable();
+
+
+    // Returns a specialized version of the external graph for meta-method mm;
+    // mm is supposed to be the run method (the body) of a thread.
+    ParIntGraph getSpecializedExtParIntGraph(MetaMethod mm){
+	ParIntGraph pig = (ParIntGraph) t_specs.get(mm);
+	if(pig != null) return pig;
+
+	// if the specialization was not already in the cache,
+	// try to recover the original ParIntGraph (if it exists) and
+	// specialize it
+
+	ParIntGraph original_pig = getExtParIntGraph(mm);
+	if(original_pig == null) return null;
+
+	ParIntGraph new_pig = null;
+	if(THREAD_SENSITIVE)
+	    new_pig = original_pig.tSpecialize(mm);
+	else
+	    if(WEAKLY_THREAD_SENSITIVE)
+		new_pig = original_pig.wtSpecialize();
+	    else Util.assert(false,"The thread specialization is off!");
+
+	t_specs.put(mm,new_pig);
+
+	return new_pig;	
+    }
+    // cache for thread sensitivity: Map<MetaMethod, ParIntGraph>
+    private Map t_specs = new Hashtable();
+
 
     ParIntGraph getExtParIntGraph(MetaMethod mm, boolean compute_it){
 	ParIntGraph pig = (ParIntGraph)hash_proc_ext.get(mm);
@@ -396,7 +427,7 @@ public class PointerAnalysis {
 		// since the original graph associated with hm_work changed,
 		// the old specializations for it are no longer actual;
 		if(CALL_CONTEXT_SENSITIVE)
-		    specs.remove(mm_work);
+		    cs_specs.remove(mm_work);
 
 		Object[] mms = mac.getCallers(mm_work);    
 
@@ -417,7 +448,7 @@ public class PointerAnalysis {
 	// specializations generated for the call sites inside them are not
 	// usefull any more
 	if(CALL_CONTEXT_SENSITIVE)
-	    specs.clear();
+	    cs_specs.clear();
 
 	long total_time = System.currentTimeMillis() - begin_time;
 
