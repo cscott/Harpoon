@@ -12,7 +12,6 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.IR.Jasmin.Jasmin;
 
-import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 
@@ -30,7 +29,7 @@ import harpoon.Util.Collections.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.1.2.10 2001-11-08 00:25:43 cananian Exp $
+ * @version $Id: JMain.java,v 1.1.2.11 2001-11-14 20:50:32 cananian Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 

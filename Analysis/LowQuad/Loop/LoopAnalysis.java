@@ -51,7 +51,6 @@ import harpoon.IR.LowQuad.LowQuadKind;
 import harpoon.Analysis.Loops.LoopFinder;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.Temp.Temp;
-import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Temp.TempMap;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.Analysis.LowQuad.Loop.AllInductions;
@@ -73,7 +72,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopAnalysis.java,v 1.1.2.24 2001-11-08 00:22:21 cananian Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.25 2001-11-14 20:50:16 cananian Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {

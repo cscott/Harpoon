@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.Analysis.SSITOSSAMap;
+import harpoon.Analysis.Quads.SSIToSSAMap;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.HCode;
@@ -34,7 +34,7 @@ import harpoon.IR.LowQuad.PCALL;
  * <b>NOT FOR USE OUTSIDE REHANDLER</b>.  Use SSIToSSA instead.
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandlerToSSA.java,v 1.1.2.1 2001-09-26 16:15:12 cananian Exp $
+ * @version $Id: ReHandlerToSSA.java,v 1.1.2.2 2001-11-14 20:50:26 cananian Exp $
  */
 
 final class ReHandlerToSSA {
@@ -57,7 +57,7 @@ final class ReHandlerToSSA {
 		    System.out.println("Error:  clone not supported on class handed to ToSSA");
 		}
 		if (hc!=null) {
-		    (new ReHandlerToSSA(new SSITOSSAMap(hc))).optimize(hc);
+		    (new ReHandlerToSSA(new SSIToSSAMap(hc))).optimize(hc);
 		}
 		return hc;
 	    }

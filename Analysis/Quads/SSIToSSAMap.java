@@ -1,7 +1,7 @@
-// SSITOSSAMap.java, created Thu Jun 17 16:11:41 1999 by root
+// SSIToSSAMap.java, created Thu Jun 17 16:11:41 1999 by root
 // Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis;
+package harpoon.Analysis.Quads;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.WorkSet;
@@ -21,15 +21,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 /**
- * <code>SSITOSSAMap</code>
+ * An <code>SSIToSSAMap</code> allows you to look at an SSI
+ * representation "with glasses on" so that it appears as SSA.  This
+ * is often useful when the additional value-information
+ * discrimination of SSI form is unnecessary, but converting the input
+ * to SSA is undesirable.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.13 2001-11-08 00:21:12 cananian Exp $
+ * @version $Id: SSIToSSAMap.java,v 1.1.2.1 2001-11-14 20:50:05 cananian Exp $
  */
-public class SSITOSSAMap implements TempMap {
+public class SSIToSSAMap implements TempMap {
     
-    /** Creates a <code>SSITOSSAMap</code>. */
-    public SSITOSSAMap(HCode hc) {
+    /** Creates a <code>SSIToSSAMap</code> for the <code>HCode</code>
+     *  <code>hc</code>. */
+    public SSIToSSAMap(HCode hc) {
 	//We need to build to map in the constructor
 	//Set HCode pointer
         this.hc=hc;

@@ -23,7 +23,7 @@ import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.Loops;
 import harpoon.Analysis.LowQuad.Loop.LoopAnalysis;
 import harpoon.Analysis.LowQuad.Loop.Induction;
-import harpoon.Analysis.SSITOSSAMap;
+import harpoon.Analysis.Quads.SSIToSSAMap;
 import harpoon.Analysis.LowQuad.Loop.LoopMap;
 import harpoon.Analysis.Maps.AllInductionsMap;
 import harpoon.Analysis.Maps.BasicInductionsMap;
@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.33 2001-11-08 00:22:21 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.34 2001-11-14 20:50:16 cananian Exp $
  */
 public final class LoopOptimize {
 
@@ -79,7 +79,7 @@ public final class LoopOptimize {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
 		if (hc!=null) {
-		    SSITOSSAMap ssitossa=new SSITOSSAMap(hc);
+		    SSIToSSAMap ssitossa=new SSIToSSAMap(hc);
 		    return (new LoopOptimize(new LoopAnalysis(ssitossa),ssitossa)).optimize(hc);
 		} else
 		return hc;
