@@ -45,7 +45,7 @@ public class ImageSetExpr extends SetExpr {
     public String name() {
 	String name="";
 	if (isimageset)
-	    name+=ise.name();
+	    name+=ise.name()+".";
 	else
 	    name+=vd.toString()+".";
 	if (inverse)
