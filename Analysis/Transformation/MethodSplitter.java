@@ -39,7 +39,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.11 2000-10-20 22:55:43 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.12 2000-10-21 20:08:38 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -76,7 +76,7 @@ public abstract class MethodSplitter {
 	    };
 	}, true/* save cache */);
 	this.ch = ch;
-	this.fm = new harpoon.Backend.Maps.DefaultFinalMap();
+	this.fm = new harpoon.Backend.Maps.CHFinalMap(ch);
     }
     
     /** Maps split methods to <original method, token> pairs. */
@@ -147,7 +147,7 @@ public abstract class MethodSplitter {
 
     /** Returns a <code>HCodeFactory</code> containing representations for
      *  the methods split by the <code>MethodSplitter</code>. */
-    public final HCodeFactory codeFactory() { return hcf; }
+    public HCodeFactory codeFactory() { return hcf; }
 
     /** Override this method if you want to create mutated methods
      *  with descriptors differing from that of the original method.
