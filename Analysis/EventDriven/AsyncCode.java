@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.14 2000-01-06 16:59:39 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.15 2000-01-06 20:14:55 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -57,11 +57,25 @@ public class AsyncCode {
      *  @param hc
      *         the <code>HCode</code> from which to build this
      *         <code>AsyncCode</code>.
+     *  @param old2new
+     *         the <code>Map</code> mapping blocking methods to the
+     *         new Asynchronous version
+     *  @param async_todo
+     *         the <code>Set</code> of methods to build HCodes for the 
+     *         asynchronous versions
      *  @param liveness
      *         results of liveness analysis
+     *  @param blockingcalls
+     *         set of methods that block
      *  @param ucf
      *         <code>UpdateCodeFactory</code> with which to register new
      *         <code>HCode</code>
+     *  @param classMap
+     *         <code>Map</code> mapping original classes to the 
+     *         <code>HClassSyn</code> copies of.
+     *  @param bm
+     *         <code>ToAsync.BlockingMethods</code> object which tells
+     *         the analysis information about lowest level blocking calls
      */
 
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
@@ -74,13 +88,17 @@ public class AsyncCode {
 
 	Quad root = (Quad)hc.getRootElement();
 
+	//Cont_todo is the set of quads we need to build continuations for
+
 	WorkSet cont_todo=new WorkSet();
 	cont_todo.add(root);
 
 	//contmap maps blocking calls->continuations
+	//envmap maps blocking calls->environment class
 	HashMap cont_map=new HashMap();
 	HashMap env_map=new HashMap();
 	
+	//iterate through all of the necessary continuations for this HMethod
 	while(!cont_todo.isEmpty()) {
 	    Quad quadc=(Quad) cont_todo.pop();
 	    System.out.println("AsyncCode building continuation for "+quadc);
@@ -132,6 +150,8 @@ public class AsyncCode {
 	}
 
 	public void visit(HEADER q) {
+	    //Handles building HCode's for the HEADER quad...
+
 	    //need to build continuation for this Header...
 	    //nmh is the HMethod we wish to attach this HCode to
 	    HMethod nhm=(HMethod)old2new.get(hmethod);
@@ -146,7 +166,7 @@ public class AsyncCode {
 	}
 
 	public void visit(CALL q) {
-	    //need to build continuation for this CALL
+	    //builds continuation for CALLs
 	    //nmh is the HMethod we wish to attach this HCode to
 	    System.out.println("ContVisiting"+ q);
 	    HClass hclass=(HClass) cont_map.get(q);
@@ -159,12 +179,12 @@ public class AsyncCode {
 					 new HClass[] {throwable});
 
 	    //Resume method
+	    //have to reset state in visitor class
 	    clonevisit.reset(resume,q.getFactory().tempFactory(), true);
 	    copy(q,0);
 	    System.out.println("Finished resume copying");
 	    //addEdges should add appropriate headers
 	    ucf.update(resume, clonevisit.getCode());
-
 	    //Exception method
 	    clonevisit.reset(exception, q.getFactory().tempFactory(), true);
 	    copy(q,1);
@@ -173,12 +193,15 @@ public class AsyncCode {
 	    ucf.update(exception, clonevisit.getCode());
 	}
 
+	//copies the necessary quads from the original HCode
 	public void copy(Quad q, int resumeexception) {
 	    //-1 normal
 	    //0 resume
 	    //1 exception
 	    WorkSet todo=new WorkSet();
 	    WorkSet done=new WorkSet();
+	    WorkSet dontfollow=new WorkSet();
+
 	    if (resumeexception==-1) {
 		//Don't want to visit the footer
 		done.add(q.next(0));
@@ -195,10 +218,11 @@ public class AsyncCode {
 		    for (int i=0; i<next.length;i++)
 			if (!done.contains(next[i]))
 			    todo.push(next[i]);
-		}
+		} else
+		    dontfollow.add(nq);
 	    }
 	    System.out.println("Start addEdges");
-	    clonevisit.addEdges(q,resumeexception);
+	    clonevisit.addEdges(q,resumeexception,dontfollow);
 	    System.out.println("Finished addEdges");
 	}
 
@@ -226,6 +250,7 @@ public class AsyncCode {
 	WorkSet linkFooters;
 	Temp tthis;
 	ToAsync.BlockingMethods bm;
+	Set phiset;
 
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
@@ -257,6 +282,7 @@ public class AsyncCode {
 		tthis=new Temp(hcode.getFactory().tempFactory());
 	    else
 		tthis=null;
+	    phiset=new WorkSet();
 	}
 
 	public HCode getCode() {
@@ -276,7 +302,7 @@ public class AsyncCode {
 	    return nhclass;
 	}
 
-	public void addEdges(Quad q, int resumeexception) {
+	public void addEdges(Quad q, int resumeexception, Set dontfollow) {
 	    QuadFactory qf=hcode.getFactory();
 	    TempFactory tf=qf.tempFactory();
 	    FOOTER footer=new FOOTER(qf, null, linkFooters.size()+1);
@@ -295,16 +321,15 @@ public class AsyncCode {
 		    done.add(nq);
 		    Quad cnq=(Quad)quadmap.get(nq);
 		    Quad[] next=nq.next();
-		    for (int i=0;i<next.length;i++) {
-			if (quadmap.containsKey(next[i])) {
+		    if (!dontfollow.contains(nq))
+			for (int i=0;i<next.length;i++) {
 			    //this quad was cloned
 			    if (!done.contains(next[i]))
 				todo.push(next[i]);
 			    Quad cn=(Quad)quadmap.get(next[i]);
 			    //add the edge in
-			    Quad.addEdge(cnq,i,nq,q.nextEdge(i).which_pred());
+			    Quad.addEdge(cnq,i,cn,nq.nextEdge(i).which_pred());
 			}
-		    }
 		}
 		//Need to build header
 		Quad first=(Quad) quadmap.get(q.next(resumeexception));
@@ -360,30 +385,44 @@ public class AsyncCode {
 		Quad.addEdge(prev,0,
 			     (Quad)quadmap.get(q.next(resumeexception)),
 			     q.nextEdge(resumeexception).which_pred());
+		fixphis();
 		hcode.quadSet(header);
 	    } else {
 		WorkSet done=new WorkSet();
 		WorkSet todo=new WorkSet();
-		todo.push(q);
+		todo.push(q.next(1));
+		Quad.addEdge((Quad)quadmap.get(q),1,
+			     (Quad)quadmap.get(q.next(1)),q.nextEdge(1).which_pred());
 		while (!todo.isEmpty()) {
 		    Quad nq=(Quad)todo.pop();
 		    done.add(nq);
 		    Quad cnq=(Quad)quadmap.get(nq);
 		    Quad[] next=nq.next();
-		    for (int i=0;i<next.length;i++) {
-			if (quadmap.containsKey(next[i])) {
+		    if (!dontfollow.contains(nq))
+			for (int i=0;i<next.length;i++) {
 			    //this quad was cloned
 			    if (!done.contains(next[i]))
 				todo.push(next[i]);
 			    Quad cn=(Quad)quadmap.get(next[i]);
-			    //add the edge in
-			    Quad.addEdge(cnq,i,cn,q.nextEdge(i).which_pred());
+				//add the edge in
+			    Quad.addEdge(cnq,i,cn,nq.nextEdge(i).which_pred());
 			}
-		    }
 		}
-		//swap in new footer
+		//add in new footer
 		Quad.addEdge((Quad) quadmap.get(q),0, footer,0);
+		fixphis();
 		hcode.quadSet((Quad)quadmap.get(q));
+	    }
+	}
+
+	void fixphis() {
+	    Iterator phiit=phiset.iterator();
+	    while(phiit.hasNext()) {
+		PHI phi=(PHI) phiit.next();
+		for (int i=phi.arity()-1;i>=0;i--)
+		    if (phi.prevEdge(i)==null) {
+			phi=phi.shrink(i);
+		    }
 	    }
 	}
 
@@ -528,6 +567,13 @@ public class AsyncCode {
 	    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
       	}
 
+	public void visit(PHI q) {
+	    followchildren=true;
+	    Object qc=q.clone(hcode.getFactory(), ctmap);
+	    quadmap.put(q, qc);
+	    phiset.add(qc);
+      	}
+
 	public void visit(CALL q) {
 	    TempFactory tf=hcode.getFactory().tempFactory();
 	    if (blockingcalls.contains(q.method())) {
@@ -571,7 +617,7 @@ public class AsyncCode {
 				    new Temp[] {tcont}, null, retex, 
 				    false, false, new Temp[0]);
 		Quad.addEdge(newc,0,call2,0);
-		Quad.addEdge(newc,1,phi,1);
+		Quad.addEdge(call2,1,phi,1);
 		HClass rettype=hc.getMethod().getReturnType();
 		String pref = 
 		    ContBuilder.getPrefix(rettype);
