@@ -3,20 +3,36 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
 import harpoon.Backend.Generic.Frame;
-import harpoon.Temp.*;
-import harpoon.Util.*;
-import harpoon.Util.Collections.*;
+import harpoon.Temp.Label;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
+import harpoon.Util.ArrayFactory;
+import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
+import harpoon.Util.Collections.DefaultMultiMap;
+import harpoon.Util.Collections.MultiMap;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 /**
  * <code>IR.Assem.Code</code> is an abstract superclass of codeviews
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.1 2000-01-26 05:55:55 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.2 2000-01-26 06:03:25 cananian Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
