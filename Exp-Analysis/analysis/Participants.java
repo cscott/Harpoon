@@ -228,7 +228,7 @@ public class Participants {
 	setCorrect("aakrosh", 1, true);
 	setCorrect("aakrosh", 3, true);
 	setCorrect("aakrosh", 2, false);
-	setCorrect("aakrosh", 4, true);
+	setCorrect("aakrosh", 4, false);
 
 	setCorrect("catqueen", 1, true);
 	setCorrect("catqueen", 2, true);
@@ -276,12 +276,12 @@ public class Participants {
 	setCorrect("chengxia", 1, true);
 	setCorrect("chengxia", 2, true);
 	setCorrect("chengxia", 3, true);
-	setCorrect("chengxia", 4, false);
+	setCorrect("chengxia", 4, true);
 
 	setCorrect("chenhui", 2, true);
 	setCorrect("chenhui", 3, true);
 	setCorrect("chenhui", 4, true);
-	setCorrect("chenhui", 1, false);
+	setCorrect("chenhui", 1, true);
 
 	setCorrect("cpyee", 1, false);
 	setCorrect("cpyee", 2, false);
@@ -298,10 +298,10 @@ public class Participants {
 	setCorrect("girish_k", 2, false);
 	setCorrect("girish_k", 4, false);
 
-	setCorrect("hamailan", 3, true);
+	setCorrect("hamailan", 3, true);	
+	setCorrect("hamailan", 2, true);
+	setCorrect("hamailan", 4, true);
 	setCorrect("hamailan", 1, false);
-	setCorrect("hamailan", 2, false);
-	setCorrect("hamailan", 4, false);
 
 	setCorrect("jiahui81", 3, true);
 	setCorrect("jiahui81", 1, false);
@@ -312,11 +312,11 @@ public class Participants {
 	setCorrect("jingwei", 3, true);
 	setCorrect("jingwei", 4, true);
 	setCorrect("jingwei", 1, false);
-
-	setCorrect("joey6", 3, true);
+		
+	setCorrect("joey6", 2, true);
+	setCorrect("joey6", 3, true);	
+	setCorrect("joey6", 4, true);
 	setCorrect("joey6", 1, false);
-	setCorrect("joey6", 2, false);
-	setCorrect("joey6", 4, false);
 
 	setCorrect("josekj", 2, true);
 	setCorrect("josekj", 3, true);
@@ -329,14 +329,14 @@ public class Participants {
 	setCorrect("neelu", 4, false);
 
 	setCorrect("nelly", 2, true);
+	setCorrect("nelly", 3, true);
 	setCorrect("nelly", 4, true);
-	setCorrect("nelly", 1, false);
-	setCorrect("nelly", 3, false);
+	setCorrect("nelly", 1, true);	
 
 	setCorrect("nguyenh2", 2, true);
 	setCorrect("nguyenh2", 3, true);
+	setCorrect("nguyenh2", 4, true);
 	setCorrect("nguyenh2", 1, false);
-	setCorrect("nguyenh2", 4, false);
 
 	setCorrect("nigham", 1, true);
 	setCorrect("nigham", 2, true);
@@ -346,20 +346,20 @@ public class Participants {
 	setCorrect("philipt", 1, true);
 	setCorrect("philipt", 3, true);
 	setCorrect("philipt", 4, true);
-	setCorrect("philipt", 2, false);
+	setCorrect("philipt", 2, true);
 
 	setCorrect("sajindra", 1, true);
-	setCorrect("sajindra", 2, false);
-	setCorrect("sajindra", 3, false);
-	setCorrect("sajindra", 4, false);
+	setCorrect("sajindra", 2, true);
+	setCorrect("sajindra", 3, true);
+	setCorrect("sajindra", 4, true);
 	
 	setCorrect("saroop", 3, true);
 	setCorrect("saroop", 4, true);
 	setCorrect("saroop", 1, false);
 	setCorrect("saroop", 2, false);
-
-	setCorrect("sharad", 3, true);
+	
 	setCorrect("sharad", 4, true);
+	setCorrect("sharad", 3, false);
 	setCorrect("sharad", 1, false);
 	setCorrect("sharad", 2, false);
 
@@ -368,14 +368,54 @@ public class Participants {
 	setCorrect("xieyong", 3, true);
 	setCorrect("xieyong", 4, true);
 
-	setCorrect("xujin", 1, true);
 	setCorrect("xujin", 3, true);
+	setCorrect("xujin", 1, false);
 	setCorrect("xujin", 2, false);
 	setCorrect("xujin", 4, false);
-
+	
 	setCorrect("zhoulei", 2, true);
 	setCorrect("zhoulei", 3, true);
-	setCorrect("zhoulei", 4, true);
+	setCorrect("zhoulei", 4, true);	
 	setCorrect("zhoulei", 1, false);
     }
+
+
+    public void setLocalized(String username, int program, long minutes) {
+	Participant p = getParticipant(username);
+	Round r = p.getRound(program);
+
+	r.setLocalized(minutes);
+    }
+
+
+    // manually set the time spent to localize the bugs
+    public void setLocalized() {	
+	/*
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	setLocalized("", 1, );
+	*/
+    }
+
 }

@@ -31,6 +31,9 @@ public class Round {
     // the time when the program was submitted
     private long endTime;
 
+    // the time spent to localize the bug
+    private long localized;
+
     // whether the bug was fixed or not
     private boolean correct = false;
 
@@ -118,6 +121,11 @@ public class Round {
     public boolean correct() {
 	return correct;
     }
+
+    public long getLocalized() {
+	return localized;
+    }
+
     
     public int getNumberOfBuilds() {
 	return builds.size();
@@ -201,6 +209,10 @@ public class Round {
     
     public void setCorrect(boolean correct) {
 	this.correct = correct;
+    }
+
+    public void setLocalized(long minutes) {
+	this.localized = minutes;
     }
 
 
