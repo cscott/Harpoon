@@ -1864,29 +1864,39 @@ class water {
   public static long ctsize;
   public static int RTJ_alloc_method;
   private static javax.realtime.CTMemory[] ct;
+  public static final boolean allowRTJ = false;
   
   public static void run(Runnable r, int i) {
-    switch (RTJ_alloc_method) {
-    case NO_RTJ: {
-      r.run();
-      break;
-    } 
-    case CT_MEMORY: {
-      if (ct == null) {
-	(new javax.realtime.CTMemory(ctsize)).enter(r);
-      } else {
-	ct[i].enter(r);
+    if (allowRTJ) {
+      switch (RTJ_alloc_method) {
+      case NO_RTJ: {
+	r.run();
+	break;
+      } 
+      case CT_MEMORY: {
+	if (ct == null) {
+	  (new javax.realtime.CTMemory(ctsize)).enter(r);
+	} else {
+	  ct[i].enter(r);
+	}
+	break;
       }
-      break;
-    }
-    case VT_MEMORY: {
-      (new javax.realtime.VTMemory(1000, 1000)).enter(r);
-      break;
-    } 
-    default: {
-      System.out.println("Invalid memory area type!");
-      System.exit(1);
-    }
+      case VT_MEMORY: {
+	(new javax.realtime.VTMemory(1000, 1000)).enter(r);
+	break;
+      } 
+      default: {
+	System.out.println("Invalid memory area type!");
+	System.exit(1);
+      }
+      }
+    } else {
+      if (RTJ_alloc_method != NO_RTJ) {
+	System.out.println("allowRTJ=false, only noRTJ allowed!");
+	System.exit(1);
+      } else {
+	r.run();
+      }
     }
   }
 
@@ -1966,7 +1976,7 @@ class water {
       }
     }
     
-    if ((RTJ_alloc_method != NO_RTJ) &&
+    if ((args.length>3) &&
 	(args[3].equalsIgnoreCase("stats"))) {
       javax.realtime.Stats.print();
     }
