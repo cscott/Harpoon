@@ -72,12 +72,18 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.60 2000-05-26 22:29:18 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.61 2000-05-31 21:33:04 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
     public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
+
+    /** Turns on the save memory mode. In this mode, some of the speed is
+	sacrified for the sake of the memory consumption. More specifically,
+	the <i>Interior</i>, large version of the Parallel Interaction Graph
+	at the end of a method is no longer cached. */
+    public static final boolean SAVE_MEMORY = false;
 
     /** Makes the pointer analysis deterministic to make the debug easier.
 	The main source of undeterminism in our code is the intensive use of
@@ -143,11 +149,11 @@ public class PointerAnalysis {
 	some strong optimizations but requires more time and memory. */
     public static boolean LOOP_SENSITIVE = false;
 
-    // array elements are modeled as fields of the array object, all of them
-    // with the same name since the analysis is not able to make the
-    // distinction between the fields. 
-    // this name is supposed to be "as impossible as possible", so that we
-    // don't have any conflict with real fields.
+    /** Array elements are modeled as fields of the array object, all of them
+	with the same name since the analysis is not able to make the
+	distinction between the fields. 
+	this name is supposed to be "as impossible as possible", so that we
+	don't have any conflict with real fields. */
     public static final String ARRAY_CONTENT = "+ae+";
 
     // The HCodeFactory providing the actual code of the analyzed methods
@@ -170,30 +176,47 @@ public class PointerAnalysis {
     private Map hash_proc_ext = new HashMap();
 
     /** Creates a <code>PointerAnalysis</code>.
-     *<b>Parameters</b>
-     *<ul>
-     *<li>The <code>CallGraph</code> and the <code>AllCallers</code> that
-     * models the relations between the different methods;
-     *<li>A <code>BBConverter</code> that is used to generate the actual
-     * code of the methods and
+     *
+     *  @param _mcg The (meta) Call Graph that models the caller-callee
+     *  relation between methods.
+     *  @param _mac The dual of <code>_mcg</code> (<i>ie</i> the
+     *  callee-caller relation.
+     *  @param lbbconv The producer of the (Light) Basic Block representation
+     *  of a method body. 
+     *
      *</ul> */
     public PointerAnalysis(MetaCallGraph _mcg, MetaAllCallers _mac,
 			   LBBConverter lbbconv){
 	mcg  = _mcg;
 	mac  = _mac;
 	scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
+	if(SAVE_MEMORY)
+	    aamm = new HashSet();
     }
+
+    // the set of already analyzed meta-methods
+    private Set aamm = null;
 
     /** Returns the full (internal) <code>ParIntGraph</code> attached to
      * the method <code>hm</code> i.e. the graph at the end of the method.
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getIntParIntGraph(MetaMethod mm){
-	ParIntGraph pig = (ParIntGraph)hash_proc_int.get(mm);
-	if(pig == null){
-	    analyze(mm);
-	    pig = (ParIntGraph)hash_proc_int.get(mm);
+	if(SAVE_MEMORY){
+	    if(!aamm.contains(mm))
+		analyze(mm);
+	    analyze_intra_proc(mm);
+	    ParIntGraph pig = (ParIntGraph)hash_proc_int.get(mm);
+	    hash_proc_int.clear();
+	    return pig;
 	}
-	return pig;
+	else{
+	    ParIntGraph pig = (ParIntGraph)hash_proc_int.get(mm);
+	    if(pig == null){
+		analyze(mm);
+		pig = (ParIntGraph)hash_proc_int.get(mm);
+	    }
+	    return pig;
+	}
     }
 
     /** Returns the simplified (external) <code>ParIntGraph</code> attached to
@@ -238,7 +261,9 @@ public class PointerAnalysis {
 	if(original_pig == null) return null;
 
 	ParIntGraph new_pig = original_pig.csSpecialize(q);
-	map_mm.put(q,new_pig);
+
+	if(!SAVE_MEMORY)
+	    map_mm.put(q,new_pig);
 
 	return new_pig;	
     }
@@ -402,6 +427,11 @@ public class PointerAnalysis {
 	SCComponent scc = mmethod_sccs.getLast();
 	while(scc != null){
 	    analyze_inter_proc_scc(scc);
+
+	    if(SAVE_MEMORY)
+		for(Iterator it = scc.nodes(); it.hasNext(); )
+		    aamm.add((MetaMethod) it.next());
+
 	    scc = scc.prevTopSort();
 	}
 
@@ -470,8 +500,6 @@ public class PointerAnalysis {
 
 	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(mm_work);
 
-	    //ParIntGraph.DEBUG2 = true;
-
 	    // new info?
 	    if(must_check && !new_info.equals(old_info)){
 
@@ -495,8 +523,6 @@ public class PointerAnalysis {
 			W_inter_proc.add(mm_caller);
 		}
 	    }
-
-	    //ParIntGraph.DEBUG2 = false;
 	}
 
 	// enable some GC:
@@ -511,13 +537,14 @@ public class PointerAnalysis {
 	    cs_specs.clear();
 	// 3. clear the array info
 	cai.clear();
+	// 4. to save memory, the cache of "internal" graphs can be flushed
+	if(SAVE_MEMORY){
+	    System.out.println("hash_proc_int cleared!");
+	    hash_proc_int.clear();
+	}
 
-	long total_time = 0;
 	if(TIMING)
-	    total_time = System.currentTimeMillis() - begin_time;
-
-	if(TIMING)
-	    System.out.println(total_time + "ms");
+	    System.out.println((System.currentTimeMillis()-begin_time) + "ms");
     }
 
     private MetaMethod current_intra_mmethod = null;
@@ -528,7 +555,7 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(MetaMethod mm){
-	if(DEBUG)
+	//if(DEBUG)
 	    System.out.println("META METHOD: " + mm);
 
 	if(STATS) Stats.record_mmethod_pass(mm);
@@ -986,7 +1013,7 @@ public class PointerAnalysis {
 	for(int i = 0; i < len; i++){
 	    Quad q = (Quad) instrs[i];
 
-	    if(DEBUG2)
+	    //if(DEBUG2)
 		System.out.println("INSTR: " + q.getSourceFile() + ":" +
 				   q.getLineNumber() + " " + q);
 	    
@@ -1202,10 +1229,10 @@ public class PointerAnalysis {
 	// for all the basic block of the concerned method; all we need
 	// is to redo the pointer analysis for that basic block, stopping
 	// when we meet q.
-	ParIntGraph retval = analyze_lbb_up_to_q(lbb,q);
+	ParIntGraph retval = analyze_lbb_up_to_q(lbb, q);
+
 	// clear the LightBasicBlock -> ParIntGraph cache generated by
 	// analyze_intra_proc
-
 	//lbb2pig.clear();
 	clear_lbb2pig(lbbf); // annotation;
 
@@ -1244,55 +1271,6 @@ public class PointerAnalysis {
 	return pig.G.I.pointedNodes(l);
     }
 
-
-    /* 
-    private ParIntGraph get_mmethod_initial_pig(MetaMethod mm, METHOD m){
-	Temp[]  params = m.params();
-	HMethod     hm = mm.getHMethod();
-	HClass[] types = hm.getParameterTypes();
-
-	ParIntGraph pig = new ParIntGraph();
-
-	// the following code is quite messy ... The problem is that I 
-	// create param nodes only for the parameter with object types;
-	// unfortunately, the types could be found only in HMethod (and
-	// do not include the evetual this parameter for non-static nodes)
-	// while the actual Temps associated with all the formal parameters
-	// could be found only in METHOD. So, we have to coordinate
-	// information from two different places and, even more, we have
-	// to handle the missing this parameter (which is present in METHOD
-	// but not in HMethod). 
-	boolean isStatic = 
-	    java.lang.reflect.Modifier.isStatic(hm.getModifiers());
-	// if the method is non-static, the first parameter is not metioned
-	// in HMethod - it's the implicit this parameter.
-	int skew = isStatic?0:1;
-	// number of object formal parameters = the number of param nodes
-	int count = skew;
-	for(int i = 0; i < types.length; i++)
-	if(!types[i].isPrimitive()) count++;
-	
-	nodes.addParamNodes(mm,count);
-	Stats.record_mmethod_params(mm,count);
-
-	// add all the edges of type <p,np> (i.e. parameter to 
-	// parameter node) - just for the non-primitive types (e.g. int params
-	// do not clutter our analysis)
-	// the edges for the static fields will
-	// be added later.
-	count = 0;
-	for(int i = 0; i < params.length; i++)
-	    if((i<skew) || ((i>=skew) && !types[i-skew].isPrimitive())){
-		PANode param_node = nodes.getParamNode(mm,count);
-		pig.G.I.addEdge(params[i],param_node);
-		// The param nodes are escaping through themselves
-		pig.G.e.addNodeHole(param_node,param_node);
-		count++;
-	    }
-
-	return pig;
-    }
-    */
 
     /*
     ////////// SPECIAL HANDLING FOR SOME NATIVE METHODS ////////////////////
