@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.89 2000-11-15 17:55:02 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.90 2000-11-16 08:05:36 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -98,7 +98,7 @@ JARPKGS := $(subst harpoon/Contrib,gnu, \
 PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
 	    Support/nativecode-makefile.template \
 	    Support/precisec-makefile.template \
-	    Backend/Runtime1/init-safe-set
+	    $(wildcard Backend/Runtime1/*.properties)
 PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 	 $(foreach dir, $(ALLPKGS),\
 	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/README))
@@ -167,7 +167,7 @@ properties:
 	@cp Contrib/getopt/MessagesBundle.properties gnu/getopt
 	@cp Support/nativecode-makefile.template harpoon/Support
 	@cp Support/precisec-makefile.template harpoon/Support
-	@cp Backend/Runtime1/init-safe-set harpoon/Backend/Runtime1
+	@cp Backend/Runtime1/*.properties harpoon/Backend/Runtime1
 	@echo done.
 
 first:
