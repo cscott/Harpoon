@@ -39,10 +39,13 @@
  * In prior versions of gcc, such functions and data would be emitted, but
  * would be warned about except with attribute((unused)).
  */
+// this macro is renamed from the linux version, because somehow the
+// linux definition has snuck into the system stdio.h file.  so to
+// avoid redefinition, we've renamed it.
 #if __GNUC__ == 3 && __GNUC_MINOR__ >= 3 || __GNUC__ > 3
-#define __attribute_used__	__attribute__((__used__))
+#define __used__	__attribute__((__used__))
 #else
-#define __attribute_used__	__attribute__((__unused__))
+#define __used__	__attribute__((__unused__))
 #endif
 
 #endif /* INCLUDED_COMPILER_H */
