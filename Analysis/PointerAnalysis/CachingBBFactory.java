@@ -8,6 +8,7 @@ import java.util.Hashtable;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.IR.Properties.CFGrapher;
 
@@ -19,7 +20,7 @@ import harpoon.IR.Properties.CFGrapher;
  * to <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CachingBBFactory.java,v 1.1.2.2 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: CachingBBFactory.java,v 1.1.2.3 2000-01-24 03:11:11 salcianu Exp $
  */
 public class CachingBBFactory {
     
@@ -43,20 +44,20 @@ public class CachingBBFactory {
      *  <code>BasicBlock</code>s). All the results are cached. */
     public BasicBlock computeBasicBlocks(HMethod hm){
 
-	System.out.println("Computing the basic blocks for " + hm);
+	// System.out.println("Computing the basic blocks for " + hm);
 
 	if(!cache.containsKey(hm)){
-	    
-	    System.out.println("Computation NOW -> new result");
-
+	    // System.out.println("Computation NOW -> new result");
+	    HCode hcode = hcf.convert(hm);
 	    BasicBlock bb = BasicBlock.computeBasicBlocks(
-		hcf.convert(hm).getRootElement(),
+		hcode.getRootElement(),
 		CFGrapher.DEFAULT);
+
 	    cache.put(hm,bb);
 	    return bb;
 	}
 
-	System.out.println("Old computation");
+	// System.out.println("Old computation");
 
 	return (BasicBlock)cache.get(hm);
     }

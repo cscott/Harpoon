@@ -49,13 +49,13 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.7 2000-01-23 00:42:11 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.8 2000-01-24 03:11:11 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = true;
 
-    public static final String ARRAY_CONTENT = "elements";
+    public static final String ARRAY_CONTENT = "array_elements";
 
     // The HCodeFactory providing the actual code of the analyzed methods
     private CallGraph cg;
@@ -129,7 +129,8 @@ public class PointerAnalysis {
     private PAWorkList  W_intra_proc = new PAWorkList();
 
     /** Repository for node management. */
-    private NodeRepository nodes = new NodeRepository(); 
+    // TODO: Must be private, publci just for debug purposes
+    public NodeRepository nodes = new NodeRepository(); 
 
     // Top-level procedure for the analysis. Receives the main method as
     // parameter. For the moment, it is not doing the inter-thread analysis
@@ -149,10 +150,12 @@ public class PointerAnalysis {
 	    if(!new_info.equals(old_info)){
 		// yes! The callers of hm_work should be added to
 		// the inter-procedural worklist
-		// TODO: remove the comments for the inter-procedural analysis
 		Iterator it = ac.getDirectCallers(hm_work);
-		while(it.hasNext())
-		    W_inter_proc.add(it.next());
+		while(it.hasNext()){
+		    HMethod hm_caller = (HMethod) it.next();
+		    if(analyzable(hm_caller))
+		       W_inter_proc.add(hm_caller);
+		}
 	    }
 	}
     }
@@ -164,8 +167,11 @@ public class PointerAnalysis {
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra(HMethod hm){
 
+	System.out.println("Method: " + hm);
+
 	current_intra_method = hm;
 
+	// add the header basic block to the intra-procedural worklist
 	W_intra_proc.add(bb_factory.computeBasicBlocks(hm));
 	while(!W_intra_proc.isEmpty()){
 	    // grab some "interesting" Basic Block from the worklist
@@ -179,18 +185,20 @@ public class PointerAnalysis {
 	    // IDEA: the equality should be checked only for basic blocks
 	    // with backedges
 	    if(!new_info.equals(old_info)){
-
-		//System.out.println("OLD INFO:" + old_info);
-		//System.out.println("NEW INFO:" + new_info);
-
 		// yes! The succesors of the analyzed basic block
 		// are potentially "interesting", so they should be added
 		// to the intra-procedural worklist
+		
+		/// System.out.print("Neighbors of " + bb_work + ": ");
+
 		Enumeration enum = bb_work.next();
 		while(enum.hasMoreElements()){
-		    // System.out.println("Put a successor");
-		    W_intra_proc.add(enum.nextElement());
+		    BasicBlock bb_next = (BasicBlock)enum.nextElement();
+		    /// System.out.print(bb_next + " ");
+		    W_intra_proc.add(bb_next);
 		}
+		
+		/// System.out.println();
 	    }
 	}
 	hash_bb.clear();
@@ -351,12 +359,20 @@ public class PointerAnalysis {
 	
 
 	public void visit(CALL q){
+
+	    /// System.out.println("Before CALL");
+	    /// System.out.println(bbpig);
+
 	    InterProcPA.analyze_call(current_intra_method,
 				     q,     // the CALL site
 				     bbpig, // the graph before the call
 				     cg,    // the CallGraph
 				     PointerAnalysis.this,
 				     nodes);// the node repository 
+
+	    /// System.out.println("After CALL");
+	    /// System.out.println(bbpig);
+
 	}
 	
 
@@ -392,7 +408,7 @@ public class PointerAnalysis {
      *  in the original program). */
     private ParIntGraph analyze_basic_block(BasicBlock bb){
 
-	System.out.println("Analyze_basic_block " + bb);
+	/// System.out.println("BEGIN: Analyze_basic_block " + bb);
 
 	PAVisitor visitor = new PAVisitor();	
 	Iterator instrs = bb.iterator();
@@ -400,15 +416,12 @@ public class PointerAnalysis {
 	// updated till it become the graph at the bb* point
 	bbpig = get_initial_bb_pig(bb);
 
-	if(bbpig == null)
-	    System.out.println("bbpig is already null");
-	
 	// go through all the instructions of this basic block
 	while(instrs.hasNext()){
 	    
 	    Quad q = (Quad) instrs.next();
 
-	    // System.out.println("Analyzing " + q);
+	    /// System.out.println("Analyzing " + q);
 	    
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction
@@ -416,6 +429,9 @@ public class PointerAnalysis {
 	}
 
 	hash_bb.put(bb,bbpig);
+
+	/// System.out.println("END: Analyze_basic_block " + bb);
+
 	return bbpig;
     }
     
@@ -440,11 +456,6 @@ public class PointerAnalysis {
 	    // This case is treated specially, it's about the
 	    // graph at the beginning of the current method.
 	    ParIntGraph pig = method_initial_pig(current_intra_method);
-
-	    //System.out.println("The mapping at the beginning of " + //DEBUG
-	    //	       current_intra_method + ":");         //DEBUG
-	    //System.out.println(pig);                                //DEBUG
-
 	    return pig;
 	}
 	else{
@@ -518,8 +529,13 @@ public class PointerAnalysis {
 
 
     /** Check if <code>hm</code> can be analyzed by the pointer analysis. */
-    static public final boolean analyzable(HMethod hm){
-	return !(java.lang.reflect.Modifier.isNative(hm.getModifiers()));
+    public final boolean analyzable(HMethod hm){
+	int modifier = hm.getModifiers();
+	return ! (
+	    (java.lang.reflect.Modifier.isNative(modifier)) ||
+	    (java.lang.reflect.Modifier.isAbstract(modifier))
+	    );
+	    
     }
 
     // put into the initial inter-procedural worklist all the

@@ -8,7 +8,7 @@ package harpoon.Analysis.PointerAnalysis;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.5 2000-01-23 00:42:11 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.6 2000-01-24 03:11:11 salcianu Exp $
  */
 public class PANode {
     
@@ -44,7 +44,7 @@ public class PANode {
     public PANode(int _type) {
         type   = _type;
 	number = count++;
-	System.out.println("New node:" + this.toString());
+	/// System.out.println("New node: " + this);
     }
 
     /** Returns the type of the node. */

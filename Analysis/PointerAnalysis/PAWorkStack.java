@@ -1,5 +1,5 @@
 // PAWorkStack.java, created Mon Jan 10 20:16:39 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -9,8 +9,8 @@ import java.util.HashSet;
 /**
  * <code>PAWorkStack</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAWorkStack.java,v 1.1.2.2 2000-01-17 23:49:03 cananian Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: PAWorkStack.java,v 1.1.2.3 2000-01-24 03:11:11 salcianu Exp $
  */
 public class PAWorkStack extends PAWorkSet {
 

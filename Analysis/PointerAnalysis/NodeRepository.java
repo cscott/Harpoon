@@ -4,15 +4,17 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Quads.Quad;
 
 /**
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.4 2000-01-18 04:49:40 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.5 2000-01-24 03:11:11 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -32,9 +34,9 @@ public class NodeRepository {
      * doesn't exist yet. <code>class_name</code> MUST be the full
      * (and hence unique) name of the class */
     public final PANode getStaticNode(String class_name){
-	PANode node = (PANode) code_nodes.get(class_name);
+	PANode node = (PANode) static_nodes.get(class_name);
 	if(node==null)
-	    code_nodes.put(class_name,node = new PANode(PANode.STATIC));
+	    static_nodes.put(class_name,node = new PANode(PANode.STATIC));
 	return node;
     }
 
@@ -88,5 +90,54 @@ public class NodeRepository {
 	return node;
     }
 
+    /** Pretty-printer for debug purposes */
+    public final String toString(){
+	StringBuffer buffer = new StringBuffer();
+
+	buffer.append("PARAMETER NODES:\n");
+	Iterator it1 = param_nodes.keySet().iterator();
+	while(it1.hasNext()){
+	    HMethod method = (HMethod) it1.next();
+	    buffer.append(method.getDeclaringClass().getName());
+	    buffer.append(".");
+	    buffer.append(method.getName());
+	    buffer.append(":\t");
+	    PANode[] nodes = getAllParams(method);
+	    for(int i=0;i<nodes.length;i++){
+		buffer.append(nodes[i]);
+		buffer.append(" ");
+	    }
+	    buffer.append("\n");
+	}
+
+	buffer.append("STATIC NODES:\n");
+	Iterator it2 = static_nodes.keySet().iterator();
+	while(it2.hasNext()){
+	    String class_name = (String) it2.next();
+	    buffer.append(class_name);
+	    buffer.append(":\t");
+	    buffer.append(getStaticNode(class_name));
+	    buffer.append("\n");
+	}
+
+	buffer.append("CODE NODES:\n");
+	Iterator it3 = code_nodes.keySet().iterator();
+	while(it3.hasNext()){
+	    HCodeElement hce = (HCodeElement) it3.next();
+	    Quad q = (Quad) hce;
+	    buffer.append((PANode)code_nodes.get(hce));
+	    buffer.append("\t");
+	    buffer.append(hce.getSourceFile());
+	    buffer.append(":");
+	    buffer.append(hce.getLineNumber());
+	    buffer.append(" ");
+	    buffer.append(hce);
+	    buffer.append("\n");
+	}
+
+	return buffer.toString();
+    }
+
 }
+
 

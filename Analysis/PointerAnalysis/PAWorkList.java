@@ -10,7 +10,7 @@ import java.util.HashSet;
  * <code>PAWorkList</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAWorkList.java,v 1.1.2.2 2000-01-17 23:49:03 cananian Exp $
+ * @version $Id: PAWorkList.java,v 1.1.2.3 2000-01-24 03:11:11 salcianu Exp $
  */
 public class PAWorkList extends PAWorkSet{
 
@@ -37,7 +37,7 @@ public class PAWorkList extends PAWorkSet{
 			       "PAWorkStack");
 	    System.exit(1);
 	}
-	// Add is at the end, remove at the beginning -> list
+	// Add is at the end, remove at the beginning -> list (FIFO)
 	Object o = list.removeFirst();
 	set.remove(o);
 	return o;
