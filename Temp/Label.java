@@ -31,7 +31,10 @@ public class Label  {
    }
 
    public boolean equals(Object o) {
-    Label l = (Label) o;
-    return name.equals(l.name);
+       Label l;
+       if (this==o) return true;
+       if (null==o) return false;
+       try { l=(Label) o; } catch (ClassCastException e) { return false; }
+       return name.equals(l.name);
    }
 }

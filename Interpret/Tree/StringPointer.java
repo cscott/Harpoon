@@ -9,7 +9,7 @@ import harpoon.Util.Tuple;
  * with <code>getValue()</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: StringPointer.java,v 1.1.2.2 1999-05-10 00:01:17 duncan Exp $
+ * @version $Id: StringPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
  */
 public class StringPointer extends Pointer {
     private StaticState ss;
@@ -33,11 +33,12 @@ public class StringPointer extends Pointer {
      *  that points to the same location as this <code>StringPointer</code>.
      */
     public boolean equals(Object obj) { 
-	if (!(obj instanceof StringPointer)) return false;
-	else { 
-	    StringPointer ptr = (StringPointer)obj;
-	    return ptr.getBase()==getBase();
-	}
+	StringPointer ptr;
+	if (this==obj) return true;
+	if (null==obj) return false;
+	try { ptr = (StringPointer)obj; }
+	catch (ClassCastException ignore) { return false; }
+	return ptr.getBase()==getBase();
     }
 
     /** Returns a <code>Label</code> representing the base of this

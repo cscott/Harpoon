@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.11 1999-02-25 17:33:28 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.12 1999-06-18 01:48:03 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -123,8 +123,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 
 	// put the root entry on the worklist and mark it executable.
 	HCodeElement root = hc.getRootElement();
-	if (! (root instanceof Quad) ) 
-	    throw new Error("SCC analysis works only on QuadSSA form.");
+	Util.assert(root instanceof Quad,
+		    "SCC analysis works only on QuadSSA form.");
 	Wq.push(root);
 	Eq.union(root);
 
@@ -903,8 +903,10 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    return "xClass: " + type;
 	}
 	public boolean equals(Object o) {
-	    return (o instanceof xClass &&
-		    ((xClass)o).type.equals(type));
+	    xClass xc;
+	    try { xc=(xClass) o; }
+	    catch (ClassCastException e) { return false;}
+	    return xc!=null && xc.type.equals(type);
 	}
 	public boolean higherThan(LatticeVal v) {
 	    if (!(v instanceof xClass)) return false;
@@ -942,8 +944,10 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		type.getComponentType() + "["+length+"]";
 	}
 	public boolean equals(Object o) {
-	    return (o instanceof xClassArray && super.equals(o) &&
-		    ((xClassArray)o).length == length);
+	    xClassArray xca;
+	    try { xca = (xClassArray) o; }
+	    catch (ClassCastException e) { return false; }
+	    return xca!=null && super.equals(xca) && xca.length == length;
 	}
 	public boolean higherThan(LatticeVal v) {
 	    if (!(v instanceof xClassNonNull)) return false;
@@ -989,9 +993,12 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		"-"+minusWidth+"+"+plusWidth+" bits";
 	}
 	public boolean equals(Object o) {
-	    return (o instanceof xBitWidth && super.equals(o) &&
-		    ((xBitWidth)o).minusWidth == minusWidth   &&
-		    ((xBitWidth)o).plusWidth  == plusWidth    );
+	    xBitWidth xbw;
+	    try { xbw = (xBitWidth) o; }
+	    catch (ClassCastException e) { return false; }
+	    return xbw!=null && super.equals(xbw) &&
+		xbw.minusWidth == minusWidth &&
+		xbw.plusWidth  == plusWidth;
 	}
 	public boolean higherThan(LatticeVal v) {
 	    if (!(v instanceof xClassNonNull)) return false;

@@ -12,7 +12,7 @@ import harpoon.Temp.Label;
  * is simply a <code>Label</code> object.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ConstPointer.java,v 1.1.2.2 1999-05-10 00:01:14 duncan Exp $
+ * @version $Id: ConstPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
  */
 class ConstPointer extends Pointer {
     private final StaticState ss;
@@ -33,12 +33,13 @@ class ConstPointer extends Pointer {
      *  points to the same location as this <code>ConstPointer</code>.
      */
     public boolean equals(Object obj) {
-	if (!(obj instanceof ConstPointer)) return false;
-	else {
-	    ConstPointer ptr = (ConstPointer)obj;
-	    return ((Label)getBase()).toString().
-		equals(((Label)ptr.getBase()).toString());
-	}
+	ConstPointer ptr;
+	if (this==obj) return true;
+	if (null==obj) return false;
+	try { ptr = (ConstPointer)obj; }
+	catch (ClassCastException e) { return false; }
+	return ((Label)getBase()).toString().
+	    equals(((Label)ptr.getBase()).toString());
     }
 
     /** Returns a <code>Label</code> representing the base of this 

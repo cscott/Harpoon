@@ -28,7 +28,7 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.7 1999-06-16 02:34:52 cananian Exp $
+ * @version $Id: SESE.java,v 1.1.2.8 1999-06-18 01:47:56 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -164,11 +164,15 @@ public class SESE  {
 	    return (this.entry==null) && (this.exit==null);
 	}
 	public boolean equals(Object o) {
-	    if (!(o instanceof Region)) return false;
-	    if (isTopLevel()) return ((Region)o).isTopLevel();
+	    Region r;
+	    if (this==o) return true;
+	    if (o==null) return false;
+	    try { r=(Region)o; }
+	    catch (ClassCastException e) { return false; }
+	    if (isTopLevel()) return r.isTopLevel();
 	    else return
-		     this.entry.equals(((Region)o).entry) &&
-		     this.exit.equals(((Region)o).exit);
+		     this.entry.equals(r.entry) &&
+		     this.exit.equals(r.exit);
 	}
 	public int hashCode() {
 	    if (isTopLevel()) return 0;

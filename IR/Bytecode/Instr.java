@@ -21,7 +21,7 @@ import java.util.List;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.7 1999-06-15 20:30:53 sportbilly Exp $
+ * @version $Id: Instr.java,v 1.3.2.8 1999-06-18 01:48:04 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -64,7 +64,10 @@ public abstract class Instr
     return ((Instr)o).id - this.id;
   }
   public boolean equals(Object o) { // exploit global uniqueness of id.
-    return ( (o instanceof Instr) && (((Instr)o).id == this.id) );
+    if (this==o) return true;
+    if (o==null) return false;
+    try { return ((Instr) o).id == this.id; }
+    catch (ClassCastException e) { return false; }
   }
   public int hashCode() { return id; } // exploit global uniqueness of id.
 
@@ -108,10 +111,12 @@ public abstract class Instr
     return new HCodeEdge() {
       public HCodeElement from() { return from; }
       public HCodeElement to() { return to; }
-      public boolean equals(Object o) { 
-	return (o instanceof HCodeEdge &&
-		((HCodeEdge)o).from() == from &&
-		((HCodeEdge)o).to() == to);
+      public boolean equals(Object o) {
+	HCodeEdge hce;
+	if (this==o) return true;
+	if (o==null) return false;
+	try { hce=(HCodeEdge)o; } catch (ClassCastException e) {return false; }
+	return hce.from() == from && hce.to() == to;
       }
       public int hashCode() { return from.hashCode() ^ to.hashCode(); }
     };

@@ -30,7 +30,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.15 1999-06-11 19:56:32 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.16 1999-06-18 01:47:56 cananian Exp $
  */
 
 public class CycleEq  {
@@ -341,8 +341,11 @@ public class CycleEq  {
 	    return descendant.hashCode() ^ ancestor.hashCode();
 	}
 	public boolean equals(Object o) {
-	    if (!(o instanceof Bracket)) return false;
-	    Bracket b = (Bracket) o;
+	    Bracket b;
+	    if (o==null) return false;
+	    if (o==this) return true; // help alias analysis.
+	    try { b = (Bracket) o; }
+	    catch (ClassCastException e) { return false; }
 	    return (b.descendant.equals(descendant) &&
 		    b.ancestor.equals(ancestor));
 	}

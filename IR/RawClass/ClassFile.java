@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.1.2.2 1999-02-05 10:20:03 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.1.2.3 1999-06-18 01:48:05 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class ClassFile {
@@ -126,11 +126,10 @@ public class ClassFile {
     constant_pool_count = in.read_u2();
     constant_pool = new Constant[constant_pool_count];
     // constant_pool[0] is jvm dependent; ignore it.
-    for (int i=1; i<constant_pool_count; i++) {
+    for (int i=1; i<constant_pool_count; ) {
       constant_pool[i] = Constant.read(this, in);
-      if (constant_pool[i] instanceof ConstantLong ||
-	  constant_pool[i] instanceof ConstantDouble)
-	i++; // Long and Double constants take up two entries.
+      // Long and Double constants take up two entries.
+      i+=constant_pool[i].entrySize();
     }
 
     access_flags = new AccessFlags(in);
@@ -170,11 +169,10 @@ public class ClassFile {
       throw new ClassDataException("Constant Pool too large: " +
 				   constant_pool.length);
     out.write_u2(constant_pool.length);
-    for (int i=1; i<constant_pool.length; i++) {
+    for (int i=1; i<constant_pool.length; ) {
       constant_pool[i].write(out);
-      if (constant_pool[i] instanceof ConstantLong ||
-	  constant_pool[i] instanceof ConstantDouble)
-	i++; // Long and Double constants take up two entries.
+      // Long and Double constants take up two entries.
+      i+=constant_pool[i].entrySize();
     }
 
     access_flags.write(out);
@@ -272,10 +270,9 @@ public class ClassFile {
     for (int i=1; i<constant_pool.length; i++) {
       indent(pw, in+2, "Constant {"+i+"}:");
       constant_pool[i].print(pw, in+3);
-      if (constant_pool[i] instanceof ConstantLong ||
-	  constant_pool[i] instanceof ConstantDouble) { // takes two entries
+      // some constants take more than one entry.
+      for (int j=1; j<constant_pool[i].entrySize(); j++)
 	indent(pw, in+2, "Constant {"+ (++i) +"} is invalid.");
-      }
     }
     // this class information
     indent(pw, in+1, "Access Flags: " + access_flags);

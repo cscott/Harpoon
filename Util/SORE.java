@@ -17,7 +17,7 @@ import java.util.Enumeration;
  * "new" (special value to mark pointers that may point to newly allocated objects)
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SORE.java,v 1.1.2.2 1999-01-22 23:34:00 cananian Exp $
+ * @version $Id: SORE.java,v 1.1.2.3 1999-06-18 01:48:10 cananian Exp $
  */
 
 public class SORE  {
@@ -45,8 +45,10 @@ public class SORE  {
 
     // returns true if sore's are equal
     public boolean equals(Object o) {
-	if (!(o instanceof SORE)) return false;
-	SORE s = (SORE)o;
+	SORE s;
+	if (this==o) return true;
+	if (null==o) return false;
+	try {s = (SORE)o;} catch (ClassCastException e) { return false; }
 	if (h.size()!=s.h.size()) return false;
 	for (Enumeration e=h.keys(); e.hasMoreElements(); ) {
 	    Object k = e.nextElement();

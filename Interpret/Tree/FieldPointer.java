@@ -10,7 +10,7 @@ import harpoon.Util.Tuple;
  * modified with <code>updateValue()</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: FieldPointer.java,v 1.1.2.2 1999-05-10 00:01:14 duncan Exp $
+ * @version $Id: FieldPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
  */
 class FieldPointer extends Pointer {
     private boolean isDerived;
@@ -41,12 +41,13 @@ class FieldPointer extends Pointer {
      *  that points to the same location as this <code>FieldPointer</code>.
      */
     public boolean equals(Object obj) {
-	if (!(obj instanceof FieldPointer)) return false;
-	else {
-	    FieldPointer ptr = (FieldPointer)obj;
-	    return (getBase()==ptr.getBase()) &&
-		(getOffset()==ptr.getOffset());
-	}
+	FieldPointer ptr;
+	if (this==obj) return true;
+	if (null==obj) return false;
+	try { ptr = (FieldPointer)obj; }
+	catch (ClassCastException ignore) { return false; }
+	return (getBase()==ptr.getBase()) &&
+	    (getOffset()==ptr.getOffset());
     }
   
     /** Returns an <code>ArrayRef</code> representing the base of this 

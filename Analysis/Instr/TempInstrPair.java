@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
   associates an <code>Instr</code> with a <code>Temp</code>. 
   
   @author  Felix S Klock <pnkfelix@mit.edu>
-  @version $Id: TempInstrPair.java,v 1.1.2.1 1999-06-03 01:46:45 pnkfelix Exp $
+  @version $Id: TempInstrPair.java,v 1.1.2.2 1999-06-18 01:48:03 cananian Exp $
  */
 class TempInstrPair {
     final Temp t;
@@ -27,9 +27,13 @@ class TempInstrPair {
     }
 
     public boolean equals(Object o) {
-	return (o instanceof TempInstrPair && 
-		((TempInstrPair)o).t.equals(this.t) &&
-		((TempInstrPair)o).i.equals(this.i));
+	TempInstrPair tip;
+	if (this==o) return true;
+	if (null==o) return false;
+	try { tip = (TempInstrPair) o; }
+	catch (ClassCastException ignore) { return false; }
+	return tip.t.equals(this.t) &&
+	       tip.i.equals(this.i);
     }
 
     public int hashCode() {

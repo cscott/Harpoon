@@ -217,21 +217,19 @@ public final class BitString implements Cloneable, java.io.Serializable {
    * @return true if the objects are the same; false otherwise.
    */
   public boolean equals(Object obj) {
-    if ((obj != null) && (obj instanceof BitString)) {
-      if (this == obj) { // should help alias analysis
-	return true;
+    BitString set;
+    if (obj==null) return false;
+    if (this==obj) return true; //should help alias analysis
+    try { set = (BitString)obj; }
+    catch (ClassCastException e) { return false; }
+    int n = bits.length;
+    if (n != set.bits.length) return false;
+    for (int i = n ; i-- > 0 ;) {
+      if (bits[i] != set.bits[i]) {
+	return false;
       }
-      BitString set = (BitString) obj;
-      int n = bits.length;
-      if (n != set.bits.length) return false;
-      for (int i = n ; i-- > 0 ;) {
-	if (bits[i] != set.bits[i]) {
-	  return false;
-	}
-      }
-      return true;
     }
-    return false;
+    return true;
   }
 
   public boolean isZero() {

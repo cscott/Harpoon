@@ -8,6 +8,7 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.Util;
 
 import java.util.Hashtable;
 import java.util.Vector;
@@ -17,7 +18,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.HasEdges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8.2.3 1999-05-19 06:45:08 andyb Exp $
+ * @version $Id: DomTree.java,v 1.8.2.4 1999-06-18 01:47:56 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -70,8 +71,8 @@ public class DomTree /*implements Graph*/ {
 	lastHCode = hc;
 
 	// Check interfaces
-	if (! (hc.getRootElement() instanceof HasEdges) )
-	    throw new Error(hc.getName() + " does not implement HasEdges");
+	Util.assert(hc.getRootElement() instanceof HasEdges,
+		    hc.getName() + " does not implement HasEdges");
 
 	// Setup lists and tables.
 	final IntHTable dfnum = new IntHTable();

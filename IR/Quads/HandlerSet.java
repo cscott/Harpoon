@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
  * both <code>Translate</code> and <code>Print</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HandlerSet.java,v 1.1.2.4 1999-06-16 02:34:59 cananian Exp $
+ * @version $Id: HandlerSet.java,v 1.1.2.5 1999-06-18 01:48:05 cananian Exp $
  */
 final public class HandlerSet {
     final HANDLER h;
@@ -35,7 +35,9 @@ final public class HandlerSet {
     final Iterator iterator() { return iterator(this); }
     /** Determines if an object is equal to this <code>HandlerSet</code>. */
     public final boolean equals(Object o) {
-	return (o instanceof HandlerSet) ? equals(this, (HandlerSet)o) : false;
+	HandlerSet hs;
+	try{ hs=(HandlerSet)o; } catch (ClassCastException e) { return false; }
+	return equals(this, hs);
     }
     /** Computes a hashcode for this <code>HandlerSet</code>. */
     public final int hashCode() {

@@ -7,7 +7,7 @@ import harpoon.ClassFile.HField;
  * <code>SFRE</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SFRE.java,v 1.1.2.2 1999-01-22 23:34:00 cananian Exp $
+ * @version $Id: SFRE.java,v 1.1.2.3 1999-06-18 01:48:10 cananian Exp $
  */
 public class SFRE  {
     
@@ -26,8 +26,10 @@ public class SFRE  {
 	return r;
     }
     public boolean equals(Object o) {
-	if (!(o instanceof SFRE)) return false;
-	SFRE s = (SFRE)o;
+	SFRE s;
+	if (this==o) return true;
+	if (null==o) return false;
+	try {s = (SFRE)o;} catch (ClassCastException e) { return false; }
 	if (epsilon!=s.epsilon) return false;
 	if (anyPlus) return s.anyPlus;
 	if (s.anyPlus) return false;

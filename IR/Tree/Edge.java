@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.1.2.1 1999-04-26 01:54:26 duncan Exp $ 
+ * @version $Id: Edge.java,v 1.1.2.2 1999-06-18 01:48:08 cananian Exp $ 
  */
 
 public class Edge implements HCodeEdge {
@@ -53,12 +53,13 @@ public class Edge implements HCodeEdge {
     
     /** Compares two Edges for equality. */
     public boolean equals(Object obj) {
-	if (obj instanceof Edge) {
-	    Edge e = (Edge) obj;
-	    if (e.from.equals(from) && e.to.equals(to) &&
-		e.from_index == from_index /*&& e.to_index == to_index*/)
-		return true;
-	}
+	Edge e;
+	if (this==obj) return true;
+	if (null==obj) return false;
+	try { e=(Edge)obj; } catch (ClassCastException ig) { return false; }
+	if (e.from.equals(from) && e.to.equals(to) &&
+	    e.from_index == from_index /*&& e.to_index == to_index*/)
+	    return true;
 	return false;
     }
     /** Returns a hash code value for this object. */

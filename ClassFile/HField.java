@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.4 1999-01-22 10:46:33 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.5 1999-06-18 01:48:04 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -122,13 +122,14 @@ public abstract class HField implements HMember {
    * class and have the same name and type.
    */
   public boolean equals(Object object) {
-    if (object != null && object instanceof HField) {
-      HField field = (HField) object;
-      if (parent == field.parent &&
-	  getName().equals(field.getName()) &&
-	  type == field.type)
-	return true;
-    }
+    HField field;
+    if (object==null) return false;
+    if (this==object) return true;
+    try { field=(HField)object; } catch (ClassCastException e) {return false; }
+    if (parent == field.parent &&
+	getName().equals(field.getName()) &&
+	type == field.type)
+      return true;
     return false;
   }
   /**
@@ -173,8 +174,10 @@ public abstract class HField implements HMember {
   }
 
   static String getTypeName(HPointer hc) {
-    if (hc instanceof HClass) return getTypeName((HClass)hc);
-    else return hc.getName();
+    HClass hcc;
+    try { hcc = (HClass) hc; }
+    catch (ClassCastException e) { return hc.getName(); }
+    return getTypeName(hcc);
   }
   static String getTypeName(HClass hc) {
     if (hc.isArray()) {

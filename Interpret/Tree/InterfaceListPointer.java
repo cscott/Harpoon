@@ -8,7 +8,7 @@ import harpoon.Util.Tuple;
  * the blocks of class data allocated by the class loader.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterfaceListPointer.java,v 1.1.2.2 1999-05-10 00:01:15 duncan Exp $
+ * @version $Id: InterfaceListPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
  */
 public class InterfaceListPointer extends Pointer {
   
@@ -33,12 +33,13 @@ public class InterfaceListPointer extends Pointer {
      *  as this <code>InterfaceListPointer</code>.
      */
     public boolean equals(Object obj) {
-	if (!(obj instanceof InterfaceListPointer)) return false;
-	else {
-	    InterfaceListPointer ptr = (InterfaceListPointer)obj;
-	    return ptr.getBase()==getBase() &&
-		ptr.getOffset()==getOffset();
-	}
+	InterfaceListPointer ptr;
+	if (this==obj) return true;
+	if (null==obj) return false;
+	try { ptr = (InterfaceListPointer)obj; }
+	catch (ClassCastException ignore) { return false; }
+	return ptr.getBase()==getBase() &&
+	    ptr.getOffset()==getOffset();
     }
 
     /** Returns an <code>InterfaceList</code> representing the base of this 

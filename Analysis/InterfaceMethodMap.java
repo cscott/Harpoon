@@ -26,7 +26,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.8 1999-02-04 19:54:22 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.9 1999-06-18 01:47:56 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -269,12 +269,12 @@ public class InterfaceMethodMap extends MethodMap {
 	public int hashCode() { return hash; }
 
 	public boolean equals(Object o) {
-	    if (o instanceof HmNode) {
-		HmNode n = (HmNode) o;
-		return n.hash == this.hash;
-	    } else {
-		return false;
-	    }
+	    HmNode n;
+	    if (o==null) return false;
+	    if (this==o) return true;
+	    try { n = (HmNode) o; }
+	    catch (ClassCastException e) { return false; }
+	    return n.hash == this.hash;
 	}
 
 	public String toString() {

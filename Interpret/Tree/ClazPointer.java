@@ -8,7 +8,7 @@ import harpoon.Temp.Label;
  * to static class data.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ClazPointer.java,v 1.1.2.2 1999-04-23 06:21:48 pnkfelix Exp $
+ * @version $Id: ClazPointer.java,v 1.1.2.3 1999-06-18 01:48:09 cananian Exp $
  */
 class ClazPointer extends Pointer {
     private boolean isDerived;
@@ -42,13 +42,14 @@ class ClazPointer extends Pointer {
      *  points to the same location as this <code>ClazPointer</code>.
      */
     public boolean equals(Object obj) {
-	if (!(obj instanceof ClazPointer)) return false;
-	else {
-	    ClazPointer ptr = (ClazPointer)obj;
-	    return (((Label)getBase()).toString().equals
-		    (((Label)ptr.getBase()).toString())) &&
-	      getOffset()==ptr.getOffset();
-	}
+	ClazPointer ptr;
+	if (this==obj) return true;
+	if (null==obj) return false;
+	try { ptr = (ClazPointer)obj; }
+	catch (ClassCastException ignore) { return false; }
+	return (((Label)getBase()).toString().equals
+		(((Label)ptr.getBase()).toString())) &&
+	    getOffset()==ptr.getOffset();
     }
 
     /** Returns a <code>Label</code> representing the base of this 

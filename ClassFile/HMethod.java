@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.5 1999-02-09 03:57:35 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.6 1999-06-18 01:48:04 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -241,10 +241,11 @@ public abstract class HMethod implements HMember {
    * class and have the same name and formal parameter types.
    */ // in actual practice, I think HMethods are unique.
   public boolean equals(Object obj) {
+    HMethod method;
     if (obj==null) return false;
     if (this==obj) return true; // common case.
-    if (!(obj instanceof HMethod)) return false;
-    HMethod method = (HMethod) obj;
+    try { method = (HMethod) obj; }
+    catch (ClassCastException e) { return false; }
     if (parent != method.parent) return false;
     if (!getName().equals(method.getName())) return false;
     HClass hc1[] = getParameterTypes();
