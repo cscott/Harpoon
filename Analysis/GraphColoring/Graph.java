@@ -9,58 +9,84 @@ import java.util.Set;
 import java.util.Collection;
 
 /**
- * <code>Graph</code> is an interface describing the operations
- * available for manipulating a graph object.
+ * Abstractly, a <code>Graph</code> is a pair (V, E), where V is a set
+ * of nodes and E is collection of edges between those nodes.
+ *
+ * (E is a collection instead of a set to allow for <i>multigraphs</i>
+ *  which allow multiple edges to exist between the same two nodes)
+ *
+ * The <code>Graph</code> interface provides a number of <i>collection
+ * views</i> of the data maintained by a graph.  In addition to being
+ * able to view the nodes and their neighbors, one can also view the
+ * edges between the nodes themselves.  Note that since some graphs
+ * may not concretely maintain edge objects in their internal
+ * representation.  
+ * Also note that not all graphs are directed, which means that the
+ * following behavior is legal:
+ * <pre>
+ * Object n1, n2;
+ * Graph g;
+ * ...
+ * // g.getChildrenOf(n2).contains(n1) is false here
+ * g.add(n1, n2);
+ * // g.getChildrenOf(n2).contains(n1) is true here
+ * </pre>
+
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.8 2000-07-20 17:55:43 pnkfelix Exp $
+ * @version $Id: Graph.java,v 1.1.2.9 2000-07-20 18:45:40 pnkfelix Exp $
  */
 
 public interface Graph  {
     
-    /** Adds <code>node</code> to <code>this</code>.
-	<BR> <B>requires:</B> <OL>
-	     <LI> <code>this</code> is modifiable, 
-	     <LI> <code>node</code> is of the correct type 
-	          for the graph type implemented by
-		  <code>this</code>. 
-	</OL>
+    /** Ensures that this graph contains <code>node</code>.
 	<BR> <B>modifies:</B> <code>this</code>
-	<BR> <B>effects:</B>  Adds <code>node</code> to
-	                      <code>this</code>, if <code>node</code>
-			      is not already a member of
-			      <code>this</code>.  
-			      Else does nothing.  
+	<BR> <B>effects:</B>  If this method returns normally,
+	     <code>node</code> will be present in the node-set for
+	     <code>this</code>.  Returns <tt>true</tt> if this graph
+	     changed as a result of the call, <tt>false</tt>
+	     otherwise.
+	@throws UnsupportedOperationException addNode is not supported
+	        by this graph.
+	@throws ClassCastException class of specified element prevents
+	        it from being added to this graph.
+	@throws IllegalArgumentException some aspect of
+	        <code>node</code> prevents it from being added to the
+		node-set for this graph.
     */
-    void addNode( Object node );
+    boolean addNode( Object node );
 
-    /** Adds an edge from <code>from</code> to <code>to</code>.
-	<BR> <B>requires:</B> <code>from</code> and <code>to</code>
-	                      are present in <code>this</code> and are
-			      valid targets for a new edge.
+    /** Ensures that this graph contains an edge from
+	<code>from</code> to <code>to</code>. 
 	<BR> <B>modifies:</B> <code>this</code>.
+	<BR> <B>effects:</B> If this method returns normally, an edge
+	     from <code>from</code> to <code>to</code> will be in
+	     <code>this</code>.  Returns <tt>true</tt> if
+	     <code>this</code> changed as a result of the call.
+	@throws IllegalArgumentException <code>from</code> or
+	     <code>to</code> is not present in the node set for
+	     <code>this</code>.
+	@throws UnsupportedOperationException addEdge is not supported
+	     by this graph.
      */
-    void addEdge( Object from, Object to );
+    boolean addEdge( Object from, Object to );
     
     /** Returns the degree of <code>node</code>.
-	<BR> <B>requires:</B>: <code>node</code> is present in
-	                       <code>this</code>
 	<BR> <B>effects:</B> Returns the number of other
-	                     <code>ColorableNode</code>s that
-			     <code>node</code> is connected to. 
+	     <code>Object</code>s that <code>node</code> is joined to.
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
     */
     int getDegree( Object node );
 
-	
-    /** Constructs a <code>Set</code> view of the nodes in <code>this</code>.
+    /** Returns a set view of the nodes in <code>this</code>.
 	<BR> <B>effects:</B> Returns an <code>Set</code> of
 	                     the <code>Object</code>s that have been
 			     successfully added to <code>this</code>.  
     */
-    Set getNodes();
+    Set nodeSet();
 
-    /** Constructs a <code>Collection</code> view for the children of
-	a specific node.
+    /** Returns a collection view for the children of a specific node. 
 	<BR> <B>effects:</B> Returns an <code>Collection</code> view 
 	                     of nodes that have an edge from
 			     <code>node</code> to them. 
@@ -68,11 +94,10 @@ public interface Graph  {
 	                      <code>this</code> while the returned
 			      <code>Collection</code> is in use.
      */
-    Collection getChildrenOf( Object node );
+    Collection childrenOf( Object node );
 
 
-    /** Constructs a <code>Collection</code> view for the parents of a
-	specific node. 
+    /** Returns a collection view for the parents of a specific node. 
 	<BR> <B>effects:</B> Returns a <code>Collection</code> view
 	                     of nodes that have an edge from
 			     them to <code>node</code>. 
@@ -80,18 +105,38 @@ public interface Graph  {
 	                      <code>this</code> while the returned
 			      <code>Collection</code> is in use.
      */
-    Collection getParentsOf( Object node );
+    Collection parentsOf( Object node );
 
-    /** Constructs a <code>Collection</code> view for the neighbors of
-	a specific node. 
-	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
-	                     <code>Node</code>s that have an edge
+    /** Returns a collection view for the neighbors of a specific node. 
+	<BR> <B>effects:</B> Returns an <code>Collection</code> of
+	                     <code>Object</code>s that have an edge
 			     between <code>node</code> and them. 
-        <BR> <B>requires:</B> <code>this</code> is not modified while
+        <BR> <B>mandates:</B> <code>this</code> is not modified while
 	                      the <code>Enumeration</code> returned is
 			      still in use.
      */
-    Collection getNeighborsOf( Object node );
+    Collection neighborsOf( Object node );
+
+    /** Returns a collection view of the edges contained in this graph.
+	<BR> <B>effects:</B> Returns a <code>Collection</code> of
+	     two-element <code>List</code>s (known as <i>pairs</i>)
+	     where each pair corresponds to an edge (n1, n2) in this.
+	     If the graph is modified while an iteration over the
+	     collection is in progress, the results of the iteration
+	     are undefined. 
+    */
+    Collection edges();
+
+    /** Returns a collection view of the edges joining
+	<code>node</code> to nodes in the graph.
+	<BR> <B>effects:</B> Returns a <code>Collection</code> of
+	     two-element <code>List</code>s (known as <i>pairs</i>)
+	     where each pair corresponds to an edge (node, n2) or (n1,
+	     node) in this.  If the graph is modified while an
+	     iteration over the collection is in progress, the results
+	     of the iteration are undefined. 
+    */
+    Collection edgesFor( Object node );
 
 }
 
