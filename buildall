@@ -35,5 +35,5 @@ echo -n "Compiling the Time C client ..."
 gcc -o Time/Client/timemark Time/Client/timemark.c
 echo done
 
-
+./buildone martin-raytrace
 
