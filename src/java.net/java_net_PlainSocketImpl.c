@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <errno.h> /* for errno */
 #include <netinet/in.h> /* for struct sockaddr_in */
+#include <netinet/tcp.h> /* for TCP_NODELAY */
 #include <sys/socket.h> /* for socket(2) */
 #include <string.h> /* for strerror(3) */
 #include <unistd.h> /* for close(2) */
@@ -21,6 +22,8 @@ static jfieldID FD_fdID    = 0; /* The field ID of FileDescriptor.fd */
 static jfieldID IA_addrID  = 0; /* The field ID of InetAddress.address */
 static jfieldID IA_familyID= 0; /* The field ID of InetAddress.family */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
+static jint jSO_BINDADDR, jSO_REUSEADDR, jSO_LINGER, jSO_TIMEOUT;
+static jint jTCP_NODELAY, jIP_MULTICAST_IF;
 static int inited = 0; /* whether the above variables have been initialized */
 #ifdef WITH_HEAVY_THREADS
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -61,6 +64,12 @@ static int initializePSI(JNIEnv *env) {
     if ((*env)->ExceptionOccurred(env)) goto done;
     /* make IOExcCls into a global reference for future use */
     IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
+    /* initialize socket option values.  copied from source file at
+     * at the moment; will work on being able to read these from the binary.*/
+    jTCP_NODELAY=0x0001; jIP_MULTICAST_IF=0x10;
+    jSO_BINDADDR=0x000F; jSO_REUSEADDR=0x04;
+    jSO_LINGER=0x0080; jSO_TIMEOUT=0x1006;
+
     /* done. */
     inited = 1;
  done:
@@ -258,6 +267,12 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_initProto
   /* do nothing. */
 }
 
+static void throwSE(JNIEnv *env, const char * msg) {
+    jclass exc = (*env)->FindClass(env, "java/net/SocketException");
+    if (!(*env)->ExceptionOccurred(env))
+	(*env)->ThrowNew(env, exc, msg);
+}
+
 /*
  * Class:     java_net_PlainSocketImpl
  * Method:    socketSetOption
@@ -266,7 +281,41 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_initProto
 /** set socket options */
 JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketSetOption
   (JNIEnv *env, jobject _this, jint opt, jboolean on, jobject value) {
-  assert(0);
+    struct linger li;
+    int fd, optval = on ? 1 : 0;
+    jobject fdObj; jclass cls;
+    assert(inited);
+    fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
+    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    cls = (*env)->GetObjectClass(env, value);
+    if (opt == jTCP_NODELAY) {
+	if (setsockopt(fd, SOL_TCP, TCP_NODELAY, &optval, sizeof(optval))==0)
+	    return;
+    } else if (opt == jSO_REUSEADDR) {
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,&optval,sizeof(optval))==0)
+	    return;
+    } else if (opt == jIP_MULTICAST_IF) {
+	struct in_addr sa;
+	sa.s_addr = htonl( (*env)->GetIntField(env, value, IA_addrID) );
+	if (setsockopt(fd, SOL_IP, IP_MULTICAST_IF,&sa,sizeof(sa))==0)
+	    return;
+    } else if (opt == jSO_LINGER) {
+	// move from Integer to struct linger
+        memset(&li, 0, sizeof(struct linger));
+	if (on) {
+	    jmethodID mid = (*env)->GetMethodID(env, cls, "intValue", "()I");
+	    li.l_linger = (*env)->CallIntMethod(env, value, mid);
+	    li.l_onoff = 1;
+	}
+	if (setsockopt(fd, SOL_SOCKET, SO_LINGER, &li, sizeof(li))==0)
+	    return;
+    } else { /* unknown option */
+	throwSE(env, "Unknown socket option.");
+	return;
+    }
+    /* error in setsockopt */
+    throwSE(env, strerror(errno));
+    return;
 }
 
 /*
@@ -283,5 +332,26 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketSetOption
  */
 JNIEXPORT jint JNICALL Java_java_net_PlainSocketImpl_socketGetOption
   (JNIEnv *env, jobject _this, jint opt) {
-  assert(0);
+    struct linger li;
+    int fd, optval, optlen;
+    jobject fdObj;
+    assert(inited);
+    fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
+    fd = (*env)->GetIntField(env, fdObj, FD_fdID);
+    if (opt == jTCP_NODELAY) {
+	optlen = sizeof(optval);
+	if (getsockopt(fd, SOL_TCP, TCP_NODELAY, &optval, &optlen) == 0)
+	    return optval ? 1 : -1;
+    } else if (opt == jSO_LINGER) {
+	memset(&li, 0, sizeof(li));
+	optlen = sizeof(li);
+	if (getsockopt(fd, SOL_SOCKET, SO_LINGER, &li, &optlen) == 0)
+	    return li.l_onoff ? li.l_linger : -1;
+    } else {
+	throwSE(env, "Unknown socket option.");
+	return 0;
+    }
+    /* error in getsockopt */
+    throwSE(env, strerror(errno));
+    return 0;
 }
