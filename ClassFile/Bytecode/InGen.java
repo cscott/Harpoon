@@ -1,5 +1,6 @@
 package harpoon.ClassFile.Bytecode;
 
+//import harpoon.ClassFile.Raw.Constant.*;
 import harpoon.ClassFile.*;
 import harpoon.Util.Util;
 
@@ -8,35 +9,215 @@ import harpoon.Util.Util;
  */
 public class InGen extends Instr {
   byte opcode;
-  public InGen(String sourcefile, int linenumber, byte[] code, int pc) {
+  Operand operands[];
+
+  public InGen(String sourcefile, int linenumber, 
+	       byte[] code, int pc, Code parent) {
     super(sourcefile, linenumber);
     this.opcode = code[pc];
+    // Make operands, if necessary.
+    switch(code[pc]) {
+      // Constant local variable index 0:
+    case Op.ALOAD_0:
+    case Op.ASTORE_0:
+    case Op.DLOAD_0:
+    case Op.DSTORE_0:
+    case Op.FLOAD_0:
+    case Op.FSTORE_0:
+    case Op.ILOAD_0:
+    case Op.ISTORE_0:
+    case Op.LLOAD_0:
+    case Op.LSTORE_0:
+      operands = new Operand[] { new OpLocalVariable(0) };
+      break;
+      // Constant local variable index 1:
+    case Op.ALOAD_1:
+    case Op.ASTORE_1:
+    case Op.DLOAD_1:
+    case Op.DSTORE_1:
+    case Op.FLOAD_1:
+    case Op.FSTORE_1:
+    case Op.ILOAD_1:
+    case Op.ISTORE_1:
+    case Op.LLOAD_1:
+    case Op.LSTORE_1:
+      operands = new Operand[] { new OpLocalVariable(1) };
+      break;
+      // Constant local variable index 2:
+    case Op.ALOAD_2:
+    case Op.ASTORE_2:
+    case Op.DLOAD_2:
+    case Op.DSTORE_2:
+    case Op.FLOAD_2:
+    case Op.FSTORE_2:
+    case Op.ILOAD_2:
+    case Op.ISTORE_2:
+    case Op.LLOAD_2:
+    case Op.LSTORE_2:
+      operands = new Operand[] { new OpLocalVariable(2) };
+      break;
+      // Constant local variable index 3:
+    case Op.ALOAD_3:
+    case Op.ASTORE_3:
+    case Op.DLOAD_3:
+    case Op.DSTORE_3:
+    case Op.FLOAD_3:
+    case Op.FSTORE_3:
+    case Op.ILOAD_3:
+    case Op.ISTORE_3:
+    case Op.LLOAD_3:
+    case Op.LSTORE_3:
+      operands = new Operand[] { new OpLocalVariable(3) };
+      break;
+      // Local variable index
+    case Op.ALOAD:
+    case Op.ASTORE:
+    case Op.DLOAD:
+    case Op.DSTORE:
+    case Op.FLOAD:
+    case Op.FSTORE:
+    case Op.ILOAD:
+    case Op.ISTORE:
+    case Op.LLOAD:
+    case Op.LSTORE:
+      operands = new Operand[] { new OpLocalVariable(u1(code,pc+1)) };
+      break;
+      // Class
+    case Op.ANEWARRAY:
+    case Op.CHECKCAST:
+    case Op.INSTANCEOF:
+    case Op.NEW:
+      operands = new Operand[] { new OpClass(parent, u2(code,pc+1)) };
+      break;
+      // Field
+    case Op.GETFIELD:
+    case Op.GETSTATIC:
+    case Op.PUTFIELD:
+    case Op.PUTSTATIC:
+      operands = new Operand[] { new OpField(parent, u2(code,pc+1)) };
+      break;
+      // Method
+    case Op.INVOKESPECIAL:
+    case Op.INVOKESTATIC:
+    case Op.INVOKEVIRTUAL:
+    case Op.INVOKEINTERFACE: // note that we discard an unnecessary operand.
+      operands = new Operand[] { new OpMethod(parent, u2(code,pc+1)) };
+      break;
+      // Byte
+    case Op.BIPUSH:
+    case Op.NEWARRAY:
+      operands = new Operand[] { 
+	new OpConstant(new Byte(code[pc+1]), HClass.Byte)
+      };
+      break;
+      // Short
+    case Op.SIPUSH:
+      operands = new Operand[] { 
+	new OpConstant(new Short((short)u2(code,pc+1)), HClass.Byte)
+      };
+      break;
+      // Integer constant.
+    case Op.ICONST_M1:
+    case Op.ICONST_0:
+    case Op.ICONST_1:
+    case Op.ICONST_2:
+    case Op.ICONST_3:
+    case Op.ICONST_4:
+    case Op.ICONST_5:
+      operands = new Operand[] {
+	new OpConstant(new Integer((int)(code[pc]-Op.ICONST_0)), HClass.Int)
+      };
+      break;
+      // Long constant.
+    case Op.LCONST_0:
+    case Op.LCONST_1:
+      operands = new Operand[] {
+	new OpConstant(new Long((long)(code[pc]-Op.LCONST_0)), HClass.Long)
+      };
+      break;
+      // Floating-point constant.
+    case Op.FCONST_0:
+    case Op.FCONST_1:
+    case Op.FCONST_2:
+      operands = new Operand[] {
+	new OpConstant(new Float((float)(code[pc]-Op.FCONST_0)), HClass.Float)
+      };
+      break;
+      // General constant.
+    case Op.LDC:
+      operands = new Operand[] { new OpConstant(parent, u1(code,pc+1)) };
+      break;
+    case Op.LDC_W:
+    case Op.LDC2_W:
+      operands = new Operand[] { new OpConstant(parent, u2(code,pc+1)) };
+      break;
+      // Odd-balls
+    case Op.IINC:
+      operands = new Operand[] {
+	new OpLocalVariable(u1(code,pc+1)),
+	new OpConstant(new Integer((int)code[pc+2]), HClass.Int)
+      };
+      break;
+    case Op.MULTIANEWARRAY:
+      operands = new Operand[] {
+	new OpClass(parent, u2(code,pc+1)),
+	new OpConstant(new Integer(u1(code,pc+3)), HClass.Int)
+      };
+      break;
+    case Op.RET:
+      operands = new Operand[] { 
+	new OpConstant(new Integer(u1(code,pc+1)), HClass.Int)
+      };
+      break;
+    case Op.WIDE: // this is evil.
+      this.opcode = code[pc+1];
+      operands = new Operand[] { new OpLocalVariable(u2(code, pc+2)) };
+      if (code[pc+1]==Op.IINC) // very evil.
+	operands = new Operand[] { 
+	  operands[0], 
+	  new OpConstant(new Integer(u2(code,pc+4)), HClass.Int) 
+	};
+      break;
+      // Takes an operand, but don't belong:
+    case Op.GOTO:
+    case Op.GOTO_W:
+    case Op.IF_ACMPEQ:
+    case Op.IF_ACMPNE:
+    case Op.IF_ICMPEQ:
+    case Op.IF_ICMPNE:
+    case Op.IF_ICMPLT:
+    case Op.IF_ICMPGE:
+    case Op.IF_ICMPGT:
+    case Op.IF_ICMPLE:
+    case Op.IFEQ:
+    case Op.IFNE:
+    case Op.IFLT:
+    case Op.IFGE:
+    case Op.IFGT:
+    case Op.IFLE:
+    case Op.IFNONNULL:
+    case Op.IFNULL:
+    case Op.JSR:
+    case Op.JSR_W:
+    case Op.LOOKUPSWITCH:
+    case Op.TABLESWITCH:
+      throw new Error("Branch operations are not InGen's.");
+    default:
+      operands = new Operand[0];
+      break;
+    }
+    // done.  yay.
   }
-
-  /*
-  HClass  resultType;
-  byte opcode;
-  Operand operands[];
-  HClass  operandTypes[];
-
-  // Full constructor.
-  public InGen(String sourcefile, int linenumber, HClass resultType,
-	       byte opcode, Operand operands[], HClass operandTypes[]) {
-    super(sourcefile, linenumber);
-    this.resultType = resultType;
-    this.opcode = opcode;
-    this.operands = (Operand[]) Util.copy(operands);
-    this.operandTypes = (HClass[]) Util.copy(operandTypes);
+  static int u1(byte[] code, int pc) {
+    return ((int) code[pc]) & 0xFF;
+  }
+  static int u2(byte[] code, int pc) {
+    return (u1(code,pc) << 8) | u1(code,pc+1);
   }
 
   public byte getOpcode() { return opcode; }
   public Operand getOperand(int i) { return operands[i]; }
   public Operand[] getOperands() { return (Operand[]) Util.copy(operands); }
-  public HClass  getOperandType(int i) { return operandTypes[i]; }
-  public HClass[] getOperandTypes() { 
-    return (HClass[]) Util.copy(operandTypes); 
-  }
-  */
 
   // provide run-time checks on arity.
   /** @see Instr#addPrev */
@@ -67,5 +248,6 @@ public class InGen extends Instr {
     */
     return sb.toString();
   }
+
 }
 

@@ -13,7 +13,7 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.5 1998-08-03 11:12:13 cananian Exp $
+ * @version $Id: Op.java,v 1.6 1998-08-04 01:56:56 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code
@@ -739,6 +739,7 @@ public final class Op {
     long l4 = ((long) b4) & 0xFF;
     return (l1<<24)|(l2<<16)|(l3<<8)|l4;
   }
+  /** Make an unsigned byte into an integer. */
   private static int ub2i(byte b) {
     return ((int) b) & 0xFF;
   }

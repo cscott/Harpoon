@@ -1,14 +1,15 @@
 package harpoon.ClassFile.Bytecode;
 
 import harpoon.ClassFile.*;
+import harpoon.ClassFile.Raw.Constant.*;
 
 /**
- * <code>OpConstant</code> represents a constant operands of a java bytecode
+ * <code>OpConstant</code> represents a constant operand of a java bytecode
  * instruction.  This would typically be taken from the 
  * <code>constant_pool</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.1 1998-08-03 23:22:15 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.2 1998-08-04 01:56:56 cananian Exp $
  * @see Operand
  * @see Instr
  */
@@ -17,12 +18,30 @@ public class OpConstant extends Operand {
   HClass type;
   /** Make a new <code>OpConstant</code> with the specified value and type. */
   public OpConstant(Object value, HClass type) {
-    this.value = value;  this.type=type;
+    this.value = value;  this.type=type; check();
+  }
+  private void check() {
     // assert that value matches type.
     HClass check = HClass.forClass(value.getClass());
     if ((type.isPrimitive() && check!=type) ||
 	(!type.isPrimitive()&& check!=type.getWrapper()))
       throw new Error("value doesn't match type of OpConstant.");
+  }
+  /** Make a new <code>OpConstant</code> from a 
+   *  <code>constant_pool</code> entry. */
+  public OpConstant(Code parent, int constant_pool_index) {
+    Constant c = parent.getConstant(constant_pool_index);
+    if (c instanceof ConstantValue) {
+      this.value=((ConstantValue)c).value();
+      if (c instanceof ConstantDouble)       this.type=HClass.Double;
+      else if (c instanceof ConstantFloat)   this.type=HClass.Float;
+      else if (c instanceof ConstantInteger) this.type=HClass.Int;
+      else if (c instanceof ConstantLong)    this.type=HClass.Long;
+      else if (c instanceof ConstantString)  
+	this.type=HClass.forName("java.lang.String");
+      else throw new Error("Unknown ConstantValue type: "+c);
+    } else throw new Error("Unknown constant pool entry: "+c);
+    check();
   }
   /** Return the value of this <code>Operand</code>. */
   public Object getValue() { return value; }

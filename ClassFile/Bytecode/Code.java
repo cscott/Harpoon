@@ -5,6 +5,7 @@ import harpoon.ClassFile.Raw.MethodInfo;
 import harpoon.ClassFile.Raw.Attribute.AttributeCode;
 import harpoon.ClassFile.Raw.Attribute.AttributeLineNumberTable;
 import harpoon.ClassFile.Raw.Attribute.LineNumberTable;
+import harpoon.ClassFile.Raw.Constant.Constant;
 import harpoon.Util.Util;
 
 import java.util.Vector;
@@ -13,7 +14,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.4 1998-08-03 11:12:12 cananian Exp $
+ * @version $Id: Code.java,v 1.5 1998-08-04 01:56:56 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -92,7 +93,7 @@ public class Code extends HCode {
 	if (Op.isBranch(code[pc]))
 	  sparse[pc] = new InCti(sf, line, code, pc);
 	else
-	  sparse[pc] = new InGen(sf, line, code, pc);
+	  sparse[pc] = new InGen(sf, line, code, pc, this);
 	v.addElement(sparse[pc]);
 	// Daisy-chain merge node if appropriate.
 	if (m != null) {
@@ -145,6 +146,9 @@ public class Code extends HCode {
     return attrcode; // null if no code attribute was found.
   }
   private AttributeCode attrcode = null;
+  /** Look up a constant in the appropriate constant_pool. */
+  public Constant getConstant(int index) { return getCode().constant(index); }
+
 
   /** Get the line number corresponding to a given pc in the code
    *  array.  Zero is returned if there is no line number information
