@@ -14,7 +14,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.9 2000-01-28 03:17:42 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.10 2000-10-18 21:47:00 cananian Exp $
  */
 final class INSystem {
     static final void register(StaticState ss) {
@@ -102,7 +102,20 @@ final class INSystem {
 		    src_position+length > src.length() ||
 		    dst_position+length > dst.length())
 		    throw aie(ss); // array index out of bounds
-		for (int i=0; i<length; i++) {
+		boolean backward = (src==dst && src_position < dst_position);
+		// arraycopy should never overwrite the stuff it's
+		// copying.  from the javadoc: "If the src and dst
+		// arguments refer to the same array object, then the
+		// copying is performed as if the components at
+		// positions srcOffset through srcOffset+length-1 were
+		// first copied to a temporary array with length
+		// components and then the contents of the temporary
+		// array were copied into positions dstOffset through
+		// dstOffset+length-1 of the argument array." So
+		// sometimes we need to copy the array in reverse order.
+		for (int i= backward ? (length-1) : 0;
+		     backward ? (i >= 0) : (i < length);
+		     i = backward ? (i-1) : (i+1) ) {
 		    Object o = src.get(i+src_position);
 		    if (o instanceof Ref &&
 			!((Ref)o).type.isInstanceOf(dstCT))
