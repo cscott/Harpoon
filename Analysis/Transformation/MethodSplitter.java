@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.21 2001-01-25 20:21:01 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.22 2001-07-03 07:17:07 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -69,24 +69,25 @@ public abstract class MethodSplitter implements java.io.Serializable {
      *    matter, choose <code>true</code>, as this reduces the
      *    memory footprint.
      */
-    public MethodSplitter(final HCodeFactory parent, ClassHierarchy ch,
+    public MethodSplitter(final HCodeFactory _parent, ClassHierarchy ch,
 			  final boolean mutateOriginalBeforeSplit) {
 	final Map origcache = //this is cache for unmutated version
 	    mutateOriginalBeforeSplit ? null : new HashMap();
         this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
 	    public String getCodeName() {
-		return mutateCodeName(parent.getCodeName());
+		return mutateCodeName(_parent.getCodeName());
 	    }
-	    public void clear(HMethod m) { parent.clear(m); }
+	    public void clear(HMethod m) { _parent.clear(m); }
 	    public HCode convert(HMethod m) {
 		List swpair = (List) split2orig.get(m);
 		Token tok = (swpair==null) ? ORIGINAL : (Token) swpair.get(1);
-		HCode hc = (tok==ORIGINAL) ? parent.convert(m) :
+		HCode hc = (tok==ORIGINAL) ? _parent.convert(m) :
+		    // get unmutated version from cache...
+		    (origcache!=null) ? (HCode)origcache.get( swpair.get(0) ) :
 		    hcf.convert( (HMethod)swpair.get(0) );
-		if (origcache!=null) {//put/get unmutated version to/from cache
-		    if (tok==ORIGINAL) origcache.put(m, hc);
-		    else hc = (HCode) origcache.get( swpair.get(0) );
-		}
+		// put unmutated version in cache
+		if (origcache!=null && tok==ORIGINAL)
+		    origcache.put(m, hc);
 		try {
 		    if (hc!=null) hc = mutateHCode(cloneHCode(hc, m), tok);
 		} catch (CloneNotSupportedException ex) {
@@ -96,9 +97,19 @@ public abstract class MethodSplitter implements java.io.Serializable {
 	    }
 	}, true/* save cache */) {
 	    public void clear(HMethod m) {
+		// this version leaks some methods, but it is safe.
+		if (select(m, ORIGINAL).equals(m) &&
+		    (origcache==null || !origcache.containsKey(m)))
+		    parent.clear(m);
+		else
+		    super.clear(m);
+		/*
+		//XXX: this doesn't work because we can clear original
+		//method before all its mutated children are created.
 		// top cache responsible for origcache too.
 		super.clear(m);
 		if (origcache!=null) origcache.remove(m);
+		*/
 	    }
 	};
 	this.ch = ch;
