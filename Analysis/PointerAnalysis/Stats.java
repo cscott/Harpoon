@@ -26,7 +26,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Stats.java,v 1.2 2002-02-25 20:58:41 cananian Exp $
+ * @version $Id: Stats.java,v 1.3 2002-05-10 22:03:34 salcianu Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
@@ -223,6 +223,7 @@ abstract class Stats implements java.io.Serializable {
 	System.out.println("TOTAL: " + total + " bytecode instrs");
 	System.out.println();
 
+	/*
 	System.out.println("ANALYZED CLASSES:");
 	for(Iterator it = cls.iterator(); it.hasNext(); ) {
 	    HClass hclass = (HClass) it.next();
@@ -236,6 +237,7 @@ abstract class Stats implements java.io.Serializable {
 	    System.out.println("SRC " + buff + "/" + hclass.getSourceFile());
 	}
 	return total;
+	*/
     }
 
     // computes the total number of parameters of the method hm;
