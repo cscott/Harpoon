@@ -9,6 +9,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
@@ -49,30 +50,31 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.8 2000-02-08 23:32:18 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.9 2000-02-09 06:01:07 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
     final NameMap m_nm;
     final int EXC_OFFSET;
     final int REF_OFFSET;
+    final DerivationGenerator m_dg;
 
     /** Creates a <code>StubCode</code>. */
     public StubCode(HMethod method, Frame frame) {
-        super(method, null, frame);
+        super(method, null, frame, new DerivationGenerator());
 	this.m_nm = frame.getRuntime().nameMap;
 	this.m_tb = (TreeBuilder) frame.getRuntime().treeBuilder;
 	this.EXC_OFFSET = 1 * m_tb.POINTER_SIZE;
 	this.REF_OFFSET = 3 * m_tb.POINTER_SIZE;
+	this.m_dg = (DerivationGenerator) getTreeDerivation();
 	this.tree = buildStub(method);
     }
-    // first, some generic cruft to complete the Code implementation.
-    public TreeDerivation getTreeDerivation() {
-	throw new Error("derivation information is not implemented.");
-    }
 
-    // down here is the real stub builder code.
+    // here is the real stub builder code.
     Tree buildStub(HMethod method) {
+	final HClass HCcls = frame.getLinker().forName("java.lang.Class");
+	final HClass HCthw = frame.getLinker().forName("java.lang.Throwable");
+
 	List stmlist = new ArrayList();
 	// segment change
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CODE));
@@ -89,11 +91,10 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	Temp[] paramTemps = new Temp[paramTypes.length+1];
 	TEMP[] paramTEMPs = new TEMP[paramTypes.length+1];
 	paramTemps[0] = new Temp(tf.tempFactory(), "rexaddr");
-	paramTEMPs[0] = new TEMP(tf, null, Type.POINTER, paramTemps[0]);
+	paramTEMPs[0] = _TEMP(tf, null, HClass.Void, paramTemps[0]);
 	for (int i=0; i<paramTypes.length; i++) {
 	    paramTemps[i+1] = new Temp(tf.tempFactory(), "param"+i);
-	    paramTEMPs[i+1] = new TEMP(tf, null, class2type(paramTypes[i]),
-				       paramTemps[i+1]);
+	    paramTEMPs[i+1] = _TEMP(tf, null, paramTypes[i], paramTemps[i+1]);
 	}
 	stmlist.add(new METHOD(tf, null, paramTEMPs));
 	// get JNIEnv *
@@ -102,15 +103,15 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	// memory.
 	Temp envT = new Temp(tf.tempFactory(), "env");
 	stmlist.add(new MOVE(tf, null,
-			     new TEMP(tf, null, Type.POINTER, envT),
-			     new MEM(tf, null, Type.POINTER,
-				     new NAME(tf, null,
+			     _TEMP(tf, null, HClass.Void, envT),
+			     _MEM(tf, null, HClass.Void,
+				     _NAME(tf, null, HClass.Void,
 					      new Label("_FNI_JNIEnv")))));
 	// reset the exception field in the thread state.
 	stmlist.add(new MOVE(tf, null,
-			     new MEM(tf, null, Type.POINTER,
+			     _MEM(tf, null, HClass.Void,
 				     new BINOP(tf, null, Type.POINTER, Bop.ADD,
-					       new TEMP(tf, null, Type.POINTER,
+					       _TEMP(tf, null, HClass.Void,
 							envT),
 					       new CONST(tf, null, EXC_OFFSET)
 					       )),
@@ -118,10 +119,10 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	// save the top of the local ref stack (so we can restore it later)
 	Temp refT = new Temp(tf.tempFactory(), "lref");
 	stmlist.add(new MOVE(tf, null,
-			     new TEMP(tf, null, Type.POINTER, refT),
-			     new MEM(tf, null, Type.POINTER,
+			     _TEMP(tf, null, HClass.Void, refT),
+			     _MEM(tf, null, HClass.Void,
 				     new BINOP(tf, null, Type.POINTER, Bop.ADD,
-					       new TEMP(tf, null, Type.POINTER,
+					       _TEMP(tf, null, HClass.Void,
 							envT),
 					       new CONST(tf, null, REF_OFFSET)
 					       ))));
@@ -130,14 +131,15 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	    if (!paramTypes[i].isPrimitive())
 		stmlist.add(new NATIVECALL
 			    (tf, null,
-			     new TEMP
-			     (tf, null, Type.POINTER, paramTemps[i+1]),
-			     new NAME
-			     (tf, null, new Label("_FNI_NewLocalRef")),
-			      new ExpList
-			      (new TEMP(tf, null, Type.POINTER, envT),
+			     _TEMP
+			     (tf, null, HClass.Void, paramTemps[i+1]),
+			     _NAME
+			     (tf, null, HClass.Void,
+			      new Label("_FNI_NewLocalRef")),
+			     new ExpList
+			      (_TEMP(tf, null, HClass.Void, envT),
 			       new ExpList
-			       (new TEMP(tf,null,Type.POINTER,paramTemps[i+1]),
+			       (_TEMP(tf, null, paramTypes[i],paramTemps[i+1]),
 				null))));
 	// wrap a class object pointer for static methods.
 	Temp classT = null;
@@ -145,14 +147,14 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	    classT = new Temp(tf.tempFactory(), "jclass");
 	    stmlist.add(new NATIVECALL
 			(tf, null,
-			 new TEMP
-			 (tf, null, Type.POINTER, classT),
-			 new NAME
-			 (tf, null, new Label("_FNI_NewLocalRef")),
+			 _TEMP
+			 (tf,null,HClass.Void, classT),
+			 _NAME
+			 (tf,null,HClass.Void, new Label("_FNI_NewLocalRef")),
 			 new ExpList
-			 (new TEMP(tf, null, Type.POINTER, envT),
+			 (_TEMP(tf, null, HClass.Void, envT),
 			  new ExpList
-			  (new NAME(tf, null,
+			  (_NAME(tf, null, HCcls,
 				    m_nm.label(method.getDeclaringClass(),
 					       "classobj")),
 			   null))));
@@ -161,16 +163,15 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	ExpList jniParams = null;
 	for (int i=paramTypes.length-1; i>=0; i--)
 	    jniParams = new ExpList
-		(new TEMP(tf, null,
-			  class2type(paramTypes[i]), paramTemps[i+1]),
+		(_TEMP(tf, null, paramTypes[i], paramTemps[i+1]),
 		 jniParams);
 	// second parameter is either a jclass for a static method
 	// or an (already added) 'this' object
 	if (classT != null)
-	    jniParams = new ExpList(new TEMP(tf, null, Type.POINTER, classT),
+	    jniParams = new ExpList(_TEMP(tf, null, HCcls, classT),
 				    jniParams);
 	// first parameter is the JNIEnv *
-	jniParams = new ExpList(new TEMP(tf, null, Type.POINTER, envT),
+	jniParams = new ExpList(_TEMP(tf, null, HClass.Void, envT),
 				jniParams);
 	// Do the call.
 	Temp retT = null;
@@ -178,19 +179,18 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	    retT = new Temp(tf.tempFactory(), "retval");
 	stmlist.add(new NATIVECALL(tf, null,
 				   (retT==null) ? null :
-				   new TEMP(tf, null,
-					    class2type(method.getReturnType()),
+				   _TEMP(tf, null, method.getReturnType(),
 					    retT),
-				   new NAME(tf, null,
+				   _NAME(tf, null, HClass.Void,
 					    new Label(jniMangle(method))),
 				   jniParams));
 	// now clean up afterward: check for exceptions, etc.
 	Temp excT = new Temp(tf.tempFactory(), "excval");
 	stmlist.add(new MOVE(tf, null,
-			     new TEMP(tf, null, Type.POINTER, excT),
-			     new MEM(tf, null, Type.POINTER,
+			     _TEMP(tf, null, HClass.Void, excT),
+			     _MEM(tf, null, HClass.Void,
 				     new BINOP(tf, null, Type.POINTER, Bop.ADD,
-					       new TEMP(tf, null, Type.POINTER,
+					       _TEMP(tf, null, HClass.Void,
 							envT),
 					       new CONST(tf, null, EXC_OFFSET)
 					       ))));
@@ -198,7 +198,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	Label yes_exceptions = new Label();
 	stmlist.add(new CJUMP(tf, null,
 			      new BINOP(tf, null, Type.POINTER, Bop.CMPEQ,
-					new TEMP(tf, null, Type.POINTER, excT),
+					_TEMP(tf, null, HClass.Void, excT),
 					new CONST(tf, null)/*null pointer*/),
 			      no_exceptions, yes_exceptions));
 	// no exceptions occurred.  unwrap return value and return from stub.
@@ -207,16 +207,17 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	if (retT==null)
 	    retexp = new CONST(tf, null);
 	else {
-	    int ty = class2type(method.getReturnType());
-	    if (!method.getReturnType().isPrimitive())
+	    HClass rettype = method.getReturnType();
+	    if (!rettype.isPrimitive())
 		stmlist.add(new NATIVECALL(tf, null,
-					   new TEMP(tf, null, ty, retT),
-					   new NAME(tf, null,
+					   _TEMP(tf, null, rettype, retT),
+					   _NAME(tf, null, HClass.Void,
 						    new Label("_FNI_Unwrap")),
 					   new ExpList
-					   (new TEMP(tf, null, ty, retT), null)
+					   (_TEMP(tf, null, HClass.Void, retT),
+					    null)
 					   ));
-	    retexp = new TEMP(tf, null, ty, retT);
+	    retexp = _TEMP(tf, null, rettype, retT);
 	}
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new RETURN(tf, null, retexp));
@@ -225,39 +226,59 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	//  jni functions!)
 	stmlist.add(new LABEL(tf, null, yes_exceptions, false));
 	stmlist.add(new NATIVECALL(tf, null, null,
-				   new NAME(tf, null,
+				   _NAME(tf, null, HClass.Void,
 					    new Label("_FNI_ExceptionClear")),
 				   new ExpList
-				   (new TEMP(tf, null, Type.POINTER, envT),
+				   (_TEMP(tf, null, HClass.Void, envT),
 				    null)
 				   ));
 	stmlist.add(new NATIVECALL(tf, null,
-				   new TEMP(tf, null, Type.POINTER, excT),
-				   new NAME(tf, null,
+				   _TEMP(tf, null, HCthw, excT),
+				   _NAME(tf, null, HClass.Void,
 					    new Label("_FNI_Unwrap")),
 				   new ExpList
-				   (new TEMP(tf, null, Type.POINTER, excT),
+				   (_TEMP(tf, null, HClass.Void, excT),
 				    null)
 				   ));
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new THROW(tf, null,
-			      new TEMP(tf, null, Type.POINTER, excT),
-			      new TEMP(tf, null, Type.POINTER, paramTemps[0])
+			      _TEMP(tf, null, HCthw, excT),
+			      _TEMP(tf, null, HClass.Void, paramTemps[0])
 			      ));
 	return Stm.toStm(stmlist);
     }
     private void emitFreeLocals(List stmlist, Temp envT, Temp refT) {
     	stmlist.add(new NATIVECALL
 		    (tf, null, null, // free local references
-		     new NAME(tf, null,
+		     _NAME(tf, null, HClass.Void,
 			      new Label("_FNI_DeleteLocalRefsUpTo")),
-		     new ExpList(new TEMP(tf, null, Type.POINTER, envT),
-		     new ExpList(new TEMP(tf, null, Type.POINTER, refT),
+		     new ExpList(_TEMP(tf, null, HClass.Void, envT),
+		     new ExpList(_TEMP(tf, null, HClass.Void, refT),
 				 null))));
     }
 
+    private TEMP _TEMP(TreeFactory tf, HCodeElement src,
+		       HClass type, Temp temp) {
+	TEMP result = new TEMP(tf, src, class2type(type), temp);
+	m_dg.putTypeAndTemp(result, type, temp);
+	return result;
+    }
+    private MEM _MEM(TreeFactory tf, HCodeElement src,
+		     HClass type, Exp exp) {
+	MEM result = new MEM(tf, src, class2type(type), exp);
+	m_dg.putType(result, type);
+	return result;
+    }
+    private NAME _NAME(TreeFactory tf, HCodeElement src,
+		       HClass type, Label label) {
+	NAME result = new NAME(tf, src, label);
+	m_dg.putType(result, type);
+	return result;
+    }
+    
     private static int class2type(HClass hc) {
 	if (!hc.isPrimitive()) return Type.POINTER;
+	if (hc==HClass.Void) return Type.POINTER;
 	if (hc==HClass.Boolean || hc==HClass.Byte || hc==HClass.Char ||
 	    hc==HClass.Int || hc==HClass.Short) return Type.INT;
 	if (hc==HClass.Double) return Type.DOUBLE;
