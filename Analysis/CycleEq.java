@@ -30,7 +30,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.11 1999-03-03 01:15:45 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.12 1999-04-03 18:00:56 cananian Exp $
  */
 
 public class CycleEq  {
@@ -287,6 +287,10 @@ public class CycleEq  {
 	public Iterator backedges() { return NodeList.elements(backedges); }
 	/** Pretty-print this node. */
 	public String toString() { return "#"+dfs_num+": "+source(); }
+	/** hashcode. */
+	public int hashCode() {
+	    return ((source()==null)?0:source().hashCode() ) + (isPrime()?5:7);
+	}
 
 	// ugly hack to keep track of list cell corresponding to a back
 	// edge.  The algorithm guys made me do this, honest.  I had no
