@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.3 2001-11-15 09:04:18 cananian Exp $
+% $Id: pldi02.tex,v 1.4 2001-11-15 09:43:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -26,7 +26,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.3 $ $}{$ $Revision: 1.3 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.4 $ $}{$ $Revision: 1.4 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -82,6 +82,8 @@ benchmark suite --- a set of general tasks, which, although they may bear
 little relation to actual programs one would want on an embedded
 device, span a gamut sufficient to adequately show the strengths and
 weaknesses of our techniques.
+
+% graph showing breakdown of allocated memory: header, pointers, fields.
 
 \section{Header Optimizations}
 % header optimizations
@@ -214,8 +216,61 @@ described in {\bf reference here}.  It is based on Wegman and Zadeck's
 Sparse Conditional Constant (SCC) propagation algorithm
 \cite{wegman91:scc}\ldots
 
+{\bf write me}
+% field-based
+
+\subsection{Field packing}
+If the program is going to run on a standard java virtual machine, or
+for some other reason modifications to the runtime environment are not
+possible, then optimization based on the bitwidth analysis can only
+shrink each field to the size of a standard java type: 1,%
+\footnote{If the runtime implements booleans as bit vectors, which the
+  Java language specification allows but does not mandate.}
+8, 16, 32, or 64 bits.  The entire object will be padded so that
+consecutive objects are properly aligned, most often to a word or
+double-word boundary.  This scenario is labelled ``std'' in our tables.
+% XXX: describe our field packing algorithm?
+
+If we can modify the runtime, however, much better use may be made of
+the information from the bitwidth analysis.  For example, we can
+allow field widths of any integral number of bytes, and pad/align
+objects to byte boundaries, instead of words.  This entails some
+cycle overhead on machines which disallow unaligned accesses, but is
+fairly straight-forward to implement.  We can take much better
+advantage of the bitwidth analysis results: a 33-bit wide field will
+end up occupying a byte-aligned 40 bits (5 bytes), instead of the 64
+bits (8 bytes) that the ``std'' scenario would require.  We will refer
+to this scenario as ``byte''.
+
+However, we can even improve this result.  If maximum space reduction
+is desired, we can {\it bit}-align fields within a word.  Further, we
+can bit-align objects as well by shifting our pointers left by 3 and
+using the new lower-order bits to encode a bit-within-the-byte offset.
+This requires much more time overhead to decode pointers and fields.
+This scenario is called ``bit''.
+
+Table {\bf XXX} shows the allocation reductions due to our bitwidth
+analysis under each of the above scenarios.  We can see that {\bf blah
+  blah blah.  ``bit'' does best, of course.}
+
+\subsection{Pointer compression}
 % sub-topic: pointer compression.
 %  present numbers: how your memory stacks up.
+The bitwidth analysis only produces results for fields of integer type.
+These comprise on average {\bf XX}\% of the field bytes allocated in
+our benchmarks.  Fields with reference type constitute {\bf XX}\% of
+the field bytes allocated.  These fields can be compressed, too:
+typically an embedded system will not require a full 32-bit address
+space,\footnote{Not to mention a 64-bit address space!} due to
+limitations on the amount of memory and I/O address space actually attached
+to the device.  If we are byte- or bit-packing our fields already,
+it is straight-forward to implement sub-word widths for fields of
+reference type.  Figure {\bf XX} shows the expected space savings
+across our benchmarks as one shrinks the pointer size.  A
+space-optimizing java compiler ought to be able to specialize the code
+emitted for the address space size of the target device to take
+advantage of these potential savings.
+
 \section{Mostly-zero field analysis}
 % mostly-zero field analysis.
 %  as extension: mostly-'N'
@@ -225,6 +280,10 @@ Sparse Conditional Constant (SCC) propagation algorithm
 %   ``external fields''
 %    profiling/analyses required.
 %    implementation of external hashtable.
+\subsection{Dynamic specialization of final fields}
+\subsection{Creating external fields}
+\subsubsection{External hashtable implementation}
+
 \section{Results}
 % results/discussion.
 %  present sum totals.
@@ -233,6 +292,7 @@ Sparse Conditional Constant (SCC) propagation algorithm
 % conclusion/future work.
 %  better pointer analysis/separate out classes of objects.
 %   (strings as motivating example: compress to byte[])
+%  pointer encoding: more common pointers at lower addresses?
 %  other stuff?
 
 
