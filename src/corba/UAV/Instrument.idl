@@ -1,0 +1,63 @@
+// -*- IDL -*- 
+// above line tells emacs to use IDL mode on this file
+
+// ================================================================
+/**
+ * @file Instrument.idl
+ *
+ * $Id: Instrument.idl,v 1.1 2003-01-16 20:15:11 wbeebee Exp $
+ *
+ * @author Gary Duzan <gduzan@bbn.com>
+ *
+ * @brief  This file contains an interface to report
+ *         events for instrumentation purposes based
+ *         on the CosNotification service.
+ */
+// ================================================================
+
+#ifndef INSTRUMENT_IDL
+#define INSTRUMENT_IDL
+
+#include "CosNotification.idl"
+#include "CosNotifyComm.idl"
+
+#pragma prefix ""
+
+module Instrument
+{
+
+  /// Interface for event delivery
+  typedef CosNotifyComm::StructuredPushConsumer Channel;
+
+  // For use in CosNotification.StructuredEvent.header.fixed_header.event_type.domain_name
+  const string domain_name =	"BBN/QuO/UAV";
+
+  // For use in CosNotification.StructuredEvent.header.fixed_header.event_type.type_name
+  const string ReceivedFrameRate =	"ReceivedFrameRate";
+  const string SentFrameStats    =	"SentFrameStats";
+  const string DistributorFrameStats =	"DistributorFrameStats";
+  const string ReceiverFrameStats =	"ReceiverFrameStats";
+  const string ContractStats     =	"ContractStats";
+
+  // For use in CosNotification.StructuredEvent.header.fixed_header.event_name
+  const string event_name =	"";
+
+  // For use in CosNotification.StructuredEvent.filterable_data[*].name
+  const string Name      =    "Name";
+  const string ProcessName=    "ProcessName"; 
+  const string PID       =    "PID"; 
+  const string FrameRate =		"Actual Frame Rate";
+  const string SequenceNumber =		"FrameNumber";
+  const string Timestamp =		"FrameSendTime";
+  const string ReceiveTime =  "FrameReceiveTime";
+  const string Delay =			"DELAY";
+  const string FrameTiming      =       "Frame Timing";
+  const string ContractRegionName=      "Contract Region Name";
+  const string ContractRegion    =      "Contract Region";
+  const string NegotiatedFrameRate =     "Expected Frame Rate";
+};
+
+
+#endif /* INSTRUMENT_IDL */
+
+

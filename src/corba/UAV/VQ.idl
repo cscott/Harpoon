@@ -1,0 +1,10 @@
+#include "quo.idl"
+
+#pragma prefix ""
+
+module VideoQuality {
+  interface Controller : quo::Callback {
+    void high_grade_video();
+    void low_grade_video();
+  };
+};

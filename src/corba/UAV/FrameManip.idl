@@ -1,0 +1,23 @@
+
+#ifndef FRAMEMANIP_IDL
+#define FRAMEMANIP_IDL
+
+#include "CosPropertyService.idl"
+
+#pragma prefix ""
+
+module FrameManip {
+  typedef CosPropertyService::Properties	FrameInfo;
+  typedef sequence<octet>			FrameData;
+
+  struct Frame {
+    FrameInfo info;
+    FrameData data;
+  };
+
+  interface Processor {
+    Frame transform(in Frame f);
+  };
+};
+
+#endif

@@ -1,0 +1,47 @@
+// -*- IDL -*- 
+// above line tells emacs to use IDL mode on this file
+
+// ================================================================
+/**
+ * @file Control.idl
+ *
+ * $Id: Negotiator.idl,v 1.1 2003-01-16 20:15:11 wbeebee Exp $
+ *
+ * @author Craig Rodrigues <crodrigu@bbn.com>
+ *
+ * @brief  This file contains an interface to link
+ *         an AVStreams Negotiator interfaec and a QuO ValueSC
+ *         interface.  The AVStreams Negotiator interface is
+ *         used to receive feedback about the state of an RSVP 
+ *         reservation.
+ */
+// ================================================================
+
+#ifndef NEGOTIATOR_IDL
+#define NEGOTIATOR_IDL
+
+#include <quo.idl>
+#include <AVStreams.idl>
+
+#pragma prefix ""
+
+module Negotiator
+{
+
+  /// Interface to control a sender
+  interface UAV_Negotiator: quo::ValueSC, AVStreams::Negotiator
+  {
+  };
+
+  // XXX - Inherit from UAV_Negotiator for compatability with legacy
+  interface UAV_Negotiator_Factory : AVStreams::Negotiator
+  {
+    AVStreams::Negotiator make_negotiator(in string flowname);
+  };
+
+};
+
+
+#endif /* NEGOTIATOR_IDL */
+
+

@@ -1,0 +1,76 @@
+// -*- IDL -*- 
+// above line tells emacs to use IDL mode on this file
+
+// ================================================================
+/**
+ * @file Control.idl
+ *
+ * $Id: Control.idl,v 1.1 2003-01-16 20:15:11 wbeebee Exp $
+ *
+ * @author Craig Rodrigues <crodrigu@bbn.com>
+ *
+ * @brief  This file contains some of the Control interfaces.
+ *
+ */
+// ================================================================
+
+#include <AVStreams.idl>
+#include <quo.idl>
+
+#pragma prefix ""
+
+module Control
+{
+
+  /// Interface to control a sender
+  interface Sender_Control
+    {
+
+      exception NoInputPortException{ };
+
+      /// Set the frame dropping behavior
+      /**
+       *  @param level 0, allow all video frames to pass through.
+       *              -1, drop B-frames only.
+       *              -2, drop P-frames as well as B frames.
+       *              >  0, drop <level> I-frames for each I-frame passed.
+       */
+      void setFrameDrop (in long level);
+      long getFrameLevel ();
+
+      /// Request a QoS behavior
+      /**
+       *  @param new_qos New QoS specification
+       */
+      void requestQoS (in AVStreams::streamQoS new_qos);
+
+      /// Find out what the input port is to this sender
+      /**
+       *  @param host  hostname
+       *  @param port  port number
+       *
+       *  Throws an exception if the input is not from a socket port. 
+       */
+      void getInputPort(out string host, out short port)
+        raises(NoInputPortException);
+
+
+      /// Tell a sender to switch output port.
+      /**
+       *  @param host  hostname
+       *  @param port  post number
+       */
+      void switchOutputPort(in string host, in short port);
+
+      /// Tell a sender to switch to a new output, based on a name.
+      /**
+        * @param name  name of Sender_Control object to look up in Naming_Service
+        */
+      void switchOutputByName(in string name);
+
+      void set_streamctrl(in AVStreams::StreamCtrl new_streamctrl);
+      void hookup_to_callback(in quo::ValueSC exp_frame_rate);
+    };
+
+
+};
