@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-11-22 17:31:54 mfoltz> 
+// Time-stamp: <1998-11-27 20:39:10 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -148,17 +148,11 @@ public class Profile {
       parameters[3] = t1;
 
       // if this is a static method call then we need a null constant
-      if (q.objectref == null || _this == null) {
-
-	if (_this == null) parameters[0] = _null_temp;
-	else parameters[0] = _this;
-	if (q.objectref == null) parameters[2] = _null_temp;
-	else parameters[2] = q.objectref; 
-
-      } else {
-	parameters[0] = _this;
-	parameters[2] = q.objectref;	
-      }
+      if (_this == null) parameters[0] = _null_temp;
+      else parameters[0] = _this;
+	
+      if (q.objectref == null) parameters[2] = _null_temp;
+      else parameters[2] = q.objectref; 
 
       CALL profiling_call = new CALL(q.getSourceElement(), _call_profiling_method,
 				     null, parameters, null, new Temp(), false);
@@ -193,8 +187,7 @@ public class Profile {
       Quad.addEdge(c1,0,profiling_call,0);
 
       // splice new quad into CFG
-      Util.assert(q.next().length==1);
-      splice(q.next(0), c1, profiling_call);
+      splice(q, c1, profiling_call);
 
     }
 
@@ -214,8 +207,7 @@ public class Profile {
       Quad.addEdge(_null_CONST,0,_calling_method_name_CONST,0);
       Quad.addEdge(_calling_method_name_CONST,0,_calling_class_name_CONST,0);
 
-      Util.assert(q.next().length==1);
-      splice(q.next(0), _null_CONST, _calling_class_name_CONST);
+      splice(q, _null_CONST, _calling_class_name_CONST);
 
       // make sure _this is null for static methods
       if (_method.isStatic()) _this = null;
@@ -223,14 +215,14 @@ public class Profile {
       // System.err.println(q);
     }
 
-    // Splice quads r to s before q in the CFG.  r is assumed
-    // to have no predecessors and s no successors.
+    // Splice quads r to s after q in the CFG.  r is assumed
+    // to have no predecessors, s no successors, and q 1 successor.
     private void splice(Quad q, Quad r, Quad s) {
-      for (int i = 0; i < q.prev().length; i++) {
-	Quad.addEdge(q.prev(i), q.prevEdge(i).which_succ(),
-		     r, i);
+      Util.assert(q.next().length==1);
+      for (int i = 0; i < q.next().length; i++) {
+	Quad.addEdge(s, i, q.next(i), q.nextEdge(i).which_pred());
       }
-      Quad.addEdge(s, 0, q, 0);
+      Quad.addEdge(q, 0, r, 0);
     }
 
   }
