@@ -20,7 +20,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.13 1999-05-25 20:22:04 andyb Exp $
+ * @version $Id: Instr.java,v 1.1.2.14 1999-05-27 01:55:23 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -63,6 +63,9 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
           String assem, Temp[] dst, Temp[] src) {
         Util.assert(inf != null);
         Util.assert(assem != null);
+	// Util.assert(dst!=null && src!=null, "DST and SRC should not = null");
+	if (src == null) src = new Temp[0];
+	if (dst == null) dst = new Temp[0];
 	
         this.source_file = (source != null)?source.getSourceFile():"unknown";
         this.id = inf.getUniqueID();
