@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Util.NullEnumerator;
 import harpoon.Util.Util;
 import harpoon.Util.Set;
 import harpoon.Util.Worklist;
@@ -22,7 +23,7 @@ import harpoon.Util.Worklist;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.5 1998-09-16 15:57:19 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.6 1998-09-16 22:58:10 cananian Exp $
  * @see Translate
  */
 
@@ -47,27 +48,31 @@ class CleanUp  {
     }
 
     static class UsedTable {
-	Hashtable h = new Hashtable();
+	Hashtable sH = new Hashtable(); // associate set of defs.
+	Hashtable iH = new Hashtable(); // associate # of uses.
 
-	void inc(Temp t, Quad q) {
-	    Set s = (Set) h.get(t);
-	    if (s==null) { s = new Set(); h.put(t, s); }
-	    s.push(q);
+	void addUse(Temp t) {
+	    Integer I = (Integer) iH.get(t);
+	    int i = (I==null)?0:I.intValue();
+	    iH.put(t, new Integer(i+1));
+	}
+	void addDef(Temp t, Quad q) {
+	    Set s = (Set) sH.get(t);
+	    if (s==null) { s=new Set(); sH.put(t, s); }
+	    s.union(q);
 	}
 	int uses(Temp t) {
-	    Set s = (Set) h.get(t);
-	    return (s==null)?0:s.size();
+	    Integer I = (Integer) iH.get(t);
+	    return (I==null)?0:I.intValue();
 	}
-	Enumeration dec(Temp t, Quad q) {
-	    Set s = (Set) h.get(t);
-	    if (s==null) 
-		return new Enumeration() {
-		    public boolean hasMoreElements() { return false; }
-		    public Object nextElement() { return null; }
-	        };
-	    s.remove(q);
-	    if (s.size()==0) h.remove(t);
-	    return s.elements();
+	Enumeration dec(Temp t) {
+	    int i = uses(t);
+	    iH.put(t, new Integer(i-1));
+	    Set s = (Set) sH.get(t);
+	    if (i>1 || s==null)
+		return NullEnumerator.STATIC;
+	    else
+		return s.elements();
 	}
     }
 
@@ -77,7 +82,10 @@ class CleanUp  {
 	for (int i=0; i<ql.length; i++) {
 	    Temp[] u = ql[i].use();
 	    for (int j=0; j<u.length; j++)
-		used.inc(u[j], ql[i]);
+		used.addUse(u[j]);
+	    Temp[] d = ql[i].def();
+	    for (int j=0; j<d.length; j++)
+		used.addDef(d[j], ql[i]);
 	}
 	// put all phis and lambdas on a worklist.
 	Worklist W = new Set();
@@ -95,7 +103,7 @@ class CleanUp  {
 		    if (used.uses(phi.dst[j])==0) {
 			// decrement the uses of the phi args.
 			for (int k=0; k<phi.src[j].length; k++)
-			    for (Enumeration e=used.dec(phi.src[j][k], phi);
+			    for (Enumeration e=used.dec(phi.src[j][k]);
 				 e.hasMoreElements(); )
 				// and push nodes on the list to be examined.
 				W.push(e.nextElement());
@@ -112,7 +120,7 @@ class CleanUp  {
 			    break;
 		    if (k==lambda.dst[j].length) { // no used variables found.
 			// decrement the uses of the lambda source
-			for (Enumeration e = used.dec(lambda.src[j], lambda);
+			for (Enumeration e = used.dec(lambda.src[j]);
 			     e.hasMoreElements(); )
 			    // and push nodes on the worklist to be examined
 			    W.push(e.nextElement());
