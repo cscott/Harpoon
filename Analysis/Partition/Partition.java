@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Fri Oct 23 00:24:17 1998> 
-// Time-stamp: <1998-11-16 23:49:48 mfoltz> 
+// Time-stamp: <1998-11-21 19:01:57 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -43,15 +43,20 @@ public class Partition {
     
   }
 
-  public static long exchange(WeightedGraph g1, WeightedGraph g2) {
+  public static long exchange(WeightedGraph g1, WeightedGraph g2) throws Exception {
 
     // we assume g1 and g2 are the same size
+
+    int size = g1.size();
+    if (size != g2.size()) throw new Exception("exchange bailed on graphs of unequal size!!!");
 
     // set up A and B
     
     WGNode node;
     int pair[] = new int[2], i, j;
     Enumeration nodes;
+
+    // clone the WeightedGraphs into A and B.
 
     WeightedGraph A = new WeightedGraph(g1);
     WeightedGraph B = new WeightedGraph(g2);
@@ -72,11 +77,11 @@ public class Partition {
     recomputeD(A.getNodes(),A,B);
     recomputeD(B.getNodes(),B,A);
 
-    WGNode X[] = new WGNode[g1.size()];
-    WGNode Y[] = new WGNode[g2.size()];
-    long gains[] = new long[Math.max(g1.size(),g2.size())];
+    WGNode X[] = new WGNode[size];
+    WGNode Y[] = new WGNode[size];
+    long gains[] = new long[size];
 
-    for (i = 0; i < A.size(); i++) {
+    for (i = 0; i < size; i++) {
 
       // System.err.print("A:\n"+A);
       // System.err.print("B:\n"+B);
@@ -103,15 +108,20 @@ public class Partition {
       quicksort(Ap,0,Ap.length-1);
       quicksort(Bp,0,Bp.length-1);
 
-      System.err.print("Ap[] = ");
+      System.err.print("Ap: ");
       for (j = 0; j < Ap.length; j++)
-	System.err.print(Ap[j]._d+" ");
+	System.err.print("Ap["+Ap[j]._name+"]="+Ap[j]._d+" ");
       System.err.print("\n");
 
-      System.err.print("Bp[] = ");
+      System.err.print("Bp: ");
       for (j = 0; j < Bp.length; j++)
-	System.err.print(Bp[j]._d+" ");
+	System.err.print("Bp["+Bp[j]._name+"]="+Bp[j]._d+" ");
       System.err.print("\n");
+
+//       System.err.print("Bp[] = ");
+//       for (j = 0; j < Bp.length; j++)
+// 	System.err.print(Bp[j]._d+" ");
+//       System.err.print("\n");
 
       gains[i] = findBestPair(Ap, Bp, pair);
 
@@ -122,14 +132,13 @@ public class Partition {
       X[i] = Ap[pair[0]];
       Y[i] = Bp[pair[1]];
 
-      A.removeNode(Ap[pair[0]]);
-      B.removeNode(Bp[pair[1]]);
+      A.removeNode(X[i]);
+      B.removeNode(Y[i]);
 
       // recompute Ds for nodes adjacent to the pair
 
-      recomputeD(Ap[pair[0]].getAdjacent(),A,B);
-      recomputeD(Bp[pair[1]].getAdjacent(),B,A);
-
+      recomputeD(X[i].getAdjacent(),A,B);
+      recomputeD(Y[i].getAdjacent(),B,A);
     }
 
     // find k to maximize total gain 
@@ -137,8 +146,8 @@ public class Partition {
     int k = -1;
     long gain = 0, max_gain = 0;
 
-    for (i = 0; i < X.length; i++) {
-      gain += gains[i];
+    for (i = 0; i < size; i++) {
+      gain = WeightedGraph.weightPlus(gain,gains[i]);
       if (gain > max_gain) {
 	max_gain = gain;
 	k = i;
@@ -146,10 +155,13 @@ public class Partition {
     }
 
     // swap it
+    if (max_gain > 0) {
 
-    for (i = 0; i <= k; i++) {
-      System.err.println("exchange "+X[i]._name+" and "+Y[i]._name);
-      WeightedGraph.exchange(g1, X[i], g2, Y[i]);
+      for (i = 0; i <= k; i++) {
+	System.err.println("exchange "+X[i]._name+" and "+Y[i]._name);
+	WeightedGraph.exchange(g1, X[i], g2, Y[i]);
+      }
+
     }
 
     return max_gain;
@@ -168,8 +180,10 @@ public class Partition {
 
 	for (k = 0; k <= j; k++) {
 	  //	  if (Ap[i]._d + Bp[k]._d < max_gain) return;
-	  gain = Ap[i]._d + Bp[k]._d - Ap[i].getWeight(Bp[k]);
-	  System.err.print("gain("+i+","+k+")="+gain+"; ");
+	  gain = WeightedGraph.weightPlus(WeightedGraph.weightPlus(Ap[i]._d,Bp[k]._d),
+					  WeightedGraph.weightPlus(-Ap[i].getWeight(Bp[k]),
+								   -Ap[i].getWeight(Bp[k])));
+	  System.err.print("gain("+Ap[i]._name+","+Bp[k]._name+")="+gain+"; ");
 	  if (gain > max_gain) {
 	    max_gain = gain;
 	    pair[0] = i;
@@ -178,9 +192,11 @@ public class Partition {
 	}
 
 	for (k = 0; k < i; k++) {
-	  if (Ap[k]._d + Bp[j]._d < max_gain) return max_gain;
-	  gain = Ap[k]._d + Bp[j]._d - Ap[k].getWeight(Bp[j]);
-	  System.err.print("gain("+k+","+j+")="+gain+"; ");
+	  if (WeightedGraph.weightPlus(Ap[k]._d,Bp[j]._d) < max_gain) return max_gain;
+	  gain = WeightedGraph.weightPlus(WeightedGraph.weightPlus(Ap[k]._d,Bp[j]._d),
+					  WeightedGraph.weightPlus(-Ap[k].getWeight(Bp[j]),
+								   -Ap[k].getWeight(Bp[j])));
+	  System.err.print("gain("+Ap[k]._name+","+Bp[j]._name+")="+gain+"; ");
 	  if (gain > max_gain) {
 	    max_gain = gain;
 	    pair[0] = k;
@@ -215,15 +231,17 @@ public class Partition {
 	adjacent = (WGNode) adjacents.nextElement();
 	weight = (Long) weights.nextElement();
 	if (g1.contains(adjacent)) 
-	  node._d -= weight.longValue();
+	  node._d = WeightedGraph.weightPlus(node._d,-weight.longValue());
+	//	  node._d -= weight.longValue();
 	else if (g2.contains(adjacent))
-	  node._d += weight.longValue();
+	  node._d = WeightedGraph.weightPlus(node._d,weight.longValue());
+	//	  node._d += weight.longValue();
       }
     }
 
   }
 
-  // sort nodes in descending order by D
+  // sort nodes in descending order by D.  
   private static void quicksort(WGNode X[], int i, int j) {
 
     // System.err.println("quicksort(X[],"+i+","+j+")\n");
@@ -235,8 +253,8 @@ public class Partition {
       int m = j;
       WGNode temp;
       while (k < m) {
-	while ((X[k]._d > pivot) && (k < m)) k++;
-	while ((X[m]._d <= pivot) && (k < m)) m--;
+	while (X[k]._d > pivot && (k < m)) k++;
+	while (X[m]._d <= pivot && (k < m)) m--;
 	if (k != m) {
 	  temp = X[m];
 	  X[m] = X[k];
@@ -284,7 +302,7 @@ public class Partition {
       for (i = 0; i < node._edges.size(); i++) {
 	to = (WGNode) node._edges.elementAt(i);
 	if (g2.contains(to)) {
-	  sum = sum + ((Long) node._weights.elementAt(i)).longValue();
+	  sum = WeightedGraph.weightPlus(sum,((Long) node._weights.elementAt(i)).longValue());
 	}
       }
     }
