@@ -28,7 +28,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.23 2000-01-27 08:37:16 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.24 2000-06-28 18:19:15 cananian Exp $
  */
 
 public class CycleEq  {
@@ -70,7 +70,8 @@ public class CycleEq  {
 		    }
 		}
 	    }
-	} while(false); // not really a loop.  Just a block.
+	    break;
+	} while(true); // not really a loop.  Just a block.
     }
     /** Return <code>Collection</code> of cycle-equivalency
      *	<code>List</code>s. */
