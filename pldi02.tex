@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.9 2001-11-16 00:49:47 cananian Exp $
+% $Id: pldi02.tex,v 1.10 2001-11-16 18:05:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -26,7 +26,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.9 $ $}{$ $Revision: 1.9 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.10 $ $}{$ $Revision: 1.10 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -130,7 +130,9 @@ and each object must have a {\it identity hash code} associated with
 it to facilitate hashtable implementations of various kinds.%
 \footnote{Arrays must, in addition, contain a specification of their
   length; we treat the length as a standard {\tt int} field of the
-  object in this paper.}
+  object in this paper.  Although not discussed at length in this
+  paper, the techniques of bitwidth analysis, etc, are equally valid
+  when applied to this field.}
 A typical implementation uses two words of header information in
 addition to the fields contained by the object.  The first, often
 designated {\tt claz}, is a pointer to a class descriptor structure for the
@@ -223,23 +225,51 @@ the {\tt hashCode} method on the generic {\tt Object} type contained
 in the collection.  Either context-sensitivity or a type-cone analysis
 is necessary to obtain the needed precision.
 
-{\bf XXX.  In the SPEC benchmark suite, it is possible to statically
-  determine that {\tt System.identityHashCode()} is never invoked.
-  Thus, we are able to simply identify those classes which override
-  Object.hashCode() and determine that the hashcode information in the
-  second header word is unnecessary for those objects.}
+In this investigation, we used a dynamic enumeration of classes on
+which {\tt Object.hashCode()} or {\tt System.identityHashCode()} is
+actually invoked at run-time.  This allows us to determine the
+upper-bound on hashcode-related savings.  It may initially be
+surprising to learn that only the 213\_javac benchmark ever invokes a
+system hashcode method (on objects of only 8 types); but on reflection
+this should be obvious: hashCodes tightly tied to the objects identity
+(as opposed to its field contents) are typically only useful when some
+guarantee of object uniqueness can be guaranteed.  But the obvious way
+to guarantee that only one object has a given field contents is to
+write a factory method which looks up the proposed new object in a
+{\it field}-keyed hashtable.  This chicken-and-egg problem usually
+assures that a field-based override of the {\tt Object.hashCode()}
+method is implemented.
 
-{\bf XXX. In the results presented here, we will use a dynamic tally
-of the object types on which hashCode is {\it actually} invoked, which
-represents a best-case bound for the analysis.}
-
-In addition, only the SPEC benchmark {\tt 227\_mtrt} is multithreaded;
-it is trivial to determine that synchronization is unnecessary for all
-objects in the other benchmarks.
-
-Table {\bf XX} presents the number of objects on which both
-synchronization and hashcodes can be eliminated in each benchmark,
-along with the space savings for so doing.
+Since only the SPEC benchmark {\tt 227\_mtrt} is multithreaded
+(making it trivial to determine that object locking is unnecessary
+for the other benchmarks)
+and only {\tt 213\_javac} contains
+any objects which require hashcodes, we find that we can completely
+eliminate the second header word from all objects in 7 of our 9 benchmarks.
+Table \ref{tab:hashlock-opt} presents the number of classes on which
+hashcodes and locks are required for each of our benchmarks, and the
+space savings due to eliminating the second header field when it is
+unused.
+\begin{table}
+\begin{tabular}{lccr@{.}l}
+&\multicolumn{2}{c}{\# classes requiring}&\multicolumn{2}{c}{\% alloc'ed}\\
+\bf Benchmark & hashcodes&locks & \multicolumn{2}{c}{space saved} \\\hline
+200\_check	&   0 &   ~0   &  5&1\% \\
+201\_compress	&   0 &   ~0   &  0&1\% \\
+202\_jess	&   0 &   ~0   & 12&0\% \\
+205\_raytrace	&   0 &   ~0   & 19&2\% \\
+209\_db 	&   0 &   ~0   & 16&8\% \\
+213\_javac	&   8 &   ~0   & 13&6\% \\
+222\_mpegaudio	&   0 &   ~0   &  5&0\% \\
+227\_mtrt	&   0 &   17   & 19&0\% \\
+228\_jack	&   0 &   ~0   & 14&7\% \\
+\end{tabular}
+\caption{Number of classes in SPEC benchmarks which dynamically use
+  the hashcode and lock features of the second header word,
+  and the savings (in \% of total allocated bytes) of unused header/lock
+  elimination.}
+\label{tab:hashlock-opt}
+\end{table}
 
 \section{Field compression}
 % field compression.
@@ -263,7 +293,7 @@ A straight-forward implementation with strongly-aligned objects and
 field widths restricted to those of standard Java types will achieve
 modest space reductions with very little implementation effort; these
 gains are achievable even when running in a JVM environment.
-The largest savings require discarding as many alignment restrictions
+The largest savings require eliminating as many alignment restrictions
 as possible, which will typically require substantial changes to the
 runtime system.
 
@@ -281,7 +311,7 @@ Sparse Conditional Constant (SCC) propagation algorithm
 If the program is going to run on a standard java virtual machine, or
 for some other reason modifications to the runtime environment are not
 possible, then optimization based on the bitwidth analysis can only
-shrink each field to the size of a standard java type: 1,
+shrink each field to the size of a standard Java type: 1,
 8, 16, 32, or 64 bits.%
 \footnote{The Java language specification allows, but does not mandate,
   a true 1-bit representation for booleans.  Many JVMs pad boolean
@@ -290,38 +320,49 @@ The entire object will be padded so that
 consecutive objects are properly aligned, most often to a word or
 double-word boundary.  This scenario is labelled ``std'' in our results.
 
-{\bf XXX: describe our field packing algorithm?}
-
 If we can modify the runtime, however, much better use may be made of
 the information gleaned from bitwidth analysis.  For example, we can
 allow field widths of any integral number of bytes, and pad/align
 objects to byte boundaries, instead of words.  This entails some
 cycle overhead on machines which disallow unaligned accesses, but is
-fairly straight-forward to implement.  When this is implemented,
+fairly straight-forward to implement.  When this is done,
 a 33-bit-wide field will
 end up occupying a byte-aligned 40 bits (5 bytes), instead of the 64
 bits (8 bytes) that the ``std'' scenario would require.  We will refer
 to this implementation as ``byte''.
 
-{\bf EDITING STOPPED HERE}
-
-However, we can even improve this result.  If maximum space reduction
+However, we can improve even this result.  If maximum space reduction
 is desired, we can {\it bit}-align fields within a word.  Further, we
 can bit-align objects as well by shifting our pointers left by 3 and
 using the new lower-order bits to encode a bit-within-the-byte offset.
 This requires much more time overhead to decode pointers and fields.
 This scenario is called ``bit''.
 
+{\bf DIAGRAM HERE?}
+
+Note that all but the most aggressive form of the {\it bit} scenario
+requires some amount of object padding.  In a space-conscious
+compiler, careful attention must be paid to field layout to reduce
+the ``holes'' caused by alignment restrictions, when present.  Our
+field layout algorithm keeps a list of alignment-induced ``free
+space'' within the object, and always attempts to fill a hole before
+increasing the object size.  This means that small fields of a
+subclass may end up being slotted {\it between} aligned fields of its
+superclass.  This violates the ``traditional'' superclass-first
+ordering of object fields, but does not pose any special problems.
+
 Table {\bf XXX} shows the allocation reductions due to our bitwidth
 analysis under each of the above scenarios.  We can see that {\bf blah
   blah blah.  ``bit'' does best, of course.}
+
+Recall also table \ref{tab:claz-space}, which shows that aggressive
+field packing can benefit header compression as well.
 
 \subsection{Pointer compression}\label{sec:ptrcmp}
 % sub-topic: pointer compression.
 %  present numbers: how your memory stacks up.
 The bitwidth analysis only produces results for fields of integer type.
-These comprise on average {\bf XX}\% of the field bytes allocated in
-our benchmarks.  Fields with reference type constitute {\bf XX}\% of
+However, fields with reference type constitute {\bf XX}\% of
 the field bytes allocated.  These fields can be compressed, too:
 typically an embedded system will not require a full 32-bit address
 space,\footnote{Not to mention a 64-bit address space!} due to
@@ -358,7 +399,8 @@ the {\tt substring()} method.  So we can reasonably expect the vast
 majority of the {\tt String} objects created in a typical program to
 have a zero {\tt offset} field.  We use dynamic selection of
 statically specialized classes to eliminate the field when its value
-is the ``common'' one.  Where this transformation is inappropriate, we
+is the ``common'' one (zero in this case).  Where this transformation
+is inappropriate, we
 can use an external storage technique to only store ``uncommon''
 values of the field.
 \begin{figure}
@@ -389,7 +431,7 @@ field into a ``small'' version without the field and a ``large''
 subclass containing the field.  Without loss of generality, assume
 that all field accesses have been transformed into calls to setter and
 getter methods.  The ``small'' class will have a getter method
-which will simply return the constant common value.  The ``large''
+which will simply return the constant zero.  The ``large''
 subclass will actually consult the field (which is only present in the
 ``large'' version of the class) and return or set its value (in the
 getter and setter, respectively).  Figure \ref{fig:big-small} illustrates this
@@ -417,32 +459,30 @@ public final class String\\
 \end{figure}
 
 This transformation is only correct for fields which are immutable
-after their initialization.  However, since we will make subclasses of the
-original class inherit from the ``large'' version of the class,
+after their initialization.  However, since in our implementation
+subclasses of the
+original class will inherit from the ``large'' version of the class,
 subclasses are allowed to mutate these fields.  We will say that
 a class is {\it subclass-final} if the only writes to the field
 are contained in constructors of its type and methods of its
 subclasses.  Writes to the field within constructors must occur only on
-the {\it this} object.%
-\footnote{{\bf XXX} Note that if we are considering a non-zero N, then
-  we must also prove that a write to the field occurs on every
-  non-exceptional path through the constructor, to prevent the default
-  'zero' value from leaking out.}
+the {\it this} object.
 
-Some class constructors will always yield objects with zero values for
-the field in question.  We can replace these instantiation expressions
+Some class constructors will always yield objects with zero-valued fields.
+We can replace these instantiation expressions
 with instantiations of the new ``small'' class.  Many constructors,
-however, initialize certain fields with simple functions of their
+however, initialize (at least some) fields with simple functions of their
 parameters.  To handle these cases, we also allow {\it dynamic
   selection} of the instantiated class.  In particular, if we can
 prove that a field is zero iff a certain constructor parameter is
 zero, then we can insert a test at the instantiation site to select
-small class if the parameter is zero, or else use the large class.
+the small class if the parameter is zero, or else to use the large class.
 An example of this approach on code which might constitute an
 implementation of {\tt String.substring()} is shown in figure
 \ref{fig:dyn-select}.  Notice that rewriting the return type of the
 method is necessary to ensure consistency with the new split
-classes; array creation expressions and {\tt instanceof} tests must be
+classes; in general, mentions of the split class in field/method signatures,
+array creation expressions, and {\tt instanceof} tests must be
 similarly widened for proper type-checking.
 
 {\bf MORE INFO HERE? Maybe numbers on how many call sites use constant
@@ -481,9 +521,12 @@ values in an external map.\footnote{Note that this is roughly parallel
 % indeed there is a deep symmetry between object fields and maps.
 The savings are tempered by the requirement of storing a key along
 with the value in the table, and for constructing a ``sufficiently
-large'' hashtable that searches will be efficient.  Typically this
+large'' hashtable so that searches will be efficient.  Typically this
 approach is only worthwhile if more than 75\% of the allocated fields
-are zero-valued.
+are zero-valued.  The transformation is straight-forward: accesses to
+the field in question are replaced by calls to getter/setter methods,
+and then the field is eliminated and the getter/setters rewritten
+to query the external map.
 
 \subsubsection{External hashtable implementation}
 Close attention to the implementation of this external map is
@@ -500,20 +543,34 @@ and values yield an average space consumption of three words per
 field.  This implementation breaks even when the mostly-zero fields
 identified are zero over 66\% of the time.
 
-Key reduction is an important implementation issue: a naive approach
+Key-size reduction is an important component of the implementation:
+a na{\"\i}ve approach
 would combine a one-word reference to the virtual-container object and a
-one-word field identifier for a two-word key.  We can offset the
+one-word field identifier for a two-word key.  The large key will
+shift the break-even point up so that only fields which are 82\% zero
+will profit.  Instead, we can offset the
 object reference (up to the limit of its size) by small integers
-discriminating the externalized fields of the object to yield a
-single-word key, subject to object-size-dependent limits on the number
+to discriminate the externalized fields of the object, which yields
+a single-word key.  This technique is
+subject to object-size-dependent limits on the number
 of class fields which may be externalized.  The pointer compression
-techniques of section \ref{sec:ptrcmp} may also be applied.
+techniques of section \ref{sec:ptrcmp} may also be applied to the
+keys.
+
+\subsection{Identifying mostly-zero fields}
+
+{\bf write me}
 
 \subsection{Mostly-$N$ analysis}
 Although this section has concentrated on zero-valued fields for
 clarity, we need not limit ourselves to these.  Our implementation of
 these ideas actually collects profiling data on ``mostly-$N$'' values
 with $N$ an integer in the range $[-5,5]$.
+
+{\bf XXX} Note that if we are considering a non-zero N, then
+  we must also prove that a write to the field occurs on every
+  non-exceptional path through the constructor, to prevent the default
+  'zero' value from leaking out.
 
 {\bf MORE HERE.}
 
@@ -523,6 +580,9 @@ with $N$ an integer in the range $[-5,5]$.
 %  compress doesn't do so hot: show why.
 
 % discuss: why are there unused/constant fields in programs?
+
+\section{Related work}
+% BW: usually register width, MMX (local variables).  Cite hardware.
 
 \section{Conclusion}
 % conclusion/future work.
