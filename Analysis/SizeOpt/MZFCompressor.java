@@ -48,7 +48,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.7 2001-11-13 22:04:05 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.8 2001-11-13 23:35:23 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -77,7 +77,14 @@ public class MZFCompressor {
 	}
 	flds = Collections.unmodifiableSet(flds);
 	listmap = Collections.unmodifiableMap(listmap);
-	// make accessors for these fields.
+	// before we change any classes (in Field2Method, below)
+	// pull all callable constructors through the ConstructorClassifier
+	// to cache their results.
+	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (isConstructor(hm)) cc.isGood(hm);
+	}
+	// make accessors for the 'good' fields.
 	Field2Method f2m = new Field2Method(hcf, flds);
 	hcf = new CachingCodeFactory(f2m.codeFactory());
 	// pull every method of each relevant class through the code factory.
