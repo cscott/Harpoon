@@ -4,7 +4,6 @@
 package harpoon.Backend.Runtime1;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Realtime.Realtime;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime.ObjectBuilder.ObjectInfo;
 import harpoon.Backend.Generic.Runtime.ObjectBuilder;
@@ -47,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.1.2.7 2001-01-21 04:39:26 wbeebee Exp $
+ * @version $Id: DataReflection1.java,v 1.1.2.8 2001-01-21 06:07:55 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -156,14 +155,7 @@ public class DataReflection1 extends Data {
 		public HClass type() { return HCclass; }
 		public Label label() { return m_nm.label(hc, "classobj"); }
 		public Object get(HField hf) {
-        if ((Realtime.REALTIME_JAVA)&&
-            (linker.forName("java.lang.Object").getField("memoryArea").equals(hf))) {
-          return null; 
-	  // These will get tagged at runtime, when first Quads.SET/Quads.ASET.
-	  // See realtime.MemoryArea.getMemoryArea(java.lang.Object obj). 
-	  // - WSB
-	}
-        throw new Error("Class objects don't have fields: "+hf);
+		    throw new Error("Class objects don't have fields: "+hf);
 		}
 	    };
 	    stmlist.add(m_ob.buildObject(tf, info, true));
