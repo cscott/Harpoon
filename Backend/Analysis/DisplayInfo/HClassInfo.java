@@ -1,20 +1,21 @@
 package harpoon.Backend.Analysis.DisplayInfo;
 
 import harpoon.ClassFile.*;
+import harpoon.Backend.Maps.*;
 
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.Enumeration;
 
 /**
- * The <code>HClassInfo</code> class provides various useful bits of information 
- * about an <code>HClass</code>.  When the <code>HClassInfo</code> object for some
- * <code>HClass</code> is requested, the <code>HClassInfo</code> object is cached,
- * as are <code>HClassInfo</code>'s for everything above the <code>HClass</code>
- * in the class hierarchy.  
+ * The <code>HClassInfo</code> class provides various useful bits of 
+ * information about an <code>HClass</code>.  When the <code>HClassInfo</code>
+ * object for some <code>HClass</code> is requested, the 
+ * <code>HClassInfo</code> object is cached, as are <code>HClassInfo</code>'s 
+ * for everything above the <code>HClass</code> in the class hierarchy.  
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version 1.1.2.2
+ * @version 1.1.2.3
  * @see     harpoon.ClassFile.HClass
  */
 public class HClassInfo
@@ -22,6 +23,8 @@ public class HClassInfo
   private static int         initial_field_offset  = 0;
   private static int         initial_method_offset = 0;
   private static Hashtable   cached_classes        = new Hashtable();
+  private static OffsetMap   offset_map;
+  private static InlineMap   inline_map;
 
   private HClass    m_hClass;
   private int       m_depth;
@@ -97,6 +100,11 @@ public class HClassInfo
       initial_method_offset = offset;
     }
 
+  public static void setOffsetMap(OffsetMap o_map)
+    {
+      offset_map = o_map;
+    }
+
   /**
    * @return a clone of this <code>HClassInfo</code>
    */
@@ -127,8 +135,9 @@ public class HClassInfo
     }
 
   /**
-   * @return an <code>Enumeration</code> of <code>HField</code> objects, representing
-   *         the fields of this class.  Does not return any static fields.
+   * @return an <code>Enumeration</code> of <code>HField</code> 
+   *         objects, representing the fields of this class.  
+   *         Does not return any static fields.
    */
   public Enumeration getFieldsE()
     {
@@ -144,9 +153,11 @@ public class HClassInfo
       Object iOffset = m_fields.get(hf);
       if (hf.isStatic())
 	return (iOffset == null) ? -1 : (((Integer)iOffset).intValue() + 
-					 initial_method_offset + m_currentMethodOffset);
+					 initial_method_offset + 
+					 m_currentMethodOffset);
       else
-	return (iOffset == null) ? -1 : ((Integer)iOffset).intValue() + initial_field_offset;
+	return (iOffset == null) ? -1 : (((Integer)iOffset).intValue() + 
+					 initial_field_offset);
     }
 
   /**
@@ -176,7 +187,8 @@ public class HClassInfo
   public int getMethodOffset(HMethod hm)
     {
       Object iOffset = m_methods.get(hm);
-      return (iOffset == null) ? -1 : ((Integer)iOffset).intValue() + initial_method_offset;
+      return (iOffset == null) ? -1 : (((Integer)iOffset).intValue() + 
+				       initial_method_offset);
     }
 
   /**
@@ -191,8 +203,8 @@ public class HClassInfo
     }
 
   /**
-   * @return an <code>Enumeration</code> of <code>HField</code> objects, representing
-   *         the static fields of this class.  
+   * @return an <code>Enumeration</code> of <code>HField</code> objects, 
+   *         representing the static fields of this class.  
    */
   public Enumeration getStaticFieldsE()
     {
@@ -200,7 +212,8 @@ public class HClassInfo
     }
 
   /**
-   * @return a (vaguely) human-readable representation of this <code>HClassInfo</code>
+   * @return a (vaguely) human-readable representation of this 
+   *         <code>HClassInfo</code>
    */
   public String toString()
     {
@@ -242,27 +255,31 @@ public class HClassInfo
 
   private void addField(HField hf)
     {
+      int offset = offset_map.offset(hf, inline_map);
+
       m_fields.put(hf.getName(), hf);
       if (hf.isStatic())
 	{
 	  m_orderedStaticFields.addElement(hf);
 	  m_fields.put(hf, new Integer(m_currentStaticFieldOffset));
-	  m_currentStaticFieldOffset += 4; // m_currentStaticFieldOffset += hf.sizeof();
+	  m_currentStaticFieldOffset += offset;
 	}
       else
 	{
 	  m_orderedFields.addElement(hf);
 	  m_fields.put(hf, new Integer(m_currentFieldOffset));
-	  m_currentFieldOffset += 4;  // m_currentFieldOffset += hf.sizeof();
+	  m_currentFieldOffset += offset;
 	}
     }
 
   private void addMethod(HMethod hm, Vector methodVector)
     {
+      int offset = offset_map.offset(hm);
+
       m_orderedMethods.addElement(hm);
       methodVector.addElement(hm);
       m_methods.put(hm, new Integer(m_currentMethodOffset));
-      m_currentMethodOffset += 4;  
+      m_currentMethodOffset += offset;  
     }
 
   private void initialize(HClass hc)
