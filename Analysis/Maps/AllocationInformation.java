@@ -4,6 +4,7 @@
 package harpoon.Analysis.Maps;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 /**
@@ -11,7 +12,7 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.4 2002-09-02 19:23:26 cananian Exp $
+ * @version $Id: AllocationInformation.java,v 1.5 2002-11-29 20:36:46 salcianu Exp $
  */
 public interface AllocationInformation<HCE extends HCodeElement>  {
     
@@ -66,12 +67,19 @@ public interface AllocationInformation<HCE extends HCodeElement>  {
 
 	/* Each sync on this object consists of NOTHING. */
 	public boolean noSync();
+
 	/** @return <code>true</code> if the dynamic write barrier 
 	 *  flag needs to be set when the object is allocated--this 
 	 *  typically means that one or more write barriers associated 
 	 *  with stores into the object created at this allocation site
 	 *  have been optimistically removed. */
 	public boolean setDynamicWBFlag();
+
+	/** @return an <code>HField</code> description of a static
+	    field that points (at runtime) to a preallocated memory
+	    chunk to be used for this allocation site.  Returns null
+	    if we cannot preallocate this allocation site. */
+	public HField getMemoryChunkField();
     }
 
     /** Query the properties of the allocation at the specified site. */
