@@ -362,10 +362,10 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
 
   __machdep_pthread_create(&(tl->mthread), &thread_startup_routine, clsp,
 			   STACKSIZE, 0,0);
-
-
 #ifdef WITH_REALTIME_THREADS
   realtime_schedule_thread(env, _this);
+  setQuanta(0);
+  settimer();
   StartSwitching();
 #else
   /*LOCK ON GTL*/
