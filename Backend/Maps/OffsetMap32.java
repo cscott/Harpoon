@@ -20,7 +20,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.13 1999-08-06 22:30:47 pnkfelix Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.14 1999-08-10 18:57:24 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -81,71 +81,37 @@ public class OffsetMap32 extends OffsetMap
 
     /** Returns the label corresponding to the specified HClass */
     public Label label(HClass hc) { 
-	if (m_labels.containsKey(hc)) {
-	    return (Label)m_labels.get(hc);
+	if (!m_labels.containsKey(hc)) {
+	    m_labels.put(hc, new Label("_CLASS_" + hc.toString()));
 	}
-	else {
-	    Label newLabel; StringBuffer sb;
-	    sb = new StringBuffer("CLASS_");
-	    sb.append(hc.getName());
-	    newLabel = new Label(sb.toString());
-	    m_labels.put(hc, newLabel);
-	    return newLabel;
-	}
+	return (Label)m_labels.get(hc);
     }
 	    
     /** Returns the label corresponding to the specified static field */
     public Label label(HField hf) { 
 	Util.assert(hf.isStatic());
-
-	if (m_labels.containsKey(hf)) {
-	    return (Label)m_labels.get(hf);
+	if (!m_labels.containsKey(hf)) {
+	    m_labels.put(hf, "_SFIELD_" + getFieldSignature(hf));
 	}
-	else {
-	    Label newLabel; StringBuffer sb;
-	    sb = new StringBuffer("S_FIELD_");
-	    sb.append(getFieldSignature(hf));
-	    newLabel = new Label(sb.toString());
-	    m_labels.put(hf, newLabel);
-	    return newLabel;
-	}
+	return (Label)m_labels.get(hf);
     }
 
     /** Returns the label corrensponding to the specified method.  This
      *  method is not necessarily static */
     public Label label(HMethod hm) { 
-	if (m_labels.containsKey(hm)) {
-	    return (Label)m_labels.get(hm);
+	if (!m_labels.containsKey(hm)) {
+	    m_labels.put(hm, new Label(NameMap.munge(hm))); 
 	}
-	else {
-	    Label newLabel; 
-	    String name;
-	    /*
-	      StringBuffer sb;
-	      sb = new StringBuffer("METHOD_"); 
-	      sb.append(getMethodSignature(hm));
-	      name = sb.toString();
-	    */ 
-	    name = NameMap.munge(hm);
-	    newLabel = new Label(name);
-	    m_labels.put(hm, newLabel);
-	    return newLabel;
-	}
+	return (Label)m_labels.get(hm);
     }
 
     /** Returns the label corresponding to the specified String constant */
     public Label label(String stringConstant) { 
-	if (m_labels.containsKey(stringConstant)) {
-	    return (Label)m_labels.get(stringConstant);
+	if (!m_labels.containsKey(stringConstant)) {
+	    m_labels.put(stringConstant, 
+			 new Label("_STRING_CONST_" + stringConstant));
 	}
-	else {
-	    Label newLabel; StringBuffer sb;
-	    sb = new StringBuffer("STRING_CONST_");
-	    sb.append(stringConstant);
-	    newLabel = new Label(sb.toString());
-	    m_labels.put(stringConstant, newLabel);
-	    return newLabel;
-	}
+	return (Label)m_labels.get(stringConstant);
     }
 
     
@@ -333,5 +299,4 @@ public class OffsetMap32 extends OffsetMap
 	    return sb.toString().replace(' ', '_');
 
 	}
-
 }
