@@ -1,4 +1,8 @@
-# $Id: GNUmakefile,v 1.61.2.21 1999-03-02 01:33:02 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.22 1999-03-02 02:01:29 cananian Exp $
+
+empty:=
+space:= $(empty) $(empty)
+
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes +$$ $(JIKES_OPT)
@@ -15,7 +19,10 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-CLASSPATH:=$(CURDIR)/Support/Lex.jar:$(CURDIR)/Support/CUP.jar:.:$(CLASSPATH)
+SUPPORT := Support/Lex.jar Support/CUP.jar
+CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORT))):$(CLASSPATH)
+CLASSPATH:=.:$(CLASSPATH)
+export CLASSPATH
 
 CVS_TAG=$(firstword $(shell cvs status GNUmakefile | grep -v "(none)" | \
 			awk '/Sticky Tag/{print $$3}'))
@@ -92,10 +99,10 @@ Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 		$(foreach pkg,$(JARPKGS),$(pkg)/*.class)
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
-jar:	Harpoon.jar Harpoon.jar.TIMESTAMP
+jar:	Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT)
 jar-install: jar
-	chmod a+r Harpoon.jar Harpoon.jar.TIMESTAMP
-	$(SCP) Harpoon.jar Harpoon.jar.TIMESTAMP \
+	chmod a+r Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT)
+	$(SCP) Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT) \
 		$(INSTALLMACHINE):$(INSTALLDIR)
 
 VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
@@ -139,8 +146,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT)
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
