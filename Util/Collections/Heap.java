@@ -15,7 +15,7 @@ import java.util.Map;
  * <TR BGCOLOR="cornsilk"><TH>Procedure</TH>
  *     <TH><code>BinaryHeap</code><BR>(worst-case)</TH>
  *     <TH><code>BinomialHeap</code><BR>(worst-case)</TH>
- *     <TH>Fibonacci heap<BR>(amortized)</TH></TR>
+ *     <TH><code>FibonacciHeap</code><BR>(amortized)</TH></TR>
  * 
  * <TR>
  *  <TD BGCOLOR="wheat">M<font size=-1>AKE</font>-H<font size=-1>EAP</font>
@@ -89,9 +89,10 @@ import java.util.Map;
  * <code>Heap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Heap.java,v 1.1.2.3 2000-02-12 20:58:00 cananian Exp $
+ * @version $Id: Heap.java,v 1.1.2.4 2001-07-01 03:24:45 cananian Exp $
  * @see BinaryHeap
  * @see BinomialHeap
+ * @see FibonacciHeap
  */
 public interface Heap {
     /** Inserts a node with the specified key and value into the
