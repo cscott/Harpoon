@@ -133,7 +133,6 @@ void fni_properties_init(JNIEnv *env, jobject propobj,
     /* extra properties defined on the command line. */
     while (extra_properties!=NULL) {
       struct property_list *npl = extra_properties->next;
-      printf("Extra property: %s %s\n", extra_properties->key, extra_properties->value);
       _putProperty(env, propobj, methodID,
 		   extra_properties->key, extra_properties->value);
       free(extra_properties->key);
