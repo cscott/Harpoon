@@ -20,6 +20,11 @@ public class GUIMain {
      *  @param args foo
      */
     public static void main(String args[]) {
+	if (args.length<2) {
+	    System.out.println("Usage: java -jar GUI.jar <'pause'|'nopause'> ['corba' | 'nocorba'] <pipeline #>");
+	    System.exit(-1);
+	}
+
 	boolean useCorba = args[1].equalsIgnoreCase("corba");
 
 	if (useCorba && (args.length<5)) {
