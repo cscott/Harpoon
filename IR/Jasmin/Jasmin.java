@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.29 1999-11-12 21:07:39 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.30 1999-11-13 05:21:05 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -1885,25 +1885,25 @@ public class Jasmin {
 	}
     }
     String escapeFloat(Float f) {
-	if (f.isNaN()||f.isInfinite()) {
+	//	if (f.isNaN()||f.isInfinite()) {
 	    int i=Float.floatToIntBits(f.floatValue());
 	    String s=Integer.toHexString(i);
 	    while (s.length()!=8) 
 		s=new String("0"+s);
 	    return new String("0\\"+s);
-	}
-	else return f.toString();
+	    //}
+	    //else return f.toString();
     }
 
     String escapeDouble(Double f) {
-	if (f.isNaN()||f.isInfinite()) {
+	//if (f.isNaN()||f.isInfinite()) {
 	    long i=Double.doubleToLongBits(f.doubleValue());
 	    String s=Long.toHexString(i);
 	    while (s.length()!=16) 
 		s=new String("0"+s);
 	    return new String("1\\"+s);
-	}
-	else return f.toString();
+	    //}
+	    //else return f.toString();
     }
 }
 
