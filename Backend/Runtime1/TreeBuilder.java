@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.3.2.1 2002-02-27 08:35:05 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.3.2.2 2002-03-10 08:06:26 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -112,7 +112,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     protected final FieldMap  cfm;
 
     // set of string references made
-    final Set stringSet = new HashSet();
+    final Set<String> stringSet = new HashSet<String>();
 
     // if non-zero, then all pointer values are masked before
     // dereference.  this allows us to stuff additional information

@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>DataStrings</code> lays out string constant objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStrings.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: DataStrings.java,v 1.2.2.1 2002-03-10 08:06:23 cananian Exp $
  */
 public class DataStrings extends Data {
     final NameMap m_nm;
@@ -32,16 +32,16 @@ public class DataStrings extends Data {
     
     /** Creates a <code>DataStrings</code> containing tables corresponding
      *  to the given set of strings. */
-    public DataStrings(Frame f, HClass hc, Set strings) {
+    public DataStrings(Frame f, HClass hc, Set<String> strings) {
 	super("string-data", hc, f);
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_ob = ((Runtime) f.getRuntime()).ob;
         this.root = build(strings);
     }
-    private HDataElement build(Set strings) {
-	List stmlist = new ArrayList(strings.size()+1);
-	for (Iterator it=strings.iterator(); it.hasNext(); )
-	    stmlist.add(buildOne((String)it.next()));
+    private HDataElement build(Set<String> strings) {
+	List<Stm> stmlist = new ArrayList<Stm>(strings.size()+1);
+	for (Iterator<String> it=strings.iterator(); it.hasNext(); )
+	    stmlist.add(buildOne(it.next()));
 	return (HDataElement) Stm.toStm(stmlist);
     }
     private Stm buildOne(final String str) {

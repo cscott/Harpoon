@@ -39,9 +39,9 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.3.2.1 2002-02-27 08:36:47 cananian Exp $
+ * @version $Id: Code.java,v 1.3.2.2 2002-03-10 08:06:34 cananian Exp $
  */
-public abstract class Code extends HCode {
+public abstract class Code extends HCode<Tree> {
     /** The Tree Objects composing this code view. */
     protected Tree tree;
 
@@ -149,7 +149,7 @@ public abstract class Code extends HCode {
     public abstract TreeDerivation getTreeDerivation();
 
     /** Returns the root of the Tree */
-    public HCodeElement getRootElement() { 
+    public Tree getRootElement() { 
 	// Ensures that the root is a SEQ, and the first instruction is 
 	// a SEGMENT.
 	Tree first = (SEQ)this.tree;
@@ -159,7 +159,7 @@ public abstract class Code extends HCode {
     }
 
     /** Returns the leaves of the Tree */
-    public HCodeElement[] getLeafElements() {
+    public Tree[] getLeafElements() {
 	// what exactly does 'leaf elements' *mean* in this context?
 	return new Tree[0];
     }
@@ -169,7 +169,7 @@ public abstract class Code extends HCode {
      * making up this code view.  The root of the tree
      * is in element 0 of the array.
      */
-    public HCodeElement[] getElements() {
+    public Tree[] getElements() {
 	return super.getElements();
     }
 
@@ -179,16 +179,16 @@ public abstract class Code extends HCode {
      * of the Iterator.  Returns the elements of the tree in depth-first
      * pre-order.
      */
-    public Iterator getElementsI() { 
-	return new UnmodifiableIterator() {
-	    Stack stack = new Stack(), aux = new Stack(); 
+    public Iterator<Tree> getElementsI() { 
+	return new UnmodifiableIterator<Tree>() {
+	    Stack<Tree> stack = new Stack<Tree>(), aux = new Stack<Tree>(); 
 	    {   // initialize stack/set
 		stack.push(getRootElement());
 	    }
 	    public boolean hasNext() { return !stack.isEmpty(); }
-	    public Object next() {
+	    public Tree next() {
 		if (stack.isEmpty()) throw new NoSuchElementException();
-		Tree t = (Tree) stack.pop();
+		Tree t = stack.pop();
 		// Push successors on stack before returning
 		// (reverse the order twice to get things right)
 		for (Tree tp = t.getFirstChild(); tp!=null; tp=tp.getSibling())
@@ -201,9 +201,11 @@ public abstract class Code extends HCode {
     }
   
     // implement elementArrayFactory which returns Tree[]s.  
-    public ArrayFactory elementArrayFactory() { return Tree.arrayFactory; }
+    public ArrayFactory<Tree> elementArrayFactory() {
+	return Tree.arrayFactory;
+    }
 
-    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+    public void print(java.io.PrintWriter pw, PrintCallback<Tree> callback) {
 	Print.print(pw, this, callback);
     } 
 

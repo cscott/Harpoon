@@ -10,6 +10,7 @@ import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.DerivationGenerator;
@@ -34,7 +35,7 @@ import java.util.Set;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.3.2.1 2002-02-27 08:34:29 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3.2.2 2002-03-10 08:06:17 cananian Exp $
  */
 public abstract class Runtime {
     protected Runtime() { }
@@ -72,7 +73,7 @@ public abstract class Runtime {
 
     /** Returns a list of <code>HData</code>s which are needed for the
      *  given class. */
-    public abstract List classData(HClass hc);
+    public abstract List<HData> classData(HClass hc);
 
     /** This code factory hook allows the runtime to return
      *  runtime-specific stubs for native methods --- or any other
@@ -107,7 +108,7 @@ public abstract class Runtime {
      *  a properly configured C runtime.  This allows us to check
      *  at link time that the C runtime's configuration matches the
      *  FLEX configuration. */
-    public final Set configurationSet = new HashSet();
+    public final Set<String> configurationSet = new HashSet<String>();
 
     /** The <code>TreeBuilder</code> constructs bits of code in the
      *  <code>IR.Tree</code> form to handle various runtime-dependent

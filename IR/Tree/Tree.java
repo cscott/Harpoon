@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.3.2.1 2002-02-27 08:36:48 cananian Exp $
+ * @version $Id: Tree.java,v 1.3.2.2 2002-03-10 08:06:34 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement
@@ -133,9 +133,9 @@ public abstract class Tree
     public abstract void accept(TreeVisitor v);
 
     /** Array factory: returns <code>Tree[]</code>. */
-    public static final ArrayFactory arrayFactory =
-	new ArrayFactory() {
-	    public Object[] newArray(int len) { return new Tree[len]; }
+    public static final ArrayFactory<Tree> arrayFactory =
+	new ArrayFactory<Tree>() {
+	    public Tree[] newArray(int len) { return new Tree[len]; }
 	};
   
     
@@ -173,7 +173,7 @@ public abstract class Tree
      *  nodes rooted here are copied, all the way down to the leaves.
      *  The cloned subtree will have the same tree factory as
      *  <code>this</code>. */
-    public final Object clone() { return rename(null); }
+    public final Tree clone() { return rename(null); }
     /** Rename while cloning a subtree.  This node and all child nodes
      *  are cloned; the 'temp' information of all <code>TEMP</code> nodes
      *  are renamed according to the supplied <code>TempMap</code>.

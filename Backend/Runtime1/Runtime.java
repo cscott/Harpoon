@@ -12,8 +12,10 @@ import harpoon.Backend.Runtime1.ObjectBuilder.RootOracle;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
+import harpoon.IR.Tree.Tree;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
@@ -31,7 +33,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.3.2.1 2002-02-27 08:35:05 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3.2.2 2002-03-10 08:06:24 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -178,7 +180,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     }
     private boolean frozen=false;
 
-    public List classData(HClass hc) {
+    public List<HData> classData(HClass hc) {
 	freeze();
 
 	// i don't particularly like this solution to generating
@@ -187,10 +189,10 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    (harpoon.Backend.Runtime1.TreeBuilder) treeBuilder;
 	tb.stringSet.removeAll(stringsSeen);
 	stringsSeen.addAll(tb.stringSet);
-	Set newStrings = new HashSet(tb.stringSet);
+	Set<String> newStrings = new HashSet<String>(tb.stringSet);
 	tb.stringSet.clear();
 
-	List r = Arrays.asList(new Data[] {
+	List<HData> r = Arrays.asList(new HData[] {
 	    new DataClaz(frame, hc, ch),
 	    new DataConfigChecker(frame, hc),
 	    new DataInterfaceList(frame, hc, ch),
@@ -203,10 +205,10 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new DataReflectionMemberList(frame, hc, ch),
 	});
 	if (frame.getGCInfo() != null) {
-	    r = new java.util.ArrayList(r);
+	    r = new java.util.ArrayList<HData>(r);
 	    r.add(new DataGC(frame, hc));
 	}
 	return r;
     }
-    final Set stringsSeen = new HashSet();
+    final Set<String> stringsSeen = new HashSet<String>();
 }
