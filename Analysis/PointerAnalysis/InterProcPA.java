@@ -29,7 +29,7 @@ import harpoon.Util.Util;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.30 2000-04-03 22:36:13 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.31 2000-05-11 21:58:24 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -83,11 +83,11 @@ abstract class InterProcPA {
 	    return pair;
 
 	MetaCallGraph mcg = pa.getMetaCallGraph();
-	NodeRepository node_rep = pa.getNodeRepository(); 
+	NodeRepository node_rep = pa.getNodeRepository();
 	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
 	int nb_callees = mms.length;
 
-
+	////// this is just for debug
 	for(int i = 0; i < mms.length; i++){
 	    HMethod hm = mms[i].getHMethod();
 	    if(Modifier.isNative(hm.getModifiers()))
@@ -109,6 +109,9 @@ abstract class InterProcPA {
 	    //return skip_call(q,pig_before,node_rep);
 	}
 
+	// Due to the imprecisions in the call graph, most of them due to
+	// dynamic dispatches, several call sites have a huge number of callees
+	// These CALLs are not analyzed (i.e. they are treated as method holes)
 	if(nb_callees > MAX_CALLEES){
 	    System.out.println("TOO MANY CALLEES (" + nb_callees + ") " + q);
 	    return skip_call(q, pig_before, node_rep);
@@ -118,9 +121,9 @@ abstract class InterProcPA {
 	for(int i = 0; i < nb_callees; i++){
 	    HMethod hm = mms[i].getHMethod();
 
-	    if(!PointerAnalysis.analyzable(hm) &&
-	       !( Modifier.isNative(hm.getModifiers()) &&
-		  !pa.harmful_native(hm) ))
+	    if(!(PointerAnalysis.analyzable(hm) ||
+		 (Modifier.isNative(hm.getModifiers()) &&
+		  !pa.harmful_native(hm))) )
 		return skip_call(q, pig_before, node_rep);
 	    else
 		pigs[i] = pa.getExtParIntGraph(mms[i], false);
@@ -131,7 +134,7 @@ abstract class InterProcPA {
 	for(int i = 0; i < nb_callees; i++)
 	    if(pigs[i] != null) counter++;
 
-	// If none of the caller has been analyzed yet, do not do anything
+	// If none of the callers has been analyzed yet, do not do anything
 	// (this can happen only in the strongly connected components of 
 	// mutually recursive methods).
 	if(counter == 0)
@@ -157,11 +160,10 @@ abstract class InterProcPA {
 	    for(int i = 0; i < pigs.length; i++){
 		HMethod hm = mms[i].getHMethod();
 		if(Modifier.isNative(hm.getModifiers())){
-		    Util.assert(!pa.harmful_native(hm),
-				"Harmful native: " + hm);
-		    
+		    Util.assert(!pa.harmful_native(hm),"Harmful native: " +hm);
+		    //////// DEBUG ONLY
 		    System.out.println("Unharmful native: " + hm);
-		    
+		    ////////
 		    mms2[k]  = mms[i];
 		    pigs2[k] = null;
 		    k++;
@@ -174,7 +176,7 @@ abstract class InterProcPA {
 
 	    //}
 
-	System.out.println("CALL: " + q + " " + counter + " callees!");
+	System.out.println("CALL: " + q + " " + nb_callees + " callees!");
 
 	// specialize the graphs of the callees for the context sensitive PA
 	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
@@ -224,8 +226,9 @@ abstract class InterProcPA {
 	if(DEBUG)
 	    System.out.println("CALLEElast: " + mms[nb_callees - 1]);
 
-	pp_after.join(mapUp(mms[nb_callees-1], q, pig_before, pigs[nb_callees-1],
-			    pa.getParamNodes(mms[nb_callees-1])));
+	pp_after.join
+	    (mapUp(mms[nb_callees-1], q, pig_before,
+		   pigs[nb_callees-1], pa.getParamNodes(mms[nb_callees-1])));
 
 	return pp_after;
     }
@@ -297,7 +300,7 @@ abstract class InterProcPA {
 							CALL q){
 	HMethod hm = mm.getHMethod();
 	
-	System.out.println("TREAT_UNHARMFUL_NATIVE: " + mm);
+	System.out.println("treatUnharmfulNative: " + mm);
 
 	ParIntGraph pig0 = (ParIntGraph) pig_before.clone();
 	ParIntGraph pig1 = (ParIntGraph) pig_before.clone();
@@ -347,8 +350,10 @@ abstract class InterProcPA {
 					 ParIntGraph pig_caller,
 					 ParIntGraph pig_callee,
 					 PANode[] callee_params){
+	/////////
+	System.out.println("mapUp called with " + mm.getHMethod());
 
-	if(pig_callee==null)
+	if(pig_callee == null)
 	    return treatUnharmfulNative(pig_caller, mm, q);
 
 	if(DEBUG){
