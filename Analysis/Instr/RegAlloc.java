@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.120 2000-10-20 08:44:44 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.121 2000-10-24 04:58:51 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -722,7 +722,6 @@ public abstract class RegAlloc  {
 	Set s = new HashSet();
 	for (Instr il = instrs; il!=null; il=il.getNext()) {
 	    if (il instanceof SpillStore) continue;
-	    if (il instanceof SpillLoad) continue;
 	    Temp[] d = il.def();
 	    for (int i=0; i<d.length; i++) {
 		if (isRegister(d[i])) {

@@ -70,7 +70,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.99 2000-10-20 08:53:56 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.100 2000-10-24 04:59:23 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -416,7 +416,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    HCode hc = sahcf.convert(hmethod);
 	    
 	    info("\t--- INSTR FORM (register allocation)  ---");
-	    HCodeFactory regAllocCF = RegAlloc.abstractSpillFactory(sahcf, frame);
+	    HCodeFactory regAllocCF = 
+		RegAlloc.abstractSpillFactory(sahcf, frame, regAllocFactory);
 	    HCode rhc = regAllocCF.convert(hmethod);
 	    if (rhc != null) {
 		info("Codeview \""+rhc.getName()+"\" for "+
