@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.20 2000-01-12 02:56:09 duncan Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.21 2000-01-12 18:02:28 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -99,18 +99,14 @@ public class NATIVECALL extends INVOCATION {
 
     public void setArgs(ExpList args) { 
 	super.setArgs(args); 
-	ExpList e; 
-	if (args != null) { 
-	    for (e = args; e.tail != null; e = e.tail) { 
-		e.head.parent = this; 
-		e.head.sibling = e.tail.head; 
-	    }
-	    e.head.parent  = this;
-	    e.head.sibling = null; 
-	    this.getFunc().sibling = args.head; 
-	}
-	else { 
-	    this.getFunc().sibling = null;
+	Exp prev = this.getFunc(), current; 
+
+	prev.sibling = null; 
+	for (ExpList e = args; e != null; e = e.tail) { 
+	    current        = e.head; 
+	    prev.sibling   = current; 
+	    current.parent = this;
+	    prev           = current;
 	}
     }
 
