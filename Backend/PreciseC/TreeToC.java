@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.29 2001-07-05 20:34:17 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.30 2001-07-10 01:09:52 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -71,6 +71,13 @@ public class TreeToC extends java.io.PrintWriter {
 	super(out);
 	this.tv = new TranslationVisitor();
     }
+    // XXX: The TempVisitor approach fails when a single temp may be
+    // assigned values of more than one type.  Be careful never to
+    // generate tree form where this happens.  (Else, we could use
+    // a reaching-def analysis to associate the "proper" reaching
+    // type with every temp, but that's too much work for me at the
+    // moment.  Remember: laziness is one of a good programmer's
+    // cardinal virtues. --CSA 9-jul-2001
     public void translate(HCode hc) {
 	harpoon.IR.Tree.Code c = (harpoon.IR.Tree.Code) hc;
 	Tree root = (Tree)c.getRootElement();

@@ -51,7 +51,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.18 2001-07-06 21:47:00 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.19 2001-07-10 01:10:54 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -138,11 +138,12 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 					       ))));
 	// wrap objects in parameter list
 	for (int i=0; i<paramTypes.length; i++)
-	    if (!paramTypes[i].isPrimitive())
+	    if (!paramTypes[i].isPrimitive()) {
+		Temp wrapped = new Temp(paramTemps[i+1]);
 		stmlist.add(new NATIVECALL
 			    (tf, null,
 			     _TEMP
-			     (tf, null, HClass.Void, paramTemps[i+1]),
+			     (tf, null, HClass.Void, wrapped),
 			     _NAME
 			     (tf, null, HClass.Void,
 			      new Label(m_nm.c_function_name
@@ -152,6 +153,10 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 			       new ExpList
 			       (_TEMP(tf, null, paramTypes[i],paramTemps[i+1]),
 				null))));
+		// after this point, use wrapped temp
+		paramTypes[i] = HClass.Void;
+		paramTemps[i+1] = wrapped;
+	    }
 	// wrap a class object pointer for static methods.
 	Temp classT = null;
 	if (method.isStatic()) {
@@ -190,12 +195,14 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				jniParams);
 	// Do the call.
 	Temp retT = null;
-	if (method.getReturnType()!=HClass.Void)
+	HClass rettype = method.getReturnType();
+	if (rettype!=HClass.Void) {
 	    retT = new Temp(tf.tempFactory(), "retval");
+	    if (!rettype.isPrimitive()) rettype=HClass.Void;//retval is wrapped
+	}
 	stmlist.add(new NATIVECALL(tf, null,
 				   (retT==null) ? null :
-				   _TEMP(tf, null, method.getReturnType(),
-					    retT),
+				   _TEMP(tf, null, rettype, retT),
 				   _NAME(tf, null, HClass.Void,
 					 new Label(m_nm.c_function_name
 						   (jniMangle(method)))),
@@ -219,14 +226,16 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 			      no_exceptions, yes_exceptions));
 	// no exceptions occurred.  unwrap return value and return from stub.
 	stmlist.add(new LABEL(tf, null, no_exceptions, false));
+	emitMonitorLockUnlock(stmlist, envT, lockT, false/*unlock*/);
 	Exp retexp;
 	if (retT==null)
 	    retexp = new CONST(tf, null);
 	else {
-	    HClass rettype = method.getReturnType();
-	    if (!rettype.isPrimitive())
+	    rettype = method.getReturnType();//reset to unwrapped type.
+	    if (!rettype.isPrimitive()) {
+		Temp unwrapped = new Temp(retT);
 		stmlist.add(new NATIVECALL(tf, null,
-					   _TEMP(tf, null, rettype, retT),
+					   _TEMP(tf, null, rettype, unwrapped),
 					   _NAME(tf, null, HClass.Void,
 						 new Label(m_nm.c_function_name
 							   ("FNI_Unwrap"))),
@@ -234,9 +243,10 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 					   (_TEMP(tf, null, HClass.Void, retT),
 					    null)
 					   ));
+		retT = unwrapped; // after this point, use unwrapped temp
+	    }
 	    retexp = _TEMP(tf, null, rettype, retT);
 	}
-	emitMonitorLockUnlock(stmlist, envT, lockT, false/*unlock*/);
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new RETURN(tf, null, retexp));
 	// an exception occurred.  unwrap exception value and throw it.
@@ -251,8 +261,10 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				   (_TEMP(tf, null, HClass.Void, envT),
 				    null)
 				   ));
+	emitMonitorLockUnlock(stmlist, envT, lockT, false/*unlock*/);
+	Temp unwrapped = new Temp(excT);
 	stmlist.add(new NATIVECALL(tf, null,
-				   _TEMP(tf, null, HCthw, excT),
+				   _TEMP(tf, null, HCthw, unwrapped),
 				   _NAME(tf, null, HClass.Void,
 					    new Label(m_nm.c_function_name
 						      ("FNI_Unwrap"))),
@@ -260,7 +272,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				   (_TEMP(tf, null, HClass.Void, excT),
 				    null)
 				   ));
-	emitMonitorLockUnlock(stmlist, envT, lockT, false/*unlock*/);
+	excT = unwrapped; // after this point, use unwrapped temp
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new THROW(tf, null,
 			      _TEMP(tf, null, HCthw, excT),
@@ -272,7 +284,6 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				       Temp lockT, boolean isLock) {
 	// if this method is not synchronized, skip this.
 	if (!Modifier.isSynchronized(getMethod().getModifiers())) return;
-	if (true) return; // XXX: UNSAFE HACK SEE CVS LOG
 	// okay, emit native call to FNI_MonitorEnter/Exit().
 	Temp discardT = new Temp(tf.tempFactory(), "discard");
 	stmlist.add(new NATIVECALL
