@@ -27,6 +27,7 @@ public class QuoteServerCTMemory {
     // A boolean used to keep the server looping until 
     // interrupted. 
     private boolean keepRunning = true; 
+    private static long ctsize;
 
     /** 
      * Starts up the application. 
@@ -34,6 +35,7 @@ public class QuoteServerCTMemory {
      */ 
     public static void main(String[] args) { 
 	QuoteServerCTMemory.SERVER_PORT=Integer.parseInt(args[0]);
+	QuoteServerCTMemory.ctsize=Long.parseLong(args[1]);
 	QuoteServerCTMemory server = new QuoteServerCTMemory(); 
 	server.serveQuotes(); 
     } 
@@ -144,7 +146,7 @@ public class QuoteServerCTMemory {
 	    StockQuoteHandlerCTMemory(clientSocket,stockInfo);
 	
 	RealtimeThread newHandlerThread = 
-	    new RealtimeThread(new CTMemory(100000), newHandler); 
+	    new RealtimeThread(new CTMemory(ctsize), newHandler); 
 
 	newHandlerThread.start(); 
     }
