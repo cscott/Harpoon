@@ -25,7 +25,7 @@ import java.util.List;
  * dependency order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInitializers.java,v 1.1.2.3 1999-10-20 07:05:57 cananian Exp $
+ * @version $Id: DataInitializers.java,v 1.1.2.4 1999-11-04 06:39:41 cananian Exp $
  */
 public class DataInitializers extends Data {
     final NameMap m_nm;
@@ -39,12 +39,14 @@ public class DataInitializers extends Data {
 	    build(staticInitializers) : null;
     }
     private HDataElement build(List initMethods) {
-	List stmlist = new ArrayList(initMethods.size()+3);
+	List stmlist = new ArrayList(initMethods.size()+4);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.TEXT));
 	stmlist.add(new ALIGN(tf, null, 4)); // word-align.
-	stmlist.add(new LABEL(tf, null, new Label("_static_inits"), true));
-	for (Iterator it=initMethods.iterator(); it.hasNext(); )
-	    stmlist.add(_DATA(m_nm.label((HInitializer)it.next())));
+	stmlist.add(new LABEL(tf, null, new Label("_FNI_static_inits"),true));
+	for (Iterator it=initMethods.iterator(); it.hasNext(); ) {
+	    HInitializer hm = (HInitializer)it.next();
+	    stmlist.add(_DATA(m_nm.label(hm.getDeclaringClass(), "namestr")));
+	}
 	stmlist.add(_DATA(new CONST(tf, null))); // null-terminate the list
 	return (HDataElement) Stm.toStm(stmlist);
     }
