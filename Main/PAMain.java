@@ -93,7 +93,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.96 2001-03-13 16:26:37 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.97 2001-04-09 21:49:59 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -854,7 +854,8 @@ public abstract class PAMain {
 	    new LongOpt("savepa",        LongOpt.REQUIRED_ARGUMENT, null, 31),
 	    new LongOpt("prealloc",      LongOpt.NO_ARGUMENT,       null, 32),
 	    new LongOpt("rtjchecks",     LongOpt.NO_ARGUMENT,       null, 33),
-	    new LongOpt("rtj",           LongOpt.REQUIRED_ARGUMENT, null, 34)
+	    new LongOpt("rtj",           LongOpt.REQUIRED_ARGUMENT, null, 34),
+	    new LongOpt("old_inlining",  LongOpt.NO_ARGUMENT,       null, 35)
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
@@ -1066,6 +1067,10 @@ public abstract class PAMain {
 			System.exit(1);
 		    }
 		}
+		break;
+	    case 35:
+		mainfo_opts.DO_METHOD_INLINING = true;
+		mainfo_opts.USE_OLD_INLINING   = true;
 		break;
 	    }
 

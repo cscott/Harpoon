@@ -72,7 +72,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.50 2001-04-08 17:34:35 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.51 2001-04-09 21:49:29 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -116,6 +116,11 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Default <code>false</code>. */
 	public boolean USE_INTER_THREAD     = false;
 
+	/** Use the old, 1-level inlining. Default is <code>false</code>
+	    (ie the new, multilevel strategy is used). Might be useful
+	    for people not willing to go into the bugs of the new strategy. */
+	public boolean USE_OLD_INLINING     = false;
+
 	/** The current implementation is able to inline call strings of
 	    length bigger than one.
 	    Default value is 2. */
@@ -135,8 +140,12 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    print_opt(prefix, "USE_INTER_THREAD", USE_INTER_THREAD);
 	    print_opt(prefix, "DO_METHOD_INLINING", DO_METHOD_INLINING);
 	    if(DO_METHOD_INLINING) {
-		System.out.println(prefix + "\tMAX_INLINING_LEVEL = " +
-				   MAX_INLINING_LEVEL);
+		if(USE_OLD_INLINING)
+		    System.out.println
+			(prefix + "\tUSE_OLD_INLINING (1-level)");
+		else
+		    System.out.println(prefix + "\tMAX_INLINING_LEVEL = " +
+				       MAX_INLINING_LEVEL);
 		System.out.println(prefix + "\tMAX_METHOD_SIZE = " +
 				   MAX_METHOD_SIZE);
 	    }
@@ -281,8 +290,12 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // analyze all the methods
     public void analyze() {
 	if(opt.DO_METHOD_INLINING) {
-	    //ih = new HashMap();
-	    set_hm2rang();
+	    if(opt.USE_OLD_INLINING)
+		ih = new HashMap();
+	    else {
+		chains = new LinkedList();
+		set_hm2rang();
+	    }
 	}
 
 	for(Iterator it = mms.iterator(); it.hasNext(); ){
@@ -292,9 +305,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	}
 	
 	if(opt.DO_METHOD_INLINING) {
-	    //do_the_inlining(hcf, ih);
-	    process_inlining_chains();
-	    ih = null; // allow some GC
+	    if(opt.USE_OLD_INLINING) {
+		do_the_inlining(hcf, ih);
+		ih = null;
+	    }
+	    else {
+		process_inlining_chains();
+		chains = null;
+		hm2rang = null;
+	    }
 	}
     }
 
@@ -403,8 +422,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	handle_tg_stuff(pig);
 
 	if(opt.DO_METHOD_INLINING) {
-	    //generate_inlining_hints(mm, pig);
-	    generate_inlining_chains(mm);
+	    if(opt.USE_OLD_INLINING)
+		generate_inlining_hints(mm, pig);
+	    else
+		generate_inlining_chains(mm);
 	}
     }
 
@@ -1188,7 +1209,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Object[] calls = scc.nodes();
 	    for(int i = 0; i < calls.length; i++) {
 		CALL cs = (CALL) calls[i];
-		HMethod hcaller = quad2method(cs);
+		HMethod hcaller = extract_caller(cs);
 		HMethod hcallee = extract_callee(cs);
 		Map old2new = inline_call_site(cs, hcaller, hcallee, hcf);
 		if(old2new != null) {
@@ -1705,7 +1726,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	}
     }
 
-    private LinkedList chains = new LinkedList();
+    private LinkedList chains = null;
 
 
     // Computes the set of NEW / ANEW quads that created the nodes
@@ -1812,7 +1833,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	}
 
 
-	// test whether the size of teh inlined method will be smaller
+	// test whether the size of the inlined method will be smaller
 	// than the maximum acceptable one.
 	public boolean isAcceptable() {
 	    if(isDone()) return true;
@@ -1910,7 +1931,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    return calls.isEmpty();
 	}
 
-	
+
 	// Returns the rang of the last method (the one where everything in
 	// this inlining chain is going to be inlined).
 	int get_rang() {
@@ -1967,9 +1988,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		System.out.print("Pruning " + hcode.getMethod());
 	    Unreachable.prune(hcode);
 	}
-
-	chains = null;  // enable some GC
-	hm2rang = null;
     }
 
     //////////// INLINING STUFF END /////////////////////////////////////
