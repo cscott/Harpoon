@@ -6,6 +6,7 @@ package harpoon.Backend.Sparc;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrMEM;
@@ -31,18 +32,24 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.11 1999-11-04 10:19:50 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.12 1999-11-23 09:39:05 andyb Exp $
  */
 %%
-    private Map origTempToNewTemp;
     private Instr root;
     private Instr last;
     private InstrFactory instrFactory;
     private final RegFileInfo regfile;
 
+    // short variable names for commonly used register temps
+    private Temp r0, r1, r8, r9;
+
     public CodeGen(Frame frame) {
         super(frame);
         this.regfile = (RegFileInfo) frame.getRegFileInfo();
+        r0 = regfile.getRegister(0);
+        r1 = regfile.getRegister(1);
+        r8 = regfile.getRegister(8);
+        r9 = regfile.getRegister(9);
     }
 
     private Instr emit(Instr i) {
@@ -89,14 +96,22 @@ import java.util.Set;
         return emit(new InstrLABEL(instrFactory, root, assem, label));
     }
 
+    private Instr emitDIRECTIVE(HCodeElement root, String directive) {
+        return emit(new InstrDIRECTIVE(instrFactory, root, directive));
+    }
+  
+    private Instr emitENTRY(HCodeElement root) {
+        return emit(new InstrENTRY(instrFactory, root));
+    }
+
+    private Instr emitEXIT(HCodeElement root) {
+        return emit(new InstrEXIT(instrFactory, root));
+    }
+
     // AAA - FIX BELOW THIS LINE
 
     public Instr procFixup(HMethod hm, Instr instr, int stackspace,
                            Set usedRegisters) {
-        return null;
-    }
-
-    private Temp makeTemp( Temp orig ) {
         return null;
     }
 
@@ -128,6 +143,18 @@ import java.util.Set;
 	/** FIXME: How does Instr represent LabelLists? */
     }
 
+    private class InstrENTRY extends InstrDIRECTIVE {
+        public InstrENTRY(InstrFactory inf, HCodeElement src) {
+            super(inf, src, "--method entry point - AAA to fix--");
+        }
+    }
+
+    private class InstrEXIT extends InstrDIRECTIVE {
+        public InstrEXIT(InstrFactory inf, HCodeElement src) {
+            super(inf, src, "--method exit point - AAA to fix--");
+        }
+    }
+
     /** Determine whether a constant can fit in the immediate field of
      *  a SPARC instruction. */
     static boolean is13bit(Number n) {
@@ -143,7 +170,7 @@ import java.util.Set;
       return r;
     }
 
-    /** Crunch <code>Bop</code> down to sparc instruction. */
+    /** Crunch simple <code>Bop</code>'s down to sparc instruction. */
     static String bop(int op) {
 	switch(op) {
 	case Bop.ADD: return "add";
@@ -174,7 +201,6 @@ import java.util.Set;
 
        root = null; 
        last = null;
-       origTempToNewTemp = new HashMap();
        this.instrFactory = inf;
 }%
 
@@ -186,40 +212,262 @@ import java.util.Set;
        return root;
 }%
 
+// Start at the beginning...
+
+ALIGN(n) %{
+    emitDIRECTIVE( ROOT, "\t.align " + n);
+}%
+
+// Now for the oh so essential binary operators
+
+// Easy things first - integer based ones
+// First cover the really easy ones: ADD, OR, AND, XOR, SHL, SHR, USHR
+
+BINOP<i,p>(op, CONST(c), e)=r %pred %( isCommutative(op) && is13bit(c) )% %{
+    emit (ROOT, bop(op)+" `s0, "+c+", `d0\n", 
+                new Temp[] { r }, new Temp[] { e });
+}%
+
+BINOP<i,p>(op, e, CONST(c))=r %pred %( (isShift(op) || isCommutative(op)) && is13bit(c) )% %{
+    emit (ROOT, bop(op)+" `s0, "+c+", `d0\n",
+                new Temp[] { r }, new Temp[] { e });
+}%
+
+BINOP<i,p>(op, e1, e2)=r  %pred %( isShift(op) || isCommutative(op) )% %{
+    emit (ROOT, bop(op)+" `s0, `s1, `d0\n",
+                new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+// Optimize for subtraction
+
+BINOP<i,p>(ADD, e1, UNOP(NEG, e2))=r /* subtraction */ %{
+    emit (ROOT, "sub `s0, `s1, `d0\n",
+                new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+// Now for MUL, DIV, REM, CMP{LT, LE, EQ, GE, GT}
+BINOP<i,p>(MUL, e1, e2) = r %{
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
+    emit (ROOT, "call .mul\n", new Temp[] { r1 }, new Temp[] { r8, r9 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
+}%
+
+BINOP(CMPLT, e1, e2) = r
+%pred  %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "cmp `s0, `s1\n" +
+                "bge "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emitLABEL(ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPLE, e1, e2) = r
+%pred  %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "cmp `s0, `s1\n" +
+                "bg "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emitLABEL(ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPEQ, e1, e2) = r
+%pred  %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "cmp `s0, `s1\n" +
+                "bne "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emitLABEL(ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPGE, e1, e2) = r
+%pred %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "cmp `s0, `s1\n" +
+                "bl "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emitLABEL(ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPGT, e1, e2) = r
+%pred %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "cmp `s0, `s1\n" +
+                "ble "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emitLABEL(ROOT, templabel + ":", templabel);
+}%
+
+// Call some methods
+
+CALL(retval, retex, func, arglist, handler) %pred %( !ROOT.isTailCall )% %{
+    emitDIRECTIVE(ROOT, "@ coming soon: CALL support\n");
+}%
+
+CONST<p>(c) = r %{
+   emit (ROOT, "mov 0, `d0 @ null\n", new Temp[]{r}, null);
+}%
+
+// Show me the data
+
+DATA(CONST<i>(exp)) %{
+    String lo = "0x" + Integer.toHexString(exp.intValue());
+    emitDIRECTIVE(ROOT, "\t.word " + lo + " @ " + exp);
+}%
+
+DATA(CONST<s:8,u:8>(exp)) %{
+    String chardesc = (exp.intValue() >= 32 && exp.intValue() < 127
+                       && exp.intValue() != 96 /* backquotes */
+                       && exp.intValue() != 34 /* double quotes */) ?
+                       ("\t@ char "+((char)exp.intValue())) : "";
+    emitDIRECTIVE(ROOT, "\t.byte "+exp+chardesc);
+}%
+
+DATA(CONST<s:16,u:16>(exp)) %{
+    String chardesc = (exp.intValue() >= 32 && exp.intValue() < 127
+                       && exp.intValue() != 96 /* backquotes */
+                       && exp.intValue() != 34 /* double quotes */) ?
+                       ("\t@ char "+((char)exp.intValue())) : "";
+    emitDIRECTIVE(ROOT, "\t.short "+exp+chardesc);
+}% 
+
+DATA(CONST<p>(exp)) %{
+    emitDIRECTIVE(ROOT, "\t.word 0 @ should always be null pointer constant");
+}%
+
+DATA(NAME(l)) %{
+    emitDIRECTIVE(ROOT, "\t.word " + l);
+}%
+
+MEM<s:8>(e) = r %{
+    emitMEM(ROOT, "ldsb [`s0] `d0", new Temp[] { r }, new Temp[] { e });
+}%
+
+MEM<u:16>(e) = r %{
+    emitMEM(ROOT, "lduh [`s0] `d0", new Temp[] { r }, new Temp[] { e });
+}%
+
+METHOD(params) %{
+    emitENTRY(ROOT);
+    /* AAA - move params into right place */
+}%
+
+NATIVECALL(retval, func, arglist) %{
+    emitDIRECTIVE(ROOT, "@ comming soon: NATIVECALL support\n");
+}%    
+
+RETURN(val) %{
+    /* AAA - put return value in right place */
+    emitEXIT(ROOT);
+}%
+
+// Output those segments, ooo yea baby
+
+SEGMENT(CLASS) %{
+    emitDIRECTIVE(ROOT, ".data 1\t@.section class");
+}%
+
+SEGMENT(CODE) %{
+    emitDIRECTIVE(ROOT, ".text 0\t@.section code");
+}%
+
+SEGMENT(GC) %{
+    emitDIRECTIVE(ROOT, ".data 2\t@.section gc");
+}%
+
+SEGMENT(INIT_DATA) %{
+    emitDIRECTIVE(ROOT, ".data 3\t@.section init_data");
+}%
+
+SEGMENT(STATIC_OBJECTS) %{
+    emitDIRECTIVE(ROOT, ".data 4\t@.section static_objects");
+}%
+
+SEGMENT(STATIC_PRIMITIVES) %{
+    emitDIRECTIVE(ROOT, ".data 5\t@.section static_primitives");
+}%
+
+SEGMENT(STRING_CONSTANTS) %{
+    emitDIRECTIVE(ROOT, ".data 6\t@.section string_constants");
+}%
+
+SEGMENT(STRING_DATA) %{
+    emitDIRECTIVE(ROOT, ".data 7\t@.section string_data");
+}%
+
+SEGMENT(REFLECTION_OBJECTS) %{
+    emitDIRECTIVE(ROOT, ".data 8\t@.section reflection_objects");
+}%
+
+SEGMENT(REFLECTION_DATA) %{
+    emitDIRECTIVE(ROOT, ".data 9\t@.section reflection_data");
+}%
+
+SEGMENT(TEXT) %{
+    emitDIRECTIVE(ROOT, ".text  \t@.section text");
+}%
+
+TEMP<p,i,f,l,d>(id) = i %{
+    i = frame.getTempBuilder().makeTemp(ROOT, inf.tempFactory());
+}%
+
+THROW(val, handler) %{
+    /* AAA - lookup destination here */
+    emitEXIT(ROOT);
+}%
+
+// OLD STUFF BELOW THIS LINE
+
 // patterns with MOVE at their root.
 
 //  32- and 64-bit integer and floating-point STOREs:
 
-MOVE(MEM(CONST(c)), e) %pred %( is13bit(c) )% %{
+MOVE(MEM(CONST<l,i>(c)), e) %pred %( is13bit(c) )% %{
  emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s0, ["+c+"]\n",
-          null, new Temp[] { e });
+          new Temp[] {}, new Temp[] { e });
 }%
 
-MOVE(MEM(BINOP(ADD, CONST(c), e1)), e2) %pred %( is13bit(c) )% %{
+MOVE(MEM(BINOP(ADD, CONST<l,i>(c), e1)), e2) %pred %( is13bit(c) )% %{
  emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n",
-	  null, new Temp[] { e1, e2 });
+	  new Temp[] {}, new Temp[] { e1, e2 });
 }%
 
-MOVE(MEM(BINOP(ADD, e1, CONST(c))), e2) %pred %( is13bit(c) )% %{
+MOVE(MEM(BINOP(ADD, e1, CONST<l,i>(c))), e2) %pred %( is13bit(c) )% %{
  emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n", 
-          null, new Temp[] { e1, e2 });
+          new Temp[] {}, new Temp[] { e1, e2 });
 }%
 
 MOVE(MEM(BINOP(ADD, e1, e2)), e3) %{
  emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s2, [`s0+`s1]\n", 
-          null, new Temp[] { e1, e2, e3 });
+          new Temp[] {}, new Temp[] { e1, e2, e3 });
 }% 
 
 MOVE(MEM(e1), e2) %{
  emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0]\n", 
-          null, new Temp[] { e1, e2 });
+          new Temp[] {}, new Temp[] { e1, e2 });
 }%
 
 // load small constants
 
-MOVE(e1, CONST<i,p>(c)) %pred %( is13bit(c) )% %{
+MOVE(e1, CONST<i>(c)) %pred %( is13bit(c) )% %{
  emit (ROOT, "\t mov "+c+", `d0\n",
-       new Temp[] { e1 }, null);
+       new Temp[] { e1 }, new Temp[] {});
 }%
 
 // other MOVEs
@@ -296,14 +544,14 @@ LABEL(l) %{
 // expressions
 
 CONST<i,l,p>(0)=r %{
- emit (ROOT, "\t mov %g0, `d0\n", new Temp[] {r}, null);
+    emit (ROOT, "\tmov `s0, `d0\n", new Temp[] { r }, new Temp[] { r0 });
 }%
 
-CONST<i,p>(c)=r %{
+CONST<i>(c)=r %{
  if (is13bit(c)) {
-   emit (ROOT, "\t set "+c+", `d0\n", new Temp[] {r}, null);
+   emit (ROOT, "\t set "+c+", `d0\n", new Temp[] {r}, new Temp[] {});
  } else {
-   emit (ROOT, "\t sethi %hi("+c+"), `d0\n", new Temp[]{r},null);
+   emit (ROOT, "\t sethi %hi("+c+"), `d0\n", new Temp[]{r}, new Temp[] {});
    emit (ROOT, "\t or `s0, %lo("+c+"), `d0\n",
          new Temp[] { r }, new Temp[] { r });
  }
@@ -319,26 +567,6 @@ NAME(s)=r %{
 }%
 
 /*TEMP(t)=r should be handled by c-g-g. */
-
-BINOP<i,p>(op, CONST(c), e)=r %pred %( isCommutative(op) && is13bit(c) )% %{
- emit (ROOT, "\t "+bop(op)+" `s0, "+c+", `d0\n",
-       new Temp[] { r }, new Temp[] { e });
-}%
-
-BINOP<i,p>(op, e, CONST(c))=r %pred %( (isShift(op) || isCommutative(op)) && is13bit(c) )% %{
- emit (ROOT, "\t "+bop(op)+" `s0, "+c+", `d0\n",
-       new Temp[] { r }, new Temp[] { e });
-}%
-
-BINOP<i,p>(op, e1, e2)=r  %pred %( isShift(op) || isCommutative(op) )% %{
- emit (ROOT, "\t "+bop(op)+" `s0, `s1, `d0\n",
-       new Temp[] { r }, new Temp[] { e1, e2 });
-}%
-
-BINOP<i,p>(ADD, e1, UNOP(NEG, e2))=r /* subtraction */ %{
- emit (ROOT, "\t sub `s0, `s1, `d0\n",
-       new Temp[] { r }, new Temp[] { e1, e2 });
-}%
 
 /* FIXME: write integer MUL/DIV rules */
 /* FIXME: write long rules */
@@ -411,12 +639,12 @@ UNOP<i,p>(_2I, e)=r %{ /* do nothing */
 
 // patterns with MEM at root.
 
-MEM(BINOP(PLUS, CONST(c), e1))=r %pred %( is13bit(c) )% %{
+MEM(BINOP(PLUS, CONST<l,i>(c), e1))=r %pred %( is13bit(c) )% %{
  emit (ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+"+c+"], `d0\n",
        new Temp[] { r }, new Temp[] { e1 });
 }%
 
-MEM(BINOP(PLUS, e1, CONST(c)))=r %pred %( is13bit(c) )% %{
+MEM(BINOP(PLUS, e1, CONST<l,i>(c)))=r %pred %( is13bit(c) )% %{
  emit (ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+"+c+"], `d0\n",
        new Temp[] { r }, new Temp[] { e1 });
 }%
@@ -426,9 +654,9 @@ MEM(BINOP(PLUS, e1, e2))=r %{
        new Temp[] { r }, new Temp[] { e1, e2 });
 }%
 
-MEM(CONST(c))=r %pred %( is13bit(c) )% %{
+MEM(CONST<l,i>(c))=r %pred %( is13bit(c) )% %{
  emit (ROOT, "\t ld ["+c+"], `d0\n",
-       new Temp[] { r }, null);
+       new Temp[] { r }, new Temp[] {});
 }%
 
 MEM(e)=r %{

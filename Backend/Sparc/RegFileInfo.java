@@ -34,7 +34,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.4 1999-11-04 09:04:25 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.5 1999-11-23 09:39:05 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -183,7 +183,7 @@ public class RegFileInfo
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg);
     }
 
-    public Temp getRegister(int index) { return getAllRegisters()[index]; }
+    public Temp getRegister(int index) { return reg[index]; }
 
     public Temp[] getGeneralRegisters() {
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, generalRegs);
