@@ -15,15 +15,21 @@ import java.util.List;
  * an array type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArraySyn.java,v 1.1.2.5 2000-11-10 02:32:53 cananian Exp $
+ * @version $Id: HClassArraySyn.java,v 1.1.2.6 2001-01-18 22:53:34 cananian Exp $
  */
 class HClassArraySyn extends HClassArray implements HClassMutator {
     final List declaredMethods = new ArrayList(4);
     
     /** Creates a <code>HClassArraySyn</code>. */
     HClassArraySyn(Linker linker, HClass baseType, int dims) {
+	this(linker, baseType, dims, true/*init w/ clone method*/);
+    }
+    private HClassArraySyn(Linker linker, HClass baseType, int dims,
+			   boolean init) {
         super(linker, baseType, dims);
-	declaredMethods.add(cloneMethod); // this method is not mutable.
+	if (init) // we skip this step when restoring from serialized form.
+	    declaredMethods.add // even clone method is mutable.
+		(new HMethodSyn(this, cloneMethod.getName(), cloneMethod));
     }
     /** Allow mutation. */
     public HClassMutator getMutator() { return this; }
@@ -60,8 +66,6 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 	return hm;
     }
     public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
-	if (m.equals(cloneMethod))
-	    throw new Error("Not allowed to remove the array clone method.");
 	if (declaredMethods.remove(m)) {
 	    hasBeenModified=true; // flag the modification
 	    return;
@@ -160,15 +164,14 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 	    this.baseType = c.baseType;
 	    this.dims = c.dims;
 	    this.modified = c.hasBeenModified;
-	    this.declaredMethods = new ArrayList(c.declaredMethods.size()-1);
+	    this.declaredMethods = new ArrayList(c.declaredMethods.size());
 	    for (Iterator it=c.declaredMethods.iterator(); it.hasNext(); ) {
 		HMethod hm = (HMethod) it.next();
-		if (hm==c.cloneMethod) continue;
 		this.declaredMethods.add(new HClassSyn.MethodStub(hm));
 	    }
 	}
 	public Object readResolve() {
-	    HClassArraySyn c = new HClassArraySyn(linker, baseType, dims);
+	    HClassArraySyn c=new HClassArraySyn(linker, baseType, dims, false);
 	    for (Iterator it=declaredMethods.iterator(); it.hasNext(); ) {
 		HMethod hm = ((HClassSyn.MethodStub)it.next()).reconstruct(c);
 		c.declaredMethods.add(hm);
