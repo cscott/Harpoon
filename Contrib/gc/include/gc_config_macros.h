@@ -28,6 +28,9 @@
 #if defined(LINUX_THREADS)
 # define GC_LINUX_THREADS
 #endif
+#if defined(USER_THREADS)
+# define GC_USER_THREADS
+#endif
 #if defined(WIN32_THREADS)
 # define GC_WIN32_THREADS
 #endif
@@ -38,6 +41,7 @@
 #if !defined(_REENTRANT) && (defined(GC_SOLARIS_THREADS) \
 		             || defined(GC_SOLARIS_PTHREADS) \
 			     || defined(GC_HPUX_THREADS) \
+			     || defined(GC_USER_THREADS) \
 			     || defined(GC_LINUX_THREADS))
 # define _REENTRANT
 	/* Better late than never.  This fails if system headers that	*/
@@ -50,6 +54,7 @@
 
 # if defined(GC_SOLARIS_PTHREADS) || defined(GC_FREEBSD_THREADS) || \
 	defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
+	defined(GC_USER_THREADS) || \
 	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
 	defined(GC_DGUX386_THREADS) || defined(GC_MACOSX_THREADS) || \
         (defined(GC_WIN32_THREADS) && defined(__CYGWIN32__))

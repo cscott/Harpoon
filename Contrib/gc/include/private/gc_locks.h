@@ -296,7 +296,7 @@
 #  if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
       && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS)
 #    define NO_THREAD (pthread_t)(-1)
-#ifdef USER_THREADS
+#ifdef GC_USER_THREADS
 #    define USER_THREADS_COMPATIBILITY
 #    include <threads.h>
 #else

@@ -317,6 +317,7 @@ COUNT_DECL
     register int word_no;
     register word *p, *q, *plim;
     NWORDS_DECL
+    
     GC_ASSERT(hhdr == GC_find_header((ptr_t)hbp));
     p = (word *)(hbp->hb_body);
     word_no = 0;
@@ -469,7 +470,7 @@ COUNT_DECL
     register int word_no = 0;
     register word *p, *plim;
     NWORDS_DECL
-
+    
     p = (word *)(hbp->hb_body);
     plim = (word *)((((word)hbp) + HBLKSIZE)
 		   - WORDS_TO_BYTES(sz));
@@ -501,7 +502,7 @@ register word sz;
 #   ifdef GATHERSTATS
         register int n_words_found = 0;
 #   endif
-
+    
     p = (word *)(hbp->hb_body);
     plim = (word *)((((word)hbp) + HBLKSIZE)
 		   - WORDS_TO_BYTES(sz));

@@ -392,8 +392,6 @@ DCL_LOCK_STATE;
     return((GC_PTR)REDIRECT_MALLOC(n*lb));
   }
 
-
-
 #ifndef strdup
 # include <string.h>
 # ifdef __STDC__

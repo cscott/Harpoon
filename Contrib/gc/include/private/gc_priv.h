@@ -418,7 +418,6 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
  	PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_stopNormal, \
  				   PCR_allSigsBlocked, \
  				   PCR_waitForever)
-
 #     define START_WORLD() \
 	PCR_ThCtl_SetExclusiveMode(PCR_ThCtl_ExclusiveMode_null, \
  				   PCR_allSigsBlocked, \
@@ -1701,6 +1700,12 @@ void GC_notify_or_invoke_finalizers GC_PROTO((void));
 			/* Call *GC_finalizer_notifier if there are	*/
 			/* finalizers to be run, and we haven't called	*/
 			/* this procedure yet this GC cycle.		*/
+
+GC_API GC_PTR GC_make_closure GC_PROTO((GC_finalization_proc fn, GC_PTR data));
+GC_API void GC_debug_invoke_finalizer GC_PROTO((GC_PTR obj, GC_PTR data));
+			/* Auxiliary fns to make finalization work	*/
+			/* correctly with displaced pointers introduced	*/
+			/* by the debugging allocators.			*/
   			
 void GC_add_to_heap GC_PROTO((struct hblk *p, word bytes));
   			/* Add a HBLKSIZE aligned chunk to the heap.	*/
