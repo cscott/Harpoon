@@ -24,7 +24,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.6 1998-08-01 07:22:09 cananian Exp $
+ * @version $Id: HClass.java,v 1.7 1998-08-01 08:54:58 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -413,7 +413,8 @@ public class HClass {
    * <code>private</code> methods, but excludes inherited methods.
    * Returns an array of length 0 if the class or interface declares no
    * methods, or if this <code>HClass</code> object represents a primitive
-   * type.
+   * type.<p>
+   * Constructors are included.
    * @see "The Java Language Specification, section 8.2"
    * @see HMethod
    */
@@ -423,8 +424,12 @@ public class HClass {
 	declaredMethods = new HMethod[0];
       else {
 	declaredMethods = new HMethod[classfile.methods.length];
-	for (int i=0; i<declaredMethods.length; i++)
-	  declaredMethods[i] = new HMethod(this, classfile.methods[i]);
+	for (int i=0; i<declaredMethods.length; i++) {
+	  if (classfile.methods[i].name().equals("<init>")) // constructor
+	    declaredMethods[i] = new HConstructor(this, classfile.methods[i]);
+	  else // plain ol' method.
+	    declaredMethods[i] = new HMethod(this, classfile.methods[i]);
+	}
       }
     }
     return HMethod.copy(declaredMethods);
@@ -472,7 +477,8 @@ public class HClass {
    * the class or interface and those inherited from superclasses and
    * superinterfaces.  Returns an array of length 0 if the class or
    * interface has no public member methods, or if the <code>HClass</code>
-   * corresponds to a primitive type or array type.
+   * corresponds to a primitive type or array type.<p>
+   * Constructors are included.
    * @see "The Java Language Specification, sections 8.2 and 8.4"
    */
   public HMethod[] getMethods() {
@@ -520,6 +526,47 @@ public class HClass {
     v.copyInto(result);
     return result;
   }
+  /**
+   * Returns an <code>HConstructor</code> object that reflects the 
+   * specified declared constructor of the class or interface represented 
+   * by this <code>HClass</code> object.  The <code>parameterTypes</code>
+   * parameter is an array of <code>HClass</code> objects that
+   * identify the constructor's formal parameter types, in declared order.
+   * @exception NoSuchMethodException if a matching method is not found.
+   */
+  public HConstructor getConstructor(HClass parameterTypes[])
+    throws NoSuchMethodException {
+    return (HConstructor) getDeclaredMethod("<init>", parameterTypes);
+  }
+  /**
+   * Returns an array of <code>HConstructor</code> objects reflecting
+   * all the constructors declared by the class represented by the
+   * <code>HClass</code> object.  These are <code>public</code>,
+   * <code>protected</code>, default (package) access, and
+   * <code>private</code> constructors.  Returns an array of length 0
+   * if this <code>HClass</code> object represents an interface or a
+   * primitive type.
+   * @see "The Java Language Specification, section 8.2"
+   */
+  public HConstructor[] getConstructors() {
+    if (constructors == null) {
+      if (isPrimitive() || isArray() || isInterface())
+	constructors = new HConstructor[0];
+      else {
+	HMethod[] hm = getMethods();
+	int n=0;
+	for (int i=0; i<hm.length; i++)
+	  if (hm[i] instanceof HConstructor)
+	    n++;
+	constructors = new HConstructor[n];
+	for (int i=0; i<hm.length; i++)
+	  if (hm[i] instanceof HConstructor)
+	    constructors[--n] = (HConstructor) hm[i];
+      }
+    }
+    return HConstructor.copy(constructors);
+  }
+  private HConstructor[] constructors = null;
 
   /**
    * Returns the Java language modifiers for this class or interface,
