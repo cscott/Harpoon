@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.2.4 2000-01-11 21:01:47 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.2.5 2000-01-11 21:08:33 cananian Exp $
  */
 public class Relinker extends Linker {
     protected final Linker linker;
@@ -74,6 +74,7 @@ public class Relinker extends Linker {
     Map memberMap = new HashMap();
 
     HClass wrap(HClass hc) {
+	if (hc==null || hc.isPrimitive()) return hc;
 	return forDescriptor(hc.getDescriptor());
     }
     HClass unwrap(HClass hc) {
@@ -82,6 +83,7 @@ public class Relinker extends Linker {
 	return ((HClassProxy)hc).proxy;
     }
     HField wrap(HField hf) {
+	if (hf==null) return null;
 	HField result = (HField) memberMap.get(hf);
 	if (result==null) {
 	    if (hf.getDeclaringClass().isArray())
@@ -93,6 +95,7 @@ public class Relinker extends Linker {
 	return result;
     }
     HMethod wrap(HMethod hm) {
+	if (hm==null) return null;
 	if (hm instanceof HInitializer) return wrap((HInitializer)hm);
 	if (hm instanceof HConstructor) return wrap((HConstructor)hm);
 	HMethod result = (HMethodProxy) memberMap.get(hm);
@@ -107,6 +110,7 @@ public class Relinker extends Linker {
 	return result;
     }
     HConstructor wrap(HConstructor hc) {
+	if (hc==null) return null;
 	HConstructor result = (HConstructorProxy) memberMap.get(hc);
 	if (result==null) {
 	    Util.assert(!hc.getDeclaringClass().isArray());
@@ -116,6 +120,7 @@ public class Relinker extends Linker {
 	return result;
     }
     HInitializer wrap(HInitializer hi) {
+	if (hi==null) return null;
 	HInitializer result = (HInitializerProxy) memberMap.get(hi);
 	if (result==null) {
 	    Util.assert(!hi.getDeclaringClass().isArray());
