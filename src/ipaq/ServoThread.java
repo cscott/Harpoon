@@ -57,5 +57,9 @@ public class ServoThread extends Thread {
 	this.stop = stop;
 	notify();
     }
+
+    public synchronized void command2(int start, long time, int stop) {
+	car.moveDelayMoveLocal(servo, start, time, stop);
+    }
 }
 
