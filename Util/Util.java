@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.9 1999-08-04 06:31:03 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.10 1999-08-05 17:53:21 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -220,7 +220,7 @@ public abstract class Util {
   public static final int fls(int v) {
     if ( (v & 0xFFFF0000) != 0)
       if ( (v & 0xFF000000) != 0)
-        return 24 + bytemsb[v>>24];
+        return 24 + bytemsb[(v>>24) & 0xFF];
       else
   	  return 16 + bytemsb[v>>16];
     if ( (v & 0x0000FF00) != 0)
