@@ -26,7 +26,7 @@ import harpoon.IR.QuadNoSSA.*;
     // hide away constructor.
 //private Main() { }
 //=======
-public abstract class Main extends harpoon.IR.Registration {
+public abstract class ProfileMain extends harpoon.IR.Registration {
     //>>>>>>> 1.7
 
     /** The compiler should be invoked with the names of classes
