@@ -9,7 +9,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>constant_pool</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.3 1998-08-04 02:09:32 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.4 1998-08-04 02:14:45 cananian Exp $
  * @see Operand
  * @see Instr
  */
@@ -52,8 +52,8 @@ public class OpConstant extends Operand {
   /** Return a human-readable representation of this OpConstant. */
   public String toString() {
     if (getType()==HClass.forName("java.lang.String"))
-      return "(String) \""+escape(getValue().toString())+"\"";
-    return "("+getType().getName()+") "+getValue().toString();
+      return "(String)\""+escape(getValue().toString())+"\"";
+    return "("+getType().getName()+")"+getValue().toString();
   }
   // copied from Constant.Utf8
   static String escape(String str) {

@@ -1,6 +1,5 @@
 package harpoon.ClassFile.Bytecode;
 
-//import harpoon.ClassFile.Raw.Constant.*;
 import harpoon.ClassFile.*;
 import harpoon.Util.Util;
 
@@ -236,16 +235,12 @@ public class InGen extends Instr {
   /** Return human-readable instruction string. */
   public String toString() {
     StringBuffer sb = new StringBuffer(Op.toString(opcode));
-    /*
+    sb.append(' ');
     for (int i=0; i<operands.length; i++) {
-      sb.append(" (");
-      sb.append(operandTypes[i].getName());
-      sb.append(")");
       sb.append(operands[i].toString());
       if (i<operands.length-1)
 	sb.append(", ");
     }
-    */
     return sb.toString();
   }
 
