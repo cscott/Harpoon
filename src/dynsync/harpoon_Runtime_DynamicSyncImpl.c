@@ -9,7 +9,7 @@
  * Method:    isSync
  * Signature: (Ljava/lang/Object;)Z
  */
-JNIEXPORT jboolean JNICALL Java_harpoon_Runtime_DynamicSyncImpl_isSync
+JNIEXPORT jboolean JNICALL Java_harpoon_Runtime_DynamicSyncImpl_isNoSync
   (JNIEnv *env, jclass cls, jobject obj) {
-  return DYNSYNC_isSync(FNI_UNWRAP(obj)) ? JNI_TRUE : JNI_FALSE;
+  return DYNSYNC_isNoSync(FNI_UNWRAP(obj)) ? JNI_TRUE : JNI_FALSE;
 }

@@ -12,7 +12,7 @@ extern "C" {
  * Method:    isSync
  * Signature: (Ljava/lang/Object;)Z
  */
-JNIEXPORT jboolean JNICALL Java_harpoon_Runtime_DynamicSyncImpl_isSync
+JNIEXPORT jboolean JNICALL Java_harpoon_Runtime_DynamicSyncImpl_isNoSync
   (JNIEnv *, jclass, jobject);
 
 #ifdef __cplusplus
