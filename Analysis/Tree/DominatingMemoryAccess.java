@@ -47,7 +47,7 @@ import java.util.Collection;
  * what memory access instructions need to do tag checks, and which don't
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.2 2001-06-03 05:23:37 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.3 2001-06-04 21:46:48 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -299,6 +299,9 @@ public class DominatingMemoryAccess {
       public int num() {
          return val;
       }
+      public int val() {
+         return val;
+      }
       private int val;
       private boolean def;
    }
@@ -355,13 +358,14 @@ public class DominatingMemoryAccess {
             Util.assert(defUseMap.containsKey(me));
             HashSet interset = (HashSet)inter.get(me);
             if(interset == null) {
-               interset = new HashSet();
+               interset = new HashSet(2);
                inter.put(me, interset);
             }
             for(Iterator it2 = in.iterator(); it2.hasNext();) {
                HCodeElement him = (HCodeElement) it2.next();
-               if(!me.equals(him))
+               if(!me.equals(him)) {
                   interset.add(him);
+               }
             }
          }
       }
@@ -462,16 +466,17 @@ public class DominatingMemoryAccess {
             for(Iterator it = interset.iterator(); it.hasNext();) {
                HCodeElement inter = (HCodeElement)it.next();
                if(ref2dareg.containsKey(inter)) {
-                  takenDA.add(ref2dareg.get(inter));
+                  takenDA.add(new Integer(((daNum)ref2dareg.get(inter)).num()));
                }
             }
             for(int i = 0; i < maxRegs; ++i) {
                // There can't be a single use and def of a DA regstier
                daNum defda = new daNum(i, true);
                daNum useda = new daNum(i, false);
+               Integer danum = new Integer(i);
                // If all the danums are taken, just don't assign this
                // one a da reg.  No spilling.
-               if(takenDA.contains(defda) == false) {
+               if(takenDA.contains(danum) == false) {
                   Util.assert(ref2dareg.containsKey(hce) == false);
                   ref2dareg.put(hce, defda);
                   for(Iterator it = ((ArrayList)defUseMap.get(hce)).iterator(); 
@@ -515,6 +520,7 @@ public class DominatingMemoryAccess {
       private HashMap defUseMap;
       private HashMap useDefMap;
       private HashMap ref2dareg;
+      private static final boolean trace = false;
    }
 
 
@@ -822,7 +828,14 @@ public class DominatingMemoryAccess {
                               + (Integer)h2n.get(useDefMap.get(hce)));
                   }
                   if(ref2dareg.containsKey(hce)) {
-                     pw.print(" DA " + (Integer)ref2dareg.get(hce));
+                     daNum danum = (daNum)ref2dareg.get(hce);
+                     pw.print(" DA ");
+                     if(danum.isUse()) {
+                        pw.print(" USE ");
+                     } else {
+                        pw.print(" DEF ");
+                     }
+                     pw.print(danum.num());
                   }
                   if(live.in(hce) != null) {
                      boolean notlive = true;
