@@ -1,6 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
-INCLUDES = -I../../include
 
 noinst_LIBRARIES = libjavaio.a
 
