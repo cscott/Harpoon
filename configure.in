@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.68 $)dnl
+AC_REVISION($Revision: 1.69 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -304,7 +304,7 @@ if test x$with_transactions = xyes; then
   AC_DEFINE(WITH_TRANSACTIONS, 1,
         [Define to build the experimental transactions transformation support])
 fi
-AM_CONDITIONAL(TRANSACTIONS, test $with_transactions = yes)
+AM_CONDITIONAL(TRANSACTIONS, test x$with_transactions = xyes)
 AC_MSG_RESULT($with_transactions)
 
 dnl select whether to collect and print statistics
