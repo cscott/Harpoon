@@ -77,7 +77,7 @@ wc:
 	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
 
 clean:
-	-${RM} -r harpoon silicon
+	-${RM} -r harpoon silicon Harpoon.jar
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
