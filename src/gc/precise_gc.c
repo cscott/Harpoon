@@ -38,11 +38,16 @@ void precise_gc_init() {
 #endif
 #ifdef MARKSWEEP
   marksweep_gc_init();
+#else
+  copying_gc_init();
 #endif
 }
 
 /* saved_registers[13] <- lr (use to walk stack) */
 #ifdef WITH_PRECISE_C_BACKEND
+
+/* simply declarations to avoid lots of tedious #ifdef'ing. */
+/* declare nop-variants of ops if WITH_THREADED_GC not defined */
 #ifdef WITH_THREADED_GC
 pthread_barrier_t before;
 pthread_barrier_t after;
@@ -96,6 +101,10 @@ void cleanup_after_threaded_GC() {
   pthread_mutex_unlock(&gc_thread_mutex);
   pthread_mutex_unlock(&running_threads_mutex);
 }
+#else /* when no threads, do nothing. */
+void halt_for_GC() {}
+void setup_for_threaded_GC() {}
+void cleanup_after_threaded_GC() {}
 #endif /* WITH_THREADED_GC */
 
 void *precise_malloc (size_t size_in_bytes)

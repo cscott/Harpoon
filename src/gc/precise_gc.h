@@ -33,6 +33,15 @@ size_t trace_array(struct aarray *arr);
 
 size_t trace_object(jobject_unwrapped obj);
 
+/* halt thread so garbage collection can begin */
+void halt_for_GC();
+
+/* halt other threads and acquire necessary locks */
+void setup_for_threaded_GC();
+
+/* release locks and allow threads to continue */
+void cleanup_after_threaded_GC();
+
 /* x: jobject_unwrapped
    effects: if obj is an object, adds object fields to root set;
    if an array, adds object elements to root set. */

@@ -61,25 +61,17 @@ extern pthread_cond_t done_cond;
 extern pthread_mutex_t done_mutex;
 extern int done_count;
 extern jint halt_for_GC_flag; 
-
-void halt_for_GC();
-
-/* halt threads and acquire necessary locks */
-void setup_for_threaded_GC();
-
-/* release locks and allow threads to continue */
-void cleanup_after_threaded_GC();
 #endif /* WITH_THREADED_GC */
 
 /* function declarations */
 void free_unreachable_blocks();
 
 /* returns: 1 if the specified object was allocated by us, 0 otherwise */
-int allocated_by_marksweep(jobject_unwrapped ptr_to_oobj) {
+int allocated_by_marksweep(void *ptr_to_oobj) {
   struct page *curr_page = page_list;
   while(curr_page != NULL) {
-    if ((void *)ptr_to_oobj > (void *)&(curr_page->page_contents) && 
-	(void *)ptr_to_oobj < (void *)curr_page + curr_page->pheader.page_size)
+    if (ptr_to_oobj > (void *)&(curr_page->page_contents) && 
+	ptr_to_oobj < (void *)curr_page + curr_page->pheader.page_size)
       return 1;
     else
       curr_page = curr_page->pheader.next;
@@ -194,7 +186,7 @@ struct block *find_free_block(size_t size) {
 /* effects: marks object as well as any objects pointed to by it */
 void marksweep_add_to_root_set(jobject_unwrapped *obj) {
   struct block *root;
-  if (allocated_by_marksweep(*obj)) {
+  if (allocated_by_marksweep((void *)(*obj))) {
     // mark or check for mark
     root = (void *)(*obj) - sizeof(struct block_header);
     if (root->bheader.markunion.mark)
@@ -220,7 +212,7 @@ void marksweep_gc_init() {
 
 void marksweep_handle_nonroot(jobject_unwrapped *obj) {
   struct block *root;
-  if (allocated_by_marksweep(*obj)) {
+  if (allocated_by_marksweep((void *)(*obj))) {
     // mark or check for mark
     root = (void *)(*obj) - sizeof(struct block_header);
     if (root->bheader.markunion.mark)
@@ -331,4 +323,20 @@ void free_unreachable_blocks() {
   }
   error_gc("%d bytes free.\n", free_bytes);
 }
+
+/* returns 1 if the given ptr points to an object
+   in the garbage-collected heap, returns 0 otherwise. */
+int marksweep_in_heap(void *ptr)
+{
+  int result = 0;
+#ifdef WITH_THREADED_GC
+  /* only one thread can touch the GC variables at a time */
+  while (pthread_mutex_trylock(&marksweep_gc_mutex))
+    if (halt_for_GC_flag) halt_for_GC();
+#endif
+  result = allocated_by_marksweep(ptr);
+  FLEX_MUTEX_UNLOCK(&marksweep_gc_mutex);
+  return result;
+}
+
 #endif
