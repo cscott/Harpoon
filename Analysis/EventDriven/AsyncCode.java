@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.9 2000-01-03 04:55:48 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.10 2000-01-05 16:47:03 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -364,6 +364,7 @@ public class AsyncCode {
 	}
 
 	public void visit(RETURN q) {
+	    TempFactory tf=hcode.getFactory().tempFactory();
 	    if (isCont) {
 		HClass hclass=hcode.getMethod().getDeclaringClass();
 		HField hfield=hclass.getField("next");
@@ -375,7 +376,6 @@ public class AsyncCode {
 		else
 		    resume=hfield.getType().getDeclaredMethod("resume",
 							      new HClass[0]);
-		TempFactory tf=hcode.getFactory().tempFactory();
 		Temp tnext=new Temp(tf);
 		GET get=new GET(hcode.getFactory(),q,
 				tnext, hfield, tthis);
@@ -404,12 +404,46 @@ public class AsyncCode {
 		linkFooters.add(qreturn);
 		quadmap.put(q, get);
 	    }
-	    else
-		;
+	    else {
+		HClass rettype=hc.getMethod().getReturnType();
+		String pref = 
+		    ContBuilder.getPrefix(rettype);
+		HClass continuation = HClass.forName
+		    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
+		HClass ret=rettype.isPrimitive()?rettype:HClass.forName("java.olang.Object");
+		HConstructor constructor=(ret!=HClass.Void)?continuation.getConstructor(new HClass[]{ret}):
+		    continuation.getConstructor(new HClass[0]);
+		Temp newt=new Temp(tf);
+		NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
+		Temp retex=new Temp(tf);
+		CALL call;
+		if (q.retval()!=null) {
+		    //***** Tailcall eventually
+		    //need to do get next first
+		    Temp nretval=ctmap.tempMap(q.retval());
+		    call=new CALL(hcode.getFactory(), q, constructor,
+				  new Temp[] {newt,nretval}, null,retex,
+				  true,false,new Temp[0]);
+		} else {
+		    //***** Tailcall eventually
+		    call=new CALL(hcode.getFactory(), q, constructor,
+				  new Temp[] {newt}, null, retex,
+				  true, false, new Temp[0]);
+		}
+		Quad.addEdge(newq,0,call,0);
+		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+		Quad.addEdge(call,1,qthrow,0);
+		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+		Quad.addEdge(call,0,qreturn,0);
+		linkFooters.add(qthrow);
+		linkFooters.add(qreturn);
+		quadmap.put(q, newq);
+	    }
 	    followchildren=false;
 	}
-
+	
 	public void visit(THROW q) {
+	    TempFactory tf=hcode.getFactory().tempFactory();
 	    if (isCont) {
 		HClass hclass=hcode.getMethod().getDeclaringClass();
 		HField hfield=hclass.getField("next");
@@ -417,14 +451,12 @@ public class AsyncCode {
 		HMethod resume=
 		    hfield.getType().getDeclaredMethod("exception",
 						       new HClass[] {throwable});
-		TempFactory tf=hcode.getFactory().tempFactory();
 		Temp tnext=new Temp(tf);
 		GET get=new GET(hcode.getFactory(),q,
 				tnext, hfield, tthis);
-		Temp nretval=null;
 		CALL call=null;
 		Temp retex=new Temp(tf);
-		nretval=ctmap.tempMap(q.throwable());
+		Temp nretval=ctmap.tempMap(q.throwable());
 		//***** Tailcall eventually
 		//need to do get next first
 		call=new CALL(hcode.getFactory(), q, resume,
@@ -438,8 +470,33 @@ public class AsyncCode {
 		linkFooters.add(qthrow);
 		linkFooters.add(qreturn);
 		quadmap.put(q, get);
-	    } else
-		;
+	    } else {
+		HClass rettype=hc.getMethod().getReturnType();
+		String pref = 
+		    ContBuilder.getPrefix(rettype);
+		HClass continuation = HClass.forName
+		    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
+		HClass ret=HClass.forName("java.lang.Throwable");
+		HConstructor constructor=continuation.getConstructor(new HClass[]{ret});
+		Temp newt=new Temp(tf);
+		NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
+		CALL call;
+		//***** Tailcall eventually
+		    //need to do get next first
+		Temp nretval=ctmap.tempMap(q.throwable());
+		Temp retex=new Temp(tf);
+		call=new CALL(hcode.getFactory(), q, constructor,
+			      new Temp[] {newt,nretval}, null,retex,
+			      true,false,new Temp[0]);
+		Quad.addEdge(newq,0,call,0);
+		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+		Quad.addEdge(call,1,qthrow,0);
+		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+		Quad.addEdge(call,0,qreturn,0);
+		linkFooters.add(qthrow);
+		linkFooters.add(qreturn);
+		quadmap.put(q, newq);
+	    }
 	    followchildren=false;
 	}
 
