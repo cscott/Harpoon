@@ -14,7 +14,7 @@ import java.util.Vector;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.9 1999-02-25 03:42:19 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.10 1999-03-02 21:31:37 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -181,9 +181,10 @@ final class UnHandler {
 			 QuadMap qm, Temp Textra, CloningTempMap ctm) {
 	    METHOD newQm = (METHOD) newQh.next(1);
 	    // first attach throws to footer.
-	    FOOTER newQf = (FOOTER) newQh.next(0);
+	    FOOTER oldQf = (FOOTER) newQh.next(0); int j=oldQf.arity();
+	    FOOTER newQf = oldQf.resize(j + Vthrows.size());
 	    for (Enumeration e=Vthrows.elements(); e.hasMoreElements(); )
-		newQf = newQf.attach((THROW)e.nextElement(), 0);
+		Quad.addEdge((THROW)e.nextElement(), 0, newQf, j++);
 	    
 	    // next do HandlerSets
 	    for (Enumeration e=Hhs.keys(); e.hasMoreElements(); ) {
