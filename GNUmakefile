@@ -75,7 +75,7 @@ always:
 %.gif: %.stats
 	scripts/make.graph $*
 
-allthesis.stats: thesis.stats Figures/THex1.fig \
+allthesis.stats: thesis.stats Figures/THex1.fig.stats \
 		$(patsubst %,%.stats,$(THESIS_FIGURES))
 	(head -1 thesis.stats ; (cat $^ | sed -e '/^[^0-9]/d' \
 	  -e 's.\([0-9][0-9]/[0-9][0-9]\)/\([0-9][0-9][0-9][0-9]\).\2/\1.g' \
@@ -109,7 +109,7 @@ update:
 clean:
 	$(RM) *.aux *.bbl *.blg *.dvi *.glo *.gls *.idx *.ilg *.ind *.lis \
 	      *.loa *.lof *.log *.lot *.toc
-	$(RM) $(foreach doc,$(ALLDOCS),$(doc).ps $(doc).pdf $(doc).gif $(doc).stats)
+	$(RM) $(foreach doc,$(ALLDOCS),$(doc).ps $(doc).pdf $(doc).gif $(doc).stats) allthesis.stats allthesis.gif
 	$(RM) harpoon_.bib unread_.bib
 	$(RM) -r html
 	$(MAKE) -C Figures clean
