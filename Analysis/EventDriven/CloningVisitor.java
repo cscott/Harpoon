@@ -71,7 +71,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.31 2000-06-07 20:19:36 kkz Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.32 2000-07-03 01:40:58 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -953,6 +953,7 @@ public class CloningVisitor extends QuadVisitor {
 	//Then build dst array for sigma function
 
 	Temp srco[]=getEnvTemps(q);
+
 	Temp src[]=map(ctmap,srco);
 	Temp srcarray[]=q.src();
 	Vector vsrc=new Vector(Arrays.asList(srco));
@@ -1268,7 +1269,8 @@ public class CloningVisitor extends QuadVisitor {
 		}
 	    if (search)
 		if (livein.contains(t)) {
-		    env.add(t);
+		    if (typemap.typeMap(q,t)!=HClass.Void)
+			env.add(t);
 		}
 	}
 
