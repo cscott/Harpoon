@@ -32,9 +32,20 @@ jobject_unwrapped FNI_Unwrap(jobject obj) {
 }
 
 /* clear local refs in stack frame */
+/* deletes local refs up to *and including* markerRef.
+ * as a special case, markerRef may == fts->localrefs_next; i.e.
+ * it may point to the next *unallocated* space, in which case
+ * this function is a no-op. */
 void FNI_DeleteLocalRefsUpTo(JNIEnv *env, jobject markerRef) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
-  assert((fts->localrefs_stack <= markerRef)&&(markerRef <= fts->localrefs_next));
+  /* assert validity of localrefs stack */
+  /*  note that at least one item must be on stack, but stack may be full */
+  assert(fts->localrefs_next <= fts->localrefs_end); /* stack may be full */
+  assert(fts->localrefs_stack < fts->localrefs_next);/* at least one item */
+  /* assert validity of marker ref: either on localrefs stack or one beyond */
+  assert(markerRef            <= fts->localrefs_end);/* may point to unalloc */
+  assert(fts->localrefs_stack <= markerRef);         /* may point to first */
+  assert(markerRef            <= fts->localrefs_next);/*may point to unalloc */
 #ifdef BDW_CONSERVATIVE_GC
   /* clear unused stack space, so as not to confuse conservative collector */
   memset(markerRef, 0, fts->localrefs_next - markerRef);
