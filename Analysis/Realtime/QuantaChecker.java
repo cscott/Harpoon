@@ -46,7 +46,7 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.1.2.3 2001-06-22 18:51:43 wbeebee Exp $
+ * @version $Id: QuantaChecker.java,v 1.1.2.4 2001-07-10 22:48:07 cananian Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
@@ -103,7 +103,7 @@ public class QuantaChecker extends MethodMutator
       HField field = linker.forName("javax.realtime.QuantaThread").getField("timerFlag");  // get flag field
 	
 	MEM mem = new MEM(tf, e, Typed.INT,
-			  new NAME(tf, e, tf.getFrame().getRuntime().nameMap.label(field))); //get memory at flag field
+			  new NAME(tf, e, tf.getFrame().getRuntime().getNameMap().label(field))); //get memory at flag field
 
 	Label flagTrue = new Label("quantaFlagTrue"); //true jump
 	Label flagFalse = new Label("quantaFlagFalse"); //false jump
@@ -124,7 +124,7 @@ public class QuantaChecker extends MethodMutator
 	CALL javaHandleFlag = null;
 	if(javaFlagMethod != null)
 	 {
-	     NAME jmeth = new NAME(tf, e, tf.getFrame().getRuntime().nameMap.label(javaFlagMethod));
+	     NAME jmeth = new NAME(tf, e, tf.getFrame().getRuntime().getNameMap().label(javaFlagMethod));
 	     NAME falseJump = new NAME(tf, e, flagFalse);
 	     Temp Tobj = new Temp(tf.tempFactory(), "rt");
 	     javaHandleFlag = new CALL(tf, e, null, 
@@ -146,7 +146,7 @@ public class QuantaChecker extends MethodMutator
     protected NATIVECALL addCheck(TreeFactory tf, HCodeElement source,
 			   DerivationGenerator dg)
     {
-	Label func = new Label(tf.getFrame().getRuntime().nameMap
+	Label func = new Label(tf.getFrame().getRuntime().getNameMap()
 			       .c_function_name("HandleQuantaFlag"));
 	return new NATIVECALL
 	    (tf, source,

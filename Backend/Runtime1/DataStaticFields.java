@@ -30,7 +30,7 @@ import java.util.Set;
  * <code>DataStaticFields</code> lays out the static fields of a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStaticFields.java,v 1.1.4.4 2000-01-10 05:08:35 cananian Exp $
+ * @version $Id: DataStaticFields.java,v 1.1.4.5 2001-07-10 22:49:50 cananian Exp $
  */
 public class DataStaticFields extends Data {
     final NameMap m_nm;
@@ -39,13 +39,13 @@ public class DataStaticFields extends Data {
     /** Creates a <code>DataStaticFields</code>. */
     public DataStaticFields(Frame f, HClass hc) {
         super("static-fields", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
+	this.m_nm = f.getRuntime().getNameMap();
 	// note that technically this is a *class* field map, and so
 	// we can't be sure that it will work on static fields.  but
 	// in fact, we wrote the code, so we know it will.  Slight
 	// violation of abstraction, but it makes everything more
 	// maintainable *not* to duplicate the code here.
-	this.m_fm = ((TreeBuilder)f.getRuntime().treeBuilder).cfm;
+	this.m_fm = ((TreeBuilder)f.getRuntime().getTreeBuilder()).cfm;
 	this.root = build(hc);
     }
     private HDataElement build(HClass hc) {

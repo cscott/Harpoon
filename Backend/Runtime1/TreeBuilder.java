@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.47 2001-07-09 23:54:17 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.48 2001-07-10 22:49:52 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -95,13 +95,13 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     protected final int CLAZ_GCENTRY_OFF;
     protected final int CLAZ_DEPTH_OFF;
     protected final int CLAZ_DISPLAY_OFF;
-    protected final int CLAZ_METHODS_OFF;
+    protected       int CLAZ_METHODS_OFF;
     
     // helper maps.
     protected final Runtime runtime;
     protected final Linker linker;
-    protected final ClassDepthMap cdm;
-    protected final MethodMap imm;
+    protected       ClassDepthMap cdm;
+    protected       MethodMap imm;
     protected final MethodMap cmm;
     protected final FieldMap  cfm;
 
@@ -116,15 +116,13 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     private final int pointerAlignment;
 
     // pointerAlignment==0 means don't mask pointers.
-    protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+    protected TreeBuilder(Runtime runtime, Linker linker,
 			  AllocationStrategy as, boolean pointersAreLong,
 			  int pointerAlignment) {
 	this.pointerAlignment = pointerAlignment;
 	this.runtime = runtime;
 	this.linker = linker;
 	this.as  = as;
-	this.cdm = new harpoon.Backend.Maps.DefaultClassDepthMap(ch);
-	this.imm = new harpoon.Backend.Analysis.InterfaceMethodMap(ch);
 	this.cmm = new harpoon.Backend.Analysis.ClassMethodMap();
 	this.cfm = new harpoon.Backend.Analysis.ClassFieldMap() {
 	    public int fieldSize(HField hf) {
@@ -165,6 +163,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_GCENTRY_OFF = 3 * POINTER_SIZE + 1 * WORD_SIZE;
 	CLAZ_DEPTH_OFF   = 4 * POINTER_SIZE + 1 * WORD_SIZE;
 	CLAZ_DISPLAY_OFF = 4 * POINTER_SIZE + 2 * WORD_SIZE;
+    }
+    // this method must be called to complete initialization before
+    // the tree builder is used.
+    protected void setClassHierarchy(ClassHierarchy ch) {
+	this.cdm = new harpoon.Backend.Maps.DefaultClassDepthMap(ch);
+	this.imm = new harpoon.Backend.Analysis.InterfaceMethodMap(ch);
 	CLAZ_METHODS_OFF = CLAZ_DISPLAY_OFF + (1+cdm.maxDepth())*POINTER_SIZE;
     }
     // type declaration helper methods
@@ -267,7 +271,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		   DECLARE(dg, maskedDL,
 			   new TEMP(tf, source, Type.POINTER, Tmasked)),
 		   new CONST(tf, source, OBJ_CLAZ_OFF)))),
-		new NAME(tf, source, runtime.nameMap.label(objectType)))))),
+		new NAME(tf, source, runtime.getNameMap().label(objectType)))))),
 	     // result of ESEQ is new object pointer
 	     DECLARE(dg, objectType/*finally an obj*/, Tobj,
 	     new TEMP(tf, source, Type.POINTER, Tobj)));
@@ -349,7 +353,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
                  (tf, source, null,
                   DECLARE(dg, HClass.Void/*c library function*/,
                   new NAME(tf, source, new Label
-                           (runtime.nameMap.c_function_name("memset")))),
+                           (runtime.getNameMap().c_function_name("memset")))),
                   new ExpList
                   (fieldBase(tf, source, dg, new Translation.Ex
 			     (DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
@@ -423,7 +427,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				      final Translation.Exp objref,
 				      final HClass classType)
     {
-	final Label Lclaz = runtime.nameMap.label(classType);
+	final Label Lclaz = runtime.getNameMap().label(classType);
 	// two cases: class or interface type.
 	if (HClassUtil.baseClass(classType).isInterface()) {
 	    // interface type: linear search through interface list.
@@ -569,7 +573,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     new TEMP(tf, source, Type.POINTER, envT)) /*retval*/,
 	     DECLARE(dg, HClass.Void/* c function ptr */,
 	     new NAME(tf, source, new Label
-		      (runtime.nameMap.c_function_name("FNI_GetJNIEnv")))),
+		      (runtime.getNameMap().c_function_name("FNI_GetJNIEnv")))),
 	     null/* no args*/);
 
 	// wrap objectref.
@@ -582,7 +586,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      new TEMP(tf, source, Type.POINTER, objT)) /*retval*/,
 	      DECLARE(dg, HClass.Void/* c function ptr */,
 	      new NAME(tf, source, new Label
-		       (runtime.nameMap.c_function_name("FNI_NewLocalRef")))),
+		       (runtime.getNameMap().c_function_name("FNI_NewLocalRef")))),
 	      new ExpList
 	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
 	       new TEMP(tf, source, Type.POINTER, envT)),
@@ -600,7 +604,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     new TEMP(tf, source, Type.INT, disT) /*retval*/,
 	     DECLARE(dg, HClass.Void/* c function ptr */,
 	     new NAME(tf, source, new Label
-		      (runtime.nameMap.c_function_name
+		      (runtime.getNameMap().c_function_name
 		       (isEnter?"FNI_MonitorEnter":"FNI_MonitorExit")))),
 	     new ExpList
 	     (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
@@ -616,7 +620,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     new NATIVECALL
 	     (tf, source, null/*void retval*/,
 	      DECLARE(dg, HClass.Void/* c function ptr */,
-	      new NAME(tf, source, new Label(runtime.nameMap.c_function_name
+	      new NAME(tf, source, new Label(runtime.getNameMap().c_function_name
 					     ("FNI_DeleteLocalRefsUpTo")))),
 	      new ExpList
 	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
@@ -654,7 +658,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		  (tf, source, null,
 		   DECLARE(dg, HClass.Void/*c library function*/,
 		   new NAME(tf, source, new Label
-			    (runtime.nameMap.c_function_name("memset")))),
+			    (runtime.getNameMap().c_function_name("memset")))),
 		   new ExpList
 		   (new BINOP
 		    (tf, source, Type.POINTER, Bop.ADD,
@@ -675,7 +679,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp classConst(TreeFactory tf, HCodeElement source,
 			  DerivationGenerator dg, HClass classData) {
 	Exp clsref = new NAME(tf, source,
-			      runtime.nameMap.label(classData, "classobj"));
+			      runtime.getNameMap().label(classData, "classobj"));
 	//let this NAME be HClass.Void, since it points at a static object
 	//which the gc doesn't need to know about.  If we give it a type,
 	//then the derivation generator will get confused by derived pointers
@@ -686,7 +690,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp fieldConst(TreeFactory tf, HCodeElement source,
 			  DerivationGenerator dg, HField fieldData) {
 	Exp fldref = new NAME(tf, source,
-			      runtime.nameMap.label(fieldData, "obj"));
+			      runtime.getNameMap().label(fieldData, "obj"));
 	//let this NAME be HClass.Void, since it points at a static object
 	//which the gc doesn't need to know about.  If we give it a type,
 	//then the derivation generator will get confused by derived pointers
@@ -697,7 +701,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp methodConst(TreeFactory tf, HCodeElement source,
 			   DerivationGenerator dg, HMethod methodData) {
 	Exp mthref = new NAME(tf, source,
-			      runtime.nameMap.label(methodData, "obj"));
+			      runtime.getNameMap().label(methodData, "obj"));
 	//let this NAME be HClass.Void, since it points at a static object
 	//which the gc doesn't need to know about.  If we give it a type,
 	//then the derivation generator will get confused by derived pointers
@@ -710,7 +714,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				       DerivationGenerator dg,
 				       String stringData) {
 	stringSet.add(stringData);
-	Exp strref = new NAME(tf, source, runtime.nameMap.label(stringData));
+	Exp strref = new NAME(tf, source, runtime.getNameMap().label(stringData));
 	//let this NAME be HClass.Void, since it points at a static object
 	//which the gc doesn't need to know about.  If we give it a type,
 	//then the derivation generator will get confused by derived pointers

@@ -51,7 +51,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.19 2001-07-10 01:10:54 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.20 2001-07-10 22:49:51 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -66,8 +66,8 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
      */
     public StubCode(HMethod method, Frame frame) {
         super(method, null, frame, new DerivationGenerator());
-	this.m_nm = frame.getRuntime().nameMap;
-	this.m_tb = (TreeBuilder) frame.getRuntime().treeBuilder;
+	this.m_nm = frame.getRuntime().getNameMap();
+	this.m_tb = (TreeBuilder) frame.getRuntime().getTreeBuilder();
 	// keep this synchronized with struct FNI_Thread_State in
 	// Runtime/include/jni-private.h and TreeBuilder._call_FNI_Monitor()
 	this.EXC_OFFSET = 1 * m_tb.POINTER_SIZE;

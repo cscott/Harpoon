@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.26 2001-06-27 02:36:41 kkz Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.27 2001-07-10 22:49:48 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -48,8 +48,8 @@ public class DataClaz extends Data {
     /** Creates a <code>ClassData</code>. */
     public DataClaz(Frame f, HClass hc, ClassHierarchy ch) {
         super("class-data", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
-	this.m_tb = (TreeBuilder) f.getRuntime().treeBuilder;
+	this.m_nm = f.getRuntime().getNameMap();
+	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
 	this.BITS_IN_GC_BITMAP = 8 * m_tb.POINTER_SIZE;
 	this.root = build(f, hc, ch);
     }

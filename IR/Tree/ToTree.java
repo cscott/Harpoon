@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.94 2001-07-09 23:40:30 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.95 2001-07-10 22:50:31 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -220,9 +220,9 @@ static class TranslationVisitor extends LowQuadVisitor {
 			      TempMap ctm) {
 	m_ctm          = ctm;
 	m_tf           = tf; 
-	m_nm           = m_tf.getFrame().getRuntime().nameMap;
+	m_nm           = m_tf.getFrame().getRuntime().getNameMap();
 	m_stmList      = new ArrayList();
-	m_rtb	       = m_tf.getFrame().getRuntime().treeBuilder;
+	m_rtb	       = m_tf.getFrame().getRuntime().getTreeBuilder();
 	this.quadDeriv      = quadDeriv;
 	this.treeDeriv	    = treeDeriv;
 	this.allocInfo	    = allocInfo;

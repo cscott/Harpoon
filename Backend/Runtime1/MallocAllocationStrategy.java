@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * same prototype as <code>malloc()</code> to do the allocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MallocAllocationStrategy.java,v 1.1.2.7 2000-11-12 04:00:48 cananian Exp $
+ * @version $Id: MallocAllocationStrategy.java,v 1.1.2.8 2001-07-10 22:49:50 cananian Exp $
  */
 public class MallocAllocationStrategy extends AllocationStrategy {
     protected final Frame frame;
@@ -47,7 +47,7 @@ public class MallocAllocationStrategy extends AllocationStrategy {
 				 AllocationProperties ap,
 				 String funcname, Exp length, ExpList addlArgs)
     {
-	Label func = new Label(frame.getRuntime().nameMap
+	Label func = new Label(frame.getRuntime().getNameMap()
 			       .c_function_name(funcname));
 	Temp Tret = new Temp(tf.tempFactory(), "ma");
 	return new ESEQ

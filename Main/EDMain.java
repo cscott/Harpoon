@@ -78,7 +78,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.1.2.7 2000-06-29 02:24:03 cananian Exp $
+ * @version $Id: EDMain.java,v 1.1.2.8 2001-07-10 22:50:50 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -300,37 +300,39 @@ public class EDMain extends harpoon.IR.Registration {
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
 
+	// create the target Frame way up here!
+	// the frame specifies the combination of target architecture,
+	// runtime, and allocation strategy we want to use.
+	switch(BACKEND) {
+	case STRONGARM_BACKEND:
+	    frame = new harpoon.Backend.StrongARM.Frame(mainM);
+	    break;
+	case SPARC_BACKEND:
+	    frame = new harpoon.Backend.Sparc.Frame(mainM);
+	    break;
+	case MIPS_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame(mainM);
+	    break;
+	case PRECISEC_BACKEND:
+	    frame = new harpoon.Backend.PreciseC.Frame(mainM);
+	    break;
+	default: throw new Error("Unknown Backend: "+BACKEND);
+	}
+
 	if (classHierarchy == null) {
-	    // XXX: this is non-ideal!  Really, we want to use a non-static
-	    // method in Frame.getRuntime() to initialize the class hierarchy
-	    // roots with.  *BUT* Frame requires a class hierarchy in its
-	    // constructor.  How do we ask the runtime which roots to use
-	    // before the runtime's been created?
-	    // Punting on this question for now, and using a hard-coded
-	    // static method. [CSA 27-Oct-1999]
-	    Set roots =new java.util.HashSet
-		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    // ask the runtime which roots it requires.
+	    Set roots = new java.util.HashSet
+		(frame.getRuntime().runtimeCallableMethods());
 	    // and our main method is a root, too...
 	    roots.add(mainM);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
-	switch(BACKEND) {
-	case STRONGARM_BACKEND:
-	    frame = new harpoon.Backend.StrongARM.Frame
-		(mainM, classHierarchy, callGraph);
-	    break;
-	case SPARC_BACKEND:
-	    frame = new harpoon.Backend.Sparc.Frame
-		(mainM, classHierarchy, callGraph);
-	    break;
-	case MIPS_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame
-		(mainM, classHierarchy, callGraph);
-	    break;
-	default: throw new Error("Unknown Backend: "+BACKEND);
-	}
+	frame.setClassHierarchy(classHierarchy);
+	frame.setCallGraph(callGraph);
+	callGraph=null;// memory management.
+
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
@@ -368,7 +370,7 @@ public class EDMain extends harpoon.IR.Registration {
 		messageln("Compiling: " + hclass.getName());
 		
 		try {
-		    String filename = frame.getRuntime().nameMap.mangle(hclass);
+		    String filename = frame.getRuntime().getNameMap().mangle(hclass);
 		    out = new PrintWriter
 			(new BufferedWriter
 			 (new FileWriter
@@ -426,7 +428,7 @@ public class EDMain extends harpoon.IR.Registration {
 	    // mainM is our method
 
 	    try {
-		String filename = frame.getRuntime().nameMap.mangle(hcl);
+		String filename = frame.getRuntime().getNameMap().mangle(hcl);
 		out = new PrintWriter
 		    (new BufferedWriter
 		     (new FileWriter

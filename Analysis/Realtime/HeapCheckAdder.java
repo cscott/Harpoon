@@ -265,14 +265,14 @@ public class HeapCheckAdder extends Simplification {
     protected static Label forField(TreeFactory tf, String className, String fieldName) {
 	Frame f = tf.getFrame();
 	HField field = f.getLinker().forName(className).getDeclaredField(fieldName);
-	return f.getRuntime().nameMap.label(field);
+	return f.getRuntime().getNameMap().label(field);
     }
   
     /** func_name(t) */
     protected static NATIVECALL nativeCall(TreeFactory tf, Exp e, 
 					   DerivationGenerator dg, Temp t,
 					   String func_name) {
-	Label func = new Label(tf.getFrame().getRuntime().nameMap
+	Label func = new Label(tf.getFrame().getRuntime().getNameMap()
 			       .c_function_name(func_name));
 	ExpList extraArgs = null;
 	if (Realtime.DEBUG_REF) {

@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.1.2.8 2001-01-21 06:07:55 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.1.2.9 2001-07-10 22:49:50 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -55,7 +55,7 @@ public class DataReflection1 extends Data {
     /** Creates a <code>DataReflection1</code>. */
     public DataReflection1(Frame f, HClass hc, ClassHierarchy ch) {
         super("reflection-data-1", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
+	this.m_nm = f.getRuntime().getNameMap();
 	this.m_ob = ((Runtime) f.getRuntime()).ob;
 	// only build one of these (so we can make sure the
 	// table is properly sorted); wait until hc is

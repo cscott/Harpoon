@@ -29,63 +29,59 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.38 2001-07-09 23:54:16 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.39 2001-07-10 22:49:51 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
     final protected Frame frame; 
     final protected HMethod main;
-    final protected ClassHierarchy ch;
+    protected ClassHierarchy ch;
+    protected CallGraph cg;
+    final protected AllocationStrategy as;
     final protected ObjectBuilder ob;
-    final protected List staticInitializers;
+    protected List staticInitializers;
+    private TreeBuilder treeBuilder;
+    private NameMap nameMap;
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
     public Runtime(Frame frame, AllocationStrategy as,
-		   HMethod main, ClassHierarchy ch, CallGraph cg,
-		   boolean prependUnderscore) {
-	this(frame, as, main, ch, cg, prependUnderscore, null);
+		   HMethod main, boolean prependUnderscore) {
+	this(frame, as, main, prependUnderscore, null);
     }
 
     /** Creates a new <code>Runtime1.Runtime</code>. */
     public Runtime(Frame frame, AllocationStrategy as,
-		   HMethod main, ClassHierarchy ch, CallGraph cg,
+		   HMethod main,
 		   boolean prependUnderscore, RootOracle rootOracle) {
-	super(new Object[] { frame, as, ch, new Boolean(prependUnderscore) });
 	this.frame = frame;
 	this.main = main;
-	this.ch = ch;
+	this.as = as;
+	this.nameMap =
+	    new harpoon.Backend.Maps.DefaultNameMap(prependUnderscore);
 	this.ob = (rootOracle == null) ?
 	    new harpoon.Backend.Runtime1.ObjectBuilder(this) :
 	    new harpoon.Backend.Runtime1.ObjectBuilder(this, rootOracle);
-	this.staticInitializers =
-	    new harpoon.Backend.Analysis.InitializerOrdering(ch, cg).sorted;
-	/* // when using InitializerTransform, can order randomly:
-	    new java.util.ArrayList();
-	for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
-	    HMethod hm = ((HClass)it.next()).getClassInitializer();
-	    if (hm!=null) staticInitializers.add(hm);
-	}
-	*/
+	this.treeBuilder = initTreeBuilder();
     }
-    // protected initialization methods.
-    protected NameMap initNameMap(Object closure) {
-	boolean prependUnderscore = ((Boolean) ((Object[])closure)[3])
-	    .booleanValue();
-	return new harpoon.Backend.Maps.DefaultNameMap(prependUnderscore);
+    public TreeBuilder getTreeBuilder() { return treeBuilder; }
+    public NameMap getNameMap() { return nameMap; }
+    public String resourcePath(String basename) {
+	return "harpoon/Backend/Runtime1/"+basename;
     }
-    protected TreeBuilder initTreeBuilder(Object closure) {
-	Frame f = (Frame) ((Object[])closure)[0];
-	AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
-	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
-	// ooh, ooh, properties!
-	// set this to non-zero to enable pointer masking.  a good value
-	// is four.
+
+    public void setCallGraph(CallGraph cg) { this.cg = cg; }
+    // this method must be called before (certain methods in) the tree
+    // builder are used.
+    public void setClassHierarchy(ClassHierarchy ch) {
+	this.ch = ch;
+	((harpoon.Backend.Runtime1.TreeBuilder) treeBuilder)
+	    .setClassHierarchy(ch);
+    }
+    protected TreeBuilder initTreeBuilder() {
 	int align = Integer.parseInt
 	    (System.getProperty("harpoon.runtime1.pointer.alignment","0"));
-	return new harpoon.Backend.Runtime1.TreeBuilder(this, f.getLinker(),
-							ch, as,
-							f.pointersAreLong(),
-							align);
+	return new harpoon.Backend.Runtime1.TreeBuilder
+	    (this, frame.getLinker(), as, frame.pointersAreLong(), align);
     }
 
     public HCodeFactory nativeTreeCodeFactory(final HCodeFactory hcf) {
@@ -106,10 +102,10 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	};
     }
 
-    /** Return a <code>Set</code> of <code>HMethod</code>s 
-     *  and <code>HClass</code>es which are referenced /
-     *  callable by code in the runtime implementation (and should
-     *  therefore be included in every class hierarchy). */
+    public Collection runtimeCallableMethods() {
+	return runtimeCallableMethods(frame.getLinker());
+    }
+    /** @deprecated Use frame.getRuntime().runtimeCallableMethods() instead */
     public static Collection runtimeCallableMethods(Linker linker) {
 	HClass HCobject = linker.forName("java.lang.Object");
 	HClass HCsystem = linker.forName("java.lang.System");
@@ -224,7 +220,27 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	});
     }
 
+    private synchronized void freeze() {
+	if (frozen) return; else frozen = true;
+
+	// finalize static initializers.
+	if (Boolean.getBoolean("harpoon.runtime1.order-initializers"))
+	    this.staticInitializers =
+		new harpoon.Backend.Analysis.InitializerOrdering(ch, cg)
+		.sorted;
+	else { // when using InitializerTransform, can order randomly:
+	    this.staticInitializers = new java.util.ArrayList();
+	    for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
+		HMethod hm = ((HClass)it.next()).getClassInitializer();
+		if (hm!=null) staticInitializers.add(hm);
+	    }
+	}
+    }
+    private boolean frozen=false;
+
     public List classData(HClass hc) {
+	freeze();
+
 	// i don't particularly like this solution to generating
 	// the needed string constants, but it works.
 	harpoon.Backend.Runtime1.TreeBuilder tb =

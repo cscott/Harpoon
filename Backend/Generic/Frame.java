@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
+import harpoon.Analysis.CallGraph;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.Linker;
 
@@ -17,7 +19,7 @@ import harpoon.ClassFile.Linker;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.43 2001-06-17 22:32:10 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.44 2001-07-10 22:49:15 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -71,4 +73,18 @@ public abstract class Frame {
 	garbage collection is not supported.
      */
     public abstract GCInfo getGCInfo();
+
+    // methods used during initialization:
+    /** Sets the <code>ClassHierarchy</code> to use for this
+     *  <code>Generic.Frame</code>.  See <code>Generic.Runtime</code>
+     *  for more details on when this needs to be called. */
+    public void setClassHierarchy(ClassHierarchy ch) {
+	getRuntime().setClassHierarchy(ch);
+    }
+    /** Sets the <code>CallGraph</code> to use for this
+     *  <code>Generic.Frame</code>.  See <code>Generic.Runtime</code>
+     *  for more details on when/if this needs to be called. */
+    public void setCallGraph(CallGraph cg) {
+	getRuntime().setCallGraph(cg);
+    }
 }

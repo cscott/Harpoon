@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.43 2001-06-18 21:00:17 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.44 2001-07-10 22:49:25 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -153,7 +153,7 @@ import java.util.Iterator;
        super(frame);
 	last = null;
 	this.regfile = (RegFileInfo) frame.getRegFileInfo();
-	this.nameMap = frame.getRuntime().nameMap;
+	this.nameMap = frame.getRuntime().getNameMap();
 	this.is_elf = is_elf;
     this.yellow_pekoe = frame.getType().equalsIgnoreCase("yp");
     this.enable_daregs = frame.getType().equalsIgnoreCase("da");

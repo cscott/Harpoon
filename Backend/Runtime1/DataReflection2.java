@@ -40,7 +40,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.12 2001-03-01 22:29:13 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.13 2001-07-10 22:49:50 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -51,8 +51,8 @@ public class DataReflection2 extends Data {
     public DataReflection2(Frame f, HClass hc, ClassHierarchy ch,
 			   boolean pointersAreLong) {
         super("reflection-data-2", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
-	this.m_tb = (TreeBuilder) f.getRuntime().treeBuilder;
+	this.m_nm = f.getRuntime().getNameMap();
+	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
 	this.pointersAreLong = pointersAreLong;
 	this.root = build(hc, ch);
     }

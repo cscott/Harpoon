@@ -30,7 +30,7 @@ import harpoon.Temp.Temp;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: PGCNiftyAllocationStrategyWithStats.java,v 1.1.2.2 2001-06-17 22:32:31 cananian Exp $
+ * @version $Id: PGCNiftyAllocationStrategyWithStats.java,v 1.1.2.3 2001-07-10 22:49:39 cananian Exp $
  */
 public class PGCNiftyAllocationStrategyWithStats
      extends PGCNiftyAllocationStrategy {
@@ -42,7 +42,7 @@ public class PGCNiftyAllocationStrategyWithStats
 			AllocationProperties ap,
 			Exp length) {
 	if (ap.canBeStackAllocated()) {
-	    Label func = new Label(frame.getRuntime().nameMap
+	    Label func = new Label(frame.getRuntime().getNameMap()
 				   .c_function_name("NSTK_update_stats"));
 	    Temp Tlen = new Temp(tf.tempFactory(), "len");
 	    return new ESEQ

@@ -64,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.168 2000-12-03 20:14:53 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.169 2001-07-10 22:50:19 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -98,7 +98,7 @@ import java.util.Iterator;
 	super(frame);
 	last = null;
 	this.regfile = (RegFileInfo) frame.getRegFileInfo();
-	this.nameMap = frame.getRuntime().nameMap;
+	this.nameMap = frame.getRuntime().getNameMap();
 	this.is_elf = is_elf;
 	r0 = regfile.reg[0];
 	r1 = regfile.reg[1];

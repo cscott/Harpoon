@@ -23,7 +23,7 @@ import java.util.List;
  * this java program.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataJavaMain.java,v 1.1.2.7 2000-03-09 03:56:17 cananian Exp $
+ * @version $Id: DataJavaMain.java,v 1.1.2.8 2001-07-10 22:49:49 cananian Exp $
  */
 public class DataJavaMain extends Data {
     final NameMap m_nm;
@@ -31,7 +31,7 @@ public class DataJavaMain extends Data {
     /** Creates a <code>DataInitializers</code>. */
     public DataJavaMain(Frame f, HClass hc, HMethod main) {
         super("java-main", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
+	this.m_nm = f.getRuntime().getNameMap();
 	// only build one of these; wait until hc is java.lang.Object.
 	this.root = (hc==linker.forName("java.lang.Object")) ?
 	    build(main) : null;

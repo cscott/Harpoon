@@ -61,7 +61,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.17 2001-06-17 02:58:43 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.18 2001-07-10 22:48:49 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -108,7 +108,7 @@ public class CacheEquivalence {
 	    this.ch = ch;
 	    this.td = td;
 	    this.df = df;
-	    this.tb = c.getFrame().getRuntime().treeBuilder;
+	    this.tb = c.getFrame().getRuntime().getTreeBuilder();
 	    this.dt = new DomTree(c, cfg, false);
 
 	    final Environment e = new HashEnvironment();

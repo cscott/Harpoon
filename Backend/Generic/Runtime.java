@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
+import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Backend.Maps.NameMap;
@@ -18,6 +19,7 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
+import java.util.Collection;
 import java.util.List;
 /**
  * A <code>Generic.Runtime</code> provides runtime-specific
@@ -30,31 +32,41 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.13 2001-07-09 23:35:02 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.14 2001-07-10 22:49:16 cananian Exp $
  */
 public abstract class Runtime {
-    /** A <code>NameMap</code> valid for this
-     *  <code>Generic.Runtime</code>. */
-    public final NameMap nameMap;
-    /** A <code>TreeBuilder</code> object for this runtime. */
-    public final TreeBuilder treeBuilder;
+    protected Runtime() { }
 
-    protected Runtime(Object closure) {
-	this.nameMap     = initNameMap(closure);
-	this.treeBuilder = initTreeBuilder(closure);
-    }
-    /** Return a <code>NameMap</code> used in the constructor to
-     *  initialize the <code>nameMap</code> field of this
-     *  <code>Runtime</code>.  By making this a separate method, the
-     *  <code>NameMap</code> can include a reference to the containing
-     *  <code>Runtime</code> without making the compiler complain. */
-    protected abstract NameMap     initNameMap(Object closure);
-    /** Return a <code>TreeBuilder</code> used in the constructor to
-     *  initialize the <code>treeBuilder</code> field of this
-     *  <code>Runtime</code>.  By making this a separate method, the
-     *  <code>TreeBuilder</code> can include a reference to the containing
-     *  <code>Runtime</code> without making the compiler complain. */
-    protected abstract TreeBuilder initTreeBuilder(Object closure);
+    /** Returns a <code>TreeBuilder</code> object for this
+     *  <code>Generic.Runtime</code>. */
+    public abstract TreeBuilder getTreeBuilder();
+
+    /** Returns a <code>NameMap</code> valid for this
+     *  <code>Generic.Runtime</code>. */
+    public abstract NameMap getNameMap();
+
+    /** Prefixes a runtime-specific path onto the specific resource name,
+     *  so that transformations can refer to runtime-specific properties
+     *  files in a uniform manner. */
+    public abstract String resourcePath(String basename);
+
+    // methods used during initialization
+    /** Sets the <code>ClassHierarchy</code> to use for this
+     *  <code>Generic.Runtime</code>.  This method must be called at least
+     *  once before the <code>TreeBuilder</code> or <code>classData</code>
+     *  are used to generate tree form.  It may be called multiple times
+     *  if transformations cause the class hierarchy to change. */
+    public void setClassHierarchy(ClassHierarchy ch) { }
+
+    /** Sets the <code>CallGraph</code> to use for this
+     *  <code>Generic.Runtime</code>.  Some runtime options do not
+     *  require a call graph, and thus do not require that this method
+     *  ever be called.  However, for those that do, this method must
+     *  be called at least once before the <code>TreeBuilder</code> or
+     *  <code>classData</code> are used to generate tree form.  It may
+     *  be called multiple times if transformations cause the call
+     *  graph to change. */
+    public void setCallGraph(CallGraph cg) { }
 
     /** Returns a list of <code>HData</code>s which are needed for the
      *  given class. */
@@ -80,6 +92,11 @@ public abstract class Runtime {
 	Util.assert(hcf!=null && hcf.getCodeName().endsWith("tree"));
 	return hcf;
     }
+    /** Return a <code>Set</code> of <code>HMethod</code>s 
+     *  and <code>HClass</code>es which are referenced /
+     *  callable by code in the runtime implementation (and should
+     *  therefore be included in every class hierarchy). */
+    public abstract Collection runtimeCallableMethods();
 
     /** The <code>TreeBuilder</code> constructs bits of code in the
      *  <code>IR.Tree</code> form to handle various runtime-dependent

@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>DataStrings</code> lays out string constant objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStrings.java,v 1.1.4.4 2001-01-21 06:09:09 cananian Exp $
+ * @version $Id: DataStrings.java,v 1.1.4.5 2001-07-10 22:49:50 cananian Exp $
  */
 public class DataStrings extends Data {
     final NameMap m_nm;
@@ -34,7 +34,7 @@ public class DataStrings extends Data {
      *  to the given set of strings. */
     public DataStrings(Frame f, HClass hc, Set strings) {
 	super("string-data", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
+	this.m_nm = f.getRuntime().getNameMap();
 	this.m_ob = ((Runtime) f.getRuntime()).ob;
         this.root = build(strings);
     }

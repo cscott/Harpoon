@@ -27,12 +27,12 @@ import java.util.List;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.1.2.3 2001-06-17 22:31:54 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.1.2.4 2001-07-10 22:48:37 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List RULES = new ArrayList(); 
     TreePostPass(final Frame f, final long FLAG_VALUE, HField HFflagvalue) {
-	final Label Lflagvalue = f.getRuntime().nameMap.label(HFflagvalue);
+	final Label Lflagvalue = f.getRuntime().getNameMap().label(HFflagvalue);
 	// add all rules to rule set
 	//          ...remove mentions of Object.flagValue field...
 	// MEM(NAME(Label(flagValue))) -> CONST(0xCACACACAL)

@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.29 2001-06-17 22:32:55 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.30 2001-07-10 22:50:20 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -37,7 +37,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	System.getProperty("harpoon.target.elf", "yes")
 	.equalsIgnoreCase("yes");
 
-    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
+    public Frame(HMethod main) {
 	super();
 	linker = main.getDeclaringClass().getLinker();
 	regFileInfo = new RegFileInfo();
@@ -63,10 +63,9 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 								  "malloc");
 	runtime=
 	    (System.getProperty("harpoon.runtime", "1").equals("2") ?
-	     new harpoon.Backend.Runtime2.Runtime(this, as, main, ch, cg, 
-						  !is_elf) :
-	     new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg, 
-						  !is_elf));
+	     new harpoon.Backend.Runtime2.Runtime(this, as, main, !is_elf) :
+	     new harpoon.Backend.Runtime1.Runtime(this, as, main, !is_elf));
+						  
 
 	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
 	// [and it also needs nameMap out of Runtime --CSA], so
@@ -78,14 +77,6 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	gcInfo = alloc_strategy.equalsIgnoreCase("precise") ? 
 	    new BasicGCInfo() : null;
     }
-
-    /*
-    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, GCInfo gcInfo)
-    {
-	this(main, ch, cg);
-	this.gcInfo = gcInfo;
-    }
-    */
 
     public Linker getLinker() { return linker; }
 

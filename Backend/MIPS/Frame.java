@@ -20,7 +20,7 @@ import java.util.Set;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.12 2001-06-17 22:32:23 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.13 2001-07-10 22:49:29 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -42,46 +42,14 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	.equalsIgnoreCase("yes");
 
 
-   public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) {
-	super();
-	linker = main.getDeclaringClass().getLinker();
-	regFileInfo = new RegFileInfo();
-    noTagCheck = null;
-	
-	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
-	    alloc_strategy.equalsIgnoreCase("nifty") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.NiftyAllocationStrategy(this) :
-	    alloc_strategy.equalsIgnoreCase("bdw") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.BDWAllocationStrategy(this) :
-	    // default, "malloc" strategy.
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
-	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
-								  "malloc");
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
-						       !is_elf);
-	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
-	// [and it also needs nameMap out of Runtime --CSA], so
-	// be careful about ordering of constructions.
-	codegen = new CodeGen(this, is_elf);
-
-	instrBuilder = new InstrBuilder(regFileInfo, this);
-	tempBuilder = new TempBuilder();
-    }
-
-    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, GCInfo gcInfo)
-    {
-	this(main, ch, cg);
-	this.gcInfo = gcInfo;
-    }
-   public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, String type) {
+    public Frame(HMethod main) { this(main, ""); }
+    public Frame(HMethod main, String type) {
 	super();
 	this.type = type;
 
 	linker = main.getDeclaringClass().getLinker();
 	regFileInfo = new RegFileInfo();
-    noTagCheck = null;
+	noTagCheck = null;
 	
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
@@ -94,8 +62,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
 								  "malloc");
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
-						       !is_elf);
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main,!is_elf);
 	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
 	// [and it also needs nameMap out of Runtime --CSA], so
 	// be careful about ordering of constructions.

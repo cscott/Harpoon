@@ -31,27 +31,23 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.4 2001-07-09 23:54:19 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.5 2001-07-10 22:49:59 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     public Runtime(Frame frame, AllocationStrategy as,
-		   HMethod main, ClassHierarchy ch, CallGraph cg,
-		   boolean prependUnderscore) {
-	super(frame,as,main,ch,cg,prependUnderscore);
+		   HMethod main, boolean prependUnderscore) {
+	this(frame, as, main, prependUnderscore, null);
     }
 
     public Runtime(Frame frame, AllocationStrategy as,
-		   HMethod main, ClassHierarchy ch, CallGraph cg,
+		   HMethod main, 
 		   boolean prependUnderscore, RootOracle rootOracle) {
-	super(frame,as,main,ch,cg,prependUnderscore,rootOracle);
+	super(frame,as,main,prependUnderscore,rootOracle);
     }
-
-    protected TreeBuilder initTreeBuilder(Object closure) {
-	Frame f = (Frame) ((Object[])closure)[0];
-	AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
-	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
-	return new harpoon.Backend.Runtime2.TreeBuilder(this, f.getLinker(),
-							ch, as,
-							f.pointersAreLong(),0);
+    protected TreeBuilder initTreeBuilder() {
+	int align = Integer.parseInt
+	    (System.getProperty("harpoon.runtime1.pointer.alignment","0"));
+	return new harpoon.Backend.Runtime2.TreeBuilder
+	    (this, frame.getLinker(), as, frame.pointersAreLong(), align);
     }
 }

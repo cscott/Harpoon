@@ -25,7 +25,7 @@ import java.util.List;
  * dependency order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInitializers.java,v 1.1.2.7 2000-03-09 03:56:17 cananian Exp $
+ * @version $Id: DataInitializers.java,v 1.1.2.8 2001-07-10 22:49:49 cananian Exp $
  */
 public class DataInitializers extends Data {
     final NameMap m_nm;
@@ -33,7 +33,7 @@ public class DataInitializers extends Data {
     /** Creates a <code>DataInitializers</code>. */
     public DataInitializers(Frame f, HClass hc, List staticInitializers) {
         super("static-initializers", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
+	this.m_nm = f.getRuntime().getNameMap();
 	// only build one of these; wait until hc is java.lang.Object.
 	this.root = (hc==linker.forName("java.lang.Object")) ?
 	    build(staticInitializers) : null;

@@ -78,7 +78,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.1.2.6 2000-07-05 01:27:31 bdemsky Exp $
+ * @version $Id: EDXMain.java,v 1.1.2.7 2001-07-10 22:50:53 cananian Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
@@ -316,24 +316,23 @@ public class EDXMain extends harpoon.IR.Registration {
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
 	switch(BACKEND) {
 	case STRONGARM_BACKEND:
-	    frame = new harpoon.Backend.StrongARM.Frame
-		(mainM, classHierarchy, callGraph);
+	    frame = new harpoon.Backend.StrongARM.Frame(mainM);
 	    break;
 	case SPARC_BACKEND:
-	    frame = new harpoon.Backend.Sparc.Frame
-		(mainM, classHierarchy, callGraph);
+	    frame = new harpoon.Backend.Sparc.Frame(mainM);
 	    break;
 	case MIPS_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame
-		(mainM, classHierarchy, callGraph);
+	    frame = new harpoon.Backend.MIPS.Frame(mainM);
 	    break;
 	case PRECISEC_BACKEND:
-	    frame = new harpoon.Backend.PreciseC.Frame
-		(mainM, classHierarchy, callGraph);
+	    frame = new harpoon.Backend.PreciseC.Frame(mainM);
 	    break;
-
 	default: throw new Error("Unknown Backend: "+BACKEND);
 	}
+	frame.setClassHierarchy(classHierarchy);
+	frame.setCallGraph(callGraph);
+	callGraph=null;// memory management.
+
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
@@ -377,7 +376,7 @@ public class EDXMain extends harpoon.IR.Registration {
 		messageln("Compiling: " + hclass.getName());
 		
 		try {
-		    String filename = frame.getRuntime().nameMap.mangle(hclass);
+		    String filename = frame.getRuntime().getNameMap().mangle(hclass);
 		    out = new PrintWriter
 			(new BufferedWriter
 			 (new FileWriter

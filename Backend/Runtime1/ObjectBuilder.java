@@ -45,13 +45,12 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.14 2001-07-06 19:28:09 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.15 2001-07-10 22:49:50 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
+    final Runtime runtime;
     final boolean pointersAreLong;
-    final NameMap nm;
-    final FieldMap cfm;
     final RootOracle ro;
     private final Random rnd;
     private final HClass HCobject; // cache HClass for java.lang.Object
@@ -71,9 +70,8 @@ public class ObjectBuilder
     }
     /** Creates a <code>ObjectBuilder</code>. */
     public ObjectBuilder(Runtime runtime, RootOracle ro) {
+	this.runtime = runtime;
 	this.pointersAreLong = runtime.frame.pointersAreLong();
-	this.nm = runtime.nameMap;
-	this.cfm= ((TreeBuilder) runtime.treeBuilder).cfm;
 	this.ro = ro;
 	this.rnd = new Random(runtime.frame.hashCode());//quasi-repeatable?
 	this.HCobject = runtime.frame.getLinker().forName("java.lang.Object");
@@ -81,6 +79,7 @@ public class ObjectBuilder
 
     public Stm buildObject(TreeFactory tf, ObjectInfo info,
 			   boolean exported) {
+	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
 	Util.assert(!info.type().isArray());
 	Util.assert(!info.type().isPrimitive());
 	List stmlist = new ArrayList();
@@ -99,6 +98,7 @@ public class ObjectBuilder
     }
     public Stm buildArray(TreeFactory tf, ArrayInfo info,
 			  boolean exported) {
+	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
 	Util.assert(info.type().isArray());
 	HClass cType = info.type().getComponentType();
 	List stmlist = new ArrayList(info.length()+2);
@@ -129,7 +129,7 @@ public class ObjectBuilder
 	// label:
 	stmlist.add(new LABEL(tf, null, info.label(), exported));
 	// claz pointer
-	stmlist.add(_DATUM(tf, nm.label(info.type())));
+	stmlist.add(_DATUM(tf, runtime.getNameMap().label(info.type())));
 	// hash code.
 	// this is of pointer size, and must have the low bit set.  we *could*
 	// emit a symbolic reference to info.label()+1 or some such, but

@@ -52,7 +52,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.1.2.5 2001-03-01 22:29:13 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.1.2.6 2001-07-10 22:49:50 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -61,7 +61,7 @@ public class DataReflectionMemberList extends Data {
     /** Creates a <code>DataReflectionMemberList</code>. */
     public DataReflectionMemberList(Frame f, HClass hc, ClassHierarchy ch) {
         super("reflection-data-method-list", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
+	this.m_nm = f.getRuntime().getNameMap();
 	this.m_ob = ((Runtime) f.getRuntime()).ob;
 	// only build one of these (so we can make sure the
 	// table is properly sorted); wait until hc is

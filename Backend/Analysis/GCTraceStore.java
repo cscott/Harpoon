@@ -65,7 +65,7 @@ public class GCTraceStore extends Simplification {
 		    Temp t2 = new Temp(tf.tempFactory(), "val");
 		    MEM mem = (MEM)(((MOVE)e).getDst());
 		    List stmList = new ArrayList();
-		    Label func = new Label(tf.getFrame().getRuntime().nameMap
+		    Label func = new Label(tf.getFrame().getRuntime().getNameMap()
 					   .c_function_name("gc_trace_store"));
 		    stmList.add(new MOVE(tf, e, ref(tf, dg, e, t1), mem.getExp()));
 		    stmList.add(new MOVE(tf, e, val(tf, dg, e, t2), ((MOVE)e).getSrc()));

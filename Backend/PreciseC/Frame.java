@@ -43,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.12 2001-03-23 16:04:51 wbeebee Exp $
+ * @version $Id: Frame.java,v 1.1.2.13 2001-07-10 22:49:37 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -57,7 +57,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final static boolean is_elf = true;
 
     /** Creates a <code>Frame</code>. */
-    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
+    public Frame(HMethod main) {
 	super();
 	linker = main.getDeclaringClass().getLinker();
 	System.out.println("AllocationStrategy: "+
@@ -87,12 +87,10 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
 								  "malloc");
 	runtime = Realtime.REALTIME_JAVA ?
-	    new RealtimeRuntime(this, as, main, ch, cg, !is_elf) :
+	    new RealtimeRuntime(this, as, main, !is_elf) :
 	    (System.getProperty("harpoon.runtime", "1").equals("2") ?
-	     new harpoon.Backend.Runtime2.Runtime(this, as, main, ch, cg, 
-						  !is_elf) :
-	     new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg, 
-						  !is_elf));
+	     new harpoon.Backend.Runtime2.Runtime(this, as, main, !is_elf) :
+	     new harpoon.Backend.Runtime1.Runtime(this, as, main, !is_elf));
     }
     public Linker getLinker() { return linker; }
     public boolean pointersAreLong() { return pointersAreLong; }

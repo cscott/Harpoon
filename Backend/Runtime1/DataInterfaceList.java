@@ -27,7 +27,7 @@ import java.util.List;
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.1.4.5 2000-10-17 17:22:41 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.1.4.6 2001-07-10 22:49:49 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;
@@ -36,8 +36,8 @@ public class DataInterfaceList extends Data {
     /** Creates a <code>DataInterfaceList</code>. */
     public DataInterfaceList(Frame f, HClass hc, ClassHierarchy ch) {
         super("ilist-data", hc, f);
-	this.m_nm = f.getRuntime().nameMap;
-	this.m_tb = (TreeBuilder) f.getRuntime().treeBuilder;
+	this.m_nm = f.getRuntime().getNameMap();
+	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
 	this.root = build(hc, ch);
     }
 

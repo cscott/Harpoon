@@ -38,7 +38,7 @@ import java.util.List;
  * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.1.2.8 2001-07-10 00:27:58 wbeebee Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.1.2.9 2001-07-10 22:48:07 cananian Exp $
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
@@ -46,9 +46,9 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
     /** Create a RealtimeRuntime. */
 
     public RealtimeRuntime(Frame frame, AllocationStrategy as,
-			   final HMethod main, ClassHierarchy ch, 
-			   CallGraph cg, final boolean prependUnderscore) {
-	super(frame, as, main, ch, cg, prependUnderscore,
+			   final HMethod main, final boolean prependUnderscore)
+    {
+	super(frame, as, main, prependUnderscore,
 	      new RootOracle() {
 		      public Object get(final HField hf, Info addlinfo) {
 			  final HClass memoryArea = main
@@ -121,7 +121,7 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 			final HClass memoryArea = hc.getLinker()
 			    .forName("javax.realtime.ImmortalMemory");
 			final Label label = 
-			    nameMap.label(hc, "constantMemoryArea");
+			    getNameMap().label(hc, "constantMemoryArea");
 		    };
 
 		List stmlist = new ArrayList();
@@ -152,17 +152,16 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 
     /** Initialize the tree builder with masking turned on if needed. */
 
-    protected TreeBuilder initTreeBuilder(Object closure) {
-	Frame f = (Frame) ((Object[])closure)[0];
-	AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
-	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
+    protected TreeBuilder initTreeBuilder() {
 	if (System.getProperty("harpoon.runtime", "1").equals("2")) {
 	    return new harpoon.Backend.Runtime1
-		.TreeBuilder(this, f.getLinker(), ch, as, f.pointersAreLong(), 
+		.TreeBuilder(this, frame.getLinker(), as,
+			     frame.pointersAreLong(), 
 			     Realtime.NOHEAP_CHECKS?4:0) { };
 	} else {
 	    return new harpoon.Backend.Runtime2
-		.TreeBuilder(this, f.getLinker(), ch, as, f.pointersAreLong(),
+		.TreeBuilder(this, frame.getLinker(), as,
+			     frame.pointersAreLong(),
 			     Realtime.NOHEAP_CHECKS?4:0) { };
 	    
 	}

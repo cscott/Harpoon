@@ -40,7 +40,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.15 2001-06-18 20:47:45 cananian Exp $
+ * @version $Id: DataGC.java,v 1.1.2.16 2001-07-10 22:49:48 cananian Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -58,8 +58,8 @@ public class DataGC extends Data {
         super("gc-data", hc, f);
 	Util.assert(f.getGCInfo() != null);
 	this.m_gc = f.getGCInfo();
-	this.m_nm = f.getRuntime().nameMap;
-	this.m_tb = (TreeBuilder) f.getRuntime().treeBuilder;
+	this.m_nm = f.getRuntime().getNameMap();
+	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
 	this.numRegs = f.getRegFileInfo().maxRegIndex();
 	this.root = build();
     }

@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * precise information about pointer locations.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: SPAllocationStrategy.java,v 1.1.2.6 2001-06-18 20:47:47 cananian Exp $
+ * @version $Id: SPAllocationStrategy.java,v 1.1.2.7 2001-07-10 22:49:51 cananian Exp $
  */
 public class SPAllocationStrategy extends MallocAllocationStrategy {
     /** Creates a <code>SPAllocationStrategy</code>. */
@@ -58,7 +58,7 @@ public class SPAllocationStrategy extends MallocAllocationStrategy {
 	}
 	Runtime rt = frame.getRuntime();
 	return buildAllocCall(tf, source, dg, ap, func, length,
-			      new ExpList(new NAME(tf, source, rt.nameMap.label
+			      new ExpList(new NAME(tf, source, rt.getNameMap().label
 						   (ap.actualClass(),
 						    "classinfo")), null));
     }

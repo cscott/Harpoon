@@ -34,7 +34,7 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.5 2000-04-04 00:38:15 cananian Exp $
+ * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.6 2001-07-10 22:49:45 cananian Exp $
  */
 public class AppelAllocationStrategy extends AllocationStrategy {
     final Frame frame;
@@ -56,7 +56,7 @@ public class AppelAllocationStrategy extends AllocationStrategy {
 			DerivationGenerator dg, AllocationProperties ap,
 			Exp size)
     {
-	NameMap	     m_nm = frame.getRuntime().nameMap;
+	NameMap	     m_nm = frame.getRuntime().getNameMap();
 	LABEL        l0, l1, l2, l3, l4;
 	NAME         gc, exit_oom;
 	TEMP         triedGC; // INT type

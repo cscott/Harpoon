@@ -53,7 +53,7 @@ import java.util.Set;
  * This pass is invoked in <code>harpoon.Main.SAMain</code>.
  *
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: MakeGCThreadSafe.java,v 1.1.2.4 2001-06-18 20:47:09 cananian Exp $
+ * @version $Id: MakeGCThreadSafe.java,v 1.1.2.5 2001-07-10 22:49:03 cananian Exp $
  */
 public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
     // hide constructor
@@ -122,7 +122,7 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 		m.put(tr, new Integer(count++));
 	}
 	final Label LGCflag = new Label("halt_for_GC_flag");
-	final Label LGCfunc = new Label(f.getRuntime().nameMap.c_function_name
+	final Label LGCfunc = new Label(f.getRuntime().getNameMap().c_function_name
 					("halt_for_GC"));
 	final Set cjumps = new HashSet();
 	return Arrays.asList(new Rule[] {

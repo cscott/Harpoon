@@ -58,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.36 2001-06-17 22:32:51 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.37 2001-07-10 22:50:09 cananian Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -287,7 +287,7 @@ import java.util.Set;
     public Instr procFixup(HMethod hm, Instr instr, int stackspace,
                            Set usedRegisters) {
 	InstrFactory inf = instrFactory; // convenient abbreviation.
-	Label methodlabel = frame.getRuntime().nameMap.label(hm);
+	Label methodlabel = frame.getRuntime().getNameMap().label(hm);
 
 	for (Instr i = instr; i != null; i = i.getNext()) {
 	    if (i instanceof InstrENTRY) { // entry stub

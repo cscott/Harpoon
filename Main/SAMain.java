@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.159 2001-07-03 07:19:42 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.160 2001-07-10 22:50:54 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -199,16 +199,35 @@ public class SAMain extends harpoon.IR.Registration {
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
 
+	// create the target Frame way up here!
+	// the frame specifies the combination of target architecture,
+	// runtime, and allocation strategy we want to use.
+	switch(BACKEND) {
+	case STRONGARM_BACKEND:
+	    frame = new harpoon.Backend.StrongARM.Frame(mainM);
+	    break;
+	case SPARC_BACKEND:
+	    frame = new harpoon.Backend.Sparc.Frame(mainM);
+	    break;
+	case MIPS_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame(mainM);
+	    break;
+	case MIPSYP_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame(mainM, "yp");
+	    break;
+	case MIPSDA_BACKEND:
+	    frame = new harpoon.Backend.MIPS.Frame(mainM, "da");
+	    break;
+	case PRECISEC_BACKEND:
+	    frame = new harpoon.Backend.PreciseC.Frame(mainM);
+	    break;
+	default: throw new Error("Unknown Backend: "+BACKEND);
+	}
+
 	{
-	    // XXX: this is non-ideal!  Really, we want to use a non-static
-	    // method in Frame.getRuntime() to initialize the class hierarchy
-	    // roots with.  *BUT* Frame requires a class hierarchy in its
-	    // constructor.  How do we ask the runtime which roots to use
-	    // before the runtime's been created?
-	    // Punting on this question for now, and using a hard-coded
-	    // static method. [CSA 27-Oct-1999]
+	    // ask the runtime which roots it requires.
 	    Set roots = new java.util.HashSet
-		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+		(frame.getRuntime().runtimeCallableMethods());
 	    // and our main method is a root, too...
 	    roots.add(mainM);
 	    // other realtime and event-driven-specific roots.
@@ -240,11 +259,8 @@ public class SAMain extends harpoon.IR.Registration {
 
 	    if (!USE_OLD_CLINIT_STRATEGY) {
 		// transform the class initializers using the class hierarchy.
-		// XXX: same chicken-and-egg problem as before.  We really
-		// want to get the safe-set path from the Runtime in the Frame
-		// but the Frame hasn't been constructed yet.[CSA 2-Nov-00]
-		String resource =
-		    "harpoon/Backend/Runtime1/init-safe.properties";
+		String resource = frame.getRuntime().resourcePath
+		    ("init-safe.properties");
 		hcf = new harpoon.Analysis.Quads.InitializerTransform
 		    (hcf, classHierarchy, linker, resource).codeFactory();
 		// recompute the hierarchy after transformation.
@@ -262,7 +278,7 @@ public class SAMain extends harpoon.IR.Registration {
 		// the JVM (the "main" method plus the methods which are called by
 		// the JVM before main) and next pass it to the MetaCallGraph
 		// constructor. [AS]
-		Set mroots = extract_method_roots(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+		Set mroots = extract_method_roots(frame.getRuntime().runtimeCallableMethods());
 		mroots.add(mainM);
 		mcg = new MetaCallGraphImpl(bbconv, classHierarchy, mroots);
 		
@@ -298,8 +314,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 
 	    if (DO_TRANSACTIONS && !alexhack) {
-		String resource =
-		    "harpoon/Backend/Runtime1/transact-safe.properties";
+		String resource = frame.getRuntime().resourcePath
+		    ("transact-safe.properties");
 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 		hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
 		    (hcf, linker);
@@ -365,7 +381,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    mcg=null; /*Memory management*/
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    Set roots = new java.util.HashSet
-		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+		(frame.getRuntime().runtimeCallableMethods());
 	    // and our main method is a root, too...
 	    roots.add(mainM);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
@@ -379,33 +395,12 @@ public class SAMain extends harpoon.IR.Registration {
 	    callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
 	}
 
-
-	switch(BACKEND) {
-	case STRONGARM_BACKEND:
-	    frame = new harpoon.Backend.StrongARM.Frame
-		(mainM, classHierarchy, callGraph);
-	    break;
-	case SPARC_BACKEND:
-	    frame = new harpoon.Backend.Sparc.Frame
-		(mainM, classHierarchy, callGraph);
-	    break;
-	case MIPS_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame
-		(mainM, classHierarchy, callGraph);
-	    break;
-	case MIPSYP_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame
-		(mainM, classHierarchy, callGraph, "yp");
-	    break;
-	case MIPSDA_BACKEND:
-	    frame = new harpoon.Backend.MIPS.Frame
-		(mainM, classHierarchy, callGraph, "da");
-	    break;
-	case PRECISEC_BACKEND:
-	    frame = new harpoon.Backend.PreciseC.Frame
-		(mainM, classHierarchy, callGraph);
-	    break;
-	default: throw new Error("Unknown Backend: "+BACKEND);
+	// now we can finally set the (final?) classHierarchy and callGraph
+	// which the frame will use (among other things, for vtable numbering)
+	frame.setClassHierarchy(classHierarchy);
+	if (USE_OLD_CLINIT_STRATEGY) {
+	    frame.setCallGraph(callGraph);
+	    System.setProperty("harpoon.runtime1.order-initializers","true");
 	}
 	callGraph=null;// memory management.
  
@@ -481,7 +476,7 @@ public class SAMain extends harpoon.IR.Registration {
 		messageln("Compiling: " + hclass.getName());
 		
 		try {
-		    String filename = frame.getRuntime().nameMap.mangle(hclass);
+		    String filename = frame.getRuntime().getNameMap().mangle(hclass);
 		    out = new PrintWriter
 			(new BufferedWriter
 			 (new FileWriter

@@ -63,13 +63,13 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.6 2001-07-10 00:28:28 wbeebee Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.7 2001-07-10 22:49:59 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
-    protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+    protected TreeBuilder(Runtime runtime, Linker linker,
 		AllocationStrategy as, boolean pointersAreLong,
 		int pointerAlignment) {
-	super(runtime,linker,ch,as,pointersAreLong,pointerAlignment);
+	super(runtime, linker, as, pointersAreLong, pointerAlignment);
     }
     // allocate 'length' bytes plus object header; fill in object header.
     // shift return pointer appropriately for an object reference.
@@ -135,7 +135,7 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	     new TEMP(tf, source, Type.POINTER, envT)) /*retval*/,
 	     DECLARE(dg, HClass.Void/* c function ptr */,
 	     new NAME(tf, source, new Label
-		      (runtime.nameMap.c_function_name("FNI_GetJNIEnv")))),
+		      (runtime.getNameMap().c_function_name("FNI_GetJNIEnv")))),
 	     null/* no args*/);
 	Temp object= new Temp(tf.tempFactory(), "BRIANSOBJECT");
 	// wrap objectref.
@@ -148,7 +148,7 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	      new TEMP(tf, source, Type.POINTER, objT)) /*retval*/,
 	      DECLARE(dg, HClass.Void/* c function ptr */,
 	      new NAME(tf, source, new Label
-		       (runtime.nameMap.c_function_name("FNI_NewLocalRef")))),
+		       (runtime.getNameMap().c_function_name("FNI_NewLocalRef")))),
 	      new ExpList
 	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
 	       new TEMP(tf, source, Type.POINTER, envT)),
@@ -167,7 +167,7 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	     new TEMP(tf, source, Type.INT, disT) /*retval*/,
 	     DECLARE(dg, HClass.Void/* c function ptr */,
 	     new NAME(tf, source, new Label
-		      (runtime.nameMap.c_function_name
+		      (runtime.getNameMap().c_function_name
 		       (isEnter?"FNI_MonitorEnter":"FNI_MonitorExit")))),
 	     new ExpList
 	     (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
@@ -183,7 +183,7 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 	     new NATIVECALL
 	     (tf, source, null/*void retval*/,
 	      DECLARE(dg, HClass.Void/* c function ptr */,
-	      new NAME(tf, source, new Label(runtime.nameMap.c_function_name
+	      new NAME(tf, source, new Label(runtime.getNameMap().c_function_name
 					     ("FNI_DeleteLocalRefsUpTo")))),
 	      new ExpList
 	      (DECLARE(dg, HClass.Void/* JNIEnv * */, envT,
