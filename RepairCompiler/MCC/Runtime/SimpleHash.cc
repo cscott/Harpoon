@@ -132,7 +132,7 @@ void WorkList::add(int id,int type, int lvalue, int rvalue) {
   if (headoffset==WLISTSIZE) {
     if (head->next==0) {
       head->next=(struct ListNode *)malloc(sizeof(struct ListNode));
-      head->next=0;
+      head->next->next=0;
     }
     headoffset=0;
     head=head->next;
