@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.156 2000-04-05 03:06:07 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.157 2000-06-07 05:11:12 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -359,6 +359,48 @@ import java.util.Iterator;
 	   v &= ~(0xFF << ((Util.ffs(v)-1) & ~1));
 	return r;
     }
+    // helpers for floating-point return values.
+    /* The StrongARM contains a curious mix of calling conventions in its
+     * floating point libraries:  functions in libgcc.a (the standard
+     * gcc "helper" library) use the hard-float calling convention, which
+     * puts floating-point return values in floating-point registers.  C
+     * native code on skiff/netwinder does also.  *However*, the libfloat
+     * floating point library uses integer registers throughout -- BUT
+     * OMITS those functions included in libgcc.  So some functions use
+     * hard-float conventions, and some don't.  And we still leave open
+     * the option (by setting the soft_float flag) of building code for
+     * a system which uses -msoft-float throughout.  These two helper
+     * functions Do The Right Thing for floating-point return values using
+     * the 'native' (ie, same as libgcc) calling convention. */
+    private void emitMoveFromNativeFloatRetVal(HCodeElement ROOT, Temp dst) {
+	declare(dst, HClass.Float);
+	// native call returns a float.
+	if (soft_float) { // system built with -msoft-float throughout.
+	    // float retval passed in int register r0.
+	    emitMOVE( ROOT, "mov `d0, `s0", dst, r0 );
+	} else {
+	    // float retval passed in float register f0.
+	    declare ( SP, HClass.Void );
+	    emit( ROOT, "stfs f0, [sp, #-4]!", SP, SP);
+	    emit2(ROOT, "ldr `d0, [sp], #4",new Temp[]{dst,SP},new Temp[]{SP});
+	}
+    }
+    private void emitMoveFromNativeDoubleRetVal(HCodeElement ROOT, Temp dst) {
+	// native call returns a double.
+	declare(dst, HClass.Double);
+	if (soft_float) { // system built with -msoft-float throughout.
+	    // double retval passed in int registers r0,r1
+	    // not certain an emitMOVE is legal with the l/h modifiers
+	    emit( ROOT, "mov `d0l, `s0", dst, r0 );
+	    emit( ROOT, "mov `d0h, `s0", dst, r1 );
+	} else {
+	    // double retval passed in float register f0.
+	    declare ( SP, HClass.Void );
+	    emit( ROOT, "stfd f0, [sp, #-8]!", SP, SP);
+	    emit2(ROOT,"ldr `d0l, [sp], #4",new Temp[]{dst,SP},new Temp[]{SP});
+	    emit2(ROOT,"ldr `d0h, [sp], #4",new Temp[]{dst,SP},new Temp[]{SP});
+	}
+    }
 
     /** simple tuple class to wrap some bits of info about the call prologue */
     private class CallState {
@@ -520,19 +562,10 @@ import java.util.Iterator;
       }
       if (ROOT.getRetval()==null) {
 	  // this is a void method.  don't bother to emit move.
-      } else if (isNative && (!soft_float) &&
-		 ROOT.getRetval().type()==Type.FLOAT) {
-	// float retval passed in float registers.
-	declare(retval, type); declare ( SP, HClass.Void );
-	emit( ROOT, "stfs f0, [sp, #-4]!", SP, SP);
-	emit2(ROOT, "ldr `d0, [sp], #4",new Temp[]{retval,SP},new Temp[]{SP});
-      } else if (isNative && (!soft_float) &&
-		 ROOT.getRetval().type()==Type.DOUBLE) {
-	// double retval passed in float registers.
-	declare(retval, type); declare ( SP, HClass.Void );
-	emit( ROOT, "stfd f0, [sp, #-8]!", SP, SP);
-	emit2(ROOT, "ldr `d0l, [sp], #4",new Temp[]{retval,SP},new Temp[]{SP});
-	emit2(ROOT, "ldr `d0h, [sp], #4",new Temp[]{retval,SP},new Temp[]{SP});
+      } else if (isNative && ROOT.getRetval().type()==Type.FLOAT) {
+	  emitMoveFromNativeFloatRetVal(ROOT, retval);
+      } else if (isNative && ROOT.getRetval().type()==Type.DOUBLE) {
+	  emitMoveFromNativeDoubleRetVal(ROOT, retval);
       } else if (ROOT.getRetval().isDoubleWord()) {
 	// not certain an emitMOVE is legal with the l/h modifiers
 	declare(retval, type);
@@ -1511,8 +1544,7 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit2(ROOT, "bl "+nameMap.c_function_name("__floatdidf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
-    emit( ROOT, "mov `d0l, `s0", i, r0 );
-    emit( ROOT, "mov `d0h, `s0", i, r1 );
+    emitMoveFromNativeDoubleRetVal(ROOT, i);//func in libgcc.a, hence fp retval
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 		
@@ -1552,7 +1584,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     declareCALL(); declare( r0, HClass.Float );
     emit2(ROOT, "bl "+nameMap.c_function_name("__floatdisf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
-    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
+    emitMoveFromNativeFloatRetVal(ROOT, i);//func in libgcc.a, hence fp retval
 }%
 UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 
