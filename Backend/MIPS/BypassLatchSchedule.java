@@ -12,6 +12,7 @@ import harpoon.IR.Assem.Instr;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -40,13 +41,13 @@ public class BypassLatchSchedule {
       Set lb = lt.getLiveBefore(instr);
       Set la = lt.getLiveAfter(instr);
       Temp[] tmp_use = instr.use();
+      Temp[] tmp_def = instr.def();
       String assem = instr.getAssem();
       // XXX omit compound instructions for now
-      if(assem.indexOf('\n') < 0) return null;
+      if(assem.indexOf('\n') != -1) return null;
 
-      // Omit branches, calls, and remnants of move coalescing
-      if(instr.getTargets().isEmpty() 
-         && tmp_use.length > 0
+      // Omit calls, and remnants of move coalescing
+      if(tmp_use.length > 0
          && tmp_use.length <= 2
          && instr.def().length <= 1 /* excludes jal _lookup_handler */
          && assem.length() > 0
@@ -55,20 +56,35 @@ public class BypassLatchSchedule {
                      + " tmp_use=" + tmp_use + " isntr=" + instr);
          List reg_use0 = null;
          List reg_use1 = null;
+         List reg_def  = tmp_def.length == 0 ? null
+             : code.getRegisters(instr, tmp_def[0]);
          boolean oneLast = false;
          if(tmp_use.length > 0) {
             reg_use0 = code.getRegisters(instr, tmp_use[0]);
             oneLast = lb.containsAll(reg_use0) 
-               && la.containsAll(reg_use0) == false;
+               && (la.containsAll(reg_use0) == false
+                   || (reg_def != null && reg_use0.containsAll(reg_def)));
          }
          boolean twoLast = false;
          if(tmp_use.length > 1) {
             reg_use1 = code.getRegisters(instr, tmp_use[1]);
             twoLast = lb.containsAll(reg_use1) 
-               && la.containsAll(reg_use1) == false;
+               && (la.containsAll(reg_use1) == false
+                   || (reg_def != null && reg_use1.containsAll(reg_def)));
          }
          if(trace) {
             System.out.println(instr + "\n\tlb=" + lb + "\n\tla=" + la);
+            if(tmp_def.length > 1) {
+               System.out.print("\tdef multiple");
+               for(int i = 0; i < tmp_def.length; ++i) {
+                  System.out.print(" " + tmp_def[i] + " " 
+                                   + code.getRegisters(instr, tmp_def[i]));
+               }
+               System.out.println();
+            }
+            if(tmp_def.length == 1) {
+               System.out.println("\tdef " + tmp_def[0] + " " + reg_def);
+            }
             if(tmp_use.length == 2) {
                System.out.println("\tuse(0) " + tmp_use[0] 
                                   + " " + reg_use0
