@@ -26,9 +26,11 @@ public class Label extends Node {
     //added by benji
     private double maxratio;
 
-    private static final int trackingTolerance = 40;
+    private static final int trackingTolerance = 45;
 
     private int numberOfImagesWithNoTank = 0;
+
+    private long timeBetweenSends = 1000;
 
     /** Construct a new {@link Label} node which will trace the outlines
      *  of objects and retain all objects with a bounding box that fits
@@ -389,7 +391,13 @@ public class Label extends Node {
 			//System.out.println("Target "+croppedImageData.trackedObjectUniqueID+" reconfirm");
 			targetPair.resetCount();
 			if (croppedImageData.trackedObjectUniqueID == currentSelectedTrackingID) {
-			    croppedImageData.command = Command.GO_BOTH;
+			    long currentTime = System.currentTimeMillis();
+			    if (currentTime - targetPair.getTime() > timeBetweenSends) {
+				croppedImageData.command = Command.GO_BOTH;
+				targetPair.setTime(currentTime);
+			    }
+			    else
+				croppedImageData.command = Command.GO_LEFT;
 			}
 			else {
 			    croppedImageData.command = Command.GO_LEFT;
@@ -400,8 +408,15 @@ public class Label extends Node {
 		    targetPair.inc();
 		    //System.out.println("Target "+croppedImageData.trackedObjectUniqueID+" auto-confirm");
 		    if (croppedImageData.trackedObjectUniqueID == currentSelectedTrackingID) {
-			croppedImageData.command = Command.GO_RIGHT;
-			return true;
+			long currentTime = System.currentTimeMillis();
+			if (currentTime - targetPair.getTime() > timeBetweenSends) {
+			    croppedImageData.command = Command.GO_RIGHT;
+			    targetPair.setTime(currentTime);
+			    return true;
+			}
+			else {
+			    return false;
+			}
 		    }
 		    else
 			return false;
@@ -448,8 +463,10 @@ public class Label extends Node {
 	}
 	//[trackingID != -1]
 	else {
-	    if (trackingID == currentSelectedTrackingID)
+	    if (trackingID == currentSelectedTrackingID) {
+		System.out.print("Label: THIS SHOULD NEVER HAPPEN");
 		return true;
+	    }
 	    else
 		return false;
 	}
@@ -502,6 +519,7 @@ public class Label extends Node {
     private class Pair {
 	int targetID;
 	int count;
+	long lastSentTime;
 	Pair next;
 	Pair(int targetID){
 	    init(targetID, null);
@@ -513,6 +531,7 @@ public class Label extends Node {
 	    this.targetID = targetID;
 	    this.next = next;
 	    this.count = 0;
+	    this.lastSentTime = 0;
 	}
 	
 	void inc() {
@@ -526,5 +545,21 @@ public class Label extends Node {
 	int getCount() {
 	    return count;
 	}
-    }    
+	
+	void setTime(long t) {
+	    lastSentTime = t;
+	}
+
+	long getTime() {
+	    return lastSentTime;
+	}
+    }
+
+    public void setTimeBetweenSends(long t) {
+	timeBetweenSends = t;
+    }
+    
+    public long getTimeBetweenSends() {
+	return timeBetweenSends;
+    }
 }
