@@ -27,7 +27,7 @@ class Set {
     if(debug) 
       System.out.println(name+": add("+nodename(n)+")");
     if (this.contains(n)) return;
-    lookup.put(n, new Object());
+    lookup.put(n, n);
   }
   public boolean empty() {
     return lookup.isEmpty();
@@ -53,5 +53,6 @@ class Set {
   public int size() {
     return lookup.size();
   }
+  public String toString() { return name+": "+lookup.toString(); }
 }
 
