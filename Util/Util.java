@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.11 1998-10-16 06:18:41 cananian Exp $
+ * @version $Id: Util.java,v 1.12 1998-11-10 03:34:37 cananian Exp $
  */
 public abstract class Util {
   // Only static methods.
@@ -66,6 +66,10 @@ public abstract class Util {
   public static final void assert(boolean val) {
     if (!val)
       throw new RuntimeException("Assertion Failure.") { };
+  }
+  public static final void assert(boolean val, String msg) {
+    if (!val)
+      throw new RuntimeException("Assertion Failure: "+msg) { };
   }
   /** Repeat a given string a certain number of times.
    *  @return a string consisting of <code>s</code> repeated <code>n</code>
