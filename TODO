@@ -1,3 +1,7 @@
+---- Nov-20-98
+javac allows circular interface dependencies that could result in infinite
+ loops in our class reader code.  jikes disallows this.  think through
+ how this should work.
 ---- Nov-11-98
 Write QuadSSA checker: verify edge links, no unreachable code, correct
  format, correct args to each Quad, in SSA form, header and footer correct,
