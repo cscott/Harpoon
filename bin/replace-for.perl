@@ -5,13 +5,13 @@ my $file = shift( @ARGV );
 open( ARG, "<$file" ) || die( "$0: can't open $file for reading ($!)\n" );
 
 while((!$isEOF) && defined($line = <ARG>)) {
-    # append 5 lines to pattern space if 'for' is on line.
+    # append 5 lines to pattern space if 'for' or 'Iterator' is on line.
     my $glom=0;
-    $glom+=5 if $line =~ m/for/s;
+    $glom+=5 if $line =~ m/for|Iterator/s;
     for (my $i=0; $i<$glom; $i++) {
 	my $nextline = <ARG>;
 	if (defined($nextline)) {
-	    $glom+=5 if $nextline =~ m/for/s;
+	    $glom+=5 if $nextline =~ m/for|Iterator/s;
 	    $line = "$line$nextline";
 	} else {
 	    $isEOF=1;
@@ -36,6 +36,24 @@ while((!$isEOF) && defined($line = <ARG>)) {
 	# it.next()
         \s* \2 \s* [.] \s* next \s* \( \s* \) \s* [;] \s*
 	     /$1$6 $7 : $4$5/gx;
+    # this is the retarded 'while loop' non-parameterized version.
+    $line =~ s/
+	Iterator \s+ ([A-Za-z_][A-Za-z0-9_]*) \s* = # $1 is the iter name
+	# allow for an optional 'Arrays.asList(' in $2
+        \s* (Arrays \s* [.] \s* asList \s* \( \s* )?
+	# grab the expression, taking off a closing paren if $2 matched
+        ([^;]*[^; ]) \s* (?(2)\)) # (trimmed?) expression in $3
+        \s* [.] \s* iterator \s* \( \s* \) \s* [;] # .iterator();
+	# while (it.hasNext()
+	\s* while \s* \( \s* \1 \s* [.] \s* hasNext \s* \( \s* \) \s*
+	\s* ( \) \s* \{ \s* ) # $4 = whitespace and a brace; next line
+	# now item type name ($5) and item variable name ($6)
+        ([A-Za-z_][A-Za-z0-9_.]*) \s+ ([A-Za-z_][A-Za-z0-9_]*) \s* =
+	# typecast to type name
+        \s* \( \s* \5 \s* \)
+	# it.next()
+        \s* \1 \s* [.] \s* next \s* \( \s* \) \s* [;] \s*
+	     /for ($5 $6 : $3$4/gx;
     # this is the parameterized version
     $line =~ s/
 	(for \s* \( ) # $1 is the 'for' part
