@@ -14,7 +14,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12.2.3 1999-02-23 05:55:21 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.4 1999-02-23 07:12:08 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -76,11 +76,7 @@ public abstract class HCode {
    * @see harpoon.IR.Bytecode.Instr
    */
   public Enumeration getElementsE() {
-    return new Enumeration() {
-      private final Iterator i = getElementsI();
-      public boolean hasMoreElements() { return i.hasNext(); }
-      public Object nextElement() { return i.next(); }
-    };
+    return new harpoon.Util.IteratorEnumerator(getElementsI());
   }
   /**
    * Return an Iterator over the component objects making up this
@@ -90,12 +86,7 @@ public abstract class HCode {
    * <code>getElementsE()</code>, or <code>getElementsI()</code>.
    */
   public Iterator getElementsI() {
-    return new Iterator() {
-      private final Enumeration e = getElementsE();
-      public boolean hasNext() { return e.hasMoreElements(); }
-      public Object next() { return e.nextElement(); }
-      public void remove() { throw new UnsupportedOperationException(); }
-    };
+    return new harpoon.Util.EnumerationIterator(getElementsE());
   }
 
   /**
