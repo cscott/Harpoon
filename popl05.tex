@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: popl05.tex,v 1.3 2004-07-16 14:55:59 cananian Exp $
+% $Id: popl05.tex,v 1.4 2004-07-16 15:48:22 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csaacmconfbig} % 15 page limit
 %\usepackage{times}
@@ -14,7 +14,7 @@
 \usepackage{varioref} % \vref command
 \usepackage{support}
 \usepackage{xspace}
-%\notesfalse
+\notesfalse
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.3 $ $}
+%\date{\today \\ $ $Revision: 1.4 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -259,7 +259,7 @@ try {
   throw new Error();
 }
 \end{verbatim}
-}\note{We'd prefer 'fail t' here, but that raises the question of how
+}\note{We'd prefer `fail t' here, but that raises the question of how
   to export objects from transactional contexts.}
 
 The {\tt try}/{\tt else} block appears to make a non-deterministic
@@ -365,7 +365,7 @@ for (int b=0; ; b++) {
   try {
     // atomic actions
   } else {
-    backOff(1<<Math.min(b,31));
+    backOff(b);
     continue;
   }
   break; // success!
@@ -693,7 +693,7 @@ software transaction system.
 version of transaction app and add check into the access functions.}
 We would like non-transactional code to execute with minimal overhead,
 however, transactions should still appear atomic to non-transactional
-code.  Our basic mechanism here will be loosely based on the
+code.  Our basic mechanism is loosely based on the
 distributed shared memory implementation of Scales and Gharachorloo
 \cite{ScalesGh97}.  We will pick a special ``flag'' value, and
 ``cross-out'' locations currently involved in a transaction by
@@ -702,6 +702,8 @@ overwrite a flagged value will indicate to non-transactional code
 that exceptional processing is necessary; all other non-transactional
 operations proceed as usual.
 
+Note that our technique explicitly allows safe access to fields
+involved in a transaction from non-transactional code.
 \punt{
 Ensuring that transactional updates remain atomic to non-transactional
 code eases ``transactification'' and 
@@ -916,7 +918,7 @@ inline writeNT(o, f, nval) {
 }
 \subsubsection{Field Copy-Back}
 \begin{figure}
-\tiny
+\fontsize{6.5}{7.4}
 \begin{verbatim}
 inline copyBackField(o, f, mode, st) {
   _nonceV=NIL; _ver = NIL; _r = NIL; st = success;
@@ -1059,7 +1061,7 @@ inline readT(tid, o, f, ver, result) {
 }
 
 \begin{figure}
-\tiny
+\fontsize{6.5}{8}
 \begin{verbatim}
 /* per-object, before write. */
 inline ensureWriter(tid, o, ver) {
@@ -1131,7 +1133,7 @@ inline ensureWriter(tid, o, ver) {
 \label{fig:ensurewriter}
 \end{figure}
 \begin{figure}
-\tiny
+\fontsize{6.5}{8}
 \begin{verbatim}
 /* per-field, before write. */
 inline checkWriteField(o, f) {
@@ -1500,7 +1502,7 @@ transaction.  Java synchronization allows such concurrent operations,
 with semantics given by the Java memory model \cite{MansonPu02}.
 We support these operations safely using our FLAG mechanism.
 
-Programmers will be loathe to use transactions to synchronize their
+Programmers will be reluctant to use transactions to synchronize their
 code when it results in their code running more slowly on the uniprocessor
 and small-SMP systems which are most common today.
 \note{Segue into hardware transactions writeup?}
@@ -1632,7 +1634,7 @@ provided the timings in \figref{hw-timings}.}
 \section*{Spin model for Software Transactions}
 The complete Spin 4.1.0 model for the FLEX software transaction system is
 available for download at
-\url{http://flex-compiler.csail.mit.edu/Harpoon/swx.pml}.
+\url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
 
 %\renewcommand{\baselinestretch}{1}
 \bibliographystyle{plain}
