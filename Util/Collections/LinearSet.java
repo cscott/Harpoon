@@ -17,7 +17,7 @@ import java.util.Iterator;
  * small.  It is backed by a <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.3 2002-04-10 03:07:12 cananian Exp $
+ * @version $Id: LinearSet.java,v 1.4 2003-05-07 23:32:09 cananian Exp $
  */
 public class LinearSet<E> extends AbstractSet<E> implements Cloneable,
 						      java.io.Serializable {
@@ -43,6 +43,16 @@ public class LinearSet<E> extends AbstractSet<E> implements Cloneable,
     */
     public <T extends E> LinearSet(final Set<T> set) {
 	this(Factories.arrayListFactory(), set);
+    }
+
+    /** Creates a <code>LinearSet</code>, filling it with the elements
+	of the given collection.  Uses an <code>ArrayList</code> as the
+	backing store.  Uses time quadratic in the size of the given
+	collection.
+    */
+    public <T extends E> LinearSet(final Collection<T> c) {
+	this(Factories.arrayListFactory());
+	addAll(c);
     }
 
     /** Creates an empty <code>LinearSet</code>, using a
