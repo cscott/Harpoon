@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec.coarseInstrs,v 1.1.2.1 2000-10-20 08:50:50 pnkfelix Exp $
+ * @version $Id: CodeGen.spec.coarseInstrs,v 1.1.2.2 2000-11-01 00:04:00 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -223,6 +223,18 @@ import java.util.Iterator;
 	List tlist = (targets==null?null:Arrays.asList(targets));
 	return emit(new InstrCALL( instrFactory, root, assem,
 				   dst, src, canFall, tlist));
+    }
+
+    private static class InstrDUMMY extends Instr { 
+	InstrDUMMY(InstrFactory inf, HCodeElement root, 
+	           String assem, Temp[] dst, Temp[] src) {
+	    super(inf, root, assem, dst, src, true, null);
+	}
+	public boolean isDummy() { return true; }
+    }
+    private Instr emitDUMMY( HCodeElement root, String assem, 
+			     Temp[] dst, Temp[] src ) {
+	return emit(new InstrDUMMY( instrFactory, root, assem, dst, src));
     }
 
     /* InstrJUMP emit helper; automatically adds entry to
@@ -418,6 +430,7 @@ import java.util.Iterator;
 	    emit( ROOT, 
 		  "mov `d0l, `s0\n"+
 		  "mov `d0h, `s1", dst, r0, r1 );
+	    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 	} else {
 	    // double retval passed in float register f0.
 	    declare ( SP, HClass.Void );
@@ -591,7 +604,9 @@ import java.util.Iterator;
       } else if (ROOT.getRetval().isDoubleWord()) {
 	// not certain an emitMOVE is legal with the l/h modifiers
 	declare(retval, type);
-	emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", retval, r0, r1 );
+	emit( ROOT, "mov `d0l, `s0\n"+
+	            "mov `d0h, `s1", retval, r0, r1 );
+	emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 
       } else {
 	declare(retval, type);
@@ -775,7 +790,7 @@ BINOP<l>(ADD, j, k) = i %{
     emit( ROOT, "adds `d0l, `s0l, `s1l\n"+
 		"adc  `d0h, `s0h, `s1h", i, j, k );
     // make sure d0l isn't assigned same reg as `s0h or `s1h
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
 }%
 
 BINOP<f>(ADD, j, k) = i %{
@@ -800,10 +815,10 @@ BINOP<d>(ADD, j, k) = i %{
         // not certain an emitMOVE is legal with the l/h modifiers
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", 
 	  new Temp[]{ r2, r3 }, k );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h",
 	  new Temp[]{ r0, r1 }, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
 
     declareCALL();
     declare(r0, HClass.Void); // retval from call.
@@ -812,6 +827,7 @@ BINOP<d>(ADD, j, k) = i %{
 	  // uses & stomps on these registers:
 	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, r0 , r1);
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[] { r1 });
 }%
 
     /*-------- SUBTRACT (which, in tree form, is (x + (-y) ) -------- */
@@ -846,7 +862,7 @@ BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %{
     emit( ROOT, "subs `d0l, `s0l, `s1l\n"+
 		"sbc  `d0h, `s0h, `s1h", i, j, k );
     // make sure d0l isn't assigned same reg as `s0h or `s1h
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
 }%
 BINOP<f>(ADD, j, UNOP<l>(NEG, k)) = i %{
     /* call auxillary fp routines */
@@ -870,16 +886,18 @@ BINOP<d>(ADD, j, UNOP<l>(NEG, k)) = i %{
 
         // not certain an emitMOVE is legal with the l/h modifiers
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{ r2, r3 }, k );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{k});
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{ r0, r1 }, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__subdf3"),
 	  // uses & stomps on these registers:
 	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
-    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{ r0, r1 } );
+    emit( ROOT, "mov `d0l, `s0\n"+
+	        "mov `d0h, `s1", i, new Temp[]{ r0, r1 } );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 }%
 
 BINOP<p,i>(AND, j, k) = i
@@ -900,7 +918,7 @@ BINOP<p,i>(AND, j, BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
 BINOP<l>(AND, j, k) = i %{
 
     emit( ROOT, "and `d0l, `s0l, `s1l\n"+"and `d0h, `s0h, `s1h", i, j, k );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
 }%
 
     /* Auxilliary comparison functions on StrongARM are... interesting.
@@ -971,8 +989,8 @@ BINOP(cmpop, j, k) = i
 	        "1:", i, new Temp[]{ i, j, k } );
     // dummy use of `s0 and `s1 following the comparison to keep them live
     // (otherwise the regalloc could allocate d0 over part of s0 or s1)
-    emit(new Instr( instrFactory, ROOT, "@ dummy use of `s0h `s0l `s1h `s1l",
-		    null, new Temp[] { j, k }));
+    emitDUMMY( ROOT, "@ dummy use of `s0h `s0l `s1h `s1l",
+	       null, new Temp[] { j, k });
 }%
   
 BINOP(cmpop, j, k) = i
@@ -1010,7 +1028,7 @@ BINOP(cmpop, j, k) = i
 
     emit ( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h",new Temp[]{ r0,r1 }, j);
     emit ( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h",new Temp[]{ r2,r3 }, k);
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
     // --- some of these comparison functions are broken! --
     //     cmpOp2Func might return a non-broken but *inverted*
     //     comparison function; we'll fixup the inverted value below.
@@ -1047,7 +1065,7 @@ BINOP<p,i>(OR, j, BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
 BINOP<l>(OR, j, k) = i %{
 
     emit( ROOT, "orr `d0l, `s0l, `s1l\n"+"orr `d0h, `s0h, `s1h", i, j, k );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
 }%
 
 BINOP<p,i>(shiftop, j, k) = i %extra<i>{ extra }
@@ -1071,15 +1089,18 @@ BINOP<l>(SHL, j, k) = i %{
     declare( r1, HClass.Void );
     declare( r0, HClass.Void );
 
-    emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[] { r0, r1 }, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
+    emit( ROOT, "mov `d0, `s0l\n"+
+	        "mov `d1, `s0h", new Temp[] { r0, r1 }, j );
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     emit( ROOT, "and `d0, `s0, #63 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__ashldi3"),
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
-    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[] { r0, r1 } );
+    emit( ROOT, "mov `d0l, `s0\n"+
+	        "mov `d0h, `s1", i, new Temp[] { r0, r1 } );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 }%
 
 BINOP<l>(SHR, j, k) = i %{
@@ -1088,14 +1109,16 @@ BINOP<l>(SHR, j, k) = i %{
     declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{ r0, r1}, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     emit( ROOT, "and `d0, `s0, #63 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__ashrdi3"),
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
-    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{ r0, r1 });
+    emit( ROOT, "mov `d0l, `s0\n"+
+	        "mov `d0h, `s1", i, new Temp[]{ r0, r1 });
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 }%
 
 BINOP<l>(USHR, j, k) = i %{
@@ -1104,14 +1127,15 @@ BINOP<l>(USHR, j, k) = i %{
     declare( r0, HClass.Void );
 
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{ r0, r1 }, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{j});
     emit( ROOT, "and `d0, `s0, #63 @ mask shift ", r2, k );
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__lshrdi3"),
 	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
-    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0, r1} );
+    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1});
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 }%
 
 
@@ -1133,7 +1157,7 @@ BINOP<p,i>(XOR, j, BINOP<p,i>(shiftop, k, CONST<p,i>(c))) = i
 BINOP<l>(XOR, j, k) = i %{
 
     emit( ROOT, "eor `d0l, `s0l, `s1l\n"+"eor `d0h, `s0h, `s1h", i, j, k );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
 }%
 
 
@@ -1212,8 +1236,7 @@ BINOP<p,i>(MUL, j, k) = i %{
     emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
     // `d0 and `s0 can't be same register on ARM, so we insert a
     // dummy use of `s0 following the mul to keep it live.
-    emit(new Instr( instrFactory, ROOT, "@ dummy",
-		    null, new Temp[] { j }));
+    emitDUMMY( ROOT, "@ dummy", null, new Temp[] { j });
 }%
     // strong arm has funky multiply & accumulate instruction.
 BINOP<p,i>(ADD, l, BINOP<p,i>(MUL, j, k)) = i %{
@@ -1222,8 +1245,7 @@ BINOP<p,i>(ADD, l, BINOP<p,i>(MUL, j, k)) = i %{
 		    new Temp[] { i }, new Temp[] { j, k, l } ));
     // `d0 and `s0 can't be same register on ARM, so we insert a
     // dummy use of `s0 following the mul to keep it live.
-    emit(new Instr( instrFactory, ROOT, "@ dummy",
-		    null, new Temp[] { j }));
+    emitDUMMY( ROOT, "@ dummy", null, new Temp[] { j });
 }%
 
 BINOP<l>(MUL, j, k) = i %{
@@ -1235,7 +1257,7 @@ BINOP<l>(MUL, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1243,6 +1265,7 @@ BINOP<l>(MUL, j, k) = i %{
 	  // uses & stomps on these registers:
 	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[]{r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{ r0,r1 });
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 }%
 
 BINOP<f>(MUL, j, k) = i %{
@@ -1266,14 +1289,16 @@ BINOP<d>(MUL, j, k) = i %{
 
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__muldf3"),
 	  // uses & stomps on these registers:
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
-    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emit( ROOT, "mov `d0l, `s0\n"+
+	        "mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emitDUMMY( ROOT, "@dummy use of `s0", null, new Temp[]{ r1 });
 }%
 
 BINOP<p,i>(DIV, j, k) = i %{
@@ -1296,14 +1321,15 @@ BINOP<l>(DIV, j, k) = i %{
     declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__divdi3"),
 	  // uses and stomps on these registers:
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
-    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1});
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{ r1 });
 }%
 
 BINOP<f>(DIV, j, k) = i %{
@@ -1324,13 +1350,14 @@ BINOP<d>(DIV, j, k) = i %{
     declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
     emit2(ROOT, "bl "+nameMap.c_function_name("__divdf3"),
 	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[] { r1 });
 }%
 
 BINOP<i>(REM, j, k) = i %{
@@ -1353,7 +1380,7 @@ BINOP<l>(REM, j, k) = i %{
     declare( r2, HClass.Void ); declare( r3, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r2,r3}, k );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, j );
-    emit2( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h `s1l `s1h", null, new Temp[]{j,k});
     declareCALL();
     declare( r0, HClass.Void ); // retval from call.
     declare( r1, HClass.Void ); // retval from call.
@@ -1491,7 +1518,7 @@ MEM<l,d>(e) = i %{
 	             "ldr `d0l, [`s0]\n"+
 	             "ldr `d0h, [`s0, #4]",
 		     new Temp[]{ i }, new Temp[]{ e }));
-    emit2( ROOT, "@ dummy use of `s0", null, new Temp[]{e});
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[]{e});
 }%
 
 // can use adr for 8 bit offsets to variables close by,
@@ -1564,7 +1591,7 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, arg );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit2(ROOT, "bl "+nameMap.c_function_name("__floatdidf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
@@ -1578,6 +1605,7 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     emit2(ROOT, "bl "+nameMap.c_function_name("__floatsidf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[] { r1 });
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
@@ -1587,7 +1615,7 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     emit2(ROOT, "bl "+nameMap.c_function_name("__extendsfdf2"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
-
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[] { r1 });
 }%
 /* this is useless.  Should never really be in Tree form.
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
@@ -1602,7 +1630,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, arg );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
     declareCALL(); declare( r0, HClass.Float );
     emit2(ROOT, "bl "+nameMap.c_function_name("__floatdisf"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
@@ -1627,7 +1655,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, arg );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
     declareCALL(); declare( r0, HClass.Float );
     emit2(ROOT, "bl "+nameMap.c_function_name("__truncdfsf2"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR},new Temp[] {r0,r1} );
@@ -1655,7 +1683,7 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, arg );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
     declareCALL(); declare( r0, HClass.Int );
     emit2(ROOT, "bl "+nameMap.c_function_name("__fixdfsi"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
@@ -1684,16 +1712,19 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     emit2(ROOT, "bl "+nameMap.c_function_name("__fixsfdi"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[] { r1 });
+
 }%
 UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, arg );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit2(ROOT, "bl "+nameMap.c_function_name("__fixdfdi"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[] { r1 });
 }%
 
 
@@ -1709,7 +1740,7 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     emit( ROOT, "rsbs `d0l, `s0l, #0\n" +
     	        "rsc  `d0h, `s0h, #0", i, arg );
     // make sure d0l isn't assigned same reg as `s0h
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
 }% 
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
@@ -1725,11 +1756,12 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
 
     declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l\n"+"mov `d1, `s0h", new Temp[]{r0,r1}, arg );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
     declareCALL(); declare( r0, HClass.Void ); declare( r1, HClass.Void );
     emit2(ROOT, "bl "+nameMap.c_function_name("__negdf2"),
 	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0\n"+"mov `d0h, `s1", i, new Temp[]{r0,r1} );
+    emitDUMMY( ROOT, "@ dummy use of `s0", null, new Temp[] { r1 });
 }%
 
 UNOP(NOT, arg) = i
@@ -1747,7 +1779,7 @@ UNOP(NOT, BINOP<p,i>(shiftop, j, CONST<p,i>(c))) = i
 UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
     emit( ROOT, "mvn `d0l, `s0l\n"+"mvn `d0h, `s0h", i, arg );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{arg});
 }% 
 
 /* STATEMENTS */
@@ -1892,7 +1924,7 @@ MOVE<d,l>(TEMP(dst), src) %{
     // change to emitMOVE later
     emit( ROOT, "mov `d0l, `s0l\n"+
 	        "mov `d0h, `s0h", dst, src );
-    emit2( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{src});
+    emitDUMMY( ROOT, "@ dummy use of `s0l `s0h", null, new Temp[]{src});
     
 }%
 
@@ -2021,7 +2053,7 @@ THROW(val, handler) %{
 
   // slow version when we don't know exactly which method we're calling.
 CALL(retval, retex, func, arglist, handler)
-%pred %( !ROOT.isTailCall )%
+// %pred %( !ROOT.isTailCall )%
 %{
     CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
     Label rlabel = new Label(), elabel = new Label();
@@ -2048,7 +2080,7 @@ CALL(retval, retex, func, arglist, handler)
 }%
   // optimized version when we know exactly which method we're calling.
 CALL(retval, retex, NAME(funcLabel), arglist, handler)
-%pred %( !ROOT.isTailCall )%
+// %pred %( !ROOT.isTailCall )%
 %{
     CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
     Label rlabel = new Label(), elabel = new Label();
