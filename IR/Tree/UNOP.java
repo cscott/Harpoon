@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.8 1999-02-24 22:22:23 duncan Exp $
+ * @version $Id: UNOP.java,v 1.1.2.9 1999-05-10 02:05:36 duncan Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -64,10 +64,10 @@ public class UNOP extends OPER {
 	    }
 	case Uop._2B:
 	    switch (optype) {
-	    case Type.INT:      return _i(_i(left)==0?0:1);
-	    case Type.LONG:     return _i(_l(left)==0?0:1);
-	    case Type.FLOAT:    return _i(_f(left)==0?0:1);
-	    case Type.DOUBLE:   return _i(_d(left)==0?0:1);
+	    case Type.INT:      return _i((byte)_i(left));
+	    case Type.LONG:     return _i((byte)_l(left));
+	    case Type.FLOAT:    return _i((byte)_f(left));
+	    case Type.DOUBLE:   return _i((byte)_d(left));
 	    case Type.POINTER: 
 		throw new Error("Operation not supported");
 	    }
@@ -137,12 +137,14 @@ public class UNOP extends OPER {
     }
 
     // wrapper functions.
+    private static Byte    _b(byte b)    { return new Byte(b);    }  
     private static Integer _i(int i)     { return new Integer(i); }
     private static Long    _l(long l)    { return new Long(l);    }
     private static Float   _f(float f)   { return new Float(f);   }
     private static Double  _d(double d)  { return new Double(d);  }
 
     // unwrapper functions.
+    private static byte   _b(Object o) { return ((Byte)o)   .byteValue(); } 
     private static int    _i(Object o) { return ((Integer)o).intValue(); }
     private static long   _l(Object o) { return ((Long)o)   .longValue(); }
     private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
