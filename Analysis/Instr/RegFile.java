@@ -22,7 +22,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.6 2000-05-23 17:25:44 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.7 2000-05-24 18:48:27 pnkfelix Exp $
  */
 class RegFile {
 
@@ -41,8 +41,12 @@ class RegFile {
     } 
 
     /** Marks the pseudo register <code>preg</code> as dirty. 
-	<BR> <B>requires:</B> <code>preg</code> currently is assigned
-	                      in <code>this</code>.
+	<BR> <B>requires:</B> <OL>
+	     <LI> <code>preg</code> is a pseudo register Temp 
+	          (not a register)
+	     <LI> <code>preg</code> currently is assigned
+	          in <code>this</code>.
+	     </OL>
         <BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> marks <code>preg</code> as dirty.
 	     <code>preg</code> will remain dirty until it is removed

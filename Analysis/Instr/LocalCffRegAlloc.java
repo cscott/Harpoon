@@ -64,7 +64,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.76 2000-05-23 22:06:08 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.77 2000-05-24 18:48:26 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -91,7 +91,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
 
     private String printInfo(BasicBlock block, Instr i, 
-				    Temp t, Code code) {
+			     Temp t, Code code) {
 	java.io.StringWriter swout = new java.io.StringWriter();
 	java.io.PrintWriter pwout = new java.io.PrintWriter(swout);
 	// code.print(pwout);
@@ -99,35 +99,40 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// StringBuffer sb = new StringBuffer(swout.toString());
 	StringBuffer sb = new StringBuffer();
 
-	// FSK: BasicBlock debug code
-	StringBuffer sb1 = new StringBuffer();
-	StringBuffer sb2 = new StringBuffer();
+	// inserting the loads and stores may make this routine
+	// O(n^2), which could be bad...
 
 	List blockL = block.statements();
 	Iterator itr = blockL.iterator(); 
 	while(itr.hasNext()) {
 	    Instr i2=(Instr)itr.next();
+
+	    // insert loads...
+	    Iterator loads = spillLoads.iterator();
+	    while(loads.hasNext()) {
+		Instr s = (Instr) loads.next();
+		Instr loc = (Instr) loads.next();
+		if (loc == i2) {
+		    sb.append(s+"\n");
+		}
+	    }
+
+	    // put actual instr in
 	    sb.append(toAssem(i2, code)+
 		      " \t { " + i2 + 
 		      " }\n");
 
-	    // FSK: BasicBlock debug code
-	    sb1.append("FSK "+i2.toString()+"\n");
+	    // insert stores... 
+	    Iterator stores = spillStores.iterator();
+	    while(stores.hasNext()) {
+		Instr s = (Instr) stores.next();
+		Instr loc = (Instr) stores.next();
+		if (loc == i2) {
+		    sb.append(s+"\n");
+		}
+	    }
 	}
 	
-	// FSK: BasicBlock debug code
-	ListIterator litr = blockL.listIterator(blockL.size());
-	while(litr.hasPrevious()) {
-	    Instr i3 = (Instr) litr.previous();
-	    sb2.insert(0, "FSK "+i3.toString()+"\n");
-	}
-
-	// FSK: BasicBlock debug code
-	Util.assert(sb1.toString().equals(sb2.toString()),
-		    "debugging BasicBlock: size:"+blockL.size()+
-		    "\n\n"+sb1+"\n\n"+sb2);
-		    
-
 	return "\n"+
 	    sb.toString() + 
 	    "temp: "+t + "\n"+
@@ -286,8 +291,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 	public void visit(final InstrMOVE i) {
 	    if (instrsToRemove.contains(i)) {
 		List regs = regfile.getAssignment(i.use()[0]);
-		Util.assert(regs != null, "no reg assignment for use in: "+i );
-		assign(i.def()[0], regs);
+		Util.assert
+		    (regs != null, 
+		     new Object() {
+			 public String toString() {
+			     return "no reg assignment :\n"+
+			     printInfo(block, i, i.use()[0], code);}});
+		
+		assign(i.def()[0], regs, true);
 	    } else {
 		visit((Instr)i);
 	    }
@@ -660,13 +671,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 	final Set liveOnExit;
 	final RegFile regfile;
 	
-	// Temp:t currently in regfile -> Index of next ref to <t>
+	// Temp:t currently in regfile -> Index of next ref to t
 	final Map evictables;
 	
 	// maps (Instr:i x Temp:t) -> 2 * index of next Instr
-	//                            referencing <t> 
-	// (only defined for <t>'s referenced by <i> that 
-	// have a future reference; otherwise null)  
+	//                            referencing t
+	// (only defined for t's referenced by i that 
+	//  have a future reference; otherwise null)  
 	final Map nextRef;
 
 	// tracks sets of equivalent temps (eq. temps are ones that
@@ -674,7 +685,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	final EqTempSets tempSets;
 
 	// maps Temp:t -> Set of Regs 
-	//      whose live regions interfere with <t>'s live region
+	//      whose live regions interfere with t's live region
 	final MultiMap preassignMap;
 
 	LocalAllocator(BasicBlock b, Set lvOnExit) {
@@ -839,129 +850,27 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    // emptying the register file post-allocation
 	    Instr last;
 
+	    // filters out hardcoded refs to machine registers 
+	    class MRegFilter extends FilterIterator.Filter {
+		public boolean isElement(Object o) {
+		    return !isTempRegister((Temp) o);
+		}
+	    }
+
 	    public void visit(Instr i) {
-		// filters out hardcoded refs to machine registers 
-		class MRegFilter extends FilterIterator.Filter {
-		    public boolean isElement(Object o) {
-			return !isTempRegister((Temp) o);
-		    }
-		}
+		Map putBackLater = takeOutUses(i);
 		
-		// first take any temp that is used by <i> out of the
-		// evictables map
-		Map putBackLater = new HashMap();
-		Iterator uses = new FilterIterator(i.useC().iterator(),
-						   new MRegFilter());
-		
-		while(uses.hasNext()) {
-		    Temp use = (Temp) uses.next();
-		    if (evictables.containsKey(use)) {
-			putBackLater.put(use, evictables.get(use));
-			evictables.remove(use);
-		    }
-		}
-		if (false) System.out.println("for "+i+"\nremoved: "+
-				   putBackLater.keySet()+
-				   "\nleaving: "+evictables);
-
-		
-		Iterator refs = new FilterIterator(getRefs(i),
-						   new MRegFilter());
-
-		
+		Iterator refs = 
+		    new FilterIterator(getRefs(i), new MRegFilter()); 
 
 		while(refs.hasNext()) {
-		    Set check = new HashSet(evictables.keySet());
-		    check.retainAll(i.useC());
-		    Util.assert(check.isEmpty(), 
-				"evictables shouldn't have "+
-				"elements of i's useC.");
-
 		    Temp t = (Temp) refs.next();
-		    if (regfile.hasAssignment(t)) {
-			String _s = ("using preassign for "+t+" in "+i+" : "+
-				    regfile.getAssignment(t));
-			// System.out.println(_s);
-
-			code.assignRegister(i, t, regfile.getAssignment(t));
-			evictables.remove(t);
-		    } else /* not already assigned */ {
-			
-			// add any conflicting preassigned register to
-			// the register file
-			Set preassignSet = (Set) preassignMap.getValues(t);
-			Set preassignTempSet = new HashSet();
-
-			// FSK: i had figured that there would be no
-			// need for this check (i still don't think
-			// there should be) but this is a quick fixit
-			if (preassignSet != null) { 
-			    Iterator preassignIter = preassignSet.iterator();
-			    while(preassignIter.hasNext()) {
-				Temp reg = (Temp) preassignIter.next();
-				Temp preassign = new RegFileInfo.PreassignTemp(reg);
-				regfile.assign( preassign, 
-						Arrays.asList( new Temp[]{ reg }));
-				preassignTempSet.add(preassign);
-			    }
-			}
-
-
-			Iterator suggs = 
-			    getSuggestions(t, regfile, i, evictables);
-			List regList = chooseSuggestion(suggs, t);
-
-			code.assignRegister(i, t, regList);
-			regfile.assign(t, regList);
-			
-			if (i.useC().contains(t)) {
-			    InstrMEM load = 
-				new SpillLoad
-				(i, "FSK-LOAD", regList, t);
-			    spillLoads.add(load);
-			    spillLoads.add(i);
-
-			    // load.insertAt(new InstrEdge(i.getPrev(), i));
-			    
-			    // System.out.println("inserting load: \t\t\t"+
-			    //                     regList + " <- "+ t);
-			}
-
-			// remove preassignments
-			Iterator preassignTemps = preassignTempSet.iterator();
-			while(preassignTemps.hasNext()) {
-			    regfile.remove((Temp) preassignTemps.next());
-			}
-
-		    }
-		    
-		    // at this point, 't' has an assignment and needs
-		    // to be entered into the 'evictables' pool
-		    
-		    Integer X = (Integer) nextRef.get(new TempInstrPair(i, t));
-		    
-		    // null => never referenced again; effectively infinite
-		    if (X == null) X = INFINITY;
-		    
-		    Util.assert(X.intValue() <= (Integer.MAX_VALUE - 1),
-				"Excessive Weight was stored.");
-		    
-		    
-		    if (regfile.isDirty(t)) {
-			X = new Integer(X.intValue() + 1);
-		    }
-		    
-		    if (i.useC().contains(t)) {
-			putBackLater.put(t, X);
-		    } else { 
-			evictables.put(t, X); 
-		    }
+		    assign(t, i, putBackLater);
 		}
 		
 		Iterator defs = i.defC().iterator();
 		while(defs.hasNext()) {
 		    Temp def = (Temp) defs.next();
-		    // Q: should we also mark writes to hardcoded registers?
 		    if (!isTempRegister(def)) regfile.writeTo(def);
 		}
 		
@@ -969,6 +878,132 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		last = i;
 	    }
+
+	    /** Removes uses of i from `evictables'.
+		modifies: `evictables'
+		effects: Takes any temp used by `i' out of the keyset
+		         for `evictables', returning a map holding the
+			 removed mappings (for later reinsertion into
+			 `evictables').  This way temps used by `i'
+			 will not be considered candidates for
+			 eviction from the register file. 
+	    */ 
+	    private Map takeOutUses(Instr i) {
+		Map putBackLater = new HashMap();
+		Iterator uses = new FilterIterator(i.useC().iterator(),
+						   new MRegFilter());
+		while(uses.hasNext()) {
+		    Temp use = (Temp) uses.next();
+		    if (evictables.containsKey(use)) {
+			putBackLater.put(use, evictables.get(use));
+			evictables.remove(use);
+		    }
+		}
+		return putBackLater;
+	    }
+
+	    /** Assigns `t' in `i'.
+		modifies: `code', `evictables', `regfile', `putBackLater'
+		effects: 
+	           1. (`t' unassigned) => finds reg assignment for `t'
+		   2. Updates structures to reflect assignment for `t'
+		   3. (`t' used but not in regfile) => adds LOAD `t'
+		   4. Puts `t' into `evictables', with updated Weight
+	    */
+	    private void assign(Temp t, Instr i, Map putBackLater) {
+
+		if (regfile.hasAssignment(t)) {
+		    
+		    code.assignRegister(i, t, regfile.getAssignment(t));
+		    evictables.remove(t); // (`t' reinserted later)
+
+		} else { /* not already assigned */ 
+		    
+		    Set preassigns = addPreassignments(t);
+		    Iterator suggs = getSuggestions(t, regfile, i, evictables);
+		    List regList = chooseSuggestion(suggs, t); 
+
+		    code.assignRegister(i, t, regList);
+		    regfile.assign(t, regList);
+			
+		    if (i.useC().contains(t)) {
+			InstrMEM load = new SpillLoad(i, "FSK-LOAD", regList, t);
+			spillLoads.add(load);
+			spillLoads.add(i);
+		    }
+
+		    // remove preassignments
+		    Iterator preassignIter = preassigns.iterator();
+		    while(preassignIter.hasNext()) {
+			regfile.remove((Temp) preassignIter.next());
+		    }
+
+		}
+		    
+		// at this point, 't' has an assignment and needs
+		// to be entered into the 'evictables' pool
+		Integer X = findWeight(t, i);
+		    
+		// don't accidentally make `t' an eviction candidate
+		if (i.useC().contains(t)) {
+		    putBackLater.put(t, X);
+		} else { 
+		    evictables.put(t, X); 
+		}
+	    }
+
+	    /** Finds the weight of `t' when used at `i'.  
+		requires: `t' is used by `i'
+		effects: let w = 2*(distance until the next use) 
+		         in if `t' is dirty 
+			    then returns (w+1) 
+			    else returns w
+	    */
+	    private Integer findWeight(Temp t, Instr i) {
+		Integer X = (Integer) nextRef.get(new TempInstrPair(i, t));
+		    
+		// null => never referenced again; effectively infinite
+		if (X == null) X = INFINITY;
+		    
+		Util.assert(X.intValue() <= (Integer.MAX_VALUE - 1),
+			    "Excessive Weight was stored.");
+		
+		if (regfile.isDirty(t)) {
+		    X = new Integer(X.intValue() + 1);
+		}
+		
+		return X;
+	    }
+
+	    /** Adds conflicting preassigned registers to `regfile'.
+		modifies: `regfile'
+		effects: 
+		  let regs = values mapped to by `t' in `preassignMap'
+		      tmps = new empty set of Temps 
+		  in for each r in regs 
+		         constructs a new PreassignTemp:p for r
+			 assigns p to r in `regfile'
+			 adds p to tmps
+                     returns tmps
+	    */
+	    private Set addPreassignments(Temp t) {
+		Collection preassigns = preassignMap.getValues(t);
+		Set preassignTempSet = new HashSet();
+		
+		Util.assert(preassigns != null,
+			    "preassignMap is missing mappings");
+		Iterator preassignIter = preassigns.iterator();
+		while(preassignIter.hasNext()) {
+		    Temp reg = (Temp) preassignIter.next();
+		    Temp preassign = new RegFileInfo.PreassignTemp(reg);
+		    regfile.assign( preassign, 
+				    Arrays.asList( new Temp[]{ reg }));
+		    preassignTempSet.add(preassign);
+		}
+
+		return preassignTempSet;
+	    }
+
 	    
 	    public void visit(final InstrMOVE i) {
 		List ul = resolve(i.use()[0]);
@@ -1008,6 +1043,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    //				       " to "+regList);
 		} else {
 		    visit((Instr) i);
+		    return;
 		}
 	    }
 

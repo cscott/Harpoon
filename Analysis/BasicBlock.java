@@ -59,7 +59,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.28 2000-05-23 22:06:00 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.29 2000-05-24 18:48:11 pnkfelix Exp $ */
 public class BasicBlock {
     
     static final boolean DEBUG = false;
@@ -232,10 +232,12 @@ public class BasicBlock {
 		    // Invariant: 0 <= ind /\ ind <= size 
 		    int ind = fi; 
 
+		    // checks rep of `this' (for debugging)
 		    private void repOK() {
 			repOK("");
 		    }
 
+		    // checks rep of `this' (for debugging)
 		    private void repOK(String s) {
 			Util.assert(0 <= ind, s+" (0 <= ind), ind:"+ind);
 			Util.assert(ind <= size, s+" (ind <= size), ind:"+ind+", size:"+size);
@@ -250,11 +252,11 @@ public class BasicBlock {
 		    }
 
 		    public boolean hasNext() {
-			repOK();
+			if (DEBUG) repOK();
 			return ind != size;
 		    }
 		    public Object next() {
-			repOK("beginning");			
+			if (DEBUG) repOK("beginning");			
 			if (ind == size) {
 			    throw new NoSuchElementException();
 			}
@@ -272,18 +274,18 @@ public class BasicBlock {
 			    // needs to be able to return it
 			}
 
-			repOK("end");
+			if (DEBUG) repOK("end");
 			return ret;
 		    }
 		    
 		    
 		    public boolean hasPrevious() {
-			repOK();
+			if (DEBUG) repOK();
 			return ind > 0;
 
 		    }
 		    public Object previous() {
-			repOK();
+			if (DEBUG) repOK();
 
 			if (ind <= 0) {
 			    throw new NoSuchElementException();
@@ -296,11 +298,11 @@ public class BasicBlock {
 			}
 			ind--;
 
-			repOK();
+			if (DEBUG) repOK();
 			return next;
 		    } 
 		    public int nextIndex() {
-			repOK();
+			if (DEBUG) repOK();
 			return ind;
 		    }
 		};
@@ -618,7 +620,7 @@ public class BasicBlock {
 		bb.pred_bb = new LinearSet(bb.pred_bb);
 		bb.succ_bb = new LinearSet(bb.succ_bb);
 
-		checkBlock(bb);
+		// FSK: debug checkBlock(bb);
 	    }
 	    
 	}
