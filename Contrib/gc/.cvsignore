@@ -4,3 +4,4 @@ if_not_there
 threadlibs
 base_lib
 gctest
+setjmp_test
