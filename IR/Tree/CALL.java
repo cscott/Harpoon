@@ -5,21 +5,27 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * <code>CALL</code> objects are statements which stand for 
  * non-native method calls.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.13 1999-08-03 21:12:57 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.14 1999-08-03 22:20:37 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
  */
 public class CALL extends INVOCATION {
+    /** Expression indicating the destination of the exception value. */
+    public Exp retex;
+
     public CALL(TreeFactory tf, HCodeElement source,
 		Exp retval, Exp retex, Exp func, ExpList args) {
-	super(tf, source, retval, retex, func, args);
+	super(tf, source, retval, func, args);
     }
   
     public boolean isNative() { return false; }
@@ -56,6 +62,18 @@ public class CALL extends INVOCATION {
 			(Exp)func.rename(tf, ctm),
 			ExpList.rename(args, tf, ctm));
   }
+
+    protected Set defSet() { 
+	Set def = super.defSet();
+	if (retex.kind()==TreeKind.TEMP)  def.add(((TEMP)retex).temp);
+	return def;
+    }
+
+    protected Set useSet() { 
+	Set uses = super.useSet();
+	if (!(retex.kind()==TreeKind.TEMP))  uses.addAll(retex.useSet());
+	return uses;
+    }
 
     public String toString() {
         ExpList list;

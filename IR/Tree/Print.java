@@ -11,7 +11,7 @@ import java.io.PrintWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.14 1999-08-03 21:12:57 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.15 1999-08-03 22:20:37 duncan Exp $
  */
 public class Print {
     final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -72,13 +72,9 @@ public class Print {
         }
 
         public void visit(CALL s) {
-            printInvocation("CALL", s);
-        }
-
-        private void printInvocation(String name, INVOCATION s) {
             ExpList list = s.args;
             indent(indlevel++);
-            pw.print(name + "(");
+            pw.print("CALL" + "(");
             indent(indlevel++);
             pw.print("return value:");
             s.retval.visit(this);
@@ -194,7 +190,28 @@ public class Print {
         }
 
         public void visit(NATIVECALL s) {
-            printInvocation("NATIVECALL", s);
+            ExpList list = s.args;
+            indent(indlevel++);
+            pw.print("NATIVECALL" + "(");
+            indent(indlevel++);
+            pw.print("return value:");
+            s.retval.visit(this);
+            pw.print(",");
+            indent(--indlevel); indlevel++;
+            pw.print("function:");
+            s.func.visit(this);
+            pw.print(",");
+            indent(--indlevel); indlevel++;
+            pw.print("arguments:");
+            while (list != null) {
+                list.head.visit(this);
+                if (list.tail != null) {
+                    pw.print(",");
+                }
+                list = list.tail;
+            }
+            pw.print(")");
+            indlevel -= 2;
         }
 
         public void visit(RETURN s) {
