@@ -2,6 +2,7 @@ package harpoon.Main;
 
 import harpoon.ClassFile.*;
 import harpoon.Analysis.DomTree;
+import harpoon.Analysis.DomFrontier;
 import harpoon.IR.Properties.Edges;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -9,7 +10,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.3 1998-09-15 11:16:13 cananian Exp $
+ * @version $Id: Graph.java,v 1.4 1998-09-16 14:05:25 cananian Exp $
  */
 
 public final class Graph extends harpoon.IR.Registration {
@@ -42,9 +43,16 @@ public final class Graph extends harpoon.IR.Registration {
 			   "height: 800", "width: 500",
 			   "stretch: 60", "shrink: 100",
 			   "display_edge_labels: yes",
-			   "near_edges: no" };
+			   "dirty_edge_labels: yes",
+			   "near_edges: no",
+			   //"infoname 1: \"Dominance Frontier\" ",
+			   //"infoname 2: \"Postdominance frontier\""
+	};
 	for (int i=0; i<setup.length; i++)
 	    out.println(setup[i]);
+	if (args.length>2 && 
+	    (args[2].equals("dom") || args[2].equals("post")))
+	    out.println("layoutalgorithm: tree");
 	
 	HCodeElement[] el = hc.getElements();
 	for (int i=0; i<el.length; i++) {
@@ -52,31 +60,48 @@ public final class Graph extends harpoon.IR.Registration {
 	    out.print("title:\""+el[i].getID()+"\" ");
 	    out.print("label:\"#" + el[i].getID() + ": " + 
 		      escape(el[i].toString())+"\" ");
-	    out.print("shape: box");
+	    out.print("shape: box ");
 	    out.println("}");
 	}
 	if (args.length>2 && 
 	    (args[2].equals("dom") || args[2].equals("post"))) {
 	    DomTree dt = new DomTree(args[2].equals("post"));
+	    DomFrontier df = new DomFrontier(dt);
 	    for (int i=0; i<el.length; i++) {
 		HCodeElement idom = dt.idom(hc, el[i]);
+
+		// make dominance frontier label.
+		HCodeElement frontier[] = df.DF(hc, el[i]);
+		StringBuffer sb = new StringBuffer("DF[");
+		sb.append(el[i].getID()); sb.append("]={");
+		for (int j=0; j<frontier.length; j++) {
+		    sb.append(frontier[j].getID());
+		    if (j < frontier.length-1)
+			sb.append(",");
+		}
+		sb.append("}");
+
 		if (idom!=null)
-		    out.println(edgeString(idom, el[i]));
+		    out.println(edgeString(idom, el[i],
+					   sb.toString()));
 	    }
 	} else {// control flow graph. The HCodeElements better implement Edges
 	    for (int i=0; i<el.length; i++) {
 		HCodeEdge[] next = ((Edges)el[i]).succ();
 		for (int j=0; j<next.length; j++)
-		    out.println(edgeString(next[j].from(), next[j].to()));
+		    out.println(edgeString(next[j].from(), next[j].to(),
+					   Integer.toString(j)));
 	    }
 	}
 	out.println("}");
     }
 
-    static String edgeString(HCodeElement from, HCodeElement to) {
+    static String edgeString(HCodeElement from, HCodeElement to, String label)
+    {
 	return "edge: { " +
 	    "sourcename: \""+from.getID()+"\" " +
 	    "targetname: \""+to.getID()+"\" " +
+	    ( (label==null)?"":("label: \""+label+"\" ") ) +
 	    "}";
     }
 
