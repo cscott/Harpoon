@@ -179,6 +179,10 @@ int done_count;
 
 jint halt_for_GC_flag = 0;
 
+#ifdef WITH_REALTIME_THREADS
+int GC_in_progress = 0;
+#endif
+
 void halt_for_GC() {
 #if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
   if (((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) return;
@@ -198,6 +202,9 @@ void halt_for_GC() {
 /* halt threads and acquire necessary locks */
 void setup_for_threaded_GC() {
   /* get count of the number of threads */
+#ifdef WITH_REALTIME_THREADS
+  GC_in_progress = 1;
+#endif
   pthread_mutex_lock(&gc_thread_mutex);
   pthread_mutex_lock(&running_threads_mutex);
   error_gc("%d threads are running.\n", num_running_threads);
@@ -205,7 +212,7 @@ void setup_for_threaded_GC() {
     pthread_barrier_init(&before, 0, num_running_threads);
     pthread_barrier_init(&after, 0, num_running_threads);
     halt_for_GC_flag = 1;
-    // grab done_mutex before any thread gets past the first barruer
+    // grab done_mutex before any thread gets past the first barrier
     pthread_mutex_lock(&done_mutex);
     pthread_barrier_wait(&before);
     halt_for_GC_flag = 0;
@@ -224,6 +231,9 @@ void cleanup_after_threaded_GC() {
   }
   pthread_mutex_unlock(&gc_thread_mutex);
   pthread_mutex_unlock(&running_threads_mutex);
+#ifdef WITH_REALTIME_THREADS
+  GC_in_progress = 0;
+#endif
 }
 #endif
 
