@@ -38,7 +38,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.10 2000-02-13 20:24:46 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.11 2000-02-14 00:59:52 cananian Exp $
  */
 public abstract class AlgebraicSimplification { 
     private static final boolean debug = false;
@@ -154,7 +154,8 @@ public abstract class AlgebraicSimplification {
 	Util.assert(root != null); 
 
 	// Perform the simpliciation. 
-	SimplificationVisitor sv = new SimplificationVisitor(root, rules); 
+	while (new SimplificationVisitor(root, rules).changed())
+	    /* repeat */ ;
     }
 
     /**
@@ -165,6 +166,7 @@ public abstract class AlgebraicSimplification {
 	/*final*/ private Stack worklist = new Stack(); 
 	/*final*/ private Code  code;
 	/*final*/ private List  rules; 
+	private boolean changed = false;
 
 	public SimplificationVisitor(Stm root, List rules) { 
 	    this.rules = rules; 
@@ -177,6 +179,7 @@ public abstract class AlgebraicSimplification {
 		((Tree)this.worklist.pop()).accept(this); 
 	    }
 	}
+	public boolean changed() { return changed; }
 
 	public void visit(Tree t) { 
 	    throw new Error("No defaults here."); 
@@ -201,6 +204,7 @@ public abstract class AlgebraicSimplification {
 					   simpleE + " by rule " + rule); 
 		    this.code.replace(e, simpleE); 
 		    this.worklist.push(simpleE); 
+		    changed = true;
 		    return; 
 		}
 	    }
@@ -284,6 +288,7 @@ public abstract class AlgebraicSimplification {
 	// const & exp --> exp & const
 	// const | exp --> exp | const
 	// const ^ exp --> exp ^ const
+	// const ==exp --> exp ==const
 	//
 	Rule commute = new Rule() { 
 	    public String toString() { return "commute"; }
@@ -292,7 +297,7 @@ public abstract class AlgebraicSimplification {
 		else { 
 		    BINOP b = (BINOP)e; 
 		    return 
-		        ((_OP(b.op) & (_ADD|_MUL|_AND|_OR|_XOR)) != 0) &&
+		        ((_OP(b.op) & (_ADD|_MUL|_AND|_OR|_XOR|_CMPEQ)) != 0) &&
 		        ((_KIND(b.getLeft()) & (_CONST|_CONST0)) != 0) &&
 		        ((_KIND(b.getRight()) & (_CONST|_CONST0|_CONSTNULL)) == 0) &&
 		        (!b.isFloatingPoint());
@@ -302,6 +307,40 @@ public abstract class AlgebraicSimplification {
 		BINOP b = (BINOP)e; 
 		TreeFactory tf = b.getFactory(); 
 		return new BINOP(tf, b, b.optype, b.op, b.getRight(), b.getLeft()); 
+ 	    }
+	};
+
+
+	// (exp + const) + const --> exp + (const + const)
+	// (exp * const) * const --> exp * (const * const)
+	// (exp & const) & const --> exp & (const & const)
+	// (exp | const) | const --> exp | (const | const)
+	// (exp ^ const) ^ const --> exp ^ (const ^ const)
+	//      note that == is not associative.
+	Rule associate = new Rule() {
+	    public String toString() { return "associate"; }
+	    public boolean match(Exp e) {
+		if (_KIND(e) != _BINOP) return false;
+		BINOP b1 = (BINOP) e; 
+		if (_KIND(b1.getLeft()) != _BINOP) return false;
+		BINOP b2 = (BINOP) b1.getLeft();
+		if (b1.op != b2.op) return false;
+		return
+		((_OP(b1.op) & (_ADD|_MUL|_AND|_OR|_XOR)) != 0) &&
+		((_KIND( b1.getRight() ) & ( _CONST|_CONST0 )) != 0) &&
+		((_KIND( b2.getRight() ) & ( _CONST|_CONST0 )) != 0) &&
+		(b1.operandType() == b2.operandType()) &&
+		(!b1.isFloatingPoint());
+	    }
+	    public Exp apply(Exp e) { 
+		BINOP b1 = (BINOP) e;
+		BINOP b2 = (BINOP) b1.getLeft();
+		TreeFactory tf = b1.getFactory(); 
+		int bop = b1.op, optype = b1.optype;
+		// be careful not to screw with commutativity.
+		return new BINOP(tf, e, optype, bop, b2.getLeft(),
+				 new BINOP(tf, e, optype, bop,
+					   b2.getRight(), b1.getRight()));
  	    }
 	};
 
@@ -416,6 +455,7 @@ public abstract class AlgebraicSimplification {
 	_DEFAULT_RULES.add(combineConstants); 
 	_DEFAULT_RULES.add(removeZero); 
 	_DEFAULT_RULES.add(commute); 
+	_DEFAULT_RULES.add(associate); 
 	_DEFAULT_RULES.add(doubleNegative); 
 	_DEFAULT_RULES.add(negZero); 
 	_DEFAULT_RULES.add(mulToShift); 
