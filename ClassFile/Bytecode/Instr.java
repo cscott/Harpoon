@@ -13,7 +13,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.8 1998-08-05 00:52:25 cananian Exp $
+ * @version $Id: Instr.java,v 1.9 1998-08-05 11:11:19 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -34,10 +34,10 @@ public abstract class Instr implements HCodeElement {
   static int next_id = 0;
   static final Object lock = new Object();
 
-  /** Get the original source file name that this bytecode instruction 
+  /** Returns the original source file name that this bytecode instruction 
    *  is derived from. */
   public String getSourceFile() { return sourcefile; }
-  /** Get the line in the original source file that this bytecode 
+  /** Returns the line in the original source file that this bytecode 
    *  instruction can be traced to. */
   public int getLineNumber() { return linenumber; }
   /** Returns a unique numeric identifier for this element. */
