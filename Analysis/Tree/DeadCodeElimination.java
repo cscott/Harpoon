@@ -37,7 +37,7 @@ import java.util.Set;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCodeElimination.java,v 1.1.2.3 2000-02-17 01:29:29 cananian Exp $
+ * @version $Id: DeadCodeElimination.java,v 1.1.2.4 2000-02-17 03:05:41 cananian Exp $
  */
 public abstract class DeadCodeElimination extends Simplification {
     // hide constructor
@@ -115,6 +115,7 @@ public abstract class DeadCodeElimination extends Simplification {
 		    return contains(_KIND(exp.getExp()), _CONST|_TEMP);
 		}
 	    },
+	    // MOVE(t1, e) --> EXP(e) if t1 is dead after move
 	    new Rule("deadMoves") {
 		public boolean match(Stm s) {
 		    return deadMoves.contains(s);
