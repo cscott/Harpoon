@@ -14,7 +14,7 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.7 2000-01-26 06:06:53 cananian Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.8 2000-01-29 01:27:24 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -44,19 +44,6 @@ public abstract class CodeGen {
 			  int stackspace, 
 			  java.util.Set usedRegisters) {
 	harpoon.Util.Util.assert(false, "abstract me and implement in subclasses");
-    }
-
-
-
-    // Helper methods to avoid package visibility problems in
-    // Generic.Code
-    // CSA: I DON'T LIKE THIS!
-    protected Instr getInstrs(harpoon.Backend.Generic.Code code) {
-	return code.getInstrs();
-    }
-    protected void setInstrs(harpoon.Backend.Generic.Code code,
-			     Instr instrs) {
-	code.setInstrs(instrs);
     }
 
     /** Creates a <code>Instr</code> list from the

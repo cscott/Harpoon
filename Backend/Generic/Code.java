@@ -15,17 +15,21 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.40 2000-01-29 00:13:27 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.41 2000-01-29 01:27:24 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
     
     /** Generates a new <code>Generic.Code</code> from 
 	another <code>Generic.Code</code>, <code>code</code>, with
 	<code>i</code> as the root instruction (instead of whatever
-	root was used in <code>code</code>.
+	root was used in <code>code</code>, and <code>codeName</code>
+	as the value that would be returned by a call
+	<code>getName()</code>.  (the codeName argument is a hack to
+	get around a dependency problem in the constructor for
+	<code>Assem.Code</code>.
     */
-    protected Code(Code code, Instr i) {
-	super(code.getMethod(), code.getFrame());
+    protected Code(Code code, Instr i, String codeName) {
+	super(code.getMethod(), code.getFrame(), codeName);
 	this.instrs = i;
     }
 
@@ -36,12 +40,6 @@ public abstract class Code extends harpoon.IR.Assem.Code {
     }
     
     public abstract String getName();
-
-    // allow code-gen to get/reset the protected instrs field
-    // CSA: I DON'T LIKE THIS!
-    Instr getInstrs() { return instrs; }
-    void setInstrs(Instr instrs) { this.instrs = instrs; }
-    // CSA: END DISLIKE
 
     /** Returns all of the Register <code>Temp</code>s that
 	<code>val</code> maps to in <code>i</code>.

@@ -21,7 +21,7 @@ import java.util.HashSet;
  * violation of the invariant.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: TreeVerifyingVisitor.java,v 1.1.2.2 2000-01-17 23:49:07 cananian Exp $
+ * @version $Id: TreeVerifyingVisitor.java,v 1.1.2.3 2000-01-29 01:27:28 pnkfelix Exp $
  */
 public abstract class TreeVerifyingVisitor extends TreeVisitor {
     
@@ -31,10 +31,11 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
     
 
     public static TreeVerifyingVisitor norepeats() {
+	Util.assert(false);
 	return new NoRepeats();
     }
 
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     public static class NoRepeats extends TreeVerifyingVisitor {
 	HashSet haveSeen = new HashSet();
@@ -67,6 +68,7 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
 	}
 
 	public void visit(SEQ s) {
+	    if(!DEBUG) return;
 	    boolean isFirstCall = firstCall;
 	    if (isFirstCall) firstCall = false;
 	    if (s!= null && haveSeen.contains(s)) saw = s;
@@ -81,6 +83,7 @@ public abstract class TreeVerifyingVisitor extends TreeVisitor {
 			    "should not have seen: "+saw+ " in "+s);
 	}
 	public void visit(ESEQ s) {
+	    if(!DEBUG) return;
 	    boolean isFirstCall = firstCall;
 	    if (isFirstCall) firstCall = false;
 	    if(s != null && haveSeen.contains(s)) saw = s;

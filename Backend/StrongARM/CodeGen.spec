@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.123 2000-01-29 00:13:36 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.124 2000-01-29 01:27:25 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -585,18 +585,6 @@ import java.util.Iterator;
 	    last = in4;
 	}
 	return instr;
-    }
-
-    public void procFixup(HMethod hm, 
-			  harpoon.Backend.Generic.Code code,
-			  int stackspace, Set usedRegisters) {
-	// FSK: sets code.instrs directly instead of returning the new
-	// head Instr.  CSA doesn't like this (it doesn't appeal that
-	// much to me either) 
-
-	Instr instr = getInstrs(code);
-	instr = procFixup(hm, instr, stackspace, usedRegisters);
-	setInstrs(code, instr);
     }
 
     // now define our little InstrENTRY and InstrEXIT sub-types.

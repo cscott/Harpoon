@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.15 2000-01-11 18:34:15 pnkfelix Exp $
+ * @version $Id: SEQ.java,v 1.1.2.16 2000-01-29 01:27:28 pnkfelix Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** The statement to evaluate first. */
@@ -33,8 +33,8 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
 	Util.assert(tf == right.tf, "This and Right must have same tree factory");
 
 
-	//FSK: debugging hack
-	this.accept(TreeVerifyingVisitor.norepeats());
+	// FSK: debugging hack
+	// this.accept(TreeVerifyingVisitor.norepeats());
 
     }
     

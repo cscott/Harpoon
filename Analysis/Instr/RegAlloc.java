@@ -70,18 +70,13 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.68 2000-01-29 00:12:43 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.69 2000-01-29 01:27:16 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
     public static final boolean DEBUG = false;
 
-    // FSK: get rid of this hack after I settle the right approach
-    // to procFixup with Scott.
-    private static final boolean PROC_FIXUP_HACK = true;
-
-    
     protected Frame frame;
     protected Code code;
     protected BasicBlock rootBlock;
@@ -281,13 +276,8 @@ public abstract class RegAlloc  {
 		final Code mycode = globalCode.code;
 		Util.assert(mycode != null);
 
-		if (PROC_FIXUP_HACK) { 
-		  return globalCode.code;  
-		} else return new Code(mycode, instr) {
-		    public String getName() {
-			Util.assert(mycode != null);
-			return mycode.getName(); 
-		    }
+	        return new Code(mycode, instr, mycode.getName()) {
+		    public String getName() { return mycode.getName(); }
 		    public String getRegisterName(Instr i, Temp t,
 						  String s) {
 			return mycode.getRegisterName(i, t, s);
@@ -512,19 +502,11 @@ public abstract class RegAlloc  {
 
 	Instr instr = (Instr) in.getRootElement();
 
-	// might be off by one here (trying to be conservative)
-	final int locals = tf.nextOffset; 
+	final int locals = tf.nextOffset - 1; 
 
-	if (PROC_FIXUP_HACK) { 
-	    frame.getCodeGen().
-		procFixup(in.getMethod(), in, locals,
-			  computeUsedRegs(instr));
-	    return (Instr) in.getRootElement();
-	} else { 
-	    return frame.getCodeGen().
-		procFixup(in.getMethod(), instr, locals, 
-			  computeUsedRegs(instr));
-	}
+	return frame.getCodeGen().
+	    procFixup(in.getMethod(), instr, locals, 
+		      computeUsedRegs(instr));
     }
     
     private Set computeUsedRegs(Instr instrs) {

@@ -32,7 +32,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.3 2000-01-29 00:13:39 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.4 2000-01-29 01:27:26 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -46,15 +46,22 @@ public abstract class Code extends HCode {
     /** The Frame associated with this codeview. */
     protected final Frame frame;
 
+
+    private InstrFactory newINF(final HMethod parent) {
+	return newINF(parent, getName());
+    }
+
     /** Creates a new <code>InstrFactory</code> for this codeview.
      *
      *  @param  parent  The method which this codeview corresponds to.
+     *  @param  codeName The String that would be returned by a call
+     *                   to <code>Code.this.getName()</code>.
      *  @return         Returns a new instruction factory for the scope
      *                  of the parent method and this codeview.
      */
-    private InstrFactory newINF(final HMethod parent) {
+    private InstrFactory newINF(final HMethod parent, String codeName) {
         final String scope = parent.getDeclaringClass().getName() + "." +
-            parent.getName() + parent.getDescriptor() + "/" + getName();
+            parent.getName() + parent.getDescriptor() + "/" + codeName;
         return new InstrFactory() {
             private final TempFactory tf = Temp.tempFactory(scope);
             private int id = 0;
@@ -63,6 +70,14 @@ public abstract class Code extends HCode {
             public Frame getFrame() { return frame; }
             public synchronized int getUniqueID() { return id++; }
         };
+    }
+
+    /** constructor. */
+    protected Code(HMethod parent, Frame frame, String codeName) {
+        this.parent = parent;
+	this.instrs = null;
+	this.inf = newINF(parent, codeName);
+	this.frame = frame;
     }
    
     /** constructor. */

@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.19 2000-01-11 18:34:15 pnkfelix Exp $
+ * @version $Id: MOVE.java,v 1.1.2.20 2000-01-29 01:27:28 pnkfelix Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -48,8 +48,8 @@ public class MOVE extends Stm implements Typed {
 	Util.assert(dst.tf == src.tf, "Dest and Src must have same tree factory");
 	Util.assert(tf == src.tf, "This and Src must have same tree factory");
 
-	//FSK: debugging hack
-	this.accept(TreeVerifyingVisitor.norepeats());
+	// FSK: debugging hack
+	// this.accept(TreeVerifyingVisitor.norepeats());
     }
   
     public Tree getFirstChild() { return this.dst; } 
