@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.55 2003-05-08 20:54:02 cananian Exp $
+% $Id: ptran.tex,v 1.56 2003-05-13 16:06:22 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.55 $ $}
+\date{\today \\ $ $Revision: 1.56 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -71,14 +71,14 @@ class Vector \{\\
 \>Object[] elements;\\
 \>int size;\\
 \>Vector() \{\\
-\>\>this.elements = new Object[10];\\
+\>\>\textbf{this.elements = new Object[10];}\\
 \>\>this.size = 0;\\
 \>\}\\
 \>private void expand() \{\\
 \>\>Object[] nelements = new Object[elements.length*2];\\
 \>\>for (int i=0; i<elements.length; i++)\\
 \>\>\>nelements[i] = elements[i];\\
-\>\>this.elements = nelements;\\
+\>\>\textbf{this.elements = nelements;}\\
 \>\}\\
 \>void add(Object o) \{\\
 \>\>if (size >= elements.length)\\
@@ -93,7 +93,7 @@ class Vector \{\\
 \>\>return size;\\
 \>\}\\
 \>Iterator iterator() \{\\
-\>\>return new Iterator() \{\\
+\>\>return new Iterator() \{ \textit{// also singular}\\
 \>\>\>int i=0;\\
 \>\>\>public boolean hasNext() \{\\
 \>\>\>\>return i < size;\\
@@ -109,19 +109,21 @@ class Vector \{\\
 \}\\
 \end{samplecode}
 \caption{A client call to \texttt{addAll()} in \texttt{java.util.Vector}
-  requires four levels of context-sensitivity to disambiguate.}
+  requires four levels of context-sensitivity to disambiguate.  Our
+  analysis will succeed here by noting the mutual singularity of the
+  values used in the boldface field assignments.}
 \label{fig:vector}
 \end{myfigure}
 
 \begin{myfigure}\small
 \begin{samplecode}
-import java.util.*;\\
-\\
+%import java.util.*;\\
+%\\
 public class Tree \{\\
 \>Comparator c;\\
 \>Node root;\\
 \>Tree() \{\\
-\>\>this.root=null;\\
+\>\>\textbf{this.root=null;}\\
 \>\>this.c=new Comparator() \{\\
 \>\>\>public int compare(Object o1, Object o2) \{\\
 \>\>\>\>return ((Comparable)o1).compareTo(o2);\\
@@ -131,18 +133,18 @@ public class Tree \{\\
 \>void add(Object o) \{\\
 \>\>Node newnode = new Node(o);\\
 \>\>if (root==null) \{\\
-\>\>\>root=newnode;\\
+\>\>\>\textbf{root=newnode;}\\
 \>\>\>return;\\
 \>\>\}\\
 \>\>for (Node n=root; ;) \{\\
 \>\>\>if (c.compare(n.value, o) < 0) \{\\
 \>\>\>\>if (n.left==null) \{\\
-\>\>\>\>\>n.left=newnode;\\
+\>\>\>\>\>\textbf{n.left=newnode;}\\
 \>\>\>\>\>return;\\
 \>\>\>\>\} else n=n.left;\\
 \>\>\>\} else \{\\
 \>\>\>\>if (n.right==null) \{\\
-\>\>\>\>\>n.right=newnode;\\
+\>\>\>\>\>\textbf{n.right=newnode;}\\
 \>\>\>\>\>return;\\
 \>\>\>\>\} else n=n.right;\\
 \>\>\>\}\\
@@ -157,7 +159,9 @@ class Node \{\\
 \>\}\\
 \}\\
 \end{samplecode}
-\caption{An implementation of a tree-based collection.}
+\caption{An implementation of a tree-based collection.  Our analysis
+  will disambiguate \texttt{Node}s by utilizing the mutual singularity
+  of the values used in the boldface field assignments.}
 \label{fig:tree}
 \end{myfigure}
 
@@ -167,7 +171,7 @@ import java.util.*;\\
 \\
 class Tree2 extends Tree \{\\
 \>Iterator iterator() \{\\
-\>\>return new Iterator() \{\\
+\>\>\textbf{return new Iterator()} \{\\
 \>\>\>List stack = null;\\
 \>\>\>\{ for (Node n=root; n!=null; n=n.left)\\
 \>\>\>\>stack = new List(n, stack);\\
@@ -196,7 +200,9 @@ class List \{\\
 \>\}\\
 \}\\
 \end{samplecode}
-\caption{A typical iterator class.}
+\caption{A typical iterator class.  It is important for the analysis
+  to note that the return value of the \texttt{iterator()} method is
+  singular.}
 \label{fig:iterator}
 \end{myfigure}
 
@@ -333,6 +339,13 @@ use $s$ as:
        \end{cases}
 \end{displaymath}
 
+Note that the definition of $\func{GenSite}$ is similar to a
+transitive closure over move statements of the $\func{RD}$ (reaching
+definitions) function.  We will therefore use $\func{RD}^*$ to
+represent our dataflow computation of $\func{GenSite}$, and we will
+define a function $\func{RU}^*$ which is a similarly-tweaked version
+of standard \newterm{reaching uses}.
+
 We perform a dataflow analysis to determine
 $\func{RD}^*_\text{in}[s]:\mathcal{V}\to(2^\mathcal{S})_\bot$, the set
 of reaching generation sites for a variable $v$ at statement $s$.
@@ -359,38 +372,38 @@ A_1 \cup A_2 & \text{otherwise}
 \end{cases}
 \end{displaymath}
 
-We also define a ``reaching uses'' analysis,
-$\func{RU}_\text{in}[s] : \mathcal{S}\to 2^\mathcal{V\times S}$ which
+We define a ``reaching generation sites'' analysis,
+$\func{RU}^*_\text{in}[s] : \mathcal{S}\to 2^\mathcal{V\times S}$ which
 maps definition sites to a set of static values using the values
-generated at those sites.  Initially, let $\func{RU}_\text{in}$ map
+generated at those sites.  Initially, let $\func{RU}^*_\text{in}$ map
 every statement to the empty set.  The update rules are:
 \\
 \begin{tabular}{lll}
 &\textbf{Statement}&\textbf{Update Rule}\\\hline
-$s$: & $t_0=\text{\tt new }T$ & $\func{RU}'_\text{out}[s]=\func{RU}_\text{in}[s]\left[s:=\emptyset\right]$ \\
-$s$: & $t_0=t_1$ &  $\func{RU}'_\text{out}[s]=\func{RU}_\text{in}[s]$ \\
+$s$: & $t_0=\text{\tt new }T$ & $\func{RU}^{*'}_\text{out}[s]=\func{RU}^*_\text{in}[s]\left[s:=\emptyset\right]$ \\
+$s$: & $t_0=t_1$ &  $\func{RU}^{*'}_\text{out}[s]=\func{RU}^*_\text{in}[s]$ \\
 $s$: & $t_0=\ldots t_1 \ldots t_n \ldots$ &
- $\func{RU}'_\text{out}[s]=\lambda s' . \begin{cases}
+ $\func{RU}^{*'}_\text{out}[s]=\lambda s' . \begin{cases}
 \emptyset &\text{if }s'=s\text{, else}\\
-\func{RU}_\text{in}[s](s')\cup\left\{s\right\}
+\func{RU}^*_\text{in}[s](s')\cup\left\{s\right\}
  & \text{if }s'\in\func{RD}^*_\text{in}[s]\left[\left\{t_1\ldots
     t_n\right\}\right] \\
-\func{RU}_\text{in}[s](s') & \text{otherwise} \\
+\func{RU}^*_\text{in}[s](s') & \text{otherwise} \\
 \end{cases}$ \\
-$s$: & \texttt{<other stmt>} &  $\func{RU}'_\text{out}[s]=\func{RU}_\text{in}[s]$ \\
+$s$: & \texttt{<other stmt>} &  $\func{RU}^{*'}_\text{out}[s]=\func{RU}^*_\text{in}[s]$ \\
 \end{tabular}
 \\
 and the join rule is:
 \begin{displaymath}
-\func{RU}_\text{in}[s] = \lambda s'.\bigcup_{p\in\func{pred}(s)} \func{RU}_\text{out}[p](s')
+\func{RU}^*_\text{in}[s] = \lambda s'.\bigcup_{p\in\func{pred}(s)} \func{RU}^*_\text{out}[p](s')
 \end{displaymath}
 
-A set of static values $\bigvar{SV} \subseteq V \times S$ are mutually
-singular iff
+Now we can say that a set of static values $\bigvar{SV} \subseteq V \times S$
+are (conservatively) mutually singular if
 \begin{displaymath}
   \forall \tuple{v,s}\in \bigvar{SV} : \func{RD}^*_\text{in}[s](v) \neq \bot
   \wedge 
-  \left(\bigvar{SV}\cap\func{RU}_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
+  \left(\bigvar{SV}\cap\func{RU}^*_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
 \end{displaymath}
 
 \subsection{Interprocedural singular value analysis}
@@ -430,7 +443,7 @@ p & \text{if }v=formal(p)\text{ and }s=s_0\\
 where $s_0$ is the unique header statement for the method.
 The remainder of the $\func{RD}^*$ analysis is identical.
 
-We also extend the type of the function $\func{RU}[s]$ from
+We also extend the type of the function $\func{RU}^*[s]$ from
 $\mathcal{S}\to 2^\mathcal{V\times S}$ to
 $(\mathcal{S}\cup\mathcal{P})\to 2^\mathcal{V\times S}$.
 This will accomodate the expanded type of the $\func{RD}^*$ function,
@@ -442,13 +455,13 @@ Now we can define
     \bigcup_{\tuple{v,s}\in\bigvar{SV}} \func{RD}^*_\text{in}[s](v)
 \end{displaymath}
 
-A set of static values $\bigvar{SV}$ is
-mutually-singular conditional on $P$ iff
+A set of static values $\bigvar{SV}$ is (conservatively)
+mutually-singular conditional on $P$ if
 $$P=\func{CondParam}(\bigvar{SV})$$ and
 \begin{displaymath}
   \forall \tuple{v,s}\in \bigvar{SV} : \func{RD}^*_\text{in}[s](v) \neq \bot
   \wedge 
-  \left(\bigvar{SV}\cap\func{RU}_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
+  \left(\bigvar{SV}\cap\func{RU}^*_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
 \end{displaymath}
 as before.
 
