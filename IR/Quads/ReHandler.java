@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.37 1999-11-05 07:29:23 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.38 1999-11-06 06:20:44 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -138,7 +138,7 @@ final class ReHandler {
 	WorkSet todo=new WorkSet();
 	todo.push(qm.getHead((Quad)e.to()));
 	boolean  change=true;
-	WorkSet handlerset=new WorkSet();
+        ArrayList handlerset=new ArrayList();
 	while (change) {
 	    while(!todo.isEmpty()) {
 		Quad quad=(Quad)todo.pop();
@@ -158,7 +158,7 @@ final class ReHandler {
 		    while (enum.hasMoreElements()) {
 			if (reachable.contains(enum.nextElement())) {
 			    todo.push(h);
-			    handlerset.push(h);
+			    handlerset.add(h);
 			    change=true;
 			    break;
 			}
@@ -184,8 +184,12 @@ final class ReHandler {
 	Quad.addEdge(qH, 1, qM, 0);
 	Quad.addEdge(qM, 0, qm.getHead((Quad)e.to()), e.which_pred());
 	Iterator iterate=handlerset.iterator();
-	for (int i=1; iterate.hasNext();i++)
-	    Quad.addEdge(qM, i, (Quad)iterate.next(),0);
+	for (int i=1; iterate.hasNext();i++) {
+	    Object ij;
+	    System.out.println(ij=iterate.next());
+	    Quad.addEdge(qM, i, (Quad)ij,0);
+	    //	    Quad.addEdge(qM, i, (Quad)iterate.next(),0);
+	}
 
 
 	// Modify this new CFG by emptying PHI nodes
