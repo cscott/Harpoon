@@ -214,7 +214,7 @@ public class LabelBlue extends Node {
     */
     protected void calibrate(ImageData imageData) {
 	//first find maximum blue diff and average blue diff
-	System.out.println("Calibrating LabelBlue node");
+	//	System.out.println("Calibrating LabelBlue node");
 	rvals = imageData.rvals;
 	gvals = imageData.gvals;
 	bvals = imageData.bvals;
