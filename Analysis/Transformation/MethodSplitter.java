@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.4 2002-04-10 03:01:54 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.5 2002-06-11 20:25:29 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -173,7 +173,13 @@ public abstract class MethodSplitter implements java.io.Serializable {
 	if (m.isStatic()) return false;
 	if (Modifier.isPrivate(m.getModifiers())) return false;
 	if (m instanceof HConstructor) return false;
-	if (fm.isFinal(m)) return false;
+	if (!m.getDeclaringClass().isArray())
+	    // XXX arrays are somewhat misleadingly classified as 'final'
+	    // even though we provide for inheritance of clone() methods
+	    // and such between array classes. =(
+	    // (this is the fruit of the strange discrepancies in array
+	    //  inheritance.  does A[] derive from Object[] or from Object?)
+	    if (fm.isFinal(m)) return false;
 	return true;
     }
 
