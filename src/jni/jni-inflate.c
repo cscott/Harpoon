@@ -78,7 +78,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #elif defined(BDW_CONSERVATIVE_GC)
     /* register finalizer to deallocate inflated_oobj on gc */
     if (GC_base(obj)!=NULL) {// skip if this is not a heap-allocated object
-        GC_register_finalizer(GC_base(obj), deflate_object,
+        GC_register_finalizer_no_order(GC_base(obj), deflate_object,
 			      (GC_PTR) ((void*)obj-(void*)GC_base(obj)),
 			      &(infl->old_finalizer),
 			      &(infl->old_client_data));
