@@ -79,7 +79,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.1.2.4 2000-03-29 23:45:58 cananian Exp $
+ * @version $Id: EDMain.java,v 1.1.2.5 2000-03-30 00:45:57 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -94,10 +94,8 @@ public class EDMain extends harpoon.IR.Registration {
     private static boolean OPTIMIZE = false;
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
-    private static HClass  singleClass = null; // for testing single classes
+    private static String  singleClass = null; // for testing single classes
     
-    private static Linker linker = new Relinker(Loader.systemLinker);
-
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
@@ -116,11 +114,24 @@ public class EDMain extends harpoon.IR.Registration {
 
 
     static class Stage1 implements Serializable {
+	HMethod mo;
 	Linker linker;
 	HCodeFactory hco;
 	ClassHierarchy chx;
-	Stage1(HMethod mo) {
-	    linker = EDMain.linker;
+	Stage1(Linker linker) {
+	    this.linker = linker; this.mo = mo;
+
+	    Util.assert(className!= null, "must pass a class to be compiled");
+
+	    HClass cls = linker.forName(className);
+	    HMethod hm[] = cls.getDeclaredMethods();
+	    for (int i=0; i<hm.length; i++) {
+		if (hm[i].getName().equals("main")) {
+		    mo = hm[i];
+		    break;
+		}
+	    }
+
 	    hco = 
 		new harpoon.ClassFile.CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(), true);
 	    
@@ -133,12 +144,14 @@ public class EDMain extends harpoon.IR.Registration {
 	}
     }
     static class Stage2 implements Serializable {
+	HMethod mo;
 	Linker linker;
 	HCodeFactory hco;
 	MetaCallGraph mcg;
-	Stage2(HMethod mo, Stage1 stage1) {
+	Stage2(Stage1 stage1) {
 	    linker = stage1.linker;
 	    hco = stage1.hco;
+	    mo = stage1.mo;
 	    CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
 
 	    // costruct the set of all the methods that might be called by 
@@ -154,11 +167,13 @@ public class EDMain extends harpoon.IR.Registration {
 	}
     }
     static class Stage3 implements Serializable {
+	HMethod mo;
 	Linker linker;
 	HCodeFactory hcf;
 	HMethod mconverted;
-	Stage3(HMethod mo, Stage2 stage2) {
+	Stage3(Stage2 stage2) {
 	    linker = stage2.linker;
+	    mo = stage2.mo;
 	    HCodeFactory ccf=harpoon.IR.Quads.QuadSSI.codeFactory(stage2.hco);
 	    System.out.println("Doing CachingCodeFactory");
 	    CachingCodeFactory hcfe = new CachingCodeFactory(ccf, true);
@@ -219,19 +234,8 @@ public class EDMain extends harpoon.IR.Registration {
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
+	Linker linker;
 	parseOpts(args);
-	Util.assert(className!= null, "must pass a class to be compiled");
-
-
-	HMethod mo = null;
-	HClass cls = linker.forName(className);
-	HMethod hm[] = cls.getDeclaredMethods();
-	for (int i=0; i<hm.length; i++) {
-	    if (hm[i].getName().equals("main")) {
-		mo = hm[i];
-		break;
-	    }
-	}
 
 	File stage3file = new File("stage-3");
 	Stage3 stage3 = null;
@@ -245,13 +249,14 @@ public class EDMain extends harpoon.IR.Registration {
 		Stage1 stage1 = null;
 		if (stage1file.exists()) stage1=(Stage1)load(stage1file);
 		if (stage1==null) {
-		    stage1=new Stage1(mo); save(stage1file, stage1);
+		    linker = new Relinker(Loader.systemLinker);
+		    stage1 = new Stage1(linker); save(stage1file, stage1);
 		}
 		// done with stage 1.
-		stage2 = new Stage2(mo, stage1); save(stage2file, stage2);
+		stage2 = new Stage2(stage1); save(stage2file, stage2);
 	    }
 	    // done with stage 2.
-	    stage3 = new Stage3(mo, stage2); save(stage3file, stage3);
+	    stage3 = new Stage3(stage2); save(stage3file, stage3);
 	}
 	// done with stage 3.
 	linker = stage3.linker;
@@ -263,7 +268,7 @@ public class EDMain extends harpoon.IR.Registration {
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf, true);
 
 	HClass hcl = linker.forName(className);
-	hm = hcl.getDeclaredMethods();
+	HMethod[] hm = hcl.getDeclaredMethods();
 	HMethod mainM = stage3.mconverted;
 
 	Util.assert(mainM != null, "Class " + className + 
@@ -318,7 +323,8 @@ public class EDMain extends harpoon.IR.Registration {
 	if (singleClass!=null || !ONLY_COMPILE_MAIN) {
 	    while(classes.hasNext()) {
 		HClass hclass = (HClass) classes.next();
-		if (singleClass!=null && singleClass!=hclass) continue;//skip
+		if (singleClass!=null && singleClass.equals(hclass.getName()))
+		    continue;
 		messageln("Compiling: " + hclass.getName());
 		
 		try {
@@ -344,7 +350,7 @@ public class EDMain extends harpoon.IR.Registration {
 		    
 		    out.println();
 		    messageln("Writing data for " + hclass.getName());
-		    outputClassData(hclass, out);
+		    outputClassData(linker, hclass, out);
 		    
 		    out.close();
 		} catch (IOException e) {
@@ -495,7 +501,7 @@ public class EDMain extends harpoon.IR.Registration {
 	sahcf.clear(hmethod);
     }
     
-    public static void outputClassData(HClass hclass, PrintWriter out) 
+    public static void outputClassData(Linker linker, HClass hclass, PrintWriter out) 
 	throws IOException {
       Iterator it=frame.getRuntime().classData(hclass).iterator();
       // output global data with the java.lang.Object class.
@@ -629,7 +635,7 @@ public class EDMain extends harpoon.IR.Registration {
 	    case '1':  
 		String optclassname = g.getOptarg();
 		if (optclassname!=null) {
-		    singleClass = linker.forName(optclassname);
+		    singleClass = optclassname;
 		} else {
 		    ONLY_COMPILE_MAIN = true;
 		}
