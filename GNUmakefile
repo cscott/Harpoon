@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.47 1999-06-30 17:48:29 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.48 1999-07-17 11:55:50 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -97,7 +97,7 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 	  $(MAKE) first; \
 	fi
 #	javac goes nuts unless Tree.java is first. <grumble>
-	${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
+	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
 		egrep -v '^\[[lc]'
 	@$(MAKE) --no-print-directory properties
 	touch java
