@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-proposal.tex,v 1.3 2004-09-03 16:49:46 cananian Exp $
+% $Id: phd-proposal.tex,v 1.4 2004-09-03 17:38:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,oneside]{article}
 %\usepackage{pdffonts}
@@ -238,6 +238,73 @@ like cache size or memory size, which can vary without affecting the
 portability of binaries.
 
 \subsection{Language-level Approaches to Synchronization}
+\begin{figure}[t]
+{\it
+\begin{tabular}{l}
+{\bf const} myDirectory == {\bf object} oneEntryDirectory\\
+~~{\bf export} Store, Lookup\\
+~~{\bf monitor}\\
+~~~~{\bf var} name : String\\
+~~~~{\bf var} AnObject : Any\\
+\\
+~~~~{\bf operation} Store [ n : String, o : Any ]\\
+~~~~~~name $\gets$ n\\
+~~~~~~AnObject $\gets$ o\\
+~~~~{\bf end} Store
+\\
+~~~~{\bf function} Lookup [ n : String ] $\to$ [ o : Any ]\\
+~~~~~~{\bf if} n = name\\
+~~~~~~~~{\bf then} o $\gets$ AnObject\\
+~~~~~~~~{\bf else} o $\gets$ {\bf nil}\\
+~~~~~~{\bf end if}\\
+~~~~{\bf end} Lookup\\
+\\
+~~~~{\bf initially}\\
+~~~~~~name $\gets$ {\bf nil}\\
+~~~~~~AnObject $\gets$ {\bf nil}\\
+~~~~{\bf end initially}\\
+\\
+~~{\bf end monitor}\\
+{\bf end} oneEntryDirectory
+\end{tabular}
+}
+\caption{A directory object in Emerald, from \cite{BlackHuJuLe86},
+  illustrating the use of monitor synchronization.}
+\label{fig:emerald-dir}
+\end{figure}
+
+\begin{figure}[t]
+{\ttfamily\small\vspace{.25in}
+\begin{tabular}{l}
+class Account \{\\
+\\
+~~int balance = 0;\\
+\\
+~~{\bf atomic} int deposit(int amt) \{\\
+~~~~int t = this.balance;\\
+~~~~t = t + amt;\\
+~~~~this.balance = t;\\
+~~~~return t;\\
+~~\}\\
+\\
+~~{\bf atomic} int readBalance() \{\\
+~~~~return this.balance;\\
+~~\}\\
+\\
+~~{\bf atomic} int withdraw(int amt) \{\\
+~~~~int t = this.balance;\\
+~~~~t = t - amt;\\
+~~~~this.balance = t;\\
+~~~~return t;\\
+~~\}\\
+\\
+\}\\
+\end{tabular}
+}\vspace{.2in}
+\caption{A simple bank account object, adapted from \cite{FlanaganQa03},
+  illustrating the use of the \atomic modifier.}
+\label{fig:atomic}
+\end{figure}
 
 Our work on integrating transactions into the Java programming
 language is related to prior work on integrating synchronization
