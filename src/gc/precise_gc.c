@@ -23,7 +23,8 @@ static int check_gc_index = 1;
 #include "asm/stack.h" /* snarf in the stack trace functions. */
 #endif /* HAVE_STACK_TRACE_FUNCTIONS */
 
-void precise_gc_init() {
+void precise_gc_init()
+{
 #ifdef WITH_HEAVY_THREADS
     error_gc("Heavy threads\n", "");
 #endif
@@ -38,6 +39,28 @@ void precise_gc_init() {
 #endif
   internal_gc_init();
 }
+
+
+/* effects: forces garbage collection to occur */
+inline void precise_collect()
+{
+  internal_collect();
+}
+
+
+/* returns: amt of free memory available */
+inline jlong precise_free_memory()
+{
+  return internal_free_memory();
+}
+
+
+/* returns: size of heap */
+inline jlong precise_get_heap_size()
+{
+  return internal_get_heap_size();
+}
+
 
 #ifdef WITH_PRECISE_C_BACKEND
 inline void *precise_malloc (size_t size_in_bytes)
@@ -182,13 +205,20 @@ void print_bitmap(ptroff_t bitmap)
 /* trace takes a pointer to an object and traces the pointers w/in it */
 void trace(jobject_unwrapped unaligned_ptr)
 {
-  jobject_unwrapped obj = PTRMASK(unaligned_ptr);
+  jobject_unwrapped obj;
   size_t obj_size_minus_header;
   int bits_needed, bitmaps_needed, i;
   ptroff_t *bitmap_ptr;
   struct aarray *arr = NULL;
   jobject_unwrapped *fields;
   jobject_unwrapped *elements = NULL;
+  struct claz *claz_ptr;
+
+  obj = PTRMASK(unaligned_ptr);
+
+  claz_ptr = obj->claz;
+
+  assert(&claz_start <= claz_ptr && claz_ptr < &claz_end);
 
   // each word in the object (excluding the header words) is
   // represented by a corresponding bit in the GC bitmap. if
@@ -198,10 +228,10 @@ void trace(jobject_unwrapped unaligned_ptr)
   // future, we may be cleverer by stealing the low bit to
   // determine whether the in-line bitmap is used, since the
   // low 2 bits are free when we use the auxiliary bitmap.
-  obj_size_minus_header = obj->claz->size - sizeof(struct oobj);
+  obj_size_minus_header = claz_ptr->size - OBJ_HEADER_SIZE;
   bits_needed = (obj_size_minus_header + SIZEOF_VOID_P - 1)/SIZEOF_VOID_P;
 
-  if (obj->claz->component_claz != NULL)
+  if (claz_ptr->component_claz != NULL)
     {
       // for arrays, we keep an extra bit for fields
       bits_needed++;
@@ -214,16 +244,16 @@ void trace(jobject_unwrapped unaligned_ptr)
     fields = (jobject_unwrapped *)(obj->field_start);
 
   bitmaps_needed = (bits_needed + BITS_IN_GC_BITMAP - 1)/BITS_IN_GC_BITMAP;
-  error_gc("object size = %d bytes\n", obj->claz->size);
-  error_gc("header size = %d bytes\n", sizeof(struct oobj));
+  error_gc("object size = %d bytes\n", claz_ptr->size);
+  error_gc("header size = %d bytes\n", OBJ_HEADER_SIZE);
   error_gc("obj_size_minus_header = %d bytes\n", obj_size_minus_header);
   error_gc("bitmaps_needed = %d\n", bitmaps_needed);
   assert(bitmaps_needed >= 0);
 
   if (bitmaps_needed > 1)
-    bitmap_ptr = obj->claz->gc_info.ptr;
+    bitmap_ptr = claz_ptr->gc_info.ptr;
   else
-    bitmap_ptr = &(obj->claz->gc_info.bitmap);
+    bitmap_ptr = &(claz_ptr->gc_info.bitmap);
 
   // the outer loop iterates through the bitmaps
   // the inner loop iterates through the bits
@@ -288,6 +318,7 @@ void trace(jobject_unwrapped unaligned_ptr)
 }
 
 
+
 /* requires: if the object being pointed to by obj is in the middle
              of being examined, last_index gives the previous field 
 	     or array index at which there was a pointer. otherwise,
@@ -308,8 +339,16 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
   int i, bits_needed, bitmaps_needed;
   ptroff_t *bitmap_ptr;
   ptroff_t next_index;
+  struct claz *claz_ptr;
 
   assert(new == 0 || new == 1);
+
+  // should only be called w/ aligned ptrs
+  assert(obj == PTRMASK(obj));
+
+  claz_ptr = obj->claz;
+
+  assert(&claz_start <= claz_ptr && claz_ptr < &claz_end);
 
   // if we've already started looking at the object, 
   // next_index and i will be initialized differently
@@ -328,12 +367,12 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
   // word in the object. if the object size (minus header)
   // is too big to be encoded in the in-line bitmap, then it's
   // put in the auxiliary bitmap
-  obj_size_minus_header = obj->claz->size - sizeof(struct oobj);
+  obj_size_minus_header = claz_ptr->size - OBJ_HEADER_SIZE;
   bits_needed = (obj_size_minus_header + SIZEOF_VOID_P - 1)/SIZEOF_VOID_P;
 
   // if we are looking at the elements of the array, we may not
   // need to examine the bitmap again at all
-  if (obj->claz->component_claz != NULL)
+  if (claz_ptr->component_claz != NULL)
     {
       struct aarray *arr = (struct aarray *)obj;
       error_gc("Array has length %d.\n", arr->length);
@@ -357,9 +396,9 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
   assert(bitmaps_needed >= 0);
   
   if (bitmaps_needed > 1)
-    bitmap_ptr = obj->claz->gc_info.ptr;
+    bitmap_ptr = claz_ptr->gc_info.ptr;
   else
-    bitmap_ptr = &(obj->claz->gc_info.bitmap);
+    bitmap_ptr = &(claz_ptr->gc_info.bitmap);
   
   // after the first time around the outer loop, next_index
   // needs to be initialized relative to i
@@ -376,7 +415,18 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
       for ( ; bitmap != 0; next_index++) {
 	// stop when we get to the first set bit
 	if (bitmap & 1)
-	  return (INDEX_OFFSET + next_index);
+	  {
+	    // need to check for zero-length arrays
+	    if (claz_ptr->component_claz != NULL)
+	      {
+		struct aarray *arr = (struct aarray *)obj;
+
+		// check if we are looking at the last bit
+		if (next_index == bits_needed - 1 && arr->length == 0)
+		  return NO_POINTERS;
+	      }
+	    return (INDEX_OFFSET + next_index);
+	  }
 
 	// as we examine each bit in the bitmap, we 
 	// shift the bitmap right.

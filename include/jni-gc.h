@@ -3,12 +3,6 @@
 
 //#define DEBUG_GC
 
-#ifdef DEBUG_GC
-# define error_gc(fs,a) ({ printf(fs, a); fflush(stdout); })
-#else
-# define error_gc(fs,a) (/* do nothing */0)
-#endif
-
 #if defined(WITH_PRECISE_GC) || defined(WITH_SEMI_PRECISE_GC)
 # define WORDSZ          (SIZEOF_VOID_P*8)
 # define WORDSZ_IN_BYTES  SIZEOF_VOID_P
@@ -16,8 +10,35 @@
 
 #ifdef WITH_PRECISE_GC
 
+#ifdef DEBUG_GC
+# define error_gc(fs,a) ({ printf(fs, a); fflush(stdout); })
+#else
+# define error_gc(fs,a) (/* do nothing */0)
+#endif
+
+#ifdef DEBUG_GC
+#if defined(WITH_MARKSWEEP_GC)
+# include "../src/gc/marksweep.h"
+# define precise_gc_cleanup     marksweep_cleanup
+#elif defined(WITH_COPYING_GC)
+# include "../src/gc/copying.h"
+# define precise_gc_cleanup     copying_cleanup
+#endif
+#else
+# define precise_gc_cleanup()
+#endif
+
+/* returns: amt of free memory available */
+jlong precise_free_memory ();
+
 /* effects: setup and initialization for the GC */
 void precise_gc_init ();
+
+/* returns: size of heap */
+jlong precise_get_heap_size ();
+
+/* effects: forces garbage collection to occur */
+void precise_collect ();
 
 /* effects: given the struct FNI_Thread_State ptr of a
             thread, adds its thread-local references to 

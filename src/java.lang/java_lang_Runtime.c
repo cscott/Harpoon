@@ -51,6 +51,8 @@ JNIEXPORT jlong JNICALL Java_java_lang_Runtime_freeMemory
   (JNIEnv *env, jobject objRuntime) {
 #ifdef BDW_CONSERVATIVE_GC
   return (jlong) GC_get_free_bytes();
+#elif defined(WITH_PRECISE_GC)
+  return precise_free_memory();
 #else
   assert(0/*unimplemented*/);
 #endif
@@ -65,6 +67,8 @@ JNIEXPORT jlong JNICALL Java_java_lang_Runtime_totalMemory
   (JNIEnv *env, jobject objRuntime) {
 #ifdef BDW_CONSERVATIVE_GC
   return (jlong) GC_get_heap_size();
+#elif defined(WITH_PRECISE_GC)
+  return precise_get_heap_size();
 #else
   assert(0/*unimplemented*/);
 #endif
@@ -79,6 +83,8 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_gc
   (JNIEnv *env, jobject objRuntime) {
 #ifdef BDW_CONSERVATIVE_GC
   GC_gcollect();
+#elif defined(WITH_PRECISE_GC)
+  precise_collect();
 #else
   assert(0/*unimplemented*/);
 #endif
@@ -93,6 +99,9 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_runFinalization
   (JNIEnv *env, jobject objRuntime) {
 #ifdef BDW_CONSERVATIVE_GC
   GC_invoke_finalizers();
+#elif defined(WITH_PRECISE_GC)
+  /* unimplemented */
+  printf("WARNING: Finalization not implemented for precise GC.\n");
 #else
   assert(0/*unimplemented*/);
 #endif

@@ -9,47 +9,43 @@
 
 #if defined(WITH_MARKSWEEP_GC)
 #include "marksweep.h"
-#define add_to_root_set        pointerreversed_handle_reference
-//#define add_to_root_set        marksweep_handle_reference
-#define internal_gc_init       marksweep_gc_init
-#define handle_reference       pointerreversed_handle_reference
-//#define handle_reference       marksweep_handle_reference
-#define internal_collect       marksweep_collect
-#define internal_free_memory   marksweep_free_memory
-#define internal_get_heap_size marksweep_get_heap_size
-#define internal_malloc        marksweep_malloc
+# define add_to_root_set        pointerreversed_handle_reference
+//# define add_to_root_set        marksweep_handle_reference
+# define internal_gc_init       marksweep_gc_init
+# define handle_reference       pointerreversed_handle_reference
+//# define handle_reference       marksweep_handle_reference
+# define internal_collect       marksweep_collect
+# define internal_free_memory   marksweep_free_memory
+# define internal_get_heap_size marksweep_get_heap_size
+# define internal_malloc        marksweep_malloc
 #elif defined(WITH_COPYING_GC)
-#include "copying.h"
-#define add_to_root_set        copying_handle_reference
-#define internal_gc_init       copying_gc_init
-#define handle_reference       copying_handle_reference
-#define internal_collect()     copying_collect((int)0)
-#define internal_free_memory   copying_free_memory
-#define internal_get_heap_size copying_get_heap_size
-#define internal_malloc        copying_malloc
+# include "copying.h"
+# define add_to_root_set        copying_handle_reference
+# define internal_gc_init       copying_gc_init
+# define handle_reference       copying_handle_reference
+# define internal_collect()     copying_collect((int)0)
+# define internal_free_memory   copying_free_memory
+# define internal_get_heap_size copying_get_heap_size
+# define internal_malloc        copying_malloc
 #endif
-
-#ifndef WITH_SINGLE_WORD_ALIGN
-# define ALIGN                  7
-#else
-# define ALIGN                  3
-#endif
-
-#define BITMASK               (~ALIGN)
-#define HEADERSZ               3 /* size of array header */
 
 #ifdef WITH_MASKED_POINTERS
-#define TAG_HEAP_PTR(x) ((void*) ((ptroff_t)(x) | 1))
+# define TAG_HEAP_PTR(x) ((void*) ((ptroff_t)(x) | 1))
 #else
-#define TAG_HEAP_PTR(x) ((void*) (x))
+# define TAG_HEAP_PTR(x) ((void*) (x))
 #endif
 
-#define align(_unaligned_size_) (((_unaligned_size_) + ALIGN) & BITMASK)
-#define aligned_size_of_np_array(_np_arr_) \
-(align((HEADERSZ * WORDSZ_IN_BYTES + \
-	(_np_arr_)->length * (_np_arr_)->obj.claz->component_claz->size)))
-#define aligned_size_of_p_array(_p_arr_) \
-(align((HEADERSZ + (_p_arr_)->length) * WORDSZ_IN_BYTES))
+#ifdef WITH_SINGLE_WORD_ALIGN
+# define ALIGN_TO  4 /* bytes */
+#else
+# define ALIGN_TO  8 /* bytes */
+#endif
+
+#define ALIGNMENT               (ALIGN_TO - 1)
+#define SIZE_MASK               (~ALIGNMENT)
+#define OBJ_HEADER_SIZE         (sizeof(struct oobj))
+
+#define align(_unaligned_size_) (((_unaligned_size_) + ALIGNMENT) & SIZE_MASK)
 
 #ifndef WITH_THREADED_GC
 #define halt_for_GC()

@@ -47,7 +47,7 @@ cat > $tmpsed <<-__EOF__
 	  i\\
 	    /* BEGIN FLEX ADDITIONS */\\
 	    /* unmarked segments */\\
-	    . = ALIGN(4) ; *(.flex.class)\\
+	    . = ALIGN(4) ; claz_start = . ; *(.flex.class) claz_end = . ;\\
 	    . = ALIGN(4) ; *(.flex.init_data)\\
 	    . = ALIGN(4) ; *(.flex.static_primitives)\\
 	    . = ALIGN(4) ; *(.flex.string_data)\\

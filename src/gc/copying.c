@@ -40,7 +40,10 @@ static int num_mallocs = 0;
 static size_t total_memory_requested = 0;
 #endif
 
-#ifdef WITH_THREADED_GC
+#ifndef WITH_THREADED_GC
+#define ENTER_COPYING_GC()
+#define EXIT_COPYING_GC()
+#else
 /* mutex for the GC variables */
 FLEX_MUTEX_DECLARE_STATIC(copying_gc_mutex);
 
@@ -51,20 +54,44 @@ extern pthread_barrier_t after;
 extern pthread_cond_t done_cond;
 extern pthread_mutex_t done_mutex;
 extern int done_count;
-extern jint halt_for_GC_flag; 
-#endif /* WITH_THREADED_GC */
+extern jint halt_for_GC_flag;
 
-#ifdef WITH_PRECISE_C_BACKEND
-void collect(int expand_amt);
-#else
-void collect(void *saved_registers[], int expand_amt);
-#endif
+/* effects: acquire locks for copying GC in "safe" manner (non-blocking) */
+#define ENTER_COPYING_GC() \
+({ while (pthread_mutex_trylock(&copying_gc_mutex)) \
+if (halt_for_GC_flag) halt_for_GC(); })
+
+/* effects: release locks for copying GC */
+#define EXIT_COPYING_GC() FLEX_MUTEX_UNLOCK(&copying_gc_mutex)
+
+#endif /* WITH_THREADED_GC */
 
 size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj);
 
-void overwrite_to_space();
-
 void relocate(jobject_unwrapped *obj);
+
+
+/* returns: amt of free memory available */
+jlong copying_free_memory()
+{
+  jlong result;
+  ENTER_COPYING_GC();
+  result = (jlong)(top_of_space - free);
+  EXIT_COPYING_GC();
+  return result;
+}
+
+
+/* returns: heap size */
+jlong copying_get_heap_size()
+{
+  jlong result;
+  ENTER_COPYING_GC();
+  result = (jlong) heap_size;
+  EXIT_COPYING_GC();
+  return result;
+}
+
 
 /* copying_handle_references handles refereneces to objects. objects in the
    heap that need to be copied to the new semispace are copied. if the 
@@ -93,7 +120,7 @@ void copying_handle_reference(jobject_unwrapped *ref)
 	{
 	  // move to new semispace
 	  relocate(ref);
-	  error_gc("relocated to %p.\n", obj);
+	  error_gc("relocated to %p.\n", PTRMASK((*ref)));
 	}
     }
   else
@@ -119,7 +146,7 @@ void relocate(jobject_unwrapped *ref) {
   jobject_unwrapped obj = (jobject_unwrapped)PTRMASK((*ref));
   void *forwarding_address;
   /* figure out how big the object is */
-  size_t obj_size = copying_get_size_of_obj(obj);
+  size_t obj_size = align(FNI_ObjectSize(obj));
   /* relocated objects should not exceed size of heap */
   assert(free + obj_size <= top_of_to_space);
   /* copy over to to_space */
@@ -133,7 +160,9 @@ void relocate(jobject_unwrapped *ref) {
 }
 
 /* magic number (quite arbitrary) used to determine start size of heap */
-#define INITIAL_HEAP_SIZE     1024
+#define INITIAL_HEAP_SIZE     65536
+/* another magic number specifying the target heap occupancy */
+#define TARGET_OCCUPANCY      0.2
 
 /* statistics for determining when to grow heap. */
 static float avg_occupancy = 0; // 0 <= avg_occupancy <= 0.5
@@ -160,7 +189,14 @@ void copying_gc_init()
   top_of_to_space = to_space + heap_size/2;
   error_gc("Free space from %p ", from_space);
   error_gc("to %p\n\n", top_of_space);
-} 
+}
+
+
+void copying_cleanup ()
+{
+    printf("Maximum heap size = %d bytes.\n", max_heap_size);
+}
+
 
 #ifdef WITH_PRECISE_C_BACKEND
 void *copying_malloc (size_t size_in_bytes)
@@ -171,11 +207,8 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
   size_t aligned_size_in_bytes;
   void *result;
 
-#ifdef WITH_THREADED_GC
-  /* only one thread can get memory at a time */
-  while (pthread_mutex_trylock(&copying_gc_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
-#endif
+  ENTER_COPYING_GC();
+
   /* calculate the actual number of bytes we need */
   aligned_size_in_bytes = align(size_in_bytes);
 
@@ -193,24 +226,25 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
       // guess if we want to grow heap based on statistics
       expected_free_space = (0.5 - avg_occupancy)*heap_size;
       error_gc("Expected free space after collection is %d bytes.\n", expected_free_space);
-      if (expected_free_space < 2*aligned_size_in_bytes)
-	{
-	  // if we are going to expand the heap, make sure we do it by enough
-	  expand_heap = aligned_size_in_bytes;
-	  error_gc("Force heap expansion of %d bytes.\n", expand_heap);
-	}
+
+      if (expected_free_space < 2*aligned_size_in_bytes) 
+	// if we are going to expand the heap, make sure we do it by enough
+	expand_heap = 2*aligned_size_in_bytes;
+      else if (avg_occupancy > TARGET_OCCUPANCY)
+	// also try to maintain a low occupancy
+	expand_heap = heap_size;
 
       // setup_for_threaded_GC is a nop if not using threads
       setup_for_threaded_GC();
 #ifdef WITH_PRECISE_C_BACKEND
-      collect(expand_heap);
+      copying_collect(expand_heap);
 #else
-      collect(saved_registers, expand_heap);
+      copying_collect(saved_registers, expand_heap);
 #endif
       // done with collection, calculate statistics
       heap_occupancy = ((float)(free - from_space)) / ((float)heap_size);
       avg_occupancy = (heap_occupancy + num_collections*avg_occupancy)/(num_collections+1);
-      assert(avg_occupancy <= 0.5);
+      assert(avg_occupancy >= 0 && avg_occupancy <= 0.5);
       num_collections++;
       error_gc("Heap occupancy %.4f", avg_occupancy);
       error_gc(" after %d collections\n", num_collections);
@@ -224,9 +258,9 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
 	  // we should never have to expand the heap twice in the same allocation
 	  assert(expand_heap == 0);
 #ifdef WITH_PRECISE_C_BACKEND
-	  collect(aligned_size_in_bytes);
+	  copying_collect(2*aligned_size_in_bytes);
 #else
-	  collect(saved_registers, aligned_size_in_bytes);
+	  copying_collect(saved_registers, aligned_size_in_bytes);
 #endif
 	}
       // cleanup_after_threaded_GC is a nop if not using threads
@@ -236,24 +270,27 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
   result = free;
   free += aligned_size_in_bytes;
 
-  // calculate statistics for max_heap_size
+  // zero out memory before returning
+  // result = memset(result, 0, aligned_size_in_bytes);
+
+  //calculate statistics for max_heap_size
   max_heap_size = (max_heap_size > (free - from_space)) ? max_heap_size : (free - from_space);
-  error_gc("Maximum heap size = %d bytes\n", max_heap_size);
 
   error_gc("%d\t", ++num_mallocs);
   error_gc("Allocated x%x bytes ", aligned_size_in_bytes);
   error_gc("at %p (for a total of ", result);
   error_gc("x%x bytes)\n", (total_memory_requested += aligned_size_in_bytes));
 
-  FLEX_MUTEX_UNLOCK(&copying_gc_mutex);
+  EXIT_COPYING_GC();
+
   return result;
 }
 
 /* collect performs the actual tracing and copying collection */
 #ifdef WITH_PRECISE_C_BACKEND
-void collect(int expand_amt)
+void copying_collect(int expand_amt)
 #else
-void collect(void *saved_registers[], int expand_amt)
+void copying_collect(void *saved_registers[], int expand_amt)
 #endif
 {
   void *scan;
@@ -272,7 +309,7 @@ void collect(void *saved_registers[], int expand_amt)
 
       // we are going to expand the heap by at least expand_amt 
       // but we prefer to just double the size of the heap
-      heap_size = (heap_size/2 < expand_amt) ? (4*expand_amt) : (2*heap_size);
+      heap_size = (heap_size < expand_amt) ? (2*expand_amt) : (2*heap_size);
       to_space = mmap(0, heap_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 
       // NOTE TO SELF: turn this assert into an exception!!!
@@ -300,7 +337,6 @@ void collect(void *saved_registers[], int expand_amt)
       // trace object at scan for references,
       // then increment scan by size of object
       assert(scan != NULL && ((jobject_unwrapped)scan)->claz != NULL);
-      error_gc("Object at %p being scanned\n", scan);
       trace((jobject_unwrapped)scan);
       scan += align(FNI_ObjectSize(scan));
     }
@@ -320,7 +356,6 @@ void collect(void *saved_registers[], int expand_amt)
       // on success, munmap returns 0, on failure -1
       int munmap_result = munmap(old_heap, old_heap_size);
       assert(munmap_result == 0);
-      assert(free + expand_amt < top_of_space);
     }
   
   // this function is a nop if not debug
@@ -343,46 +378,3 @@ size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj)
 static struct free_block *free_list = NULL;
 /* mutex for free_list */
 FLEX_MUTEX_DECLARE_STATIC(copying_free_list_mutex);
-
-/* copying_free allows explicit freeing of memory allocated by the
-   copying collector. you can only free memory to which there will
-   be no more pointers. therefore, you must null out the ptr to the 
-   freed memory after this call. note that using free introduces
-   fragmentation. */
-void copying_free(void *ptr_to_memory_to_be_freed)
-{
-  struct free_block *ptr_to_freed_memory;
-  /* find out how big this object is */
-  size_t amt_of_memory_to_be_freed = 
-    copying_get_size_of_obj(ptr_to_memory_to_be_freed);
-  /* we depend on the memory to be freed being big enough to go on the free list */
-  assert(amt_of_memory_to_be_freed >= MINIMUM_SIZE);
-  /* note the amt of memory being freed */
-  ptr_to_freed_memory = (struct free_block *)ptr_to_memory_to_be_freed;
-#ifdef WITH_THREADED_GC
-  /* only one thread can touch free list at a time */
-  while (pthread_mutex_trylock(&copying_free_list_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
-#endif
-  /* put new freed block at the beginning of the free list */
-  ptr_to_freed_memory->next = free_list;
-  free_list = ptr_to_freed_memory;
-  /* release */
-  FLEX_MUTEX_UNLOCK(&copying_free_list_mutex);
-}
-
-/* returns 1 if the given ptr points to an object
-   in the garbage-collected heap, returns 0 otherwise. */
-int copying_in_heap(void *ptr)
-{
-  int result = 0;
-#ifdef WITH_THREADED_GC
-  /* only one thread can touch the GC variables */
-  while (pthread_mutex_trylock(&copying_gc_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
-#endif
-  result = IN_HEAP(ptr);
-  FLEX_MUTEX_UNLOCK(&copying_gc_mutex);
-  return result;
-}
-

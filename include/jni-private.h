@@ -232,6 +232,7 @@ extern struct _fixup_info fixup_start[], fixup_end[];
 extern jobject_unwrapped static_objects_start[], static_objects_end[];
 extern int *string_constants_start, *string_constants_end;
 extern int *code_start, *code_end;
+extern struct claz claz_start, claz_end;
 
 struct _fixup_info {
   void *return_address;
