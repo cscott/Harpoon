@@ -48,24 +48,25 @@ public class HumanRecognition extends Node implements VariableLatency {
      */
     //private String memName;
 
-    /**
-     * This method either tells the {@link HumanRecognition} node to
-     * begin or stop
-     * setting a "return value" in {@link CommonMemory}.
-     * Specifying a name will ause the {@link HumanRecognition} node to
-     * store either
-     * <code>true</code> or <code>false</code> in the variable who's
-     * name you specify
-     * depending on whether the <code>process()</code> method detects
-     * blue in an image.<br><br>
-     *
-     * By specifying a <code>null</code> name, you turn this feature off.
-     * @param name The name of the variable in {@link CommonMemory}
-     * where this {@link HumanRecognition}
-     * node will store its "return value."
-     *
-     * @see CommonMemory
-     */
+    ///**
+    // * This method either tells the {@link HumanRecognition} node to
+    // * begin or stop
+    // * setting a "return value" in {@link CommonMemory}.
+    // * Specifying a name will ause the {@link HumanRecognition} node to
+    // * store either
+    // * <code>true</code> or <code>false</code> in the variable who's
+    //
+    // * name you specify
+    // * depending on whether the <code>process()</code> method detects
+    // * blue in an image.<br><br>
+    // *
+    // * By specifying a <code>null</code> name, you turn this feature off.
+    // * @param name The name of the variable in {@link CommonMemory}
+    // * where this {@link HumanRecognition}
+    // * node will store its "return value."
+    // *
+    // * @see CommonMemory
+    // */
     //public void setCommonMemory(String name) {
     //this.memName = name;
     //}
