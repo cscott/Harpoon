@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.19 1998-08-03 22:05:59 cananian Exp $
+ * @version $Id: HClass.java,v 1.20 1998-08-04 01:49:13 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -241,12 +241,12 @@ public class HClass {
    * <code>HClass</code> object.  The <code>name</code> parameter is a 
    * <code>String</code> that specifies the simple name of the
    * desired field.
-   * @exception NoSuchFieldException
+   * @exception NoSuchFieldError
    *            if a field with the specified name is not found.
    * @see HField
    */
   public HField getDeclaredField(String name)
-    throws NoSuchFieldException {
+    throws NoSuchFieldError {
     // construct master declaredField list, if we haven't already.
     if (declaredFields==null) getDeclaredFields();
     // look for field name in master list.
@@ -254,7 +254,7 @@ public class HClass {
       if (declaredFields[i].getName().equals(name))
 	return declaredFields[i];
     // not found.
-    throw new NoSuchFieldException(name);
+    throw new NoSuchFieldError(name);
   }
   /**
    * Returns an array of <code>HField</code> objects reflecting all the
@@ -292,11 +292,11 @@ public class HClass {
    * object (and its superclasses and interfaces) for an accessible 
    * field with the specified name.
    * @see "The Java Language Specification, sections 8.2 and 8.3"
-   * @exception NoSuchFieldException
+   * @exception NoSuchFieldError
    *            if a field with the specified name is not found.
    * @see HField
    */
-  public HField getField(String name) throws NoSuchFieldException {
+  public HField getField(String name) throws NoSuchFieldError {
     // construct master field list, if we haven't already.
     if (fields==null) getFields();
     // look for field name in master field list.
@@ -305,7 +305,7 @@ public class HClass {
       if (fields[i].getName().equals(name))
 	return fields[i];
     // can't find it.
-    throw new NoSuchFieldException(name);
+    throw new NoSuchFieldError(name);
   }
   /**
    * Returns an array containing <code>HField</code> objects reflecting
@@ -384,12 +384,12 @@ public class HClass {
    * method, and the <code>parameterTypes</code> parameter is an array
    * of <code>HClass</code> objects that identify the method's formal
    * parameter types, in declared order.
-   * @exception NoSuchMethodException
+   * @exception NoSuchMethodError
    *            if a matching method is not found.
    * @see HMethod
    */
   public HMethod getDeclaredMethod(String name, HClass parameterTypes[])
-    throws NoSuchMethodException {
+    throws NoSuchMethodError {
     // construct master declaredMethod list, if we haven't already.
     if (declaredMethods==null) getDeclaredMethods();
     // look for method name/type in master list.
@@ -405,7 +405,7 @@ public class HClass {
 	}
       }
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodException(name);
+    throw new NoSuchMethodError(name);
   }
   /**
    * Returns an array of <code>HMethod</code> objects reflecting all the
@@ -438,7 +438,7 @@ public class HClass {
   }
   private HMethod[] declaredMethods = null;
   /**
-   * Returns a <code>HMethod</code> object that reflects the specified
+   * Returns an <code>HMethod</code> object that reflects the specified
    * accessible method of the class or interface represented by this
    * <code>HClass</code> object.  The <code>name</code> parameter is
    * a string specifying the simple name of the desired method, and
@@ -450,13 +450,13 @@ public class HClass {
    * object for an accessible method with the specified name and exactly
    * the same formal parameter types.
    * @see "The Java Language Specification, sections 8.2 and 8.4"
-   * @exception NoSuchMethodException if a matching method is not found.
+   * @exception NoSuchMethodError if a matching method is not found.
    */
   public HMethod getMethod(String name, HClass parameterTypes[])
-    throws NoSuchMethodException {
+    throws NoSuchMethodError {
     // construct master method list, if we haven't already.
     if (methods==null) getMethods();
-    // look for method name is master method list.
+    // look for method name in master method list.
     // look backwards to be sure we find local methods first (scoping).
     for (int i=methods.length-1; i>=0; i--)
       if (methods[i].getName().equals(name)) {
@@ -470,8 +470,36 @@ public class HClass {
 	}
       }
     // didn't find a match. Oh, well.
-    throw new NoSuchMethodException(name);
+    throw new NoSuchMethodError(name);
   }
+  /**
+   * Returns an <code>HMethod</code> object that reflects the specified
+   * accessible method of the class or interface represented by this
+   * <code>HClass</code> object.  The <code>name</code> parameter is
+   * a string specifying the simple name of the desired method, and
+   * the <code>descriptor</code> is a string describing the
+   * parameter types and return value of the method. <p>
+   * The method is located by searching all the member methods of
+   * the class or interface represented by this <code>HClass</code>
+   * object for an accessible method with the specified name and
+   * exactly the same descriptor.
+   * @see HMethod#getDescriptor
+   * @exception NoSuchMethodError if a matching method is not found.
+   */
+  public HMethod getMethod(String name, String descriptor)
+    throws NoSuchMethodError {
+    // construct master method list, if we haven't already.
+    if (methods==null) getMethods();
+    // look for method name in master method list.
+    // look backwards to be sure we find local methods first (scoping)
+    for (int i=methods.length-1; i>=0; i--)
+      if (methods[i].getName().equals(name) &&
+	  methods[i].getDescriptor().equals(descriptor))
+	return methods[i];
+    // didn't find a match.
+    throw new NoSuchMethodError(name);
+  }
+	
   /**
    * Returns an array containing <code>HMethod</code> object reflecting
    * all accessible member methods of the class or interface represented
@@ -536,10 +564,10 @@ public class HClass {
    * by this <code>HClass</code> object.  The <code>parameterTypes</code>
    * parameter is an array of <code>HClass</code> objects that
    * identify the constructor's formal parameter types, in declared order.
-   * @exception NoSuchMethodException if a matching method is not found.
+   * @exception NoSuchMethodError if a matching method is not found.
    */
   public HConstructor getConstructor(HClass parameterTypes[])
-    throws NoSuchMethodException {
+    throws NoSuchMethodError {
     return (HConstructor) getDeclaredMethod("<init>", parameterTypes);
   }
   /**
@@ -580,7 +608,7 @@ public class HClass {
   public HMethod getClassInitializer() {
     try {
       return getDeclaredMethod("<clinit>", new HClass[0]);
-    } catch (NoSuchMethodException e) {
+    } catch (NoSuchMethodError e) {
       return null;
     }
   }
