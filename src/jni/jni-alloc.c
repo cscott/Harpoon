@@ -71,7 +71,9 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
   /* note -- setting the last bit also has the convenient property of
    * eliminating a possible self-cycle that would keep conservative gc
    * from finalizing the object. */
+#ifndef WITH_HASHLOCK_SHRINK
   masked->hashunion.hashcode = 1 | (ptroff_t) masked; /* low bit always set */
+#endif
   /* FIXME: register finalizer.  */
   result = FNI_WRAP(newobj);
 #if defined(WITH_REALTIME_JAVA) && defined(WITH_MEMORYAREA_TAGS)

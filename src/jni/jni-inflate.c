@@ -1,8 +1,12 @@
+#include "config.h"
+#ifdef WITH_HASHLOCK_SHRINK
+# define GC_I_HIDE_POINTERS /* we need HIDE_POINTER from gc.h */
+#endif /* WITH_HASHLOCK_SHRINK */
+
 #include <jni.h>
 #include <jni-private.h>
 
 #include <assert.h>
-#include "config.h"
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
@@ -16,6 +20,25 @@
 #ifdef WITH_REALTIME_JAVA
 #include "../realtime/RTJfinalize.h" /* for RTJ_register_finalizer */
 #endif
+
+#ifdef WITH_HASHLOCK_SHRINK
+/* hashtable mapping obj to inflated obj */
+# ifndef BDW_CONSERVATIVE_GC
+#  error WITH_HASHLOCK_SHRINK only works with BDW_CONSERVATIVE_GC
+# endif
+# define MAKE_POINTER_VERSION
+# define TYPE struct inflated_oobj *
+# define TABLE infl_table
+# define TABLE_ELEMENT infl_table_el
+# define GET infl_table_get
+# define SET infl_table_set
+# define REMOVE infl_table_remove
+# include "hashimpl.h"
+static char *INFL_LOCK="lock";
+struct inflated_oobj *FNI_infl_lookup(struct oobj *oobj) {
+  return infl_table_get(INFL_LOCK, oobj, NULL);
+}
+#endif /* WITH_HASHLOCK_SHRINK */
 
 /* lock for inflating locks */
 FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
@@ -32,7 +55,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
   struct oobj *obj = FNI_UNWRAP_MASKED(wrapped_obj);
   FLEX_MUTEX_LOCK(&global_inflate_mutex);
   /* be careful in case someone inflates this guy while our back is turned */
-  if (obj->hashunion.hashcode & 1) {
+  if (!FNI_IS_INFLATED(wrapped_obj)) {
     /* all data in inflated_oobj is managed manually, so we can use malloc */
     struct inflated_oobj *infl = 
 #if defined(WITH_TRANSACTIONS) && defined(BDW_CONSERVATIVE_GC)
@@ -50,7 +73,9 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 #endif
     /* initialize infl */
     memset(infl, 0, sizeof(*infl));
+#ifndef WITH_HASHLOCK_SHRINK
     infl->hashcode = obj->hashunion.hashcode;
+#endif /* !WITH_HASHLOCK_SHRINK */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 # ifdef ERROR_CHECKING_LOCKS
     /* error checking locks are slower, but catch more bugs (maybe) */
@@ -65,7 +90,11 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     pthread_cond_init(&(infl->cond), NULL);
     pthread_rwlock_init(&(infl->jni_data_lock), NULL);
 #endif
+#ifndef WITH_HASHLOCK_SHRINK
     obj->hashunion.inflated = infl;
+#else
+    infl_table_set(INFL_LOCK, obj, infl, NULL);
+#endif /* WITH_HASHLOCK_SHRINK */
     assert(FNI_IS_INFLATED(wrapped_obj));
 #ifdef WITH_PRECISE_GC 
 #if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
@@ -106,7 +135,11 @@ static void deflate_object(struct oobj *obj, ptroff_t client_data) {
 #endif
 #if defined(BDW_CONSERVATIVE_GC) || defined(WITH_PRECISE_GC) || defined(WITH_REALTIME_JAVA)
     struct oobj *oobj = (struct oobj *) ((void*)obj+(ptroff_t)client_data);
+#ifndef WITH_HASHLOCK_SHRINK
     struct inflated_oobj *infl = oobj->hashunion.inflated;
+#else
+    struct inflated_oobj *infl = infl_table_get(INFL_LOCK, oobj, NULL);
+#endif
     /*printf("Deflating object %p (clazz %p)\n", oobj, FNI_CLAZ(oobj));*/
     /* okay, first invoke java finalizer.  afterwards this object
      * *should* be dead, but the java finalizer might resurrect it.
@@ -133,7 +166,11 @@ static void deflate_object(struct oobj *obj, ptroff_t client_data) {
     pthread_cond_destroy(&(infl->cond));
 #endif
     /* wow, all done. */
+#ifndef WITH_HASHLOCK_SHRINK
     oobj->hashunion.hashcode = infl->hashcode;
+#else
+    infl_table_remove(INFL_LOCK, oobj);
+#endif /* WITH_HASHLOCK_SHRINK */
 #if defined(WITH_TRANSACTIONS) && defined(BDW_CONSERVATIVE_GC)
     GC_free
 #else

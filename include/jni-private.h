@@ -78,7 +78,9 @@ struct claz {
 /* the inflated_oobj structure has various bits of information that we
  * want to associate with *some* (not all) objects. */
 struct inflated_oobj {
+#ifndef WITH_HASHLOCK_SHRINK
   ptroff_t hashcode; /* the real hashcode, since we've booted it */
+#endif /* !WITH_HASHLOCK_SHRINK */
   void *jni_data; /* information associated with this object by the JNI */
   void (*jni_cleanup_func)(void *jni_data);
   /* TRANSACTION SUPPORT */
@@ -125,10 +127,12 @@ struct oobj {
 #else
   struct claz *claz;
 #endif
+#ifndef WITH_HASHLOCK_SHRINK
   /* if low bit is one, then this is a fair-dinkum hashcode. else, it's a
    * pointer to a struct inflated_oobj. this pointer needs to be freed
    * when the object is garbage collected, which is done w/ a finalizer. */
   union { ptroff_t hashcode; struct inflated_oobj *inflated; } hashunion;
+#endif
   /* fields below this point */
   char field_start[0];
 };
@@ -235,9 +239,15 @@ jobject FNI_Alloc(JNIEnv *env,
 
 /* inflation routine/macro */
 void FNI_InflateObject(JNIEnv *env, jobject obj);
+#ifndef WITH_HASHLOCK_SHRINK
 #define FNI_IS_INFLATED(obj) \
 		((FNI_UNWRAP_MASKED(obj)->hashunion.hashcode & 1) == 0)
 #define FNI_INFLATED(obj) (FNI_UNWRAP_MASKED(obj)->hashunion.inflated)
+#else
+extern struct inflated_oobj *FNI_infl_lookup(struct oobj *oobj);
+#define FNI_INFLATED(obj) FNI_infl_lookup(FNI_UNWRAP_MASKED(obj))
+#define FNI_IS_INFLATED(obj) (FNI_INFLATED(obj)!=NULL)
+#endif
 
 /* JNI-local object data storage. */
 void * FNI_GetJNIData(JNIEnv *env, jobject obj);

@@ -1,7 +1,11 @@
+#include "config.h"
+#ifdef WITH_HASHLOCK_SHRINK
+# define GC_I_HIDE_POINTERS /* we need HIDE_POINTER from gc.h */
+#endif /* WITH_HASHLOCK_SHRINK */
+
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_System.h"
-#include "config.h"
 #include "flexthread.h" /* for arrcls lock in arraycopy */
 #include <time.h> /* time,localtime for time zone information */
 #include <sys/time.h> /* gettimeofday */
@@ -196,10 +200,17 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
  */
 JNIEXPORT jint JNICALL Java_java_lang_System_identityHashCode
   (JNIEnv *env, jclass cls, jobject obj) {
+#ifndef WITH_HASHLOCK_SHRINK
     jobject_unwrapped oobj = FNI_UNWRAP_MASKED(obj);
     ptroff_t hashcode = oobj->hashunion.hashcode;
     if ((hashcode & 1) == 0) hashcode = oobj->hashunion.inflated->hashcode;
     return (jint) (hashcode>>2);
+#else
+# ifndef BDW_CONSERVATIVE_GC
+#  error This technique does not work w/ a non-conservative GC.
+# endif
+    return (ptroff_t) HIDE_POINTER(FNI_UNWRAP_MASKED(obj));
+#endif /* WITH_HASHLOCK_SHRINK */
 }
 
 /*

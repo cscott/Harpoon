@@ -92,3 +92,9 @@ FLAG check_with_claz_shrink_should_be_##x
 #else
  FLAG check_with_init_check_not_needed;
 #endif
+
+#ifdef WITH_HASHLOCK_SHRINK
+ FLAG check_with_hashlock_shrink_needed;
+#else
+ FLAG check_with_hashlock_shrink_not_needed;
+#endif
