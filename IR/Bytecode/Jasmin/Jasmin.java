@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.6 1999-08-05 20:06:46 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.7 1999-08-05 21:06:02 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -138,7 +138,7 @@ public class Jasmin {
 	    else if (tp==HClass.Short)
 		operand="saload";
 	    else if (tp==HClass.Int)
-		operand="siload";
+		operand="iaload";
 	    else if (tp==HClass.Double)
 		operand="daload";
 	    else if (tp==HClass.Float)
@@ -166,7 +166,7 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    for (int i=0;i<q.dimsLength();i++)
 		load(q.dims(i));
-	    out.println("    multianewarray "+q.hclass().getSuperclass().getName().replace('.','/') +" "+q.dimsLength());
+	    out.println("    multianewarray "+q.hclass().getName().replace('.','/') +" "+q.dimsLength());
 	}
 
 	public void visit(ASET q) {
@@ -183,7 +183,7 @@ public class Jasmin {
 	    else if (tp==HClass.Short)
 		operand="sastore";
 	    else if (tp==HClass.Int)
-		operand="sistore";
+		operand="iastore";
 	    else if (tp==HClass.Double)
 		operand="dastore";
 	    else if (tp==HClass.Float)
@@ -458,16 +458,81 @@ public class Jasmin {
 	}
 
 	public void visit(OPER q) {
+	    out.println(iflabel(q));
 	    switch (q.opcode()) {
+	    case Qop.LCMPEQ:
+		String l1=label(),l2=label();
+		for (int i=0;i<q.operandsLength();i++)
+		    load(q.operands(i));
+		out.println("    lcmp");
+		out.println("    ifeq "+l1);
+		out.println("    bipush 0");
+		out.println("    goto "+l2);
+		out.println(l1+":");
+		out.println("    bipush 1");
+		out.println(l2+":");
+		break;
+	    case Qop.LCMPGT:
+		l1=label();l2=label();
+		for (int i=0;i<q.operandsLength();i++)
+		    load(q.operands(i));
+		out.println("    lcmp");
+		out.println("    ifgt "+l1);
+		out.println("    bipush 0");
+		out.println("    goto "+l2);
+		out.println(l1+":");
+		out.println("    bipush 1");
+		out.println(l2+":");
+		break;
+	    case Qop.DCMPEQ:
+	    case Qop.DCMPGE:
+	    case Qop.DCMPGT:
+		l1=label();l2=label();
+		for (int i=0;i<q.operandsLength();i++)
+		    load(q.operands(i));
+		out.println("    dcmpl");
+		if (q.opcode()==Qop.DCMPEQ)
+		    out.println("    ifeq "+l1);
+		if (q.opcode()==Qop.DCMPGE)
+		    out.println("    ifge "+l1);
+		if (q.opcode()==Qop.DCMPGT)
+		    out.println("    ifgt "+l1);
+		out.println("    bipush 0");
+		out.println("    goto "+l2);
+		out.println(l1+":");
+		out.println("    bipush 1");
+		out.println(l2+":");
+		break;
+
+	    case Qop.FCMPEQ:
+	    case Qop.FCMPGE:
+	    case Qop.FCMPGT:
+		l1=label();l2=label();
+		for (int i=0;i<q.operandsLength();i++)
+		    load(q.operands(i));
+		out.println("    fcmpl");
+		if (q.opcode()==Qop.FCMPEQ)
+		    out.println("    ifeq "+l1);
+		if (q.opcode()==Qop.FCMPGE)
+		    out.println("    ifge "+l1);
+		if (q.opcode()==Qop.FCMPGT)
+		    out.println("    ifgt "+l1);
+		out.println("    bipush 0");
+		out.println("    goto "+l2);
+		out.println(l1+":");
+		out.println("    bipush 1");
+		out.println(l2+":");
+		break;
+
 	    case Qop.ACMPEQ:
 	    case Qop.ICMPEQ:
 	    case Qop.ICMPGT:
 		String base=Qop.toString(q.opcode());
-		String l1=label(), l2=label();
+		l1=label();
+		l2=label();
 		for (int i=0;i<q.operandsLength();i++) {
 		    load(q.operands(i));
 		}
-		out.println(iflabel(q));
 		out.println("    if_"+base+" "+l1);
 		out.println("    bipush 0");
 		out.println("    goto "+l2);
