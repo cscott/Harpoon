@@ -41,7 +41,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterThreadPA.java,v 1.4 2002-04-10 03:00:41 cananian Exp $
+ * @version $Id: InterThreadPA.java,v 1.5 2003-05-06 15:35:22 salcianu Exp $
  */
 public abstract class InterThreadPA implements java.io.Serializable {
 
@@ -212,10 +212,10 @@ public abstract class InterThreadPA implements java.io.Serializable {
 						 PANode nt) {
 	// TODO: think about the LOAD && PARAM thread nodes (not only INSIDE) 
 	Quad quad = (Quad) pa.getNodeRepository().node2Code(nt.getRoot());
-	assert (quad instanceof NEW) : (nt + " has a strange instr." + 
-		    " nt type: " + nt.type + " PANode.INSIDE: " +
-		    PANode.INSIDE); 
-
+	assert (quad instanceof NEW) : 
+	    nt + " has a strange instr." + 
+	    " nt type: " + nt.type + " != PANode.INSIDE";
+	
 	NEW q = (NEW) quad; 
 	assert q != null : "Creation of " + nt + " not found!";
 

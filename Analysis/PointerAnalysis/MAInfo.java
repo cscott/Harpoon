@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.11 2003-05-01 20:13:15 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.12 2003-05-06 15:35:22 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -214,7 +214,6 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    }
 	}
     };
-
 
     
     private static boolean DEBUG = false;
@@ -363,6 +362,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(pa.analyzable(mm.getHMethod()))
 		analyze_mm(mm);
 	}
+
+	//if(DEBUG)
+	    pa.print_stats();
 	
 	if(opt.do_inlining()) {
 	    if(opt.USE_OLD_INLINING) {
@@ -388,7 +390,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	if(DEBUG_IC)
 	    System.out.println("set_hm2rang");
 
-	SCCTopSortedGraph mmethod_sccs = mcg.getTopDownSortedView();
+	SCCTopSortedGraph mmethod_sccs = mcg.getTopDownComponentView();
 	
 	if(DEBUG_IC)
 	    System.out.println("\n\nMethod rang:");
@@ -433,6 +435,9 @@ public class MAInfo implements AllocationInformation, Serializable {
     /* Analyze a single method: take the object creation sites from it
        and generate an allocation policy for each one. */
     private final void analyze_mm(MetaMethod mm){
+	// debug for JLEX; TODO: remove
+	DEBUG = mm.getHMethod().getDeclaringClass().getName().equals("Test");
+
 	if(DEBUG)
 	    System.out.println("\n\nMAInfo: Analyzed Meta-Method: " + mm);
 
@@ -442,9 +447,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Set nodes = new HashSet();
 	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
 	    Quad quad = (Quad) it.next();
-	    if((quad instanceof NEW) ||
-	       (quad instanceof ANEW))
-		nodes.add(node_rep.getCodeNode(quad, PANode.INSIDE));
+	    if((quad instanceof NEW) || (quad instanceof ANEW)) {
+		// it is possible that exceptions have been coalesced
+		// (and we cannot retrieve their allocation site).
+		// anyway, there is little interest in
+		// stack-allocating exceptions!
+		PANode node = node_rep.getCodeNode(quad, PANode.INSIDE);
+		if(node_rep.node2Code(node) != null)
+		    nodes.add(node);
+	    }
 	}
 
 	if(DEBUG)
@@ -471,7 +482,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	// handle_tg_stuff(pig);
 
-	if(opt.do_inlining()) {
+	if(opt.do_inlining() && (opt.MAX_INLINING_LEVEL > 0)) {
 	    if(opt.USE_OLD_INLINING)
 		generate_inlining_hints(mm, pig);
 	    else
@@ -1440,7 +1451,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     /* Normally, we should refuse to inline calls that are inside loops
        because that + stack allocation might lead to stack overflow errors.
-       However, at this moment we don't test this condition. */
+       However, at this moment we don't test this condition.
+
+       Note: the advanced inlining tests this in other part. */
     private boolean good_cs(CALL cs){
 	return true;
     }
@@ -1772,7 +1785,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	MetaMethod mm_caller = new MetaMethod(extract_caller(cs), true);
 	MetaMethod[] mm_callees = mcg.getCallees(mm_caller, cs);
 	if(mm_callees.length == 0) return null;
-	assert mm_callees.length == 1 : "More than one callee for " + cs;
+	assert mm_callees.length == 1 : 
+	    "More than one callee for " + cs + "; " + mm_callees.length;
 	return mm_callees[0].getHMethod();
     }
 
@@ -1793,10 +1807,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
 
 	Set nodes = getInterestingLevel0InsideNodes(mm.getHMethod(), pig);
+	if(nodes.isEmpty()) return;
 	Set sa_nodes = new HashSet();
 	Set ta_nodes = new HashSet();
 	split_nodes(nodes, sa_nodes, ta_nodes);
-	if(nodes.isEmpty()) return;
 
 	current_chain_cs = new LinkedList();
 	current_chain_callees = new LinkedList();
@@ -1831,39 +1845,73 @@ public class MAInfo implements AllocationInformation, Serializable {
 	int rang_caller = get_rang(extract_caller(cs));
 	int rang_callee = get_rang(extract_callee(cs));
 	assert rang_caller >= rang_callee : "Bad method rangs " + cs;
+
+	if(DEBUG && !(rang_caller > rang_callee))
+	    System.out.println("BAD cs (equal ranks)" + Util.code2str(cs));
+
 	return rang_caller > rang_callee;
     }
 
     // Parameters:
     //  nodes - the set of PANodes that escape from some method called by mm,
     //    only into the caller (ie mm).
-    //  level - nodes originate in a callee at distance level in the call
+    //  level - nodes originate in a callee at distance "level" in the call
     //    graph; to be able to stack allocate them, an inlining chain of length
-    //    at least level is necessary.
+    //    at least "level" is necessary.
     private void discover_inlining_chains(MetaMethod mm,
 					  Set sa_nodes, Set ta_nodes,
 					  int level) {
+
+	String header = null;
+	if(DEBUG) {
+	    StringBuffer buff = new StringBuffer();
+	    for(int i = 0; i < level; i++)
+		buff.append("  ");
+	    buff.append("dinlc: ");
+	    header = buff.toString();
+	    System.out.println(header + "ENTRY " + mm.getHMethod() + " , " + sa_nodes + " , " + ta_nodes + " , " + level);
+	}
+
 	// iterate through all the call sites where mm is called
 	MetaMethod[] callers = mac.getCallers(mm);
 	for(int i = 0; i < callers.length; i++) {
 	    MetaMethod mcaller = callers[i];
+	    // avoid inlining the class initializers: past experience
+	    // showed this might lead to circular dependencies in the
+	    // static initializer code
+	    if(mcaller.getHMethod().getName().equals("<clinit>"))
+		continue;
 
 	    Set call_sites = mcg.getCallSites(mcaller);
+
+	    if(DEBUG)
+		System.out.println(header + "CALLER: " + mcaller.getHMethod());
+
 	    for(Iterator it = call_sites.iterator(); it.hasNext(); ) {
 		CALL cs = (CALL) it.next();
 
 		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
-		
-		// we can only inline call sites that are only to mm
-		if(! ( (callees.length == 1) &&
-		       (callees[0] == mm) && good_cs(cs)
-		       && good_cs2(cs) ) ) continue;
-		
+		assert callees.length > 0 : 
+		    "there has to be at least one callee: " + mm;
+
+		// we can only inline call sites that calls only mm
+		if((callees.length != 1) || !callees[0].equals(mm)
+		   || !good_cs2(cs) ) {
+		    /*
+		    if(DEBUG)
+			System.out.println(header + Util.code2str(cs) + " is not good -> don't sa; callees.length = " + callees.length + " callees[0].equals(mm)=" + callees[0].equals(mm) + "\ncallees[0] = " + callees[0] + "\nmm = " + mm);
+		    */
+		    continue;
+		}
+
+		if(DEBUG)
+		    System.out.println(header + "good: " + Util.code2str(cs));
+		    		
 		// refuse to stack allocate stuff in a loop
 		if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
-		    System.out.println("discover_inlining_chains: " +
-				       Util.code2str(cs) +
-				       " is in a loop -> don't sa");
+		    if(DEBUG)
+			System.out.println(header + Util.code2str(cs) +
+					   " is in a loop -> don't sa");
 		    ta_nodes = new HashSet(ta_nodes);
 		    for(Iterator itn = sa_nodes.iterator(); itn.hasNext(); ) {
 			PANode node = (PANode) itn.next();
@@ -1886,27 +1934,30 @@ public class MAInfo implements AllocationInformation, Serializable {
 		// B = specs that are captured in mcaller
 		Set sa_B = captured_subset(sa_specs, pig_caller);
 		Set ta_B = captured_subset(ta_specs, pig_caller);
+
+		if(DEBUG && 
+		   opt.DO_STACK_ALLOCATION && opt.DO_INLINING_FOR_SA)
+		    System.out.println(header + "sa_specs=" + sa_specs + 
+				       " sa_B=" + sa_B);
+
+		if(DEBUG && 
+		   opt.DO_THREAD_ALLOCATION && opt.DO_INLINING_FOR_TA)
+		    System.out.println(header + " ta_B=" + ta_B);
 		
 		// here we have some good inlining chain; mark it
 		if((opt.DO_STACK_ALLOCATION &&
 		    opt.DO_INLINING_FOR_SA && !sa_B.isEmpty()) ||
 		   (opt.DO_THREAD_ALLOCATION &&
 		    opt.DO_INLINING_FOR_TA && !ta_B.isEmpty())) {
-		    // avoid inlining the class initializers: past
-		    // experience showed this might lead to circular
-		    // dependencies in the static initializer code
-		    if(!mcaller.getHMethod().getName().equals("<clinit>")){
-			InliningChain new_ic =
-			    new InliningChain(current_chain_cs,
-					      current_chain_callees,
-					      get_news(sa_B),
-					      get_news(ta_B));
-			if(DEBUG_IC)
-			    System.out.println("Discovered chain: "
-					       + new_ic);
-			if(new_ic.isAcceptable())
-			    chains.add(new_ic);
-		    }
+		    InliningChain new_ic =
+			new InliningChain(current_chain_cs,
+					  current_chain_callees,
+					  get_news(sa_B),
+					  get_news(ta_B));
+		    if(DEBUG)
+			System.out.print(header + "chain: " + new_ic);
+		    if(new_ic.isAcceptable())
+			chains.add(new_ic);
 		}
 		
 		// the length of current_chain_cs is level + 1
@@ -1921,6 +1972,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 			opt.DO_INLINING_FOR_TA && !ta_C.isEmpty()))
 			discover_inlining_chains
 			    (mcaller, sa_C, ta_C, level + 1);
+		}
+		else {
+		    if(DEBUG)
+			System.out.println(header + "too deep " + (level+2));
 		}
 		
 		current_chain_cs.removeLast();
@@ -1988,8 +2043,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Set result = new HashSet();
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig))
+	    if(pig.G.captured(node)) continue;
+
+	    if(lostOnlyInCaller(node, pig))
 		result.add(node);
+	    else {
+		if(DEBUG) {
+		    System.out.println("only_in_caller_subset: " + node + " escapes somewhere else" + pig.G.e.nodeHolesSet(node));
+		}
+	    }
 	}
 	return result;
     }
@@ -2232,10 +2294,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 
     private void process_inlining_chains() {
-      if(DEBUG_IC) {
+	//      if(DEBUG_IC) {
 	    Util.print_collection(chains, "\n\nINLINING CHAINS");
 	    System.out.println("=======================");
-      }
+	    //}
 
       // db debug
       System.out.println("Chains that influence Main.run"); 
