@@ -26,7 +26,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.15 2003-09-05 22:10:44 cananian Exp $
+ * @version $Id: Javap.java,v 1.16 2003-09-05 22:38:08 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     /** Print out disassembled code. */
@@ -273,6 +273,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    else
 		System.out.print(mi.name());
 	    // parameters.
+	    int argCount=0;
 	    if (!isStaticInit) {
 		System.out.print('(');
 		assert md.charAt(0)=='(';
@@ -288,6 +289,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		    } else // ordinary, non-vararg parameter
 			System.out.print(param_oas.string);
 		    off += param_oas.offset;
+		    argCount++;
 		}
 		System.out.print(')');
 		// 'throws' list.
@@ -316,12 +318,15 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    if (DISASSEMBLE && ac!=null) {
 		System.out.println("  Code:");
 		if (MORE_INFO) {
-		    System.out.println("Stack="+ac.max_stack+", "+
+		    // Args_size doesn't seem to count 'long' and 'double'
+		    // entries twice.
+		    int args = argCount + (mi.access_flags.isStatic()?0:1);
+		    System.out.println("   "+
+				       "Stack="+ac.max_stack+", "+
 				       "Locals="+ac.max_locals+", "+
-				       "Args_size=?");
+				       "Args_size="+args);
 		}
-		System.out.println("   0:   aload_0");
- 		assert false : "unimplemented";
+		disassemble(ac);
 	    }
 	    // print line number table
 	    AttributeLineNumberTable alnt = (AttributeLineNumberTable)
@@ -648,5 +653,11 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    assert false : "bad descriptor: "+descriptor;
 	    return new OffsetAndString("<unknown>", 1);
 	}
+    }
+    static void disassemble(AttributeCode code) {
+	// use harpoon.IR.Bytecode.Op, etc.
+	//for (int pc=0; i<xxx; i++)
+	System.out.println("   0:   aload_0");
+	assert false : "unimplemented";
     }
 }
