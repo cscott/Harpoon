@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.7 2000-06-09 14:39:46 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.1.2.8 2000-06-12 16:25:52 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable,
@@ -24,6 +24,8 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     public boolean hip = true;
     // canBeStackAllocated
     public boolean sa  = false;
+    // canBeStackAllocatedIfNotTG
+    public boolean santg = false;
     // canBeThreadAllocated
     public boolean ta  = false;
     // useOwnHeap
@@ -50,6 +52,10 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 
     public boolean canBeStackAllocated(){
 	return sa;
+    }
+
+    public boolean canBeStackAllocatedIfNotTG(){
+	return santg;
     }
 
     public boolean canBeThreadAllocated(){

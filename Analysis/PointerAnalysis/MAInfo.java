@@ -59,7 +59,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.26 2000-06-09 14:39:46 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.27 2000-06-12 16:25:51 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -82,6 +82,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	For the moment, it is potentially dangerous so it is deactivated by
 	default. */
     public static boolean DO_PREALLOCATION = false;
+
+    /** Forces the allocation of ALL the threads on the stack. Of course,
+	dummy and unsafe. */
+    public static boolean DO_SANTG = false;
 
     private static Set good_holes = null;
     static {
@@ -232,7 +236,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	Set nodes = pig.allNodes();
 
-	for(Iterator it = nodes.iterator(); it.hasNext(); ){
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    if(node.type != PANode.INSIDE) continue;
 
@@ -259,10 +263,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    }
 		}
 	    }
-	    else{
+	    else {
 		if((depth == 0)
 		   /* && news.contains(node_rep.node2Code(node)) */ ) {
-		    if(remainInThread(node, hm, "")){
+		    if(remainInThread(node, hm, "")) {
 			Quad q = (Quad) node_rep.node2Code(node);
 			Util.assert(q != null, "No quad for " + node);
 
@@ -284,6 +288,19 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    analyze_prealloc(mm, hcode, pig, tau);
 
 	set_make_heap(tau.activeThreadSet());
+
+	/// DUMMY CODE: Stack allocate all the threads
+	if(DO_SANTG) {
+	    Set set = getLevel0InsideNodes(pig);
+	    for(Iterator it = set.iterator(); it.hasNext(); ) {
+		PANode node = (PANode) it.next();
+		Quad q = (Quad) node_rep.node2Code(node);
+		if(thread_on_stack(node, q)) {
+		    MyAP ap = getAPObj(q);
+		    ap.santg = true;
+		}
+	    }
+	}
 
 	if(DO_METHOD_INLINING)
 	    generate_inlining_hints(mm, pig);
@@ -683,6 +700,19 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	Linker linker = Loader.systemLinker;
 	java_lang_Thread = linker.forName("java.lang.Thread");
     }
+
+
+    private boolean thread_on_stack(PANode node, Quad q) {
+	HClass hclass = getAllocatedType(q);
+	if(java_lang_Thread.isSuperclassOf(hclass)) {
+	    if(DEBUG)
+		System.out.println(Debug.code2str(q) + " Thread on Stack");
+	    return true;
+	}
+	return false;
+    }
+
+
 
     /** Pretty printer for debug. */
     public void print(){
