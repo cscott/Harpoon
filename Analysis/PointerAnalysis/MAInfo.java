@@ -25,6 +25,8 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.Analysis.Maps.AllocationInformation;
 
+import harpoon.Analysis.Quads.Unreachable;
+
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaAllCallers;
@@ -42,12 +44,14 @@ import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.QuadFactory;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
 import harpoon.Util.Util;
+import harpoon.Util.WorkSet;
 
 
 import harpoon.IR.Quads.QuadVisitor;
@@ -63,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.32 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.33 2000-07-15 21:17:22 bdemsky Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -831,6 +835,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     private void do_the_inlining(HCodeFactory hcf, Map ih){
 	SCComponent scc = reverse_top_sort_of_cs(ih);
+	Set toPrune=new WorkSet();
 	while(scc != null) {
 	    if(DEBUG) {
 		System.out.println("Processed SCC:{");
@@ -838,10 +843,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    System.out.println(" " + Debug.code2str((CALL) it.next()));
 		System.out.println("}");
 	    }
-	    for(Iterator it = scc.nodes(); it.hasNext(); )
-		inline_call_site((CALL) it.next(), hcf, ih);
+	    for(Iterator it = scc.nodes(); it.hasNext(); ) {
+		CALL cs=(CALL) it.next();
+		inline_call_site(cs, hcf, ih);
+		toPrune.add(cs.getFactory().getParent());
+	    }
 	    scc = scc.prevTopSort();
 	}
+	for(Iterator pit=toPrune.iterator();pit.hasNext();)
+	    Unreachable.prune((HEADER)((HCode)pit.next()).getRootElement());
     }
 
 
@@ -947,52 +957,74 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     
     private void modify_return_and_throw(final CALL cs, final HEADER header) {
-	QuadVisitor inlining_qv = new QuadVisitor() {
-		public void visit(Quad q) {
-		} 
+	class QVisitor extends  QuadVisitor {
+	    Set returnset;
+	    Set throwset;
+	    QVisitor() {
+		returnset=new WorkSet();
+		throwset=new WorkSet();
+	    }
 
-		public void visit(RETURN q) {
-		    Temp retVal = cs.retval(); 
-		    
-		    Quad replace;
-		    if(retVal != null)
-			replace = new MOVE
-			    (cs.getFactory(), null, retVal, q.retval());
-		    else
-			replace = new NOP(cs.getFactory(), null);
-		    
-		    // make the predecessors of q point to replace
-		    move_pred_edges(q, replace);
+	    public void finish() {
+		PHI returnphi=new PHI(cs.getFactory(),null, null,
+				      returnset.size());
+		int edge=0;
+		for(Iterator returnit=returnset.iterator();returnit.hasNext();)
+		    Quad.addEdge((Quad)returnit.next(),0,returnphi,edge++);
+		
+		Quad.addEdge(returnphi,0,cs.next(0),cs.nextEdge(0).which_pred());
 
-		    // the only succesor of replace should now be the
-		    // 0-successor of the CALL instruction (normal return)
-		    Edge edge = cs.nextEdge(0);
-		    Quad.addEdge(replace, 0,
-				 (Quad) edge.toCFG(), edge.which_pred());
-		}
+		PHI throwphi=new PHI(cs.getFactory(),null, null,
+				     throwset.size());
+		edge=0;
+		for(Iterator throwit=throwset.iterator();throwit.hasNext();)
+		    Quad.addEdge((Quad)throwit.next(),0,throwphi,edge++);
+		
+		Quad.addEdge(throwphi,0,cs.next(0),cs.nextEdge(0).which_pred());
+	    }
 
-		public void visit(THROW q) {
-		    Temp retEx = cs.retex(); 
-		    
-		    Quad replace;
-		    if(retEx != null)
-			replace = new MOVE
-			    (cs.getFactory(), null, retEx, q.throwable());
-		    else
-			replace = new NOP(cs.getFactory(), null);
-		    
-		    // make the predecessors of q point to replace
-		    move_pred_edges(q, replace);
+	    public void visit(Quad q) {
+	    } 
 
-		    // the only succesor of replace should now be the
-		    // 1-successor of the CALL instruction (exception return)
-		    Edge edge = cs.nextEdge(1);
-		    Quad.addEdge(replace, 0,
-				 (Quad) edge.toCFG(), edge.which_pred());
-		}
-	    };
-	
+	    public void visit(RETURN q) {
+		Temp retVal = cs.retval(); 
+		
+		Quad replace;
+		if(retVal != null)
+		replace = new MOVE
+		(cs.getFactory(), null, retVal, q.retval());
+		else
+		replace = new NOP(cs.getFactory(), null);
+		
+		// make the predecessors of q point to replace
+		move_pred_edges(q, replace);
+		
+		// the only succesor of replace should now be the
+		// 0-successor of the CALL instruction (normal return)
+		returnset.add(replace);
+	    }
+
+	    public void visit(THROW q) {
+		Temp retEx = cs.retex(); 
+		
+		Quad replace;
+		if(retEx != null)
+		replace = new MOVE
+		(cs.getFactory(), null, retEx, q.throwable());
+		else
+		replace = new NOP(cs.getFactory(), null);
+		
+		// make the predecessors of q point to replace
+		move_pred_edges(q, replace);
+		
+		// the only succesor of replace should now be the
+		// 1-successor of the CALL instruction (exception return)
+		throwset.add(replace);
+	    }
+	};
+	QVisitor inlining_qv=new QVisitor();
 	apply_qv_to_tree(header, inlining_qv);
+	inlining_qv.finish();
     }
 
 
