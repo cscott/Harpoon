@@ -219,6 +219,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_leave
   (JNIEnv *env, jobject _this, jobject inetaddr /*InetAddress*/) {
   assert(0/*unimplemented*/);
 }
+#endif
 
 /*
  * Class:     java_net_PlainDatagramSocketImpl
@@ -226,9 +227,36 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_leave
  * Signature: (Ljava/net/InetAddress;)I
  */
 /* peek at the packet to see who it is from. */
+/* fills the inetaddress and returns the port number */
 JNIEXPORT jint JNICALL Java_java_net_PlainDatagramSocketImpl_peek
-  (JNIEnv *env, jobject _this, jobject i/*InetAddress*/) {
-  assert(0/*unimplemented*/);
+  (JNIEnv *env, jobject _this, jobject addrObj/*InetAddress*/) {
+  struct sockaddr_in sa;
+  int salen = sizeof(sa);
+  jobject fdObj;
+  char buf[1];
+  int fd, rc;
+
+  /* oh, this is ugly */
+  assert(inited && addrObj);
+
+  fdObj = (*env)->GetObjectField(env, _this, DSI_fdObjID);
+  fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
+
+  do {
+    rc = recvfrom(fd, buf, 0, MSG_PEEK, (struct sockaddr *) &sa, &salen);
+  } while (rc<0 && errno==EINTR); /* repeat if interrupted */
+  
+  /* Check for error condition */
+  if (rc<0) {
+    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    return 0;
+  }
+
+  /* fill in inetaddress/extract port */
+
+  (*env)->SetIntField(env, addrObj, IA_familyID, sa.sin_family);
+  (*env)->SetIntField(env, addrObj, IA_addrID, ntohl(sa.sin_addr.s_addr));
+  return ntohs(sa.sin_port);
 }
 
 /*
@@ -239,9 +267,52 @@ JNIEXPORT jint JNICALL Java_java_net_PlainDatagramSocketImpl_peek
 /* receive the datagram packet */
 JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_receive
   (JNIEnv *env, jobject _this, jobject p /*DatagramPacket*/) {
-  assert(0/*unimplemented*/);
+  struct sockaddr_in sa;
+  int salen = sizeof(sa);
+  jobject fdObj, addrObj, bufObj;
+  jbyte *bufp;
+  jint len, off;
+  int fd, rc;
+
+  /* oh, this is ugly */
+  assert(inited && p);
+
+  /* get file descriptor */
+  fdObj = (*env)->GetObjectField(env, _this, DSI_fdObjID);
+  fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
+
+  /* get inetaddress object */
+  addrObj = (*env)->GetObjectField(env, p, DP_addressID);
+
+  /* get message buffer */
+  bufObj = (*env)->GetObjectField(env, p, DP_bufID);
+  bufp = (*env)->GetByteArrayElements(env, (jbyteArray) bufObj, NULL);
+  off = DP_offsetID ? (*env)->GetIntField(env, p, DP_offsetID) : 0;
+  len = (*env)->GetIntField(env, p, DP_lengthID);
+
+  do {
+    rc = recvfrom
+      (fd, bufp+off, len, MSG_WAITALL, (struct sockaddr *) &sa, &salen);
+  } while (rc<0 && errno==EINTR); /* repeat if interrupted */
+  
+  (*env)->ReleaseByteArrayElements(env, (jbyteArray)bufObj, bufp,
+				   rc < 0 ? JNI_ABORT : 0);
+  /* Check for error condition */
+  if (rc<0) {
+    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+    return;
+  }
+
+  /* fill in inetaddress/extract port */
+  if (addrObj) {
+    (*env)->SetIntField(env, addrObj, IA_familyID, sa.sin_family);
+    (*env)->SetIntField(env, addrObj, IA_addrID, ntohl(sa.sin_addr.s_addr));
+    (*env)->SetIntField(env, p, DP_portID, ntohs(sa.sin_port));
+  }
+  /* set length of received datagram */
+  (*env)->SetIntField(env, p, DP_lengthID, rc);
+  return;
 }
-#endif
 
 /*
  * Class:     java_net_PlainDatagramSocketImpl
@@ -274,9 +345,11 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_send
     off = DP_offsetID ? (*env)->GetIntField(env, p, DP_offsetID) : 0;
     len = (*env)->GetIntField(env, p, DP_lengthID);
     /* actually send data gram */
-    printf("SENDING %d bytes to fd %d...", len, fd); // XXX!
-    rc = sendto(fd, bufp+off, len, 0/*no flags*/, &sa, sizeof(sa));
-    printf("%d sent.\n", rc);
+    do {
+      rc = sendto
+	(fd, bufp+off, len, 0/*no flags*/, (struct sockaddr *)&sa, sizeof(sa));
+    } while (rc<0 && errno==EINTR); /* repeat if interrupted */
+
     /* free buffers */
     (*env)->ReleaseByteArrayElements(env, (jbyteArray)bufObj, bufp, JNI_ABORT);
 				     
