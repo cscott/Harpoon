@@ -31,8 +31,15 @@ char *name_of_binary;
 int main(int argc, char *argv[]) {
   int top_of_stack; /* special variable holding the top-of-stack position */
   char *firstclasses[] = {
+#ifdef CLASSPATH_VERSION
+    /* no one's tried CLASSPATH w/o WITH_INIT_CHECK yet.  Whoever's the
+     * first will no doubt need to replace this comment with something
+     * useful. */
+#else
     "java/util/Properties", "java/io/FileDescriptor", "java/lang/System", 
-    "java/io/BufferedWriter", NULL
+    "java/io/BufferedWriter",
+#endif
+    NULL
   };
   JNIEnv *env;
   jclass cls;
@@ -117,6 +124,9 @@ int main(int argc, char *argv[]) {
     (*env)->DeleteLocalRef(env, cls);
   }
 
+#ifdef CLASSPATH_VERSION
+  /* no special method to execute the initialize the library. */
+#else
   /* Execute java.lang.System.initializeSystemClass */
   cls = (*env)->FindClass(env, "java/lang/System");
   CHECK_EXCEPTIONS(env);
@@ -125,6 +135,7 @@ int main(int argc, char *argv[]) {
   (*env)->CallStaticVoidMethod(env, cls, mid);
   CHECK_EXCEPTIONS(env);
   (*env)->DeleteLocalRef(env, cls);
+#endif
 
   /* Execute rest of static initializers, in proper order. */
   for (namep=FNI_static_inits; *namep!=NULL; namep++) {
