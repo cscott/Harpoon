@@ -20,7 +20,7 @@ import java.util.List;
  * a certain set of class data.
  *
  * @author  Duncan Bryce     <duncan@lcs.mit.edu>
- * @version $Id: HData.java,v 1.1.2.5 1999-09-08 21:33:07 cananian Exp $
+ * @version $Id: HData.java,v 1.1.2.6 1999-10-13 16:04:44 cananian Exp $
  */
 public abstract class HData { 
     
@@ -33,7 +33,8 @@ public abstract class HData {
     }
 
     /** Return the <code>HClass</code> to which this <code>HData</code>
-     *  belongs. */
+     *  belongs. Returns <code>null</code> if this <code>HData</code>
+     *  has global, rather than class-local, data structures. */
     public abstract HClass getHClass();
 
     /**

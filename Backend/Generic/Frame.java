@@ -37,7 +37,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.33 1999-10-12 20:04:47 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.34 1999-10-13 16:04:29 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -81,6 +81,11 @@ public abstract class Frame {
 	<code>Frame</code>.
     */
     public abstract RegFileInfo getRegFileInfo();
+
+    /** Returns the appropriate <code>LocationFactory</code> for this
+     *  <code>Frame</code>.
+     */
+    public abstract LocationFactory getLocationFactory();
 
     /** Returns the <code>Generic.CodeGen</code> for the backend
 	associated with <code>this</code>.

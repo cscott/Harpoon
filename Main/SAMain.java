@@ -8,6 +8,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
@@ -27,6 +28,8 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
+import harpoon.Util.Default;
+import harpoon.Util.CombineIterator;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.ReverseIterator;
 import harpoon.Util.Util;
@@ -62,7 +65,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.34 1999-10-12 20:04:59 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.35 1999-10-13 16:04:46 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -259,12 +262,16 @@ public class SAMain extends harpoon.IR.Registration {
     
     public static void outputClassData(HClass hclass, PrintWriter out) 
 	throws IOException {
-      for (Iterator it=frame.getRuntime().classData(hclass).iterator();
-	     it.hasNext(); ) {
+      Iterator it=frame.getRuntime().classData(hclass).iterator();
+      // output global data with the java.lang.Object class.
+      if (hclass==HClass.forName("java.lang.Object")) {
+	  HData data=frame.getLocationFactory().makeLocationData(frame);
+	  it=new CombineIterator(new Iterator[]
+				 { it, Default.singletonIterator(data) });
+      }
+      while (it.hasNext() ) {
 	final Data data = (Data) it.next();
 	
-	messageln("created a Data (yay!)");
-
 	if (PRINT_ORIG) {
 	    info("\t--- TREE FORM (for DATA)---");
 	    data.print(out);

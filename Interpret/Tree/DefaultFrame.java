@@ -8,6 +8,7 @@ import harpoon.Backend.Allocation.AllocationInfo;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Generic.InstrBuilder;
+import harpoon.Backend.Generic.LocationFactory;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Maps.OffsetMap;
@@ -46,7 +47,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.2 1999-10-12 22:39:33 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.3 1999-10-13 16:04:45 cananian Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -197,6 +198,10 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 
     /** Stub added by FSK. */
     public InstrBuilder getInstrBuilder() {
+	return null;
+    }
+    /** Stub added by CSA. */
+    public LocationFactory getLocationFactory() {
 	return null;
     }
     /** Stub added by FSK. */

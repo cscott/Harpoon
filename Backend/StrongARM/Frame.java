@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.6 1999-10-12 20:04:53 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.7 1999-10-13 16:04:43 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -131,6 +131,11 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 
     public harpoon.Backend.Generic.RegFileInfo getRegFileInfo() { 
 	return regFileInfo; 
+    }
+
+    public harpoon.Backend.Generic.LocationFactory getLocationFactory() {
+	// regfileinfo holds the location factory implementation for this frame
+	return regFileInfo;
     }
 
     public harpoon.Backend.Generic.InstrBuilder getInstrBuilder() { 

@@ -3,6 +3,17 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
 
+import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.LocationFactory.Location;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HData;
+import harpoon.ClassFile.HDataElement;
+import harpoon.IR.Tree.Data;
+import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.Type;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.LinearSet;
@@ -17,13 +28,18 @@ import java.util.Map;
 import java.util.HashSet;
 
 /**
- * <code>RegFileInfo</code>
+ * <code>RegFileInfo</code> encapsulates information about the
+ * StrongARM register set.  This object also implements
+ * <code>Generic.LocationFactory</code>, allowing the creation of
+ * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.2 1999-10-12 22:39:32 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.3 1999-10-13 16:04:43 cananian Exp $
  */
-public class RegFileInfo extends harpoon.Backend.Generic.RegFileInfo {
-
+public class RegFileInfo
+    extends harpoon.Backend.Generic.RegFileInfo 
+    implements harpoon.Backend.Generic.LocationFactory
+{
     // FSK wants to relinquish author ship of the first half of this
     // file, since it was just cut-and-pasted out of the
     // hack-once-known-as-SAFrame
@@ -175,4 +191,53 @@ public class RegFileInfo extends harpoon.Backend.Generic.RegFileInfo {
     public Set callerSave() { Util.assert(false, "not implemented yet"); return null; }
     public Set calleeSave() { Util.assert(false, "not implemented yet"); return null; }
     
+
+    // LocationFactory interface.
+    /** Allocate a global register of the specified type and return a
+     *  handle to it.
+     *  @param type a <code>IR.Tree.Type</code> specifying the type
+     *              of the register.
+     */
+    public Location allocateLocation(final int type) {
+	Util.assert(Type.isValid(type), "invalid type");
+	Util.assert(!makeLocationDataCalled,
+		    "allocateLocation() may not be called after "+
+		    "makeLocationData() has been called.");
+	Util.assert(type!=Type.LONG && type!=Type.DOUBLE,
+		    "doubleword locations not implemented by this "+
+		    "LocationFactory");
+	// all other types of locations need a single register.
+	final Temp allocreg = reg[regtop--];
+	// take this out of callersave, calleesave, etc.
+	return new Location() {
+	    public Exp makeAccessor(TreeFactory tf, HCodeElement source) {
+		return new TEMP(tf, source, type, allocreg);
+	    }
+	};
+    }
+    /** The index of the next register to be allocated. */
+    private int regtop=10;
+
+    // since we're just making global registers, we don't need to
+    // allocate the storage anywhere.
+    /** Create an <code>HData</code> which allocates static space for
+     *  any <code>LocationFactory.Location</code>s that have been created.
+     *  As this implementation only allocates global registers, the
+     *  <code>HData</code> returned is always empty. */
+    public HData makeLocationData(final Frame f) {
+	// make sure we don't call allocateLocation after this.
+	makeLocationDataCalled=true;
+	// return an empty HData.
+	return new Data("location-data",f) {
+	    /** Global data, so <code>HClass</code> is <code>null</code>. */
+	    public HClass getHClass() { return null; }
+	    /** Empty tree, so root element is <code>null</code>. */
+	    public HDataElement getRootElement() { return null; }
+	    /** Tell a human reader that there is no data here. */
+	    public void print(java.io.PrintWriter pw) {
+		pw.println("--- no data ---");
+	    }
+	};
+    }
+    private boolean makeLocationDataCalled=false;
 }
