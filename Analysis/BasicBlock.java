@@ -59,13 +59,13 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.33 2000-06-27 19:28:05 salcianu Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.34 2000-07-13 07:20:00 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
     static final boolean TIME = false;
     
-    static final boolean CHECK_INSTRS = false;
+    static boolean CHECK_INSTRS = false;
 
     private HCodeElement first;
     private HCodeElement last;
@@ -562,6 +562,7 @@ public class BasicBlock implements java.io.Serializable {
 		Iterator hceIter = hcode.getElementsI();
 		while(hceIter.hasNext()) {
 		    HCodeElement hce = (HCodeElement) hceIter.next();
+		    System.out.println("BB Check: "+hce);
 		    if (!(hce instanceof harpoon.IR.Assem.InstrLABEL) &&
 			!(hce instanceof harpoon.IR.Assem.InstrDIRECTIVE)&&
 			!(hce instanceof harpoon.IR.Assem.InstrJUMP) &&

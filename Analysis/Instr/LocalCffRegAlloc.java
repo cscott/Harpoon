@@ -66,7 +66,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.100 2000-07-13 02:17:13 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.101 2000-07-13 07:20:20 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -102,6 +102,9 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
 
     private Instr getBack(Instr i) {
+	if (!backedInstrs.keySet().contains(i)) {
+	    return i;
+	}
 	// unforutnately, back(..) alone can't keep transitive
 	// relations (A -> B -> C) out of backedInstrs on its own,
 	// because A -> B could be added first and then followed by 
@@ -144,14 +147,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	final Derivation oldD = code.getDerivation();
 	return new BackendDerivation() {
 	    private HCodeElement orig(HCodeElement h){
-		if (backedInstrs.containsKey(h)) {
-		    HCodeElement h2 = getBack((Instr)h);
-		    // System.out.println(h+" is backed by "+h2);
-		    return h2;
-		} else {
-		    // System.out.println(h+" has no backing instr");
-		    return h;
-		}
+		return getBack((Instr)h);
 	    }
 	    private Temp orig(HCodeElement h, Temp t) {
 		HTempMap coalescedTemps = (HTempMap) instrToHTempMap.get(h);
@@ -289,7 +285,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Instr pre = (Instr) replace.next();
 	    Instr post = (Instr) replace.next();
 	    Instr.replace(pre, post);
-	    back(post, pre);
 	}
    }
 
@@ -663,6 +658,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Instr newi = curr.rename(remappedTemps);
 		    instrsToReplace.add(oldi);
 		    instrsToReplace.add(newi);
+		    back(newi, oldi);
 
 		    curr = newi;
 		    allocV.iloc = oldi;
@@ -829,7 +825,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		    code.assignRegister(i, t, regList);
 
-		    regfile.assign(t, regList, definition(i,t));
+		    regfile.assign(t, regList, definition(getBack(i),t));
 			
 		    
 		    // remove preassignments
@@ -994,6 +990,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			instrsToReplace.add(i);
 			Instr proxy = new InstrMOVEproxy(i);
 			instrsToReplace.add(proxy);
+			back(proxy, i);
 			checked.add(proxy);
 			instrToHTempMap.put(proxy, coalescedTemps);
 			if (isRegister(u)) {
@@ -1011,13 +1008,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Util.assert(!(isRegister(u) && isRegister(d)));
 		    
 		    if (isRegister(u)) {
-			regfile.assign(d, list(u), definition(i,d));
+			regfile.assign(d, list(u), definition(getBack(i),d));
 			regfile.writeTo(d);
 		    } else if (isRegister(d)) {
 			if (regfile.getTemp(d) == null) {
 			    // FSK: can this actually EVER work???
 			    regfile.assign
-				(u, list(d), definition(i,u));
+				(u, list(d), definition(getBack(i),u));
 			} else {
 			    Util.assert(regfile.getTemp(d) == u);
 			}
@@ -1042,14 +1039,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	    
 	    private void remove(Instr i, int n, boolean pr) {
-		/*
-		instrsToReplace.add(i);
-		Instr proxy = new InstrMOVEproxy(i);
-		instrsToReplace.add(proxy);
-		List l = regfile.getAssignment(i.use()[0]);
-		code.assignRegister(proxy, i.use()[0], l);
-		code.assignRegister(proxy, i.def()[0], l);
-		*/
 		instrsToRemove.add(i);
 		if (pr) System.out.println("removing"+n+" "+i+" rf: "+regfile);
 	    }

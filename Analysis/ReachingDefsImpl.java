@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.9 2000-07-05 21:05:25 pnkfelix Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.10 2000-07-13 07:20:00 pnkfelix Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -76,6 +76,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
 	BasicBlock b = bbf.getBlock(hce);
+	Util.assert(b != null, "no block for "+hce);
 	report("In BasicBlock: "+b.toString());
 	// get the map for the BasicBlock
 	Map m = (Map)cache.get(b);
