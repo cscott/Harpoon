@@ -27,6 +27,9 @@ public class EDFScheduler extends Scheduler {
     private static final boolean WALLCLOCK_WORK = false; /* Use the wall clock to estimate work. */
     private static final boolean COUNT_MISSED_DEADLINES = true; 
 
+    private static final boolean WAIT_UNTIL_ALL_THERE = true; /* Used to synchronize the beginning */
+    private static final int NUM_THREADS_TO_WAIT_FOR = 3;
+
     private long deadlinesMissed = 0;
 
     protected EDFScheduler() {
@@ -314,6 +317,15 @@ public class EDFScheduler extends Scheduler {
 	ReleaseParameters r = thread.getReleaseParameters();
 	enabled[threadID] = true;
 	startPeriod[threadID] = System.currentTimeMillis();
+
+	if (WAIT_UNTIL_ALL_THERE && (numThreads >= (NUM_THREADS_TO_WAIT_FOR+OFFSET))) {
+	    NoHeapRealtimeThread.print("\n--- ALL HERE ---");
+	    for (int i=0; i<numThreads; i++) {
+		startPeriod[i] = startPeriod[threadID];
+		work[i] = 0;
+	    }
+	    contextSwitch();
+	}
 
 	if (r != null) {
 	    cost[threadID] = r.getCost().getMilliseconds();
