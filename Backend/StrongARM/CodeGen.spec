@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.155 2000-04-02 09:03:09 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.156 2000-04-05 03:06:07 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -94,6 +94,8 @@ import java.util.Iterator;
 
     // whether to generate a.out-style or elf-style segment directives
     private final boolean is_elf;
+    // whether to use soft-float or hard-float calling convention.
+    private final boolean soft_float = false; // skiffs use hard-float
 
     public CodeGen(Frame frame, boolean is_elf) {
 	super(frame);
@@ -506,7 +508,7 @@ import java.util.Iterator;
       emitDIRECTIVE( ROOT, !is_elf?".text 0":".section .flex.code");
     }
     /** Finish up a CALL or NATIVECALL. */
-    private void emitCallEpilogue(INVOCATION ROOT,
+    private void emitCallEpilogue(INVOCATION ROOT, boolean isNative,
 				  Temp retval, HClass type, 
 				  CallState cs) {
       // this will break if stackOffset > 255 (ie >63 args)
@@ -518,6 +520,19 @@ import java.util.Iterator;
       }
       if (ROOT.getRetval()==null) {
 	  // this is a void method.  don't bother to emit move.
+      } else if (isNative && (!soft_float) &&
+		 ROOT.getRetval().type()==Type.FLOAT) {
+	// float retval passed in float registers.
+	declare(retval, type); declare ( SP, HClass.Void );
+	emit( ROOT, "stfs f0, [sp, #-4]!", SP, SP);
+	emit2(ROOT, "ldr `d0, [sp], #4",new Temp[]{retval,SP},new Temp[]{SP});
+      } else if (isNative && (!soft_float) &&
+		 ROOT.getRetval().type()==Type.DOUBLE) {
+	// double retval passed in float registers.
+	declare(retval, type); declare ( SP, HClass.Void );
+	emit( ROOT, "stfd f0, [sp, #-8]!", SP, SP);
+	emit2(ROOT, "ldr `d0l, [sp], #4",new Temp[]{retval,SP},new Temp[]{SP});
+	emit2(ROOT, "ldr `d0h, [sp], #4",new Temp[]{retval,SP},new Temp[]{SP});
       } else if (ROOT.getRetval().isDoubleWord()) {
 	// not certain an emitMOVE is legal with the l/h modifiers
 	declare(retval, type);
@@ -1959,7 +1974,7 @@ CALL(retval, retex, func, arglist, handler)
     emitHandlerStub(ROOT, retex, handler);
     // normal return
     emitLABEL( ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval,
+    emitCallEpilogue(ROOT, false, retval,
 		     ((ROOT.getRetval()==null)?null:
 		      code.getTreeDerivation().typeMap(ROOT.getRetval())), cs);
     // emit fixup table.
@@ -1990,7 +2005,7 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
     emitHandlerStub(ROOT, retex, handler);
     // normal return
     emitLABEL( ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval,
+    emitCallEpilogue(ROOT, false, retval,
 		     ((ROOT.getRetval()==null)?null:
 		      code.getTreeDerivation().typeMap(ROOT.getRetval())), cs);
     // emit fixup table.
@@ -2010,7 +2025,7 @@ NATIVECALL(retval, func, arglist) %{
 	   (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
 	   true, null);
     // clean up.
-    emitCallEpilogue(ROOT, retval, 
+    emitCallEpilogue(ROOT, true, retval, 
 		     ((ROOT.getRetval()==null)?null:
 		      code.getTreeDerivation().typeMap(ROOT.getRetval())), cs);
 }%
@@ -2025,7 +2040,7 @@ NATIVECALL(retval, NAME(funcLabel), arglist) %{
 	  (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
           true, null );
     // clean up.
-    emitCallEpilogue(ROOT, retval, 
+    emitCallEpilogue(ROOT, true, retval, 
 		     ((ROOT.getRetval()==null)?null:
 		      code.getTreeDerivation().typeMap(ROOT.getRetval())),  cs);
 }%
