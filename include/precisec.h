@@ -17,9 +17,9 @@ rettype ## _and_ex funcname args
 void * funcname args __attribute__ ((section (segment)))
 #define DEFINEFUNCV(funcname, args, segment) \
 void * funcname args
-#define RETURN(rettype, val)	return ((rettype ## _and_ex) { (val), NULL })
+#define RETURN(rettype, val)	return ((rettype ## _and_ex) { NULL, (val) })
 #define RETURNV()		return NULL
-#define THROW(rettype, val)	return ((rettype ## _and_ex) { 0, (val)})
+#define THROW(rettype, val)	return ((rettype ## _and_ex) { (val), 0 })
 #define THROWV(val)		return (val)
 
 #define FIRST_PROTO_ARG(x)
@@ -29,14 +29,14 @@ rettype ## _and_ex (*) argtypes
 void * (*) argtypes
 
 #define FIRST_CALL_ARG(x)
-#define CALL(rettype, retval, funcref, args, ex, handler)\
+#define CALL(rettype, retval, funcref, args, exv, handler)\
 { rettype ## _and_ex __r = (funcref) args;\
-  if (__r.ex) { ex = __r.ex; goto handler; }\
+  if (__r.ex) { exv = __r.ex; goto handler; }\
   else retval = __r.value;\
 }
-#define CALLV(funcref, args, ex, handler)\
+#define CALLV(funcref, args, exv, handler)\
 { void * __r = (funcref) args;\
-  if (__r) { ex = __r; goto handler; }\
+  if (__r) { exv = __r; goto handler; }\
 }
 
 /* <foo> and exception pairs */
