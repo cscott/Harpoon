@@ -37,7 +37,7 @@ import harpoon.Util.Util;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.33 2000-05-14 04:49:17 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.34 2000-05-17 15:15:58 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -45,7 +45,7 @@ abstract class InterProcPA {
 	considered to be holes. */ 
     public static final int MAX_CALLEES = 5;
 
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
 
     /** Displays some warnings for the call sites with 0 callees etc. 
 	This is not necessarily an error! For example, if an application
@@ -80,6 +80,8 @@ abstract class InterProcPA {
 	if(DEBUG)
 	    System.out.println("Inter-procedural analysis " + q);
 
+	System.out.println("CALL-SITE " + q);
+
 	// specially treat some native methods
 	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
 	if(pair != null)
@@ -95,11 +97,11 @@ abstract class InterProcPA {
 	// are not instantiated), not because the call graph is buggy!
 	// So, the CALL is simply ignored.
 	if(nb_callees == 0){
-	    if(WARNINGS){
+	    //	    if(WARNINGS){
 		System.out.println("Warning: CALL site with no callee! ");
 		System.out.println("Warning:  " + current_mmethod);
 		System.out.println("Warning:  " + q);
-	    }
+		//	    }
 	    return new ParIntGraphPair(pig_before, pig_before);
 	}
 
@@ -107,7 +109,7 @@ abstract class InterProcPA {
 	// dynamic dispatches, several call sites have a huge number of callees
 	// These CALLs are not analyzed (i.e. they are treated as method holes)
 	if(nb_callees > MAX_CALLEES){
-	    if(DEBUG)
+	    /////// if(DEBUG)
 		System.out.println("TOO MANY CALLEES (" + nb_callees + ") "+q);
 	    return skip_call(q, pig_before, node_rep);
 	}
@@ -144,7 +146,7 @@ abstract class InterProcPA {
 	    }
 
 	    if(!(PointerAnalysis.analyzable(hm))){
-		if(DEBUG)
+		///////// if(DEBUG)
 		    System.out.println("NEED TO SKIP: " + hm);
 		return skip_call(q, pig_before, node_rep);
 	    }
@@ -185,7 +187,8 @@ abstract class InterProcPA {
 	if(nb_callees_with_pig == 1){
 	    if(DEBUG)
 		System.out.println("SINGLE CALLEE: " + mms[0]);
-	    return mapUp(mms[0],q,pig_before,pigs[0],pa.getParamNodes(mms[0]));
+	    return mapUp(mms[0], q, pig_before,pigs[0],
+			 pa.getParamNodes(mms[0]));
 	}
 
 	// 2. More than one callee: 

@@ -72,12 +72,12 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.53 2000-05-14 23:10:12 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.54 2000-05-17 15:15:58 salcianu Exp $
  */
 public class PointerAnalysis {
 
-    public static final boolean DEBUG     = false;
-    public static final boolean DEBUG2    = false;
+    public static final boolean DEBUG     = true;
+    public static final boolean DEBUG2    = true;
     public static final boolean DEBUG_SCC = true;
 
     /** Makes the pointer analysis deterministic to make the debug easier.

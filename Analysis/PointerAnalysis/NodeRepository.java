@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Map;
 
+import java.lang.reflect.Modifier;
+
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
@@ -19,7 +21,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.20 2000-05-14 04:49:17 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.21 2000-05-17 15:15:58 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -79,10 +81,11 @@ public class NodeRepository {
      * created in advance, using <code>addParamNodes</code>. */
     public final PANode[] getAllParams(MetaMethod mmethod){
 	if(PointerAnalysis.DEBUG){
-	    if(!param_nodes.containsKey(mmethod)){
+	    if(!param_nodes.containsKey(mmethod) &&
+	       !Modifier.isNative(mmethod.getHMethod().getModifiers())) {
 		System.out.println("getAllParams: inexistent nodes");
 		System.exit(1);
-	    }
+	   }
 	}
 	return (PANode[]) param_nodes.get(mmethod);
     }

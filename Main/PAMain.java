@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.47 2000-05-15 22:50:26 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.48 2000-05-17 15:16:10 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -396,50 +396,53 @@ public abstract class PAMain {
     private static void display_method(Method method){
 	HClass hclass = linker.forName(method.declClass);
 	HMethod[] hm  = hclass.getDeclaredMethods();
+	int nbmm = 0;
 
 	HMethod hmethod = null;		
 	for(int i = 0; i < hm.length; i++)
-	    if(hm[i].getName().equals(method.name))
+	    if(hm[i].getName().equals(method.name)){
 		hmethod = hm[i];
 
+		// look for all the meta-methods originating into this method
+		// and do all the analysis stuff on them.
+		for(Iterator it = split_rel.getValues(hmethod); it.hasNext();){
+		    nbmm++;
+		    MetaMethod mm = (MetaMethod) it.next();
+		    System.out.println("HMETHOD " + hmethod
+				       + " ->\n META-METHOD " + mm);
+		    ParIntGraph int_pig = pa.getIntParIntGraph(mm);
+		    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
+		    ParIntGraph pig_inter_thread = pa.threadInteraction(mm);
+		    PANode[] nodes = pa.getParamNodes(mm);
+		    System.out.println("META-METHOD " + mm);
+		    System.out.print("POINTER PARAMETERS: ");
+		    System.out.print("[ ");
+		    for(int j = 0; j < nodes.length; j++)
+			System.out.print(nodes[j] + " ");
+		    System.out.println("]");
+		    System.out.print("INT. GRAPH AT THE END OF THE METHOD:");
+		    System.out.println(int_pig);
+		    System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
+		    System.out.println(ext_pig);
+		    System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
+				     " + INTER-THREAD ANALYSIS:");
+		    System.out.println(pig_inter_thread);
+		}
+	    }
+
 	if(hmethod == null){
-	    System.out.println("Sorry, method " + method.declClass +
-			       " . " + method.name + " not found\n");
+	    System.out.println("Oops!" + method.declClass + "." +
+			       method.name + " not found");
 	    return;
 	}
 
-	int nbmm = 0;
-
-	// look for all the meta-methods originating into this method
-	// and do all the analysis stuff on them.
-	for(Iterator it = split_rel.getValues(hmethod); it.hasNext(); ){
-	    nbmm++;
-	    MetaMethod mm = (MetaMethod) it.next();
-	    System.out.println("HMETHOD " +hmethod+ " ->\n META-METHOD " + mm);
-	    ParIntGraph int_pig = pa.getIntParIntGraph(mm);
-	    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
-	    ParIntGraph pig_inter_thread = pa.threadInteraction(mm);
-	    PANode[] nodes = pa.getParamNodes(mm);
-	    System.out.println("META-METHOD " + mm);
-	    System.out.print("POINTER PARAMETERS: ");
-	    System.out.print("[ ");
-	    for(int i = 0; i < nodes.length; i++)
-		System.out.print(nodes[i] + " ");
-	    System.out.println("]");
-	    System.out.print("INTERNAL GRAPH AT THE END OF THE METHOD:");
-	    System.out.println(int_pig);
-	    System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD:");
-	    System.out.println(ext_pig);
-	    System.out.print("INTERNAL GRAPH AT THE END OF THE METHOD" +
-			     " + INTER-THREAD ANALYSIS:");
-	    System.out.println(pig_inter_thread);
-	}
-
 	if(nbmm == 0)
-	    System.out.println("Oops! " + hmethod +
+	    System.out.println("Oops!" + method.declClass + "." +
+			       method.name +
 			       " seems not to be called at all");
 	else
 	    System.out.println(nbmm + " ANALYZED META-METHOD(S)");
+
     }
 
     // receives a "class.name" string and cut it into pieces, separating
