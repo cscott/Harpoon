@@ -52,5 +52,12 @@ public class InGen extends Instr {
   }
 
   public HClass getResultType() { return resultType; }
+
+  /** Return a list of all the <code>Instr</code>s that can precede
+   *  this one. Always returns a one-element array. */
+  public Instr[] prev() { return new Instr[] { prev }; }
+  /** Return a list of all the possible <code>Instr</code>s that may
+   *  succeed this one. Always returns a one-element array. */
+  public Instr[] next() { return new Instr[] { next }; }
 }
 

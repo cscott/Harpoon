@@ -7,7 +7,7 @@ import harpoon.ClassFile.*;
  * bytecode instruction classes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3 1998-08-03 06:54:53 cananian Exp $
+ * @version $Id: Instr.java,v 1.4 1998-08-03 07:00:49 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -44,4 +44,11 @@ public abstract class Instr implements HCodeElement {
    * <code>null</code>.
    */
   public HClass getResultType() { return null; }
+
+  /** Return a list of all the <code>Instr</code>s that can precede
+   *  this one. */
+  public abstract Instr[] prev();
+  /** Return a list of all the possible <code>Instr</code>s that may
+   *  succeed this one. */
+  public abstract Instr[] next();
 }
