@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
   jobject mainthread;
   jthrowable threadexc;
   char **namep;
+  int st=0;
   int i;
   
   /* set up for bfd */
@@ -120,6 +121,7 @@ int main(int argc, char *argv[]) {
     jobject threadgroup;
     jmethodID gettgID, uncaughtID;
     (*env)->ExceptionClear(env); /* clear the thread's exception */
+    st=1; /* main() exit status will be non-zero. */
     // Thread.currentThread().getThreadGroup()...
     gettgID = (*env)->GetMethodID(env, thrCls, "getThreadGroup",
 				  "()Ljava/lang/ThreadGroup;");
@@ -161,4 +163,5 @@ int main(int argc, char *argv[]) {
   /* print out allocation statistics */
   { void print_statistics(void); print_statistics(); }
 #endif
+  return st;
 }
