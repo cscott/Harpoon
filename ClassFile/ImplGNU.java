@@ -10,7 +10,7 @@ import java.util.Vector;
  * using the <code>gnu.bytecode</code> package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplGNU.java,v 1.1 1998-10-16 06:21:03 cananian Exp $
+ * @version $Id: ImplGNU.java,v 1.2 1998-10-16 07:30:52 cananian Exp $
  */
 
 abstract class ImplGNU  { // wrapper for the RealStuff (TM)
@@ -30,7 +30,9 @@ abstract class ImplGNU  { // wrapper for the RealStuff (TM)
 	    register();
 	    this.superclass = (classtype.getSuper()==null)?null:
 		forName(classtype.getSuper().getName());
-	    {
+	    if (classtype.getInterfaces()==null)
+		this.interfaces=new HClass[0];
+	    else {
 		ClassType[] ctin = classtype.getInterfaces();
 		this.interfaces = new HClass[ctin.length];
 		for (int i=0; i<ctin.length; i++)
@@ -71,11 +73,12 @@ abstract class ImplGNU  { // wrapper for the RealStuff (TM)
 	_this.parent = parent;
 	_this.name = m.getName();
 	_this.modifiers = m.getModifiers();
-	_this.returnType = HClass.forName(m.getReturnType().getName());
+	_this.returnType =
+	    HClass.forDescriptor(m.getReturnType().getSignature());
 	gnu.bytecode.Type[] pt = m.getParameterTypes();
 	_this.parameterTypes = new HClass[pt.length];
 	for (int i=0; i<pt.length; i++)
-	    _this.parameterTypes[i] = HClass.forName(pt[i].getName());
+	    _this.parameterTypes[i]=HClass.forDescriptor(pt[i].getSignature());
 	_this.parameterNames = new String[pt.length]; // xxx fill in
 	_this.exceptionTypes = new HClass[0]; // xxx
 	_this.isSynthetic = false;
