@@ -28,7 +28,7 @@ public class LogicStatement {
         }
         return set;
     }
-    
+
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
 	TypeDescriptor lt=left.typecheck(sa);
 	if (lt!=ReservedTypeDescriptor.INT)
@@ -110,7 +110,7 @@ public class LogicStatement {
             VarDescriptor leftd = VarDescriptor.makeNew("leftboolean");
             left.generate(writer, leftd);
 
-            writer.outputline("// 3-valued NOT");
+            writer.outputline("/* 3-valued NOT*/");
 	    //            writer.outputline("if (!maybe)"); //this isn't really necessary
             writer.startblock();
             writer.outputline(dest.getSafeSymbol() + " =  !" + leftd.getSafeSymbol() + ";");
@@ -131,10 +131,10 @@ public class LogicStatement {
 
             String l = leftd.getSafeSymbol();
             String r = rightd.getSafeSymbol();
-            
+
             if (op == AND) {
 
-                /* 
+                /*
                  * 3-value AND LOGIC
                  *
                  * LRLR
@@ -160,14 +160,14 @@ public class LogicStatement {
                  * M = (L*RM) + (R*LM) + (LM*RM)
                  * O = (L*R)
                  */
-               
+
                 // maybe = (l && rm) || (r && lm) || (lm && rm)
                 writer.outputline("maybe = (" + l + " && " + rm + ") || (" + r + " && " + lm + ") || (" + lm + " && " + rm + ");");
                 writer.outputline(dest.getSafeSymbol() + " = " + l + " && " + r + ";");
 
             } else if (op == OR) {
 
-                /* 
+                /*
                  * 3-value OR LOGIC
                  *
                  * LRLR
@@ -199,20 +199,7 @@ public class LogicStatement {
                 writer.outputline(dest.getSafeSymbol() + " = " + l + " || " + r + ";");
             } else {
                 throw new IRException();
-            }        
+            }
         }
-    }   
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -39,9 +39,9 @@ public class SizeofFunction extends Expr {
         String destname = dest.getSafeSymbol();
         cr.outputline("int " + destname + ";");
 
-        // ok... destination is declared... we gotta expand this rule inplace... and instead of the inclusion we 
+        // ok... destination is declared... we gotta expand this rule inplace... and instead of the inclusion we
         // set the destination in the guard ... otherwise maybe!
-        
+
         VarDescriptor domain = vd;
 
         cr.pushSymbolTable(rule.getSymbolTable());
@@ -51,26 +51,26 @@ public class SizeofFunction extends Expr {
             SetQuantifier sq = ((SetQuantifier) rule.quantifiers().next());
             VarDescriptor rulebinding = sq.getVar();
             String tempvar = (VarDescriptor.makeNew("tempvar")).getSafeSymbol();
-            
+
             // this is to be safe about name overlap because int t = t; sets t to 0!
             cr.outputline("int " + tempvar + " = " + domain.getSafeSymbol() + ";");
             cr.outputline("int " + rulebinding.getSafeSymbol() + " = " + tempvar + ";");
-            
+
             /* pretty print! */
-            cr.outputline("// about to inbed relational function");
-            cr.output("// ");
+            cr.outputline("/* about to inbed relational function*/");
+            cr.output("/* ");
             rule.getGuardExpr().prettyPrint(cr);
-            cr.outputline("");
-            
+            cr.outputline("*/");
+
             /* now we have to generate the guard test */
             VarDescriptor guardval = VarDescriptor.makeNew();
             rule.getGuardExpr().generate(cr, guardval);
-            
+
             cr.outputline("if (" + guardval.getSafeSymbol() + ")");
             cr.startblock(); {
-                
+
                 cr.outputline(destname + " = 1;");
-                
+
             } cr.endblock();
             cr.outputline("else");
             cr.startblock(); {
@@ -94,5 +94,5 @@ public class SizeofFunction extends Expr {
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
         throw new IRException();
     }
-        
+
 }

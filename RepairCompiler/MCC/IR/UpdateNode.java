@@ -37,7 +37,7 @@ class UpdateNode {
 	st+="---------------------\n";
 	return st;
     }
-  
+
     public void addBindings(Vector v) {
 	for (int i=0;i<v.size();i++) {
 	    addBinding((Binding)v.get(i));
@@ -73,7 +73,7 @@ class UpdateNode {
 		Descriptor d=u1.getDescriptor();
 		Expr subexpr=null;
 		Expr intindex=null;
-		
+
 		if (u2.isField()) {
 		    subexpr=((DotExpr)u2.getLeftExpr()).getExpr();
 		    intindex=((DotExpr)u2.getLeftExpr()).getIndex();
@@ -131,7 +131,7 @@ class UpdateNode {
 		    continue;  /* Abstract updates are already accounted for by graph */
 		if (u1.getDescriptor()!=u2.getDescriptor())
 		    continue; /* No interference - different descriptors */
-		
+
 		if ((u1.getOpcode()==Opcode.GT||u1.getOpcode()==Opcode.GE)&&
 		    (u2.getOpcode()==Opcode.GT||u2.getOpcode()==Opcode.GE))
 		    continue; /* Can be satisfied simultaneously */
@@ -174,7 +174,7 @@ class UpdateNode {
 			toremove.add(u2);
 		    continue;
 		}
-		
+
 		/* Compatible operations < & <= */
 		if (((u1.getOpcode()==Opcode.LT)||(u1.getOpcode()==Opcode.LE))&&
 		    ((u2.getOpcode()==Opcode.LT)||(u2.getOpcode()==Opcode.LE)))
@@ -209,7 +209,7 @@ class UpdateNode {
     public Binding getBinding(int i) {
 	return (Binding)bindings.get(i);
     }
-    
+
     public Binding getBinding(VarDescriptor vd) {
 	if (binding.containsKey(vd))
 	    return (Binding)binding.get(vd);
@@ -299,10 +299,10 @@ class UpdateNode {
 		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (usageimage)
-		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+		    cr.outputline("SimpleHashremove("+rg.stmodel+"->"+rd.getJustSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		if (usageinvimage)
-		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hashinv->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
-		
+		    cr.outputline("SimpleHashremove("+rg.stmodel+"->"+rd.getJustSafeSymbol()+"_hashinv, (int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+
 		for(int i=0;i<state.vRules.size();i++) {
 		    Rule r=(Rule)state.vRules.get(i);
 		    if (r.getInclusion().getTargetDescriptors().contains(rd)) {
@@ -311,14 +311,14 @@ class UpdateNode {
 			    if (un.getRule()==r) {
 				/* Update for rule rule r */
 				String name=(String)rg.updatenames.get(un);
-				cr.outputline(rg.strepairtable+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
+				cr.outputline("RepairHashaddrelation("+rg.strepairtable+","+rd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
 			    }
 			}
 		    }
 		}
 	    } else {
 		SetDescriptor sd=(SetDescriptor) d;
-		cr.outputline(rg.stmodel+"->"+sd.getJustSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		cr.outputline("SimpleHashremove("+rg.stmodel+"->"+sd.getJustSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 
 		for(int i=0;i<state.vRules.size();i++) {
 		    Rule r=(Rule)state.vRules.get(i);
@@ -328,7 +328,7 @@ class UpdateNode {
 			    if (un.getRule()==r) {
 				/* Update for rule rule r */
 				String name=(String)rg.updatenames.get(un);
-				cr.outputline(rg.strepairtable+"->addset("+sd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+				cr.outputline("RepairHashaddset("+rg.strepairtable+","+sd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
 			    }
 			}
 		    }
@@ -341,16 +341,16 @@ class UpdateNode {
 		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (usageimage)
-		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+		    cr.outputline("SimpleHashadd("+rg.stmodel+"->"+rd.getJustSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		if (usageinvimage)
-		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hashinv->add((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		    cr.outputline("SimpleHashadd("+rg.stmodel+"->"+rd.getJustSafeSymbol()+"_hashinv, (int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 
 		UpdateNode un=mun.getUpdate(0);
 		String name=(String)rg.updatenames.get(un);
 		cr.outputline(name+"(this,"+rg.stmodel+","+rg.strepairtable+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
 	    } else {
 		SetDescriptor sd=(SetDescriptor)d;
-		cr.outputline(rg.stmodel+"->"+sd.getJustSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		cr.outputline("SimpleHashadd("+rg.stmodel+"->"+sd.getJustSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 
 		UpdateNode un=mun.getUpdate(0);
 		/* Update for rule rule r */
@@ -490,7 +490,7 @@ class UpdateNode {
 	ArrayAnalysis.AccessPath ap=u.getAccessPath();
 	VarDescriptor init=VarDescriptor.makeNew("init");
 	if (ap.isSet()) {
-	    cr.outputline("int "+init.getSafeSymbol()+"="+ap.getSet().getSafeSymbol()+"_hash->firstkey();");
+	    cr.outputline("int "+init.getSafeSymbol()+"= SimpleHashfirstkey("+ap.getSet().getSafeSymbol()+"_hash);");
 	    init.td=ap.getSet().getType();
 	} else {
 	    init=ap.getVar();
@@ -540,7 +540,7 @@ class UpdateNode {
 
 	    if (b.getType()==Binding.SEARCH) {
 		VarDescriptor vd=b.getVar();
-		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+b.getSet().getSafeSymbol()+"_hash->firstkey();");
+		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=SimpleHashfirstkey("+b.getSet().getSafeSymbol()+"_hash);");
 	    } else if (b.getType()==Binding.CREATE) {
 		throw new Error("Creation not supported");
 		//		source.generateSourceAlloc(cr,vd,b.getSet());

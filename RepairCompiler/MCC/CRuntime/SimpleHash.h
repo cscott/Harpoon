@@ -87,7 +87,7 @@ int SimpleHashget(struct SimpleHash *,int key, int* data);
 int SimpleHashcountdata(struct SimpleHash *,int data);
 void SimpleHashaddParent(struct SimpleHash *,struct SimpleHash* parent);
 int SimpleHashfirstkey(struct SimpleHash *);
-struct SimpleIterator* SimpleHashcreateiterator(struct SimpleHash *, struct SimpleHash *);
+struct SimpleIterator* SimpleHashcreateiterator(struct SimpleHash *);
 void SimpleHashiterator(struct SimpleHash *, struct SimpleIterator * it);
 int SimpleHashcount(struct SimpleHash *, int key);
 void SimpleHashaddAll(struct SimpleHash *, struct SimpleHash * set);
@@ -106,7 +106,7 @@ struct SimpleHash {
     int tailindex;
 };
 
-inline int count(struct SimpleHash * thisvar) {
+inline int SimpleHashcountset(struct SimpleHash * thisvar) {
     return thisvar->numelements;
 }
 
@@ -191,15 +191,15 @@ struct RepairHashNode {
 struct RepairHash * noargallocateRepairHash();
 struct RepairHash * allocateRepairHash(int size);
 void freeRepairHash(struct RepairHash *);
-int addset(struct RepairHash *, int setv, int rule, int value, int data);
-int addrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue, int data);
-int addrelation2(struct RepairHash *, int relation, int rule, int lvalue, int rvalue, int data, int data2);
-bool containsset(struct RepairHash *, int setv, int rule, int value);
-bool containsrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
-int getset(struct RepairHash *, int setv, int rule, int value);
-int getrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
-int getrelation2(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
-int ismodify(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
+int RepairHashaddset(struct RepairHash *, int setv, int rule, int value, int data);
+int RepairHashaddrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue, int data);
+int RepairHashaddrelation2(struct RepairHash *, int relation, int rule, int lvalue, int rvalue, int data, int data2);
+bool RepairHashcontainsset(struct RepairHash *, int setv, int rule, int value);
+bool RepairHashcontainsrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
+int RepairHashgetset(struct RepairHash *, int setv, int rule, int value);
+int RepairHashgetrelation(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
+int RepairHashgetrelation2(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
+int RepairHashismodify(struct RepairHash *, int relation, int rule, int lvalue, int rvalue);
 
 struct RepairHash {
     int numelements;

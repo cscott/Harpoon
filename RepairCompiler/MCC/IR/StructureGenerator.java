@@ -14,7 +14,7 @@ public class StructureGenerator {
 	this.state=state;
 	this.rg=rg;
 	try {
-	    cr=new StandardCodeWriter(new java.io.PrintWriter(new FileOutputStream("size.cc"),true));
+	    cr=new StandardCodeWriter(new java.io.PrintWriter(new FileOutputStream("size.c"),true));
 	    crhead=new StandardCodeWriter(new java.io.PrintWriter(new FileOutputStream("size.h"),true));
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -67,27 +67,27 @@ public class StructureGenerator {
 	}
 	str+="};";
 	cr.outputline(str);
-	
 
-	cr.outputline("int typeobject::size(int type) {");
+
+	cr.outputline("int size(int type) {");
 	cr.outputline("return arsize[type];");
 	cr.outputline("}");
 
-	cr.outputline("int typeobject::sizeBytes(int type) {");
+	cr.outputline("int sizeBytes(int type) {");
 	cr.outputline("return arsizeBytes[type];");
 	cr.outputline("}");
 
-	cr.outputline("int typeobject::numElements(int type, int fieldindex) {");
+	cr.outputline("int numElements(int type, int fieldindex) {");
 	cr.outputline("return arnumelements[type][fieldindex];");
 	cr.outputline("}");
-	cr.outputline("typeobject::typeobject() {}");
     }
 
     private void generatecomputesize() {
 	int max=TypeDescriptor.counter;
-	cr.outputline("void typeobject::computesizes("+rg.name+"_state * obj) {");
-	cr.outputline("obj->computesizes(arsize,arnumelements);");
-	cr.outputline("for(int i=0;i<"+max+";i++) {");
+	cr.outputline("void computesizes(struct "+rg.name+"_state * obj) {");
+        cr.outputline("int i;");
+	cr.outputline(rg.name+"_statecomputesizes(obj,arsize,arnumelements);");
+	cr.outputline("for(i=0;i<"+max+";i++) {");
 	cr.outputline("int bits=arsize[i];");
 	cr.outputline("int bytes=bits>>3;");
 	cr.outputline("if (bits%8) bytes++;");
@@ -98,9 +98,6 @@ public class StructureGenerator {
 
     private void generateheader() {
 	crhead.outputline("#include \""+rg.headername + "\"");
-	crhead.outputline("class typeobject {");
-	crhead.outputline("public:");
-	crhead.outputline("typeobject();");
 	crhead.outputline("int getfield(int type, int fieldindex);");
 	crhead.outputline("int isArray(int type, int fieldindex);");
 	crhead.outputline("int isPtr(int type, int fieldindex);");
@@ -109,11 +106,10 @@ public class StructureGenerator {
 	crhead.outputline("int sizeBytes(int type);");
 	crhead.outputline("int getnumfields(int type);");
 	crhead.outputline("bool issubtype(int subtype, int type);");
-	crhead.outputline("void computesizes("+rg.name+"_state *);");
-	crhead.outputline("};");
+	crhead.outputline("void computesizes(struct "+rg.name+"_state *);");
     }
 
-    
+
     private void generategetfield() {
 	for(Iterator it=state.stTypes.descriptors();it.hasNext();) {
 	    TypeDescriptor ttd=(TypeDescriptor)it.next();
@@ -143,8 +139,8 @@ public class StructureGenerator {
 	}
 	str+="};";
 	cr.outputline(str);
-	
-	cr.outputline("int typeobject::getfield(int type, int fieldindex) {");
+
+	cr.outputline("int getfield(int type, int fieldindex) {");
 	cr.outputline("return argetfield[type][fieldindex];");
 	cr.outputline("}");
     }
@@ -164,8 +160,8 @@ public class StructureGenerator {
 	}
 	str+="};";
 	cr.outputline(str);
-	
-	cr.outputline("int typeobject::getnumfields(int type) {");
+
+	cr.outputline("int getnumfields(int type) {");
 	cr.outputline("return argetnumfield[type];");
 	cr.outputline("}");
     }
@@ -201,8 +197,8 @@ public class StructureGenerator {
 	}
 	str+="};";
 	cr.outputline(str);
-	
-	cr.outputline("int typeobject::isArray(int type, int fieldindex) {");
+
+	cr.outputline("int isArray(int type, int fieldindex) {");
 	cr.outputline("return arisArray[type][fieldindex];");
 	cr.outputline("}");
     }
@@ -237,8 +233,8 @@ public class StructureGenerator {
 	}
 	str+="};";
 	cr.outputline(str);
-	
-	cr.outputline("int typeobject::isPtr(int type, int fieldindex) {");
+
+	cr.outputline("int isPtr(int type, int fieldindex) {");
 	cr.outputline("return arisPtr[type][fieldindex];");
 	cr.outputline("}");
     }
@@ -264,7 +260,7 @@ public class StructureGenerator {
 	}
 	str+="};";
 	cr.outputline(str);
-	cr.outputline("bool typeobject::issubtype(int subtype, int type) {");
+	cr.outputline("bool issubtype(int subtype, int type) {");
 	cr.outputline("return arissubtype[subtype][type];");
 	cr.outputline("}");
     }

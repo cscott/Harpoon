@@ -22,7 +22,7 @@ public class TupleOfExpr extends Expr {
         if ((left == null) || (right == null) || (relation == null)) {
             throw new NullPointerException();
         }
-        
+
         this.left = left;
         this.right = right;
         this.relation = relation;
@@ -75,8 +75,8 @@ public class TupleOfExpr extends Expr {
         VarDescriptor rd = VarDescriptor.makeNew();
         right.generate(writer, rd);
 
-        writer.outputline("int " + dest.getSafeSymbol() + " = " + 
-                          relation.getSafeSymbol() + "_hash->contains(" + 
+        writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcontainskeydata("
+                          +relation.getSafeSymbol() +"_hash, "+
                           ld.getSafeSymbol() + ", " +
                           rd.getSafeSymbol() + ");");
     }
@@ -92,7 +92,7 @@ public class TupleOfExpr extends Expr {
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
         TypeDescriptor ld = left.typecheck(sa);
         TypeDescriptor rd = right.typecheck(sa);
-        
+
         if (ld == null || rd == null) {
             return null;
         }

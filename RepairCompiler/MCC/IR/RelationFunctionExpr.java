@@ -34,7 +34,7 @@ public class RelationFunctionExpr extends Expr {
     }
 
     public Set getRequiredDescriptors() {
-        Set v = expr.getRequiredDescriptors();        
+        Set v = expr.getRequiredDescriptors();
         v.add(relation);
         return v;
     }
@@ -47,13 +47,13 @@ public class RelationFunctionExpr extends Expr {
     }
 
     public void generate(CodeWriter cr, VarDescriptor dest) {
-        
+
         String destname = dest.getSafeSymbol();
         cr.outputline("int " + destname + ";");
 
-        // ok... destination is declared... we gotta expand this rule inplace... and instead of the inclusion we 
+        // ok... destination is declared... we gotta expand this rule inplace... and instead of the inclusion we
         // set the destination in the guard ... otherwise maybe!
-        
+
         VarDescriptor domain = VarDescriptor.makeNew("domain");
         expr.generate(cr, domain);
 
@@ -64,34 +64,34 @@ public class RelationFunctionExpr extends Expr {
             SetQuantifier sq = ((SetQuantifier) rule.quantifiers().next());
             VarDescriptor rulebinding = sq.getVar();
             String tempvar = (VarDescriptor.makeNew("tempvar")).getSafeSymbol();
-            
+
             // this is to be safe about name overlap because int t = t; sets t to 0!
             cr.outputline("int " + tempvar + " = " + domain.getSafeSymbol() + ";");
             cr.outputline("int " + rulebinding.getSafeSymbol() + " = " + tempvar + ";");
-            
+
             /* pretty print! */
-            cr.outputline("// about to inbed relational function");
-            cr.output("// ");
+            cr.outputline("/* about to inbed relational function*/");
+            cr.output("/* ");
             rule.getGuardExpr().prettyPrint(cr);
-            cr.outputline("");
-            
+            cr.outputline("*/");
+
             /* now we have to generate the guard test */
             VarDescriptor guardval = VarDescriptor.makeNew();
             rule.getGuardExpr().generate(cr, guardval);
-            
+
             cr.outputline("if (" + guardval.getSafeSymbol() + ")");
             cr.startblock(); {
-                
+
                 /* now we have to generate the inclusion code */
                 RelationInclusion ri = (RelationInclusion) rule.getInclusion();
-                
-                // basically, destname = righthandside<r, r.field>            
+
+                // basically, destname = righthandside<r, r.field>
                 VarDescriptor tempdest = VarDescriptor.makeNew("tempdest");
                 Expr rhs = ri.getRightExpr();
                 rhs.generate(cr, tempdest);
-                
+
                 cr.outputline(destname + " = " + tempdest.getSafeSymbol() + ";");
-                
+
             } cr.endblock();
             cr.outputline("else");
             cr.startblock(); {

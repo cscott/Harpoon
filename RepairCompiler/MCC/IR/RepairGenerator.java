@@ -77,12 +77,26 @@ public class RepairGenerator {
         this.outputrepair = new java.io.PrintWriter(outputrepair, true);
         this.outputaux = new java.io.PrintWriter(outputaux, true);
         this.outputhead = new java.io.PrintWriter(outputhead, true);
+
         headername=st;
 	name_updates();
 	generatetypechecks(true);
         generate_tokentable();
+	RelationDescriptor.prefix = "thisvar->";
+	SetDescriptor.prefix = "thisvar->";
+
         generate_hashtables();
 	generate_stateobject();
+
+
+	/* Rewrite globals */
+        CodeWriter craux = new StandardCodeWriter(this.outputaux);
+	for (Iterator it=this.state.stGlobals.descriptors();it.hasNext();) {
+	    VarDescriptor vd=(VarDescriptor)it.next();
+	    craux.outputline("#define "+vd.getSafeSymbol()+" thisvar->"+vd.getSafeSymbol());
+	}
+
+
 	generate_call();
 	generate_start();
         generate_rules();
@@ -92,8 +106,7 @@ public class RepairGenerator {
         generate_checks();
         generate_teardown();
 	CodeWriter crhead = new StandardCodeWriter(this.outputhead);
-	CodeWriter craux = new StandardCodeWriter(this.outputaux);
-	crhead.outputline("};");
+	craux = new StandardCodeWriter(this.outputaux);
 	craux.outputline("}");
 
 	if (Compiler.GENERATEDEBUGHOOKS) {
@@ -129,6 +142,7 @@ public class RepairGenerator {
 
 	for (Iterator it=this.state.stGlobals.descriptors();it.hasNext();) {
 	    VarDescriptor vd=(VarDescriptor)it.next();
+            craux.outputline("#undef "+vd.getSafeSymbol());
 	    craux.outputline("#define "+vd.getSafeSymbol()+" "+ststate+"->"+vd.getSafeSymbol());
 	}
 
@@ -145,11 +159,11 @@ public class RepairGenerator {
 		switch(mun.op) {
 		case MultUpdateNode.ADD:
 		    if (isrelation) {
-			crhead.outputline("void "+methodname+"("+name+"_state * " +ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+", int "+stright+");");
-			craux.outputline("void "+methodname+"("+name+"_state * "+ ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+", int "+stright+")");
+			crhead.outputline("void "+methodname+"(struct "+name+"_state * " +ststate+",struct "+name+" * "+stmodel+", struct RepairHash * "+strepairtable+", int "+stleft+", int "+stright+");");
+			craux.outputline("void "+methodname+"(struct "+name+"_state * "+ ststate+", struct "+name+" * "+stmodel+", struct RepairHash * "+strepairtable+", int "+stleft+", int "+stright+")");
 		    } else {
-			crhead.outputline("void "+methodname+"("+name+"_state * "+ ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+");");
-			craux.outputline("void "+methodname+"("+name+"_state * "+ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+")");
+			crhead.outputline("void "+methodname+"(struct "+name+"_state * "+ ststate+", struct "+name+" * "+stmodel+", struct RepairHash * "+strepairtable+", int "+stleft+");");
+			craux.outputline("void "+methodname+"(struct "+name+"_state * "+ststate+", struct "+name+" * "+stmodel+", struct RepairHash * "+strepairtable+", int "+stleft+")");
 		    }
 		    craux.startblock();
 		    craux.outputline("int maybe=0;");
@@ -166,7 +180,7 @@ public class RepairGenerator {
 		    break;
 		case MultUpdateNode.REMOVE: {
 		    Rule r=un.getRule();
-		    String methodcall="void "+methodname+"("+name+"_state * "+ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable;
+		    String methodcall="void "+methodname+"(struct "+name+"_state * "+ststate+", struct "+name+" * "+stmodel+", struct RepairHash * "+strepairtable;
 		    for(int j=0;j<r.numQuantifiers();j++) {
 			Quantifier q=r.getQuantifier(j);
 			if (q instanceof SetQuantifier) {
@@ -200,7 +214,7 @@ public class RepairGenerator {
 		    break;
 		case MultUpdateNode.MODIFY: {
 		    Rule r=un.getRule();
-		    String methodcall="void "+methodname+"("+name+"_state * "+ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable;
+		    String methodcall="void "+methodname+"(struct "+name+"_state * "+ststate+", struct "+name+" * "+stmodel+", struct RepairHash * "+strepairtable;
 		    for(int j=0;j<r.numQuantifiers();j++) {
 			Quantifier q=r.getQuantifier(j);
 			if (q instanceof SetQuantifier) {
@@ -244,20 +258,20 @@ public class RepairGenerator {
     private void generate_call() {
         CodeWriter cr = new StandardCodeWriter(outputrepair);
 	VarDescriptor vdstate=VarDescriptor.makeNew("repairstate");
-	cr.outputline(name+"_state * "+vdstate.getSafeSymbol()+"=new "+name+"_state();");
+	cr.outputline("struct "+ name+"_state * "+vdstate.getSafeSymbol()+"=allocate"+name+"_state();");
 	Iterator globals=state.stGlobals.descriptors();
 	while (globals.hasNext()) {
 	    VarDescriptor vd=(VarDescriptor) globals.next();
 	    cr.outputline(vdstate.getSafeSymbol()+"->"+vd.getSafeSymbol()+"=("+vd.getType().getGenerateType().getSafeSymbol()+")"+vd.getSafeSymbol()+";");
 	}
 	/* Insert repair here */
-	cr.outputline(vdstate.getSafeSymbol()+"->doanalysis();");
+	cr.outputline("doanalysis("+vdstate.getSafeSymbol()+");");
 	globals=state.stGlobals.descriptors();
 	while (globals.hasNext()) {
 	    VarDescriptor vd=(VarDescriptor) globals.next();
 	    cr.outputline("*(("+vd.getType().getGenerateType().getSafeSymbol()+"*) &"+vd.getSafeSymbol()+")="+vdstate.getSafeSymbol()+"->"+vd.getSafeSymbol()+";");
 	}
-	cr.outputline("delete "+vdstate.getSafeSymbol()+";");
+	cr.outputline("free"+name+"_state("+vdstate.getSafeSymbol()+");");
     }
 
     private void generate_tokentable() {
@@ -265,12 +279,12 @@ public class RepairGenerator {
         Iterator tokens = TokenLiteralExpr.tokens.keySet().iterator();
 
         cr.outputline("");
-        cr.outputline("// Token values");
+        cr.outputline("/* Token values*/");
         cr.outputline("");
 
         while (tokens.hasNext()) {
             Object token = tokens.next();
-            cr.outputline("// " + token.toString() + " = " + TokenLiteralExpr.tokens.get(token).toString());
+            cr.outputline("/* " + token.toString() + " = " + TokenLiteralExpr.tokens.get(token).toString()+"*/");
         }
 
         cr.outputline("");
@@ -279,15 +293,15 @@ public class RepairGenerator {
 
     private void generate_stateobject() {
         CodeWriter crhead = new StandardCodeWriter(outputhead);
-	crhead.outputline("class "+name+"_state {");
-	crhead.outputline("public:");
+	crhead.outputline("struct "+name+"_state {");
 	Iterator globals=state.stGlobals.descriptors();
 	while (globals.hasNext()) {
 	    VarDescriptor vd=(VarDescriptor) globals.next();
 	    crhead.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+";");
 	}
-	crhead.outputline("void computesizes(int *,int **);");
-	crhead.outputline("void recomputesizes();");
+        crhead.outputline("};");
+	crhead.outputline("void "+name+"_statecomputesizes(struct "+name+"_state * ,int *,int **);");
+	crhead.outputline("void "+name+"_staterecomputesizes(struct "+name+"_state *);");
     }
 
     private void generate_computesizes() {
@@ -302,7 +316,7 @@ public class RepairGenerator {
 		public SymbolTable getSymbolTable() { return st; }
 	    };
 
-	cr.outputline("void "+name+"_state::computesizes(int *sizearray,int **numele) {");
+	cr.outputline("void "+name+"_statecomputesizes(struct "+name+"_state * thisvar,int *sizearray,int **numele) {");
 	cr.outputline("int maybe=0;");
 	for(int i=0;i<max;i++) {
 	    TypeDescriptor td=tdarray[i];
@@ -342,7 +356,7 @@ public class RepairGenerator {
 	CodeWriter cr = new StandardCodeWriter(outputaux) {
 		public SymbolTable getSymbolTable() { return st; }
 	    };
-	cr.outputline("void "+name+"_state::recomputesizes() {");
+	cr.outputline("void "+name+"_staterecomputesizes(struct "+name+"_state * thisvar) {");
 	cr.outputline("int maybe=0;");
 	for(int i=0;i<max;i++) {
 	    TypeDescriptor td=tdarray[i];
@@ -376,15 +390,12 @@ public class RepairGenerator {
 	crhead.outputline("#ifndef "+name+"_h");
 	crhead.outputline("#define "+name+"_h");
         crhead.outputline("#include \"SimpleHash.h\"");
-	crhead.outputline("extern \"C\" {");
         crhead.outputline("#include \"instrument.h\"");
-	crhead.outputline("}");
         crhead.outputline("#include <stdio.h>");
         crhead.outputline("#include <stdlib.h>");
-	crhead.outputline("class "+name+" {");
-	crhead.outputline("public:");
-	crhead.outputline(name+"();");
-	crhead.outputline("~"+name+"();");
+	crhead.outputline("struct "+name+" * allocate"+name+"();");
+	crhead.outputline("void free"+name+"(struct "+name+" *);");
+	crhead.outputline("struct "+name+" {");
         craux.outputline("#include \""+headername+"\"");
         craux.outputline("#include \"size.h\"");
 	if (Compiler.TIME) {
@@ -406,17 +417,18 @@ public class RepairGenerator {
 		}
 	    }
 	}
-        craux.outputline(name+"::"+name+"() {");
-        craux.outputline("// creating hashtables ");
+        craux.outputline("struct "+ name+"* "+name+"() {");
+        craux.outputline("/* creating hashtables */");
 
         /* build sets */
         Iterator sets = state.stSets.descriptors();
+        craux.outputline("struct "+name+"* thisvar=(struct "+name+"*) malloc(sizeof(struct "+name+"));");
 
         /* first pass create all the hash tables */
         while (sets.hasNext()) {
             SetDescriptor set = (SetDescriptor) sets.next();
-	    crhead.outputline("SimpleHash* " + set.getSafeSymbol() + "_hash;");
-            craux.outputline(set.getSafeSymbol() + "_hash = new SimpleHash();");
+	    crhead.outputline("struct SimpleHash* " + set.getJustSafeSymbol() + "_hash;");
+            craux.outputline(set.getSafeSymbol() + "_hash = noargallocateSimpleHash();");
         }
 
         /* second pass build relationships between hashtables */
@@ -428,7 +440,7 @@ public class RepairGenerator {
 
             while (subsets.hasNext()) {
                 SetDescriptor subset = (SetDescriptor) subsets.next();
-                craux.outputline(subset.getSafeSymbol() + "_hash->addParent(" + set.getSafeSymbol() + "_hash);");
+                craux.outputline("SimpleHashaddParent("+subset.getSafeSymbol() +"_hash ,"+ set.getSafeSymbol() + "_hash);");
             }
         }
 
@@ -440,20 +452,20 @@ public class RepairGenerator {
             RelationDescriptor relation = (RelationDescriptor) relations.next();
 
             if (relation.testUsage(RelationDescriptor.IMAGE)) {
-                crhead.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hash;");
-                craux.outputline(relation.getSafeSymbol() + "_hash = new SimpleHash();");
+                crhead.outputline("struct SimpleHash* " + relation.getJustSafeSymbol() + "_hash;");
+                craux.outputline(relation.getSafeSymbol() + "_hash = noargallocateSimpleHash();");
             }
 
             if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
-                crhead.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hashinv;");
-                craux.outputline(relation.getSafeSymbol() + "_hashinv = new SimpleHash();");
+                crhead.outputline("struct SimpleHash* " + relation.getJustSafeSymbol() + "_hashinv;");
+                craux.outputline(relation.getSafeSymbol() + "_hashinv = noargallocateSimpleHash();");
             }
         }
 
         craux.outputline("}");
         crhead.outputline("};");
-        craux.outputline(name+"::~"+name+"() {");
-        craux.outputline("// deleting hashtables");
+        craux.outputline("void free"+name+"(struct "+ name +"* thisvar) {");
+        craux.outputline("/* deleting hashtables */");
 
         /* build destructor */
         sets = state.stSets.descriptors();
@@ -461,7 +473,7 @@ public class RepairGenerator {
         /* first pass create all the hash tables */
         while (sets.hasNext()) {
             SetDescriptor set = (SetDescriptor) sets.next();
-            craux.outputline("delete "+set.getSafeSymbol() + "_hash;");
+            craux.outputline("freeSimpleHash("+set.getSafeSymbol() + "_hash);");
         }
 
         /* destroy relations */
@@ -472,13 +484,14 @@ public class RepairGenerator {
             RelationDescriptor relation = (RelationDescriptor) relations.next();
 
             if (relation.testUsage(RelationDescriptor.IMAGE)) {
-                craux.outputline("delete "+relation.getSafeSymbol() + "_hash;");
+                craux.outputline("freeSimpleHash("+relation.getSafeSymbol() + "_hash);");
             }
 
             if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
-                craux.outputline("delete " + relation.getSafeSymbol() + "_hashinv;");
+                craux.outputline("freeSimpleHash(" + relation.getSafeSymbol() + "_hashinv);");
             }
         }
+        craux.outputline("free(thisvar);");
         craux.outputline("}");
     }
 
@@ -497,31 +510,29 @@ public class RepairGenerator {
 	    craux.outputline("int abstractcount;");
 	}
 
-	crhead.outputline("void doanalysis();");
-	craux.outputline("void "+name +"_state::doanalysis()");
+	crhead.outputline("void doanalysis(struct "+name+"_state *);");
+	craux.outputline("void doanalysis(struct "+name+"_state * thisvar)");
   	craux.startblock();
 	if (Compiler.TIME) {
 	    craux.outputline("struct timeval _begin_time,_end_time;");
 	    craux.outputline("gettimeofday(&_begin_time,NULL);");
 	}
-
 	if (Compiler.GENERATEINSTRUMENT) {
 	    craux.outputline("updatecount=0;");
 	    craux.outputline("rebuildcount=0;");
 	    craux.outputline("abstractcount=0;");
 	}
 	craux.outputline("int highmark;");
+	craux.outputline("struct "+name+ " * "+oldmodel.getSafeSymbol()+"=0;");
+        craux.outputline("struct WorkList * "+worklist.getSafeSymbol()+" = allocateWorkList();");
+	craux.outputline("struct RepairHash * "+repairtable.getSafeSymbol()+"=0;");
 	craux.outputline("initializestack(&highmark);");
-	craux.outputline("typeobject *typeobject1=gettypeobject();");
-	craux.outputline("typeobject1->computesizes(this);");
-	craux.outputline("recomputesizes();");
-	craux.outputline(name+ " * "+oldmodel.getSafeSymbol()+"=0;");
-        craux.outputline("WorkList * "+worklist.getSafeSymbol()+" = new WorkList();");
-	craux.outputline("RepairHash * "+repairtable.getSafeSymbol()+"=0;");
+	craux.outputline("computesizes(thisvar);");
+	craux.outputline(name+"_staterecomputesizes(thisvar);");
 	craux.outputline("while (1)");
 	craux.startblock();
-	craux.outputline(name+ " * "+newmodel.getSafeSymbol()+"=new "+name+"();");
-	craux.outputline(worklist.getSafeSymbol()+"->reset();");
+	craux.outputline("struct "+name+ " * "+newmodel.getSafeSymbol()+"=allocate"+name+"();");
+	craux.outputline("WorkListreset("+worklist.getSafeSymbol()+");");
 	if (Compiler.GENERATEINSTRUMENT)
 	    craux.outputline("rebuildcount++;");
     }
@@ -550,7 +561,7 @@ public class RepairGenerator {
 		public SymbolTable getSymbolTable() { return st; }
 	    };
 
-	cr.outputline("// printing sets!");
+	cr.outputline("/* printing sets!*/");
 	cr.outputline("printf(\"\\n\\nPRINTING SETS AND RELATIONS\\n\");");
 
         Iterator setiterator = state.stSets.descriptors();
@@ -563,13 +574,13 @@ public class RepairGenerator {
 	    String setname = sd.getSafeSymbol();
 
 	    cr.startblock();
-	    cr.outputline("// printing set " + setname);
-	    cr.outputline("printf(\"\\nPrinting set " + sd.getSymbol() + " - %d elements \\n\", " + setname + "_hash->count());");
-	    cr.outputline("SimpleIterator __setiterator;");
-	    cr.outputline("" + setname + "_hash->iterator(__setiterator);");
-	    cr.outputline("while (__setiterator.hasNext())");
+	    cr.outputline("/* printing set " + setname+"*/");
+	    cr.outputline("printf(\"\\nPrinting set " + sd.getSymbol() + " - %d elements \\n\", SimpleHashcountset("+setname+"_hash));");
+	    cr.outputline("struct SimpleIterator __setiterator;");
+	    cr.outputline("SimpleHashiterator(&"+setname+"_hash,__setiterator);");
+	    cr.outputline("while (hasNext(&__setiterator))");
 	    cr.startblock();
-	    cr.outputline("int __setval = (int) __setiterator.next();");
+	    cr.outputline("int __setval = (int) next(&__setiterator);");
 
 	    TypeDescriptor td = sd.getType();
 	    if (td instanceof StructureTypeDescriptor) {
@@ -612,7 +623,7 @@ public class RepairGenerator {
 			InvariantValue ivalue=new InvariantValue();
 			cr.setInvariantValue(ivalue);
 
-			cr.outputline("// build " +escape(rule.toString()));
+			cr.outputline("/* build " +escape(rule.toString())+"*/");
 			cr.startblock();
 			cr.outputline("int maybe=0;");
 
@@ -639,6 +650,7 @@ public class RepairGenerator {
 			    }
 			}
 
+                        int openparencount=0;
 			for(Iterator invit=invariants.iterator();invit.hasNext();) {
 			    Expr invexpr=(Expr)invit.next();
 			    VarDescriptor tmpvd=VarDescriptor.makeNew("tmpvar");
@@ -647,8 +659,9 @@ public class RepairGenerator {
 			    cr.outputline("int "+maybevd.getSafeSymbol()+"=maybe;");
 			    cr.outputline("maybe=0;");
 			    ivalue.assignPair(invexpr,tmpvd,maybevd);
+                            openparencount++;
+                            cr.startblock();
 			}
-
 			quantifiers = rule.quantifiers();
 			while (quantifiers.hasNext()) {
 			    Quantifier quantifier = (Quantifier) quantifiers.next();
@@ -656,9 +669,9 @@ public class RepairGenerator {
 			}
 
 			/* pretty print! */
-			cr.output("//");
+			cr.output("/*");
 			rule.getGuardExpr().prettyPrint(cr);
-			cr.outputline("");
+			cr.outputline("*/");
 
 			/* now we have to generate the guard test */
 			VarDescriptor guardval = VarDescriptor.makeNew();
@@ -675,6 +688,8 @@ public class RepairGenerator {
 			    cr.endblock();
 			}
 			cr.endblock();
+                        while((openparencount--)>0)
+                            cr.endblock();
 			cr.outputline("");
 			cr.outputline("");
 		    }
@@ -685,13 +700,13 @@ public class RepairGenerator {
 		for(Iterator initialworklist=ruleset.iterator();initialworklist.hasNext();) {
 		    /** Construct initial worklist set */
 		    Rule rule=(Rule)initialworklist.next();
-		    cr2.outputline(worklist.getSafeSymbol()+"->add("+rule.getNum()+",-1,0,0);");
+		    cr2.outputline("WorkListadd("+worklist.getSafeSymbol()+","+rule.getNum()+",-1,0,0);");
 		}
 
-		cr2.outputline("while ("+worklist.getSafeSymbol()+"->hasMoreElements())");
+		cr2.outputline("while (WorkListhasMoreElements("+worklist.getSafeSymbol()+"))");
 		cr2.startblock();
 		VarDescriptor idvar=VarDescriptor.makeNew("id");
-		cr2.outputline("int "+idvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getid();");
+		cr2.outputline("int "+idvar.getSafeSymbol()+"=WorkListgetid("+worklist.getSafeSymbol()+");");
 
 		String elseladder = "if";
 
@@ -714,10 +729,10 @@ public class RepairGenerator {
 			VarDescriptor typevar=VarDescriptor.makeNew("type");
 			VarDescriptor leftvar=VarDescriptor.makeNew("left");
 			VarDescriptor rightvar=VarDescriptor.makeNew("right");
-			cr.outputline("int "+typevar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->gettype();");
-			cr.outputline("int "+leftvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getlvalue();");
-			cr.outputline("int "+rightvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getrvalue();");
-			cr.outputline("// build " +escape(rule.toString()));
+			cr.outputline("int "+typevar.getSafeSymbol()+"= WorkListgettype("+worklist.getSafeSymbol()+");");
+			cr.outputline("int "+leftvar.getSafeSymbol()+"= WorkListgetlvalue("+worklist.getSafeSymbol()+");");
+			cr.outputline("int "+rightvar.getSafeSymbol()+"= WorkListgetrvalue("+worklist.getSafeSymbol()+");");
+			cr.outputline("/* build " +escape(rule.toString())+"*/");
 
 
 			for (int j=0;j<rule.numQuantifiers();j++) {
@@ -726,10 +741,10 @@ public class RepairGenerator {
 			}
 
 			/* pretty print! */
-			cr.output("//");
+			cr.output("/*");
 
 			rule.getGuardExpr().prettyPrint(cr);
-			cr.outputline("");
+			cr.outputline("*/");
 
 			/* now we have to generate the guard test */
 
@@ -762,7 +777,7 @@ public class RepairGenerator {
 		cr2.outputline("exit(1);");
 		cr2.endblock();
 		// end block created for worklist
-		cr2.outputline(worklist.getSafeSymbol()+"->pop();");
+		cr2.outputline("WorkListpop("+worklist.getSafeSymbol()+");");
 		cr2.endblock();
 	    }
 	}
@@ -799,7 +814,7 @@ public class RepairGenerator {
 		CodeWriter cr = new StandardCodeWriter(outputaux);
 		cr.pushSymbolTable(constraint.getSymbolTable());
 
-		cr.outputline("// checking " + escape(constraint.toString()));
+		cr.outputline("/* checking " + escape(constraint.toString())+"*/");
                 cr.startblock();
 
                 ListIterator quantifiers = constraint.quantifiers();
@@ -830,9 +845,10 @@ public class RepairGenerator {
 		if (Compiler.REPAIR) {
 		/* Do repairs */
 		/* Build new repair table */
+
 	        cr.outputline("if ("+repairtable.getSafeSymbol()+")");
-		cr.outputline("delete "+repairtable.getSafeSymbol()+";");
-                cr.outputline(repairtable.getSafeSymbol()+"=new RepairHash();");
+		cr.outputline("freeRepairHash("+repairtable.getSafeSymbol()+");");
+                cr.outputline(repairtable.getSafeSymbol()+"=noargallocateRepairHash();");
 
 		if (Compiler.GENERATEDEBUGHOOKS)
 		    cr.outputline("debughook();");
@@ -925,7 +941,7 @@ public class RepairGenerator {
 		cr.outputline("}");
 
 		cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
-		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
+		cr.outputline("free"+name+"("+oldmodel.getSafeSymbol()+");");
 		cr.outputline(oldmodel.getSafeSymbol()+"="+newmodel.getSafeSymbol()+";");
 		cr.outputline("goto rebuild;");  /* Rebuild model and all */
 		}
@@ -943,11 +959,11 @@ public class RepairGenerator {
 	CodeWriter cr = new StandardCodeWriter(outputaux);
 	cr.startblock();
 	cr.outputline("if ("+repairtable.getSafeSymbol()+")");
-	cr.outputline("delete "+repairtable.getSafeSymbol()+";");
+	cr.outputline("freeRepairHash("+repairtable.getSafeSymbol()+");");
 	cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
-	cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
-	cr.outputline("delete "+newmodel.getSafeSymbol()+";");
-	cr.outputline("delete "+worklist.getSafeSymbol()+";");
+	cr.outputline("free"+name+"("+oldmodel.getSafeSymbol()+");");
+	cr.outputline("free"+name+"("+newmodel.getSafeSymbol()+");");
+	cr.outputline("freeWorkList("+worklist.getSafeSymbol()+");");
 	cr.outputline("resettypemap();");
 	cr.outputline("break;");
 	cr.endblock();
@@ -1051,12 +1067,12 @@ public class RepairGenerator {
 	    ((RelationExpr)expr.getLeftExpr()).getExpr().generate(cr,leftside);
 	    expr.getRightExpr().generate(cr,newvalue);
 	    cr.outputline(rd.getRange().getType().getGenerateType().getSafeSymbol()+" "+rightside.getSafeSymbol()+";");
-	    cr.outputline(rd.getSafeSymbol()+"_hash->get("+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+	    cr.outputline("SimpleHashget("+rd.getSafeSymbol()+"_hash,"+leftside.getSafeSymbol()+", &"+rightside.getSafeSymbol()+");");
 	} else {
 	    ((RelationExpr)expr.getLeftExpr()).getExpr().generate(cr,rightside);
 	    expr.getRightExpr().generate(cr,newvalue);
 	    cr.outputline(rd.getDomain().getType().getGenerateType().getSafeSymbol()+" "+leftside.getSafeSymbol()+";");
-	    cr.outputline(rd.getSafeSymbol()+"_hashinv->get("+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+	    cr.outputline("SimpleHashget("+rd.getSafeSymbol()+"_hashinv,"+rightside.getSafeSymbol()+", &"+leftside.getSafeSymbol()+");");
 	}
 
 	opcode=Opcode.translateOpcode(negated,opcode);
@@ -1078,17 +1094,17 @@ public class RepairGenerator {
 	}
 	/* Do abstract repairs */
 	if (usageimage) {
-	    cr.outputline(rd.getSafeSymbol()+"_hash->remove("+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+	    cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hash, "+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
 	}
 	if (usageinvimage) {
-	    cr.outputline(rd.getSafeSymbol()+"_hashinv->remove("+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+	    cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hashinv, "+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
 	}
 
 	if (needremoveloop) {
 	    if (!inverted) {
-		cr.outputline("if ("+rd.getSafeSymbol()+"_hash->contains("+leftside.getSafeSymbol()+")) {");
+		cr.outputline("if (SimpleHashcontainskey("+rd.getSafeSymbol()+"_hash, "+leftside.getSafeSymbol()+")) {");
 	    } else {
-		cr.outputline("if ("+rd.getSafeSymbol()+"_hashinv->contains("+rightside.getSafeSymbol()+")) {");
+		cr.outputline("if (SimpleHashcontainskey("+rd.getSafeSymbol()+"_hashinv, "+rightside.getSafeSymbol()+")) {");
 	    }
 	    for(int i=0;i<state.vRules.size();i++) {
 		Rule r=(Rule)state.vRules.get(i);
@@ -1098,7 +1114,7 @@ public class RepairGenerator {
 			if (un.getRule()==r) {
 				/* Update for rule r */
 			    String name=(String)updatenames.get(un);
-			    cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+");");
+			    cr.outputline("RepairHashaddrelation("+repairtable.getSafeSymbol()+","+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+");");
 			}
 		    }
 		}
@@ -1109,16 +1125,16 @@ public class RepairGenerator {
 
 	if (usageimage) {
 	    if (!inverted) {
-		cr.outputline(rd.getSafeSymbol()+"_hash->add("+leftside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
+		cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hash,"+leftside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
 	    } else {
-		cr.outputline(rd.getSafeSymbol()+"_hash->add("+newvalue.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+		cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hash, "+newvalue.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
 	    }
 	}
 	if (usageinvimage) {
 	    if (!inverted) {
-		cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+newvalue.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+		cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hashinv, "+newvalue.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
 	    } else {
-		cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+rightside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
+		cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hashinv,"+rightside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
 	    }
 	}
 	/* Do concrete repairs */
@@ -1131,7 +1147,7 @@ public class RepairGenerator {
 			if (un.getRule()==r) {
 			    /* Update for rule r */
 			    String name=(String)updatenames.get(un);
-			    cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+","+newvalue.getSafeSymbol()+");");
+			    cr.outputline("RepairHashaddrelation2("+repairtable.getSafeSymbol()+","+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+","+newvalue.getSafeSymbol()+");");
 			}
 		    }
 		}
@@ -1147,7 +1163,7 @@ public class RepairGenerator {
 			    if (un.getRule()==r) {
 				/* Update for rule r */
 				String name=(String)updatenames.get(un);
-				cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+");");
+				cr.outputline("RepairHashaddrelation("+repairtable.getSafeSymbol()+","+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+");");
 			    }
 			}
 		    }
@@ -1156,9 +1172,9 @@ public class RepairGenerator {
 	    UpdateNode un=munadd.getUpdate(0);
 	    String name=(String)updatenames.get(un);
 	    if (!inverted) {
-		cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
+		cr.outputline(name+"(thisvar,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
 	    } else {
-		cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newvalue.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+		cr.outputline(name+"(thisvar,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newvalue.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
 	    }
 	}
 	if (needremoveloop) {
@@ -1237,14 +1253,14 @@ public class RepairGenerator {
 		if (ep.inverted()) {
 		    ((ImageSetExpr)((SizeofExpr)expr.left).setexpr).generate_leftside(cr,rightvar);
 		    cr.outputline("int "+leftvar.getSafeSymbol()+";");
-		    cr.outputline(d.getSafeSymbol()+"_hashinv->get((int)"+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
+		    cr.outputline("SimpleHashget("+d.getSafeSymbol()+"_hashinv,(int)"+rightvar.getSafeSymbol()+", &"+leftvar.getSafeSymbol()+");");
 		} else {
 		    ((ImageSetExpr)((SizeofExpr)expr.left).setexpr).generate_leftside(cr,leftvar);
 		    cr.outputline("int "+rightvar.getSafeSymbol()+"=0;");
-		    cr.outputline(d.getSafeSymbol()+"_hash->get((int)"+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
+		    cr.outputline("SimpleHashget("+d.getSafeSymbol()+"_hash ,(int)"+leftvar.getSafeSymbol()+", &"+rightvar.getSafeSymbol()+");");
 		}
 	    } else {
-		cr.outputline("int "+leftvar.getSafeSymbol()+"="+d.getSafeSymbol()+"_hash->firstkey();");
+		cr.outputline("int "+leftvar.getSafeSymbol()+"= SimpleHashfirstkey("+d.getSafeSymbol()+"_hash);");
 	    }
 	    /* Generate abstract remove instruction */
 	    if (d instanceof RelationDescriptor) {
@@ -1252,11 +1268,11 @@ public class RepairGenerator {
 		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (usageimage)
-		    cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+		    cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		if (usageinvimage)
-		    cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		    cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hashinv ,(int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 	    } else {
-		cr.outputline(d.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		cr.outputline("SimpleHashremove("+d.getSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 	    }
 	    /* Generate concrete remove instruction */
 	    for(int i=0;i<state.vRules.size();i++) {
@@ -1268,9 +1284,9 @@ public class RepairGenerator {
 				/* Update for rule rule r */
 			    String name=(String)updatenames.get(un);
 			    if (d instanceof RelationDescriptor) {
-				cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+d.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
+				cr.outputline("RepairHashaddrelation("+repairtable.getSafeSymbol()+","+d.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
 			    } else {
-				cr.outputline(repairtable.getSafeSymbol()+"->addset("+d.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+				cr.outputline("RepairHashaddset("+repairtable.getSafeSymbol()+","+d.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
 			    }
 			}
 		    }
@@ -1299,16 +1315,16 @@ public class RepairGenerator {
 		    SetDescriptor sd=termination.sources.relgetSourceSet(rd,!ep.inverted());
 		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
 		    cr.outputline(sd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
-		    cr.outputline("SimpleIterator "+iterator.getSafeSymbol()+";");
-		    cr.outputline("for("+sd.getSafeSymbol()+"_hash->iterator("+ iterator.getSafeSymbol() +");"+iterator.getSafeSymbol()+".hasNext();)");
+		    cr.outputline("struct SimpleIterator "+iterator.getSafeSymbol()+";");
+		    cr.outputline("for(SimpleHashiterator(& "+sd.getSafeSymbol()+"_hash ,"+ iterator.getSafeSymbol() +");"+iterator.getSafeSymbol()+".hasNext();)");
 		    cr.startblock();
 		    if (ep.inverted()) {
-			cr.outputline("if (!"+rd.getSafeSymbol()+"_hashinv->contains("+iterator.getSafeSymbol()+".key(),"+otherside.getSafeSymbol()+"))");
+			cr.outputline("if (!SimpleHashcontainskeydata("+rd.getSafeSymbol()+"_hashinv,"+iterator.getSafeSymbol()+".key(),"+otherside.getSafeSymbol()+"))");
 		    } else {
-			cr.outputline("if (!"+rd.getSafeSymbol()+"_hash->contains("+otherside.getSafeSymbol()+","+iterator.getSafeSymbol()+".key()))");
+			cr.outputline("if (!SimpleHashcontainskeydata("+rd.getSafeSymbol()+"_hash, "+otherside.getSafeSymbol()+","+iterator.getSafeSymbol()+".key()))");
 		    }
-		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
-		    cr.outputline(iterator.getSafeSymbol()+".next();");
+		    cr.outputline(newobject.getSafeSymbol()+"=key("+iterator.getSafeSymbol()+");");
+		    cr.outputline("next("+iterator.getSafeSymbol()+");");
 		    cr.endblock();
 		} else if (termination.sources.relallocSource(rd,!ep.inverted())) {
 		    /* Allocation Source*/
@@ -1318,23 +1334,23 @@ public class RepairGenerator {
 		    boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
 		    boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol()+"_hash->add("+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hash, "+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hashinv, "+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
 
 		    UpdateNode un=munadd.getUpdate(0);
 		    String name=(String)updatenames.get(un);
-		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
+		    cr.outputline(name+"(thisvar,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
 		} else {
 		    boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
 		    boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol()+"_hash->add("+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hash, "+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hashinv, "+newobject.getSafeSymbol()+","+otherside.getSafeSymbol()+");");
 		    UpdateNode un=munadd.getUpdate(0);
 		    String name=(String)updatenames.get(un);
-		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+		    cr.outputline(name+"(thisvar, "+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+otherside.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
 		}
 	    } else {
 		SetDescriptor sd=(SetDescriptor)d;
@@ -1345,20 +1361,20 @@ public class RepairGenerator {
 		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
 		    cr.outputline(sourcesd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
 		    cr.outputline("SimpleIterator "+iterator.getSafeSymbol()+";");
-		    cr.outputline("for("+sourcesd.getSafeSymbol()+"_hash->iterator("+iterator.getSafeSymbol()+");"+iterator.getSafeSymbol()+".hasNext();)");
+		    cr.outputline("for(SimpleHashiterator("+sourcesd.getSafeSymbol()+"_hash, "+iterator.getSafeSymbol()+");"+iterator.getSafeSymbol()+".hasNext();)");
 		    cr.startblock();
-		    cr.outputline("if (!"+sd.getSafeSymbol()+"_hash->contains("+iterator.getSafeSymbol()+".key()))");
-		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
-		    cr.outputline(iterator.getSafeSymbol()+".next();");
+		    cr.outputline("if (!SimpleHashcontainskey("+sd.getSafeSymbol()+"_hash, key("+iterator.getSafeSymbol()+")))");
+		    cr.outputline(newobject.getSafeSymbol()+"=key("+iterator.getSafeSymbol()+");");
+		    cr.outputline("next("+iterator.getSafeSymbol()+");");
 		    cr.endblock();
 		} else if (termination.sources.allocSource(sd)) {
 		    /* Allocation Source*/
 		    termination.sources.generateSourceAlloc(cr,newobject,sd);
 		} else throw new Error("No source for adding to Set");
-		cr.outputline(sd.getSafeSymbol()+"_hash->add("+newobject.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+		cr.outputline("SimpleHashadd("+sd.getSafeSymbol()+"_hash, "+newobject.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
 		UpdateNode un=munadd.getUpdate(0);
 		String name=(String)updatenames.get(un);
-		cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
+		cr.outputline(name+"(thisvar,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newobject.getSafeSymbol()+");");
 	    }
 	    cr.endblock();
 	}
@@ -1381,14 +1397,14 @@ public class RepairGenerator {
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (inverse) {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hash, (int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hashinv, (int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		} else {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hash ,(int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashremove("+rd.getSafeSymbol()+"_hashinv, (int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		}
 		for(int i=0;i<state.vRules.size();i++) {
 		    Rule r=(Rule)state.vRules.get(i);
@@ -1399,9 +1415,9 @@ public class RepairGenerator {
 				/* Update for rule rule r */
 				String name=(String)updatenames.get(un);
 				if (inverse) {
-				    cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+				    cr.outputline("RepairHashaddrelation("+repairtable.getSafeSymbol()+","+rd.getNum()+","+r.getNum()+","+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
 				} else {
-				    cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
+				    cr.outputline("RepairHashaddrelation("+repairtable.getSafeSymbol()+","+rd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
 				}
 			    }
 			}
@@ -1409,7 +1425,7 @@ public class RepairGenerator {
 		}
 	    } else {
 		SetDescriptor sd=ip.setexpr.sd;
-		cr.outputline(sd.getSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		cr.outputline("SimpleHashremove("+sd.getSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 
 		for(int i=0;i<state.vRules.size();i++) {
 		    Rule r=(Rule)state.vRules.get(i);
@@ -1419,7 +1435,7 @@ public class RepairGenerator {
 			    if (un.getRule()==r) {
 				/* Update for rule rule r */
 				String name=(String)updatenames.get(un);
-				cr.outputline(repairtable.getSafeSymbol()+"->addset("+sd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+				cr.outputline("RepairHashaddset("+repairtable.getSafeSymbol()+","+sd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
 			    }
 			}
 		    }
@@ -1436,30 +1452,30 @@ public class RepairGenerator {
 		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
 		if (inverse) {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hash, (int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hashinv, (int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		} else {
 		    if (usageimage)
-			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
 		    if (usageinvimage)
-			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+			cr.outputline("SimpleHashadd("+rd.getSafeSymbol()+"_hashinv, (int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 		}
 		UpdateNode un=mun.getUpdate(0);
 		String name=(String)updatenames.get(un);
 		if (inverse) {
-		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
+		    cr.outputline(name+"(thisvar,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
 		} else {
-		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
+		    cr.outputline(name+"(thisvar,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
 		}
 	    } else {
 		SetDescriptor sd=ip.setexpr.sd;
-		cr.outputline(sd.getSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		cr.outputline("SimpleHashadd("+sd.getSafeSymbol()+"_hash, (int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
 
 		UpdateNode un=mun.getUpdate(0);
 		/* Update for rule rule r */
 		String name=(String)updatenames.get(un);
-		cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
+		cr.outputline(name+"(thisvar,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
 	    }
 	}
     }
@@ -1526,24 +1542,24 @@ public class RepairGenerator {
 	if (!(usageinvimage||usageimage)) /* not used at all*/
 	    return;
 
-        cr.outputline("// RELATION DISPATCH ");
+        cr.outputline("/* RELATION DISPATCH */");
 	if (Compiler.REPAIR) {
 	    cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
 	    if (usageimage)
-		cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+rd.getJustSafeSymbol()+"_hash->contains("+leftvar+","+rightvar+"))");
+		cr.outputline("!SimpleHashcontainskeydata("+oldmodel.getSafeSymbol()+"->"+rd.getJustSafeSymbol() + "_hash, "+leftvar+","+rightvar+"))");
 	    else
-		cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+rd.getJustSafeSymbol()+"_hashinv->contains("+rightvar+","+leftvar+"))");
+		cr.outputline("!SimpleHashcontainskeydata("+oldmodel.getSafeSymbol() +"->"+rd.getJustSafeSymbol()+"_hashinv, "+rightvar+","+leftvar+"))");
 
 	    cr.startblock(); {
 		/* Adding new item */
 		/* Perform safety checks */
 		cr.outputline("if ("+repairtable.getSafeSymbol()+"&&");
-		cr.outputline(repairtable.getSafeSymbol()+"->containsrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+"))");
+		cr.outputline("RepairHashcontainsrelation("+repairtable.getSafeSymbol()+","+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+"))");
 		cr.startblock(); {
 		    /* Have update to call into */
 		    VarDescriptor mdfyptr=VarDescriptor.makeNew("modifyptr");
 		    VarDescriptor ismdfyptr=VarDescriptor.makeNew("ismodifyptr");
-		    cr.outputline("int "+ismdfyptr.getSafeSymbol()+"="+repairtable.getSafeSymbol()+"->ismodify("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
+		    cr.outputline("int "+ismdfyptr.getSafeSymbol()+"=RepairHashismodify("+repairtable.getSafeSymbol()+","+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
 
 
 
@@ -1558,7 +1574,7 @@ public class RepairGenerator {
 		    VarDescriptor funptr=VarDescriptor.makeNew("updateptr");
 		    VarDescriptor tmpptr=VarDescriptor.makeNew("tempupdateptr");
 
-		    String methodcall="("+funptr.getSafeSymbol()+") (this,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
+		    String methodcall="("+funptr.getSafeSymbol()+") (thisvar,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
 		    for(int i=0;i<currentrule.numQuantifiers();i++) {
 			Quantifier q=currentrule.getQuantifier(i);
 			if (q instanceof SetQuantifier) {
@@ -1577,23 +1593,23 @@ public class RepairGenerator {
 
 
 		    cr.outputline("void *"+tmpptr.getSafeSymbol()+"=");
-		    cr.outputline("(void *) "+repairtable.getSafeSymbol()+"->getrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
+		    cr.outputline("(void *) RepairHashgetrelation("+repairtable.getSafeSymbol()+","+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
 		    cr.outputline("if ("+ismdfyptr.getSafeSymbol()+")");
 		    {
 			cr.startblock();
-			cr.outputline("int "+mdfyptr.getSafeSymbol()+"="+repairtable.getSafeSymbol()+"->getrelation2("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
-			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol()+";");
+			cr.outputline("int "+mdfyptr.getSafeSymbol()+"=RepairHashgetrelation2("+repairtable.getSafeSymbol()+","+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
+			cr.outputline("void (*"+funptr.getSafeSymbol()+") (struct "+name+"_state *, struct "+name+"*, struct RepairHash *"+parttype+",int,int,int)="+"(void (*) (struct "+name+"_state *, struct "+name+"*, struct RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol()+";");
 			cr.outputline(methodcall+","+leftvar+", "+rightvar+", "+mdfyptr.getSafeSymbol() +");");
 			cr.endblock();
 		    }
 		    cr.outputline("else ");
 		    {
 			cr.startblock();
-			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+tmpptr.getSafeSymbol()+";");
+			cr.outputline("void (*"+funptr.getSafeSymbol()+") (struct "+name+"_state *, struct "+name+"*,struct RepairHash *"+parttype+")="+"(void (*) (struct "+name+"_state *,struct "+name+"*,struct RepairHash *"+parttype+")) "+tmpptr.getSafeSymbol()+";");
 			cr.outputline(methodcall+");");
 			cr.endblock();
 		    }
-		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
+		    cr.outputline("free"+name+"("+newmodel.getSafeSymbol()+");");
 		    cr.outputline("goto rebuild;");
 		}
 		cr.endblock();
@@ -1603,7 +1619,7 @@ public class RepairGenerator {
 		    UpdateNode un=find_compensation(currentrule);
 		    String name=(String)updatenames.get(un);
 		    usedupdates.add(un); /* Mark as used */
-		    String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
+		    String methodcall=name+"(thisvar,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
 		    for(int i=0;i<currentrule.numQuantifiers();i++) {
 			Quantifier q=currentrule.getQuantifier(i);
 			if (q instanceof SetQuantifier) {
@@ -1620,7 +1636,7 @@ public class RepairGenerator {
 		    }
 		    methodcall+=");";
 		    cr.outputline(methodcall);
-		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
+		    cr.outputline("free"+name+"("+newmodel.getSafeSymbol()+");");
 		    cr.outputline("goto rebuild;");
 		}
 	    }
@@ -1628,6 +1644,7 @@ public class RepairGenerator {
 	}
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
+        cr.startblock();
 	cr.outputline("int " + addeditem + "=0;");
 
 	String ifstring="if (!maybe";
@@ -1643,12 +1660,12 @@ public class RepairGenerator {
 
 	if (rd.testUsage(RelationDescriptor.IMAGE)) {
 	    cr.outputline(ifstring);
-	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + rightvar+ ");");
+	    cr.outputline(addeditem + " = SimpleHashadd("+rd.getSafeSymbol()+"_hash, (int)" + leftvar + ", (int)" + rightvar+ ");");
 	}
 
 	if (rd.testUsage(RelationDescriptor.INVIMAGE)) {
 	    cr.outputline(ifstring);
-	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar + ", (int)" + leftvar + ");");
+	    cr.outputline(addeditem + " = SimpleHashadd("+rd.getSafeSymbol()+"_hashinv, (int)" + rightvar + ", (int)" + leftvar + ");");
 	}
 
 
@@ -1662,7 +1679,8 @@ public class RepairGenerator {
 	}
 	dispatchrules.removeAll(toremove);
         if (dispatchrules.size() == 0) {
-            cr.outputline("// nothing to dispatch");
+            cr.outputline("/* nothing to dispatch */");
+            cr.endblock();
             return;
         }
 
@@ -1673,32 +1691,32 @@ public class RepairGenerator {
             Rule rule = (Rule) dispatchrules.elementAt(i);
 	    if (rule.getGuardExpr().getRequiredDescriptors().contains(rd)) {
 		/* Guard depends on this relation, so we recomput everything */
-		cr.outputline(worklist.getSafeSymbol()+"->add("+rule.getNum()+",-1,0,0);");
+		cr.outputline("WorkListadd("+worklist.getSafeSymbol()+","+rule.getNum()+",-1,0,0);");
 	    } else {
 		for (int j=0;j<rule.numQuantifiers();j++) {
 		    Quantifier q=rule.getQuantifier(j);
 		    if (q.getRequiredDescriptors().contains(rd)) {
 			/* Generate add */
-			cr.outputline(worklist.getSafeSymbol()+"->add("+rule.getNum()+","+j+","+leftvar+","+rightvar+");");
+			cr.outputline("WorkListadd("+worklist.getSafeSymbol()+","+rule.getNum()+","+j+","+leftvar+","+rightvar+");");
 		    }
 		}
 	    }
         }
-
+        cr.endblock();
 	cr.endblock();
     }
 
 
     public void generate_dispatch(CodeWriter cr, SetDescriptor sd, String setvar) {
-	cr.outputline("// SET DISPATCH ");
+	cr.outputline("/* SET DISPATCH */");
 	if (Compiler.REPAIR) {
 	    cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
-	    cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+sd.getJustSafeSymbol()+"_hash->contains("+setvar+"))");
+	    cr.outputline("!SimpleHashcontainskey("+oldmodel.getSafeSymbol() +"->"+sd.getJustSafeSymbol()+"_hash, "+setvar+"))");
 	    cr.startblock(); {
 		/* Adding new item */
 		/* See if there is an outstanding update in the repairtable */
 		cr.outputline("if ("+repairtable.getSafeSymbol()+"&&");
-		cr.outputline(repairtable.getSafeSymbol()+"->containsset("+sd.getNum()+","+currentrule.getNum()+","+setvar+"))");
+		cr.outputline("RepairHashcontainsset("+repairtable.getSafeSymbol()+","+sd.getNum()+","+currentrule.getNum()+","+setvar+"))");
 		cr.startblock(); {
 		    /* Have update to call into */
 		    VarDescriptor funptr=VarDescriptor.makeNew("updateptr");
@@ -1709,9 +1727,9 @@ public class RepairGenerator {
 			else
 			    parttype=parttype+", int";
 		    }
-		    cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")=");
-		    cr.outputline("(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+repairtable.getSafeSymbol()+"->getset("+sd.getNum()+","+currentrule.getNum()+","+setvar+");");
-		    String methodcall="("+funptr.getSafeSymbol()+") (this,"+oldmodel.getSafeSymbol()+","+
+		    cr.outputline("void (*"+funptr.getSafeSymbol()+") (struct "+name+"_state *,struct "+name+"*,struct RepairHash *"+parttype+")=");
+		    cr.outputline("(void (*) (struct "+name+"_state *,struct "+name+"*,struct RepairHash *"+parttype+")) RepairHashgetset("+repairtable.getSafeSymbol()+","+sd.getNum()+","+currentrule.getNum()+","+setvar+");");
+		    String methodcall="("+funptr.getSafeSymbol()+") (thisvar,"+oldmodel.getSafeSymbol()+","+
 			repairtable.getSafeSymbol();
 		    for(int i=0;i<currentrule.numQuantifiers();i++) {
 			Quantifier q=currentrule.getQuantifier(i);
@@ -1729,7 +1747,7 @@ public class RepairGenerator {
 		    }
 		    methodcall+=");";
 		    cr.outputline(methodcall);
-		    cr.outputline("delete "+newmodel.getSafeSymbol()+";");
+		    cr.outputline("free"+name+"("+newmodel.getSafeSymbol()+");");
 		    cr.outputline("goto rebuild;");
 		}
 		cr.endblock();
@@ -1746,7 +1764,7 @@ public class RepairGenerator {
 			String name=(String)updatenames.get(un);
 			usedupdates.add(un); /* Mark as used */
 
-			String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+
+			String methodcall=name+"(thisvar,"+oldmodel.getSafeSymbol()+","+
 			    repairtable.getSafeSymbol();
 			for(int j=0;j<currentrule.numQuantifiers();j++) {
 			    Quantifier q=currentrule.getQuantifier(j);
@@ -1766,11 +1784,11 @@ public class RepairGenerator {
 			if (currentrule!=itrule) {
 			    SetDescriptor sdrule=((SetInclusion)itrule.getInclusion()).getSet();
 			    cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
-			    cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+sdrule.getJustSafeSymbol()+"_hash->contains("+setvar+"))");
+			    cr.outputline("!SimpleHashcontainskey("+ oldmodel.getSafeSymbol() +"->"+sdrule.getJustSafeSymbol() +"_hash,"+setvar+"))");
 			    cr.startblock();
 			}
 			cr.outputline(methodcall);
-			cr.outputline("delete "+newmodel.getSafeSymbol()+";");
+			cr.outputline("free"+name+"("+newmodel.getSafeSymbol()+");");
 			cr.outputline("goto rebuild;");
 			cr.endblock();
 		    }
@@ -1780,13 +1798,14 @@ public class RepairGenerator {
 	    }
 	}
 
+        cr.startblock();
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
 	cr.outputline("int " + addeditem + " = 0;");
 	if (sd.getType() instanceof StructureTypeDescriptor)  {
 	    cr.outputline("if (!maybe&&"+setvar+")");
 	} else
 	    cr.outputline("if (!maybe)");
-	cr.outputline(addeditem + " = " + sd.getSafeSymbol() + "_hash->add((int)" + setvar +  ", (int)" + setvar + ");");
+	cr.outputline(addeditem + " = SimpleHashadd("+sd.getSafeSymbol()+"_hash, (int)" + setvar +  ", (int)" + setvar + ");");
 	cr.startblock();
         Vector dispatchrules = getrulelist(sd);
 
@@ -1799,7 +1818,8 @@ public class RepairGenerator {
 	dispatchrules.removeAll(toremove);
 
         if (dispatchrules.size() == 0) {
-            cr.outputline("// nothing to dispatch");
+            cr.outputline("/* nothing to dispatch */");
+	    cr.endblock();
 	    cr.endblock();
             return;
         }
@@ -1810,17 +1830,18 @@ public class RepairGenerator {
             Rule rule = (Rule) dispatchrules.elementAt(i);
 	    if (SetDescriptor.expand(rule.getGuardExpr().getRequiredDescriptors()).contains(sd)) {
 		/* Guard depends on this relation, so we recompute everything */
-		cr.outputline(worklist.getSafeSymbol()+"->add("+rule.getNum()+",-1,0,0);");
+		cr.outputline("WorkListadd("+worklist.getSafeSymbol()+","+rule.getNum()+",-1,0,0);");
 	    } else {
 		for (int j=0;j<rule.numQuantifiers();j++) {
 		    Quantifier q=rule.getQuantifier(j);
 		    if (SetDescriptor.expand(q.getRequiredDescriptors()).contains(sd)) {
 			/* Generate add */
-			cr.outputline(worklist.getSafeSymbol()+"->add("+rule.getNum()+","+j+","+setvar+",0);");
+			cr.outputline("WorkListadd("+worklist.getSafeSymbol()+","+rule.getNum()+","+j+","+setvar+",0);");
 		    }
 		}
 	    }
 	}
+	cr.endblock();
 	cr.endblock();
 	cr.endblock();
     }

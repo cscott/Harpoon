@@ -151,11 +151,11 @@ void WorkListadd(struct WorkList *thisvar, int id,int type, int lvalue, int rval
 }
 
 /* SIMPLE HASH ********************************************************/
-struct SimpleIterator* createiterator(struct SimpleHash * thisvar) {
+struct SimpleIterator* SimpleHashcreateiterator(struct SimpleHash * thisvar) {
     return allocateSimpleIterator(thisvar->listhead,thisvar->listtail,thisvar->tailindex/*,thisvar*/);
 }
 
-void iterator(struct SimpleHash *thisvar, struct SimpleIterator * it) {
+void SimpleHashiterator(struct SimpleHash *thisvar, struct SimpleIterator * it) {
   it->cur=thisvar->listhead;
   it->index=0;
   it->tailindex=thisvar->tailindex;
@@ -453,11 +453,11 @@ void freeRepairHash(struct RepairHash *thisvar) {
 
 #define SETFLAG (1<<31)
 
-int addset(struct RepairHash *thisvar, int setv, int rule, int value, int data) {
-  return addrelation(thisvar, setv||SETFLAG, rule, value,0,data);
+int RepairHashaddset(struct RepairHash *thisvar, int setv, int rule, int value, int data) {
+  return RepairHashaddrelation(thisvar, setv||SETFLAG, rule, value,0,data);
 }
 
-int addrelation(struct RepairHash *thisvar, int relation, int rule, int lvalue, int rvalue, int data) {
+int RepairHashaddrelation(struct RepairHash *thisvar, int relation, int rule, int lvalue, int rvalue, int data) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % thisvar->size;
 
     struct RepairHashNode **ptr = &thisvar->bucket[hashkey];
@@ -483,7 +483,7 @@ int addrelation(struct RepairHash *thisvar, int relation, int rule, int lvalue, 
     return 1;
 }
 
-int addrelation2(struct RepairHash *thisvar, int relation, int rule, int lvalue, int rvalue, int data, int data2) {
+int RepairHashaddrelation2(struct RepairHash *thisvar, int relation, int rule, int lvalue, int rvalue, int data, int data2) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % thisvar->size;
 
     struct RepairHashNode **ptr = &thisvar->bucket[hashkey];
@@ -509,11 +509,11 @@ int addrelation2(struct RepairHash *thisvar, int relation, int rule, int lvalue,
     return 1;
 }
 
-bool containsset(struct RepairHash *thisvar, int setv, int rule, int value) {
-  return containsrelation(thisvar, setv||SETFLAG, rule, value,0);
+bool RepairHashcontainsset(struct RepairHash *thisvar, int setv, int rule, int value) {
+  return RepairHashcontainsrelation(thisvar, setv||SETFLAG, rule, value,0);
 }
 
-bool containsrelation(struct RepairHash *thisvar, int relation, int rule, int lvalue, int rvalue) {
+bool RepairHashcontainsrelation(struct RepairHash *thisvar, int relation, int rule, int lvalue, int rvalue) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % thisvar->size;
 
     struct RepairHashNode **ptr = &thisvar->bucket[hashkey];
@@ -532,11 +532,11 @@ bool containsrelation(struct RepairHash *thisvar, int relation, int rule, int lv
     return false;
 }
 
-int getset(struct RepairHash *thisvar, int setv, int rule, int value) {
-  return getrelation(thisvar, setv||SETFLAG, rule, value,0);
+int RepairHashgetset(struct RepairHash *thisvar, int setv, int rule, int value) {
+  return RepairHashgetrelation(thisvar, setv||SETFLAG, rule, value,0);
 }
 
-int ismodify(struct RepairHash *thisvar, int relation, int rule, int lvalue,int rvalue) {
+int RepairHashismodify(struct RepairHash *thisvar, int relation, int rule, int lvalue,int rvalue) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % thisvar->size;
 
     struct RepairHashNode **ptr = &thisvar->bucket[hashkey];
@@ -555,7 +555,7 @@ int ismodify(struct RepairHash *thisvar, int relation, int rule, int lvalue,int 
     return 0;
 }
 
-int getrelation2(struct RepairHash *thisvar, int relation, int rule, int lvalue,int rvalue) {
+int RepairHashgetrelation2(struct RepairHash *thisvar, int relation, int rule, int lvalue,int rvalue) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % thisvar->size;
 
     struct RepairHashNode **ptr = &thisvar->bucket[hashkey];
@@ -574,7 +574,7 @@ int getrelation2(struct RepairHash *thisvar, int relation, int rule, int lvalue,
     return 0;
 }
 
-int getrelation(struct RepairHash *thisvar, int relation, int rule, int lvalue,int rvalue) {
+int RepairHashgetrelation(struct RepairHash *thisvar, int relation, int rule, int lvalue,int rvalue) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % thisvar->size;
 
     struct RepairHashNode **ptr = &thisvar->bucket[hashkey];

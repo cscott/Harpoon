@@ -57,14 +57,14 @@ public class SumExpr extends Expr {
         writer.outputline("int "+dest.getSafeSymbol()+"=0;");
 
         VarDescriptor itvd=VarDescriptor.makeNew("iterator");
-        writer.outputline("SimpleIterator "+itvd.getSafeSymbol()+";");
-        writer.outputline(sd.getSafeSymbol()+"_hash->iterator("+itvd.getSafeSymbol()+");");
-        writer.outputline("while ("+itvd.getSafeSymbol()+".hasNext()) {");
+        writer.outputline("struct SimpleIterator "+itvd.getSafeSymbol()+";");
+        writer.outputline("SimpleHashiterator("+sd.getSafeSymbol()+"_hash , &"+itvd.getSafeSymbol()+");");
+        writer.outputline("while (hasNext(&"+itvd.getSafeSymbol()+")) {");
         VarDescriptor keyvd=VarDescriptor.makeNew("key");
-        writer.outputline("int "+keyvd.getSafeSymbol()+"="+itvd.getSafeSymbol()+".next();");
+        writer.outputline("int "+keyvd.getSafeSymbol()+"=next(&"+itvd.getSafeSymbol()+");");
         VarDescriptor tmpvar=VarDescriptor.makeNew("tmp");
         writer.outputline("int "+tmpvar.getSafeSymbol()+";");
-        writer.outputline(rd.getSafeSymbol()+ "_hash->get("+keyvd.getSafeSymbol()+","+tmpvar.getSafeSymbol()+");");
+        writer.outputline("SimpleHashget("+rd.getSafeSymbol()+"_hash, "+keyvd.getSafeSymbol()+", &"+tmpvar.getSafeSymbol()+");");
         writer.outputline(dest.getSafeSymbol()+"+="+tmpvar.getSafeSymbol()+";");
         writer.outputline("}");
     }

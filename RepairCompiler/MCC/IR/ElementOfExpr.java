@@ -55,10 +55,9 @@ public class ElementOfExpr extends Expr {
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor ed = VarDescriptor.makeNew("element");
         element.generate(writer, ed);
-        writer.outputline("int " + dest.getSafeSymbol() + " = " + 
-                          set.getSafeSymbol() + "_hash->contains(" + ed.getSafeSymbol() + ");");
+        writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcontainskey("+set.getSafeSymbol() +"_hash ,"+ ed.getSafeSymbol() + ");");
     }
-    
+
     public void prettyPrint(PrettyPrinter pp) {
         element.prettyPrint(pp);
         pp.output(" in? " + set.getSafeSymbol());
@@ -66,7 +65,7 @@ public class ElementOfExpr extends Expr {
 
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
         TypeDescriptor td = element.typecheck(sa);
-        
+
         if (td == null) {
             return null;
         }
@@ -77,10 +76,9 @@ public class ElementOfExpr extends Expr {
             sa.getErrorReporter().report(null, "Type mismatch: attempting to test for types '" + td.getSymbol() + "' in set of type '" + settype.getSymbol() + "'");
             return null;
         }
-        
+
         this.td = ReservedTypeDescriptor.INT;
         return this.td;
     }
 
 }
-

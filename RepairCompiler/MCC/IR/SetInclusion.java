@@ -66,7 +66,7 @@ public class SetInclusion extends Inclusion {
         if (dostore) {
 	    /*	    if (!Compiler.REPAIR) {
 		writer.outputline("int " + addeditem + " = 1;");
-		writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol()
+		writer.outputline(addeditem + " = SimpleHashadd("+set.getSafeSymbol()+"_hash, (int)" + vd.getSafeSymbol()
 				  +  ", (int)" + vd.getSafeSymbol() + ");");
 				  } else {*/
 		Repair.generate_dispatch(writer, set, vd.getSafeSymbol());

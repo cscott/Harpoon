@@ -8,14 +8,14 @@ public class WorklistGenerator {
 
     State state;
     java.io.PrintWriter output = null;
-            
+
     public WorklistGenerator(State state) {
         this.state = state;
     }
 
     public void generate(java.io.OutputStream output) {
-        this.output = new java.io.PrintWriter(output, true); 
-        
+        this.output = new java.io.PrintWriter(output, true);
+
         generate_tokentable();
         generate_hashtables();
         generate_worklist();
@@ -28,16 +28,16 @@ public class WorklistGenerator {
 
     private void generate_tokentable() {
 
-        CodeWriter cr = new StandardCodeWriter(output);        
-        Iterator tokens = TokenLiteralExpr.tokens.keySet().iterator();        
+        CodeWriter cr = new StandardCodeWriter(output);
+        Iterator tokens = TokenLiteralExpr.tokens.keySet().iterator();
 
         cr.outputline("");
-        cr.outputline("// Token values");
+        cr.outputline("/* Token values*/");
         cr.outputline("");
 
         while (tokens.hasNext()) {
             Object token = tokens.next();
-            cr.outputline("// " + token.toString() + " = " + TokenLiteralExpr.tokens.get(token).toString());            
+            cr.outputline("/* " + token.toString() + " = " + TokenLiteralExpr.tokens.get(token).toString()+"*/");
         }
 
         cr.outputline("");
@@ -47,48 +47,48 @@ public class WorklistGenerator {
     private void generate_hashtables() {
 
         CodeWriter cr = new StandardCodeWriter(output);
-        cr.outputline("int __Success = 1;\n");       
-        cr.outputline("// creating hashtables ");
-        
+        cr.outputline("int __Success = 1;\n");
+        cr.outputline("/* creating hashtables */");
+
         /* build all the hashtables */
         Hashtable hashtables = new Hashtable();
 
         /* build sets */
         Iterator sets = state.stSets.descriptors();
-        
+
         /* first pass create all the hash tables */
         while (sets.hasNext()) {
             SetDescriptor set = (SetDescriptor) sets.next();
             cr.outputline("SimpleHash* " + set.getSafeSymbol() + "_hash = new SimpleHash();");
-        } 
-        
+        }
+
         /* second pass build relationships between hashtables */
         sets = state.stSets.descriptors();
-        
+
         while (sets.hasNext()) {
             SetDescriptor set = (SetDescriptor) sets.next();
             Iterator subsets = set.subsets();
-            
+
             while (subsets.hasNext()) {
-                SetDescriptor subset = (SetDescriptor) subsets.next();                
+                SetDescriptor subset = (SetDescriptor) subsets.next();
                 cr.outputline(subset.getSafeSymbol() + "_hash->addParent(" + set.getSafeSymbol() + "_hash);");
             }
-        } 
+        }
 
         /* build relations */
         Iterator relations = state.stRelations.descriptors();
-        
+
         /* first pass create all the hash tables */
         while (relations.hasNext()) {
             RelationDescriptor relation = (RelationDescriptor) relations.next();
-            
+
             if (relation.testUsage(RelationDescriptor.IMAGE)) {
                 cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hash = new SimpleHash();");
             }
 
             if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
                 cr.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hashinv = new SimpleHash();");
-            } 
+            }
         }
 
         cr.outputline("");
@@ -101,21 +101,21 @@ public class WorklistGenerator {
         cr.outputline("WORKLIST = new SimpleList();");
 
     }
-    
+
     private void generate_teardown() {
 
-        CodeWriter cr = new StandardCodeWriter(output);        
+        CodeWriter cr = new StandardCodeWriter(output);
         cr.outputline("WORKLIST->reset();");
         cr.outputline("while (WORKLIST->hasMoreElements())");
         cr.startblock();
         cr.outputline("free ((WORKITEM *) WORKLIST->nextElement());");
-        cr.endblock();        
+        cr.endblock();
         cr.outputline("delete WORKLIST;");
 
     }
 
     private void generate_rules() {
-        
+
         /* first we must sort the rules */
         Iterator allrules = state.vRules.iterator();
 
@@ -144,38 +144,38 @@ public class WorklistGenerator {
                 worklistrules.add(rule);
             }
         }
-       
+
         Iterator iterator_er = emptyrules.iterator();
         while (iterator_er.hasNext()) {
 
-            Rule rule = (Rule) iterator_er.next();            
+            Rule rule = (Rule) iterator_er.next();
 
             {
-                final SymbolTable st = rule.getSymbolTable();                
+                final SymbolTable st = rule.getSymbolTable();
                 CodeWriter cr = new StandardCodeWriter(output) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
-                
-                cr.outputline("// build " + rule.getLabel());
+
+                cr.outputline("/* build " + rule.getLabel()+"*/");
                 cr.startblock();
 
                 ListIterator quantifiers = rule.quantifiers();
 
                 while (quantifiers.hasNext()) {
-                    Quantifier quantifier = (Quantifier) quantifiers.next();                   
+                    Quantifier quantifier = (Quantifier) quantifiers.next();
                     quantifier.generate_open(cr);
-                }            
-                        
+                }
+
                 /* pretty print! */
-                cr.output("//");
+                cr.output("/*");
                 rule.getGuardExpr().prettyPrint(cr);
-                cr.outputline("");
+                cr.outputline("*/");
 
                 /* now we have to generate the guard test */
-        
+
                 VarDescriptor guardval = VarDescriptor.makeNew();
                 rule.getGuardExpr().generate(cr, guardval);
-                
+
                 cr.outputline("if (" + guardval.getSafeSymbol() + ")");
                 cr.startblock();
 
@@ -194,23 +194,23 @@ public class WorklistGenerator {
             }
         }
 
-        CodeWriter cr2 = new StandardCodeWriter(output);        
+        CodeWriter cr2 = new StandardCodeWriter(output);
 
         cr2.outputline("WORKLIST->reset();");
         cr2.outputline("while (WORKLIST->hasMoreElements())");
         cr2.startblock();
         cr2.outputline("WORKITEM *wi = (WORKITEM *) WORKLIST->nextElement();");
-        
+
         String elseladder = "if";
 
         Iterator iterator_rules = worklistrules.iterator();
         while (iterator_rules.hasNext()) {
-            
-            Rule rule = (Rule) iterator_rules.next();            
+
+            Rule rule = (Rule) iterator_rules.next();
             int dispatchid = rule.getNum();
 
             {
-                final SymbolTable st = rule.getSymbolTable();                
+                final SymbolTable st = rule.getSymbolTable();
                 CodeWriter cr = new StandardCodeWriter(output) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
@@ -219,26 +219,26 @@ public class WorklistGenerator {
                 cr.outputline(elseladder + " (wi->id == " + dispatchid + ")");
                 cr.startblock();
 
-                cr.outputline("// build " + rule.getLabel());
+                cr.outputline("/* build " + rule.getLabel()+"*/");
 
                 ListIterator quantifiers = rule.quantifiers();
 
                 int count = 0;
                 while (quantifiers.hasNext()) {
                     Quantifier quantifier = (Quantifier) quantifiers.next();
-                    count = quantifier.generate_worklistload(cr, count );                    
+                    count = quantifier.generate_worklistload(cr, count );
                 }
-                        
+
                 /* pretty print! */
-                cr.output("//");
+                cr.output("/*");
                 rule.getGuardExpr().prettyPrint(cr);
-                cr.outputline("");
+                cr.outputline("*/");
 
                 /* now we have to generate the guard test */
-        
+
                 VarDescriptor guardval = VarDescriptor.makeNew();
                 rule.getGuardExpr().generate(cr, guardval);
-                
+
                 cr.outputline("if (" + guardval.getSafeSymbol() + ")");
                 cr.startblock();
 
@@ -247,7 +247,7 @@ public class WorklistGenerator {
                 cr.endblock();
 
                 // close startblocks generated by DotExpr memory checks
-                //DotExpr.generate_memory_endblocks(cr);                
+                //DotExpr.generate_memory_endblocks(cr);
 
                 cr.endblock(); // end else-if WORKLIST ladder
 
@@ -269,9 +269,9 @@ public class WorklistGenerator {
     private void generate_implicit_checks() {
 
         /* do post checks */
-         
+
         CodeWriter cr = new StandardCodeWriter(output);
-           
+
         // #TBD#: these should be implicit checks added to the set of constraints
         //output.println("check multiplicity");
     }
@@ -283,33 +283,33 @@ public class WorklistGenerator {
 
         for (int i = 0; i < constraints.size(); i++) {
 
-            Constraint constraint = (Constraint) constraints.elementAt(i); 
+            Constraint constraint = (Constraint) constraints.elementAt(i);
 
             {
 
                 final SymbolTable st = constraint.getSymbolTable();
-                
+
                 CodeWriter cr = new StandardCodeWriter(output) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
-                
-                cr.outputline("// checking " + constraint.getLabel());
+
+                cr.outputline("/* checking " + constraint.getLabel()+"*/");
                 cr.startblock();
 
                 ListIterator quantifiers = constraint.quantifiers();
 
                 while (quantifiers.hasNext()) {
-                    Quantifier quantifier = (Quantifier) quantifiers.next();                   
+                    Quantifier quantifier = (Quantifier) quantifiers.next();
                     quantifier.generate_open(cr);
-                }            
+                }
 
                 cr.outputline("int maybe = 0;");
-                        
+
                 /* now we have to generate the guard test */
-        
+
                 VarDescriptor constraintboolean = VarDescriptor.makeNew("constraintboolean");
                 constraint.getLogicStatement().generate(cr, constraintboolean);
-                
+
                 cr.outputline("if (maybe)");
                 cr.startblock();
                 cr.outputline("__Success = 0;");
@@ -334,13 +334,10 @@ public class WorklistGenerator {
                 cr.outputline("");
                 cr.outputline("");
             }
-            
+
         }
 
-        output.println("// if (__Success) { printf(\"all tests passed\"); }");
-    }    
+        output.println("/* if (__Success) { printf(\"all tests passed\"); }*/");
+    }
 
 }
-
-
-

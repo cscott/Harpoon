@@ -246,7 +246,7 @@ public class OpExpr extends Expr {
 	    newset.addAll(right.useDescriptor(d));
 	return newset;
     }
-    
+
     public int[] getRepairs(boolean negated, Termination t) {
 	if (left instanceof RelationExpr)
 	    return new int[] {AbstractRepair.MODIFYRELATION};
@@ -284,7 +284,7 @@ public class OpExpr extends Expr {
 					  AbstractRepair.REMOVEFROMRELATION};
 		    }
 		} else if (op==Opcode.GE||op==Opcode.GT) {
-		    return new int[]{AbstractRepair.ADDTORELATION}; 
+		    return new int[]{AbstractRepair.ADDTORELATION};
 		} else if (op==Opcode.LE||op==Opcode.LT) {
 		    if ((op==Opcode.LT&&maxsize!=-1&&maxsize<size)||(op==Opcode.LE&&maxsize!=-1&&maxsize<=size))
 			return new int[0];
@@ -297,7 +297,7 @@ public class OpExpr extends Expr {
 	    } else {
 		if (op==Opcode.EQ) {
 		    if (size==0)
-			return new int[] {AbstractRepair.REMOVEFROMSET};			
+			return new int[] {AbstractRepair.REMOVEFROMSET};
 		    else {
 			if (maxsize<=size&&maxsize!=-1)
 			    return new int[] {AbstractRepair.ADDTOSET};
@@ -305,7 +305,7 @@ public class OpExpr extends Expr {
 					      AbstractRepair.REMOVEFROMSET};
 		    }
 		} else if (op==Opcode.GE||op==Opcode.GT) {
-		    return new int[] {AbstractRepair.ADDTOSET}; 
+		    return new int[] {AbstractRepair.ADDTOSET};
 		} else if (op==Opcode.LE||op==Opcode.LT) {
 		    if ((op==Opcode.LT&&maxsize<size&&maxsize!=-1)||(op==Opcode.LE&&maxsize<=size&&maxsize!=-1))
 			return new int[0];
@@ -319,7 +319,7 @@ public class OpExpr extends Expr {
 	}
 	throw new Error("BAD");
     }
-    
+
     public Descriptor getDescriptor() {
 	return left.getDescriptor();
     }
@@ -338,21 +338,21 @@ public class OpExpr extends Expr {
 
     public Set getRequiredDescriptors() {
         Set v = left.getRequiredDescriptors();
-     
+
         if (right != null) {
             v.addAll(right.getRequiredDescriptors());
         }
 
         return v;
-    }   
+    }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor ld = VarDescriptor.makeNew("leftop");
 	/* Check for loop invariant hoisting. */
 	if (writer.getInvariantValue()!=null&&
 	    writer.getInvariantValue().isInvariant(this)) {
-	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
 	    writer.outputline("int "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
 	    return;
 	}
 
@@ -391,7 +391,7 @@ public class OpExpr extends Expr {
 	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() + ";");
 	} else if (opcode != Opcode.NOT) { /* two operands */
             assert rd != null;
-	    writer.outputline("int " + dest.getSafeSymbol() + " = " + 
+	    writer.outputline("int " + dest.getSafeSymbol() + " = " +
 			      ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
         } else if (opcode == Opcode.NOT) {
             writer.outputline("int " + dest.getSafeSymbol() + " = !" + ld.getSafeSymbol() + ";");
@@ -408,7 +408,7 @@ public class OpExpr extends Expr {
 	} else if (opcode == Opcode.RND) {
 	    pp.output("RND ");
             left.prettyPrint(pp);
-        } else {           
+        } else {
             left.prettyPrint(pp);
             pp.output(" " + opcode.toString() + " ");
             assert right != null;

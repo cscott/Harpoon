@@ -115,14 +115,14 @@ public class VarExpr extends Expr {
 
 	if (writer.getInvariantValue()!=null&&
 	    writer.getInvariantValue().isInvariant(this)) {
-	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
 	    writer.outputline(vd.getType().getGenerateType().getSafeSymbol()+
 			      " "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
 	    return;
 	}
 
         writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() +
-                          " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; //varexpr");
+                          " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; /*varexpr*/");
 	if (vd.isGlobal() && (DOTYPECHECKS||DOMEMCHECKS) && (td instanceof StructureTypeDescriptor)) {
 	    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
 	    writer.outputline("if ("+dest.getSafeSymbol()+")");

@@ -9,11 +9,11 @@ import MCC.IR.*;
  * <ul>
  *  <li>
  *   nothing.
- *  </li> 
+ *  </li>
  * <ul>
  *
  * @author <b>Daniel Roy</b> droy (at) mit (dot) edu
- * @version %I, %G 
+ * @version %I, %G
  */
 
 public class Compiler {
@@ -26,7 +26,7 @@ public class Compiler {
     public static boolean GENERATEINSTRUMENT=false;
     public static boolean ALLOCATECPLUSPLUS=false;
     public static boolean TIME=false;
-    
+
     public static Vector debuggraphs=new Vector();
 
     public static void main(String[] args) {
@@ -54,52 +54,52 @@ public class Compiler {
 	    System.err.println("\nError: no input file specified");
 	    System.exit(-1);
 	}
-        
+
 	if (state.debug) {
 	    System.out.println("Compiling " + cli.infile + ".");
 	}
-	
+
 	success = scan(state) || error(state, "Scanning failed, not attempting to parse.");
 	success = parse(state) || error(state, "Parsing failed, not attempting semantic analysis.");
 	success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
-	
-	
+
+
 	state.setanalysis=new SetAnalysis(state);
 	Termination termination=null;
 	/* Check partition constraints */
 	(new ImplicitSchema(state)).update();
 	termination=new Termination(state);
-	
+
 	state.printall();
 	(new DependencyBuilder(state)).calculate();
-	
+
 	try {
 	    Vector nodes = new Vector(state.constraintnodes.values());
 	    nodes.addAll(state.rulenodes.values());
-	    
+
 	    FileOutputStream dotfile;
 	    dotfile = new FileOutputStream(cli.infile + ".dependencies.edgelabels.dot");
 	    GraphNode.useEdgeLabels = true;
 	    GraphNode.DOTVisitor.visit(dotfile, nodes);
 	    dotfile.close();
-	    
+
 	    dotfile = new FileOutputStream(cli.infile + ".dependencies.dot");
 	    GraphNode.useEdgeLabels = false;
-	    GraphNode.DOTVisitor.visit(dotfile, nodes);                
+	    GraphNode.DOTVisitor.visit(dotfile, nodes);
 	    dotfile.close();
 	} catch (Exception e) {
 	    e.printStackTrace();
 	    System.exit(-1);
 	}
-	
+
 	try {
-	    FileOutputStream gcode = new FileOutputStream(cli.infile + ".cc");
-	    
-	    
+	    FileOutputStream gcode = new FileOutputStream(cli.infile + ".c");
+
+
 	    // do model optimizations
 	    //(new Optimizer(state)).optimize();
-	    
-	    FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.cc");
+
+	    FileOutputStream gcode2 = new FileOutputStream(cli.infile + "_aux.c");
 	    FileOutputStream gcode3 = new FileOutputStream(cli.infile + "_aux.h");
 	    RepairGenerator wg = new RepairGenerator(state,termination);
 	    wg.generate(gcode,gcode2,gcode3, cli.infile + "_aux.h");
@@ -116,7 +116,7 @@ public class Compiler {
 	    e.printStackTrace();
 	    System.exit(-1);
 	}
-	
+
 	if (state.debug) {
 	    System.out.println("Compilation of " + state.infile + " successful.");
 	    System.out.println("#SUCCESS#");
@@ -187,7 +187,7 @@ public class Compiler {
     }
 
     public static boolean parse(State state) {
-        
+
         /* parse structure file */
         try {
             debugMessage(1, "Parsing structure file");
@@ -260,39 +260,39 @@ public class Compiler {
 	    return false;
 	}
 
-        boolean success = 
-            !CUP$TDLParser$actions.errors && 
-            !CUP$SDLParser$actions.errors && 
-            !CUP$CDLParser$actions.errors && 
+        boolean success =
+            !CUP$TDLParser$actions.errors &&
+            !CUP$SDLParser$actions.errors &&
+            !CUP$CDLParser$actions.errors &&
             !CUP$MDLParser$actions.errors;
 
-                
+
         // if verbosity is on, then output parse trees as .dot files
         if (success && state.verbose > 0) {
             try {
                 FileOutputStream dotfile;
 
                 dotfile = new FileOutputStream(state.infile + ".struct.dot");
-                ParseNodeDOTVisitor.visit(dotfile, state.ptStructures);                
+                ParseNodeDOTVisitor.visit(dotfile, state.ptStructures);
                 dotfile.close();
 
                 dotfile = new FileOutputStream(state.infile + ".model.dot");
-                ParseNodeDOTVisitor.visit(dotfile, state.ptModel);                
+                ParseNodeDOTVisitor.visit(dotfile, state.ptModel);
                 dotfile.close();
 
                 dotfile = new FileOutputStream(state.infile + ".space.dot");
-                ParseNodeDOTVisitor.visit(dotfile, state.ptSpace);                
+                ParseNodeDOTVisitor.visit(dotfile, state.ptSpace);
                 dotfile.close();
 
                 dotfile = new FileOutputStream(state.infile + ".constraints.dot");
-                ParseNodeDOTVisitor.visit(dotfile, state.ptConstraints);                
+                ParseNodeDOTVisitor.visit(dotfile, state.ptConstraints);
                 dotfile.close();
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;
             }
         }
-            
+
 	return success;
     }
 
@@ -318,22 +318,22 @@ public class Compiler {
                 System.err.println("Unable to open file: " + filename);
                 System.exit(-1);
             }
-            
+
             lexer = new Lexer(infile);
 
-            
+
             try {
                 while (true) {
                     java_cup.runtime.Symbol symbol;
-                    
+
                     symbol = lexer.next_token();
-                    
+
                     if (symbol.sym == Sym.EOF) {
                         break;
                     } else if (symbol.sym == Sym.BAD) {
                         errors = true;
                     }
-                    
+
                     if (State.verbose > 2) {
                         System.out.println("Got token: " + symbol.value);
                     }
@@ -348,4 +348,3 @@ public class Compiler {
 
 
 }
-

@@ -43,7 +43,7 @@ IR/RelationInclusion.class IR/SetInclusion.class IR/TupleOfExpr.class	\
 IR/ElementOfExpr.class IR/Rule.class IR/Inclusion.class			\
 IR/CodeWriter.class IR/SymbolTableStack.class	\
 IR/StandardCodeWriter.class IR/SumExpr.class		\
-IR/WorkList.class 		\
+IR/WorkList.class IR/PrintWrapper.class		\
 IR/RepairGenerator.class IR/AbstractInterferes.class			\
 IR/PrettyPrinter.class IR/AbstractRepair.class IR/Quantifiers.class	\
 IR/Binding.class IR/ConcreteInterferes.class IR/Conjunction.class	\

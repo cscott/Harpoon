@@ -1,4 +1,4 @@
-struct foo_state {int l;};
+#include "specs/x86/cache_aux.h"
 int getfield(int type, int fieldindex);
 int isArray(int type, int fieldindex);
 int isPtr(int type, int fieldindex);

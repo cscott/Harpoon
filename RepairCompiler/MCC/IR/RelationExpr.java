@@ -14,7 +14,7 @@ public class RelationExpr extends Expr {
 	if (exprfunctions!=null)
 	    functions.addAll(exprfunctions);
 	functions.add(new ConstraintDependence.Function(relation,expr.getSet(),inverse,this));
-	
+
 	return functions;
     }
 
@@ -74,7 +74,7 @@ public class RelationExpr extends Expr {
 	newset.addAll(expr.useDescriptor(rd));
 	return newset;
     }
-    
+
     public RelationDescriptor getRelation() {
         return relation;
     }
@@ -96,7 +96,7 @@ public class RelationExpr extends Expr {
     }
 
     public Set getRequiredDescriptors() {
-        Set v = expr.getRequiredDescriptors();        
+        Set v = expr.getRequiredDescriptors();
         v.add(relation);
         return v;
     }
@@ -107,14 +107,14 @@ public class RelationExpr extends Expr {
         String found = (VarDescriptor.makeNew("found")).getSafeSymbol();
         expr.generate(writer, domain);
         writer.outputline(relation.getRange().getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + ";");
-	writer.outputline("int "+found+" = "+relation.getSafeSymbol() + "_hash" + strinverse + "->get(" + domain.getSafeSymbol() + ", " + dest.getSafeSymbol() + ");");
+	writer.outputline("int "+found+" = SimpleHashget(" +relation.getSafeSymbol()+"_hash"+strinverse+", "+ domain.getSafeSymbol() + ", & " + dest.getSafeSymbol() + ");");
 	writer.outputline("if (!" + found + ") { maybe = 1; }");
     }
 
     public void prettyPrint(PrettyPrinter pp) {
         expr.prettyPrint(pp);
         pp.output(".");
-        
+
         if (inverse) {
             pp.output("~");
         }
@@ -125,7 +125,7 @@ public class RelationExpr extends Expr {
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
 
         TypeDescriptor type = expr.typecheck(sa);
-        
+
         if (type == null) {
             return null;
         }
@@ -133,22 +133,22 @@ public class RelationExpr extends Expr {
         /* check to make sure that the types of the relation match up */
         if (inverse) {
             TypeDescriptor rangetype = relation.getRange().getType();
-            
+
             if (rangetype != type) {
-                sa.getErrorReporter().report(null, "Type of left side of relation operator '.' is '" + type.getSymbol() + 
-                                    "' but must be '" + rangetype.getSymbol() + 
+                sa.getErrorReporter().report(null, "Type of left side of relation operator '.' is '" + type.getSymbol() +
+                                    "' but must be '" + rangetype.getSymbol() +
                                     "', the type of the range of the relation '" + relation.getSymbol() + "'");
                 return null;
             }
-            
+
             this.td = relation.getDomain().getType();
             return this.td;
         } else { /* not inverse */
             TypeDescriptor domaintype = relation.getDomain().getType();
-            
+
             if (domaintype != type) {
-                sa.getErrorReporter().report(null, "Type of left side of relation operator '.' is '" + type.getSymbol() + 
-                                    "' but must be '" + domaintype.getSymbol() + 
+                sa.getErrorReporter().report(null, "Type of left side of relation operator '.' is '" + type.getSymbol() +
+                                    "' but must be '" + domaintype.getSymbol() +
                                     "', the type of the domain of the relation '" + relation.getSymbol() + "'");
                 return null;
             }
