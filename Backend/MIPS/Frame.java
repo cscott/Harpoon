@@ -19,7 +19,7 @@ import java.util.HashMap;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.7 2000-11-15 19:59:36 witchel Exp $
+ * @version $Id: Frame.java,v 1.1.2.8 2000-11-21 23:35:42 witchel Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -87,6 +87,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
       noTagCheck = hm;
    }
    public boolean memAccessNoTagCheck(HCodeElement hce) {
+      if(noTagCheck == null) return false;
       return noTagCheck.containsKey(hce);
    }
 
