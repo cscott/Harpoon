@@ -8,6 +8,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMEM;
+import harpoon.IR.Assem.InstrMOVE;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Bop;
@@ -47,7 +48,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.15 1999-08-03 00:25:56 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.16 1999-08-03 20:44:20 pnkfelix Exp $
  */
 %%
 
@@ -99,6 +100,7 @@ import java.util.HashMap;
 			new Temp[]{ dst },
 			new Temp[]{ src }));
     }
+    
 
     /** Single dest Two source Emit Helper. */
     private void emit( HCodeElement root, String assem, 
@@ -112,6 +114,15 @@ import java.util.HashMap;
     private void emit( HCodeElement root, String assem ) {
 	emit(new Instr( instrFactory, root, assem, null, null));
     }
+
+    /** Single dest Single source EmitMOVE helper */
+    private void emitMOVE( HCodeElement root, String assem,
+			   Temp dst, Temp src) {
+	emit(new InstrMOVE( instrFactory, root, assem,
+			    new Temp[]{ dst },
+			    new Temp[]{ src }));
+    }			         
+
 
     private Temp makeTemp() {
 	    return new Temp(frame.tempFactory());
@@ -147,22 +158,23 @@ BINOP<l>(ADD, j, k) = i %{
 BINOP<f>(ADD, j, k) = i %{
     /* call auxillary fp routines */
     Temp i = makeTemp();		
-    emit( ROOT, "mov `d0, `s0", r1, k );
-    emit( ROOT, "mov `d0, `s0", r0, j );
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j );
     emit( ROOT, "bl ___addsf" );
-    emit( ROOT, "mov `d0, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
 BINOP<d>(ADD, j, k) = i %{
     /* call auxillary fp routines */
     Temp i = makeTwoWordTemp();		
-    emit( ROOT, "mov `d0, `s0l", r2, k );
-    emit( ROOT, "mov `d0, `s0h", r3, k );
-    emit( ROOT, "mov `d0, `s0l", r0, j );
-    emit( ROOT, "mov `d0, `s0h", r1, j );
+        // not certain an emitMOVE is legal with the l/h modifiers
+    emitMOVE( ROOT, "mov `d0, `s0l", r2, k );
+    emitMOVE( ROOT, "mov `d0, `s0h", r3, k );
+    emitMOVE( ROOT, "mov `d0, `s0l", r0, j );
+    emitMOVE( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "bl ___adddf3" );
-    emit( ROOT, "mov `d0l, `s0", i, r0 );
-    emit( ROOT, "mov `d0h, `s0", i, r3 );
+    emitMOVE( ROOT, "mov `d0l, `s0", i, r0 );
+    emitMOVE( ROOT, "mov `d0h, `s0", i, r3 );
 }%
 
 BINOP<p,i>(AND, j, k) = i %{
@@ -909,10 +921,11 @@ LABEL(id) %{
 }%
 
 MOVE<p,i,f>(dst, src) %{
-    emit( ROOT, "mov `d0, `s0", dst, src );
+    emitMOVE( ROOT, "mov `d0, `s0", dst, src );
 }%
 
 MOVE<d,l>(dst, src) %{
+        // not certain an emitMOVE is legal with the l/h modifiers
     emit( ROOT, "mov `d0l, `s0l\n"+
 		"mov `d0h, `s0h", dst, src );
 }%
@@ -955,7 +968,7 @@ RETURN(val) %{
 
 
 THROW(val) %{
-    emit( ROOT, "mov `d0, `s0", r0, val );
+    emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     emit( ROOT, "bl _lookup ; only r0, lr (& ip?) "+
 		"need to be preserved during lookup" ); 
     emit( ROOT, "jmp stdexit");
@@ -964,7 +977,7 @@ THROW(val) %{
 }%
 
 
-CALL(retval, retex, func, arglist) %{
+CALL(retval, NAME(retex), func, arglist) %{
     ExpList list = arglist;
     
     // I assume that the elements of 'arglist' are all Temps after
@@ -978,19 +991,21 @@ CALL(retval, retex, func, arglist) %{
 	   // arg takes up two words
 	   switch(index) {
 	   case 0: case 1: case 2: // put in registers 
-	      emit( ROOT, "mov `d0, `s0l",
+        // not certain an emitMOVE is legal with the l/h modifiers
+	      emitMOVE( ROOT, "mov `d0, `s0l",
 		    frame.getAllRegisters()[index] ,
 		    tempExp.temp );
 	      index++;			     
-	      emit( ROOT, "mov `d0, `s0h",
+        // not certain an emitMOVE is legal with the l/h modifiers
+	      emitMOVE( ROOT, "mov `d0, `s0h",
 		    frame.getAllRegisters()[index],
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
-	     emit(new Instr( instrFactory, ROOT,
-			      "mov `d0, `s0l",
-			      new Temp[]{ frame.getAllRegisters()[index] },
-			      new Temp[]{ tempExp.temp }));
+        // not certain an emitMOVE is legal with the l/h modifiers
+	     emitMOVE( ROOT, "mov `d0, `s0l",
+			      frame.getAllRegisters()[index],
+			      tempExp.temp );
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
@@ -1015,7 +1030,7 @@ CALL(retval, retex, func, arglist) %{
 	} else {
 	  // arg is one word
 	  if (index < 4) {
-	     emit( ROOT, "mov `d0, `s0", 
+	     emitMOVE( ROOT, "mov `d0, `s0", 
 		   frame.getAllRegisters()[index], tempExp.temp);
 	  } else {
 	     emit(new InstrMEM(
@@ -1045,14 +1060,15 @@ CALL(retval, retex, func, arglist) %{
 		 "Update the spec file to handle large SP offsets");
     emit( ROOT, "add `d0, `s0, #" + stackOffset );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
-        emit( ROOT, "mov `d0l, `s0", retval, r0 );
-        emit( ROOT, "mov `d0h, `s0", retval, r1 );
+        // not certain an emitMOVE is legal with the l/h modifiers
+        emitMOVE( ROOT, "mov `d0l, `s0", retval, r0 );
+        emitMOVE( ROOT, "mov `d0h, `s0", retval, r1 );
     } else {
-        emit( ROOT, "mov `d0, `s0", retval, r0 );
+        emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
     }  
 }%
 
-NATIVECALL(retval, retex, func, arglist) %{
+NATIVECALL(retval, NAME(retex), func, arglist) %{
     ExpList list = arglist;
     
     // I assume that the elements of 'arglist' are all Temps after
@@ -1066,19 +1082,20 @@ NATIVECALL(retval, retex, func, arglist) %{
 	   // arg takes up two words
 	   switch(index) {
 	   case 0: case 1: case 2: // put in registers 
-	      emit( ROOT, "mov `d0, `s0l",
+        // not certain an emitMOVE is legal with the l/h modifiers
+	      emitMOVE( ROOT, "mov `d0, `s0l",
 		    frame.getAllRegisters()[index] ,
 		    tempExp.temp );
 	      index++;			     
-	      emit( ROOT, "mov `d0, `s0h",
+	      emitMOVE( ROOT, "mov `d0, `s0h",
 		    frame.getAllRegisters()[index],
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
-	     emit(new Instr( instrFactory, ROOT,
-			      "mov `d0, `s0l",
-			      new Temp[]{ frame.getAllRegisters()[index] },
-			      new Temp[]{ tempExp.temp }));
+        // not certain an emitMOVE is legal with the l/h modifiers
+	     emitMOVE( ROOT, "mov `d0, `s0l",
+		       frame.getAllRegisters()[index],
+		       tempExp.temp );
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
@@ -1131,10 +1148,11 @@ NATIVECALL(retval, retex, func, arglist) %{
     // this will break if stackOffset > 255 (ie >63 args)
     emit( ROOT, "add `d0, `s0, #" + stackOffset );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
-        emit( ROOT, "mov `d0l, `s0", retval, r0 );
-        emit( ROOT, "mov `d0h, `s0", retval, r1 );
+        // not certain an emitMOVE is legal with the l/h modifiers
+        emitMOVE( ROOT, "mov `d0l, `s0", retval, r0 );
+        emitMOVE( ROOT, "mov `d0h, `s0", retval, r1 );
     } else {
-        emit( ROOT, "mov `d0, `s0", retval, r0 );
+        emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
     }  
 }%
 
