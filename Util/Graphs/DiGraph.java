@@ -44,7 +44,7 @@ import harpoon.Util.DataStructs.RelationImpl;
  * Created: Sun May  4 20:56:57 2003
  *
  * @author Alexandru Salcianu <salcianu@mit.edu>
- * @version $Id: DiGraph.java,v 1.4 2003-05-11 00:20:39 salcianu Exp $ 
+ * @version $Id: DiGraph.java,v 1.5 2003-05-12 15:41:47 salcianu Exp $ 
  */
 public abstract class DiGraph/*<Vertex extends Object>*/ {
     
@@ -102,7 +102,7 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
     /** @return Set of all transitive and reflexive successors of
         <code>vertex</code>. */
     public Set/*<Vertex>*/ transitiveSucc(Object vertex) {
-    	return transitiveSucc(Collections.singleton(vertex).iterator());
+    	return transitiveSucc(Collections.singleton(vertex));
     }
 
     /** @return Set of all transitive and reflexive successors of the
@@ -114,7 +114,7 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
     /** @return Set of all transitive and reflexive
         predecessors of <code>vertex</code> */
     public Set/*<Vertex>*/ transitivePred(Object vertex) {
-    	return transitivePred(Collections.singleton(vertex).iterator());
+    	return transitivePred(Collections.singleton(vertex));
     }
 
     /** @return Set of all transitive and reflexive predecessors of
