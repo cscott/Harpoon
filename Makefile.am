@@ -9,6 +9,7 @@ CLEANFILES = configure.done
 EXTRA_DIST = AUTHORS COPYING INSTALL NEWS README REQUIRED \
 	include/README include/config.h.in include/flexthread.h \
 	include/fni-stats.h include/fni-threadstate.h include/fni-wrap.h \
+	include/fni-objsize.h include/jni-gcthreads.h include/memstats.h \
 	include/jni-func.h include/jni-gc.h include/jni-link.h \
 	include/jni-private.h include/jni-types.h include/jni.h \
 	include/precisec.c include/precisec.h include/sym.h \
