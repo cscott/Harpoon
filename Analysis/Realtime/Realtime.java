@@ -20,6 +20,7 @@ import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
+import harpoon.Backend.Generic.Frame;
 /**
  * <code>Realtime</code> is the top-level access point for the rest of the 
  * Harpoon compiler to provide support for the Realtime Java MemoryArea 
@@ -40,6 +41,9 @@ public class Realtime {
 
     /** Remove tagging when you remove all checks? */
     public static boolean REMOVE_TAGS = true;
+
+    /** Add support for realtime threads */
+    public static boolean REALTIME_THREADS = false;
 
     /** Determine which analysis method to use. */
     public static int ANALYSIS_METHOD = 0;
@@ -222,6 +226,13 @@ public class Realtime {
 		  .getMethod("checkAccess", new HClass[] { object }));
 	roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
 	
+	if(REALTIME_THREADS)
+	    {
+		roots.add(linker.forName("javax.realtime.QuantaThread")
+			  .getConstructor(new HClass[] {}));
+		roots.add(linker.forName("javax.realtime.QuantaThread")
+			  .getMethod("flagHandler", new HClass[] {}));
+	    }
 //  	roots.add(linker.forName("java.lang.Class")
 //  		  .getMethod("getConstructor", 
 //  			     new HClass[] { 
@@ -322,6 +333,18 @@ public class Realtime {
 	return hcf;
     }
     
+    public static HCodeFactory addQuantaChecker(Frame f, HCodeFactory hcf)
+    {
+	if(REALTIME_THREADS)
+	    {
+		QuantaChecker qc = new QuantaChecker(f, hcf);
+		
+		return qc.codeFactory();
+	    }
+
+	return hcf;
+    }
+
 
     /** Print statistics about the static analysis and addition of 
      *  Realtime support. */
