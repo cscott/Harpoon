@@ -831,27 +831,27 @@ void realtime_unschedule_thread(JNIEnv *env, jobject thread) {
   jlong threadID;
   /* the scheduler */
   jobject scheduler;
-  
+  jboolean success;
+
   StopSwitching(); //stop thread switching
   
   /* get the scheduler */
-  getSchedMethod = (*env)->GetStaticMethodID(env,
-					     FNI_GetObjectClass(env, thread),
-					     "getScheduler",
-					     "()Ljavax/realtime/Scheduler;");
+  getSchedMethod = (*env)->GetMethodID(env,
+				       FNI_GetObjectClass(env, thread),
+				       "getScheduler",
+				       "()Ljavax/realtime/Scheduler;");
   assert(!((*env)->ExceptionOccurred(env)));
-  scheduler = (*env)->CallStaticObjectMethod(env,
-					     FNI_GetObjectClass(env, thread),
-					     getSchedMethod);
+  scheduler = (*env)->CallObjectMethod(env, thread, getSchedMethod);
   assert(!((*env)->ExceptionOccurred(env)));
   /* remove the thread from the scheduler */
   removeThreadMethod =
     (*env)->GetMethodID(env, FNI_GetObjectClass(env, scheduler),
 			"removeFromFeasibility",
-			"(Ljavax/realtime/Schedulable;)V");
+			"(Ljavax/realtime/Schedulable;)Z");
   assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->CallVoidMethod(env, scheduler, removeThreadMethod, thread);
+  success = (*env)->CallBooleanMethod(env, scheduler, removeThreadMethod, thread);
   assert(!((*env)->ExceptionOccurred(env)));
+  assert(success == JNI_TRUE);
 }
 
 void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
