@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.25 1999-11-09 02:46:33 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.26 1999-11-09 03:09:05 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -1205,6 +1205,7 @@ public class Jasmin {
 
     private static final void visitAllDepth(DepthVisitor visitor, Quad start, Set qm) {
 	//Visit the node passed to us
+	System.out.println(start);
 	start.accept(visitor);
 	//add this node to the done list
 	qm.add(start);
@@ -1257,6 +1258,7 @@ public class Jasmin {
 	}
 
 	void maxcheck(int t) {
+	    System.out.println(t);
 	    if (t>max) max=t;
 	}
 
@@ -1453,12 +1455,15 @@ public class Jasmin {
 	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
 	    if (q.objectref()==null) {
 		//Static
+		depth1+=load2(q, q.dst());
 		maxcheck(depth1);
 	    }
 	    else {
 		depth1+=load(q,q.objectref());
 		maxcheck(depth1);
 		depth1-=load2(q,q.objectref());
+		depth1+=load2(q, q.dst());
+		maxcheck(depth1);
 	    }
 	    depth1+=store(q,q.dst());
 	    depth.put(q, new Integer(depth1));
@@ -1840,7 +1845,6 @@ public class Jasmin {
 			    size=2;
 			else
 			    size=1;
-	    TempInfo dest=(TempInfo)tempmap.get(t);
 	    return size;
 	}
 	private int load(Quad q,Temp t) {
