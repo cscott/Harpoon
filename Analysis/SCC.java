@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extension to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.11 1998-09-21 00:31:49 cananian Exp $
+ * @version $Id: SCC.java,v 1.12 1998-09-21 01:27:26 cananian Exp $
  */
 
 public class SCC implements TypeMap, ConstMap, ExecMap {
@@ -161,11 +161,46 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 
 	// utility functions.
 	LatticeVal get(Temp t) { return (LatticeVal) V.get(t); }
-	int whichSigma(SIGMA s, Temp t) {
-	    for (int i=0; i < s.src.length; i++)
-		if (s.src[i] == t)
-		    return i;
-	    return -1;
+
+	void handleSigmas(CJMP q, OPER def) {
+	    String opc = def.opcode.intern();
+	    LatticeVal left = def.operands.length<1?null: get(def.operands[0]);
+	    LatticeVal right= def.operands.length<2?null: get(def.operands[1]);
+
+	    // for every sigma source:
+	    for (int i=0; i < q.src.length; i++) {
+		LatticeVal v = get( q.src[i] );
+		if (v == null) continue; // skip: insufficient info.
+
+		// check to see if it comes from the OPER defining the boolean.
+		boolean handled = false;
+		if (q.src[i] == def.operands[0]) { // left is source.
+		    if (opc == "acmpeq" &&
+			left  instanceof xClass && // not already xClassNonNull
+			right instanceof xNullConstant) {
+			raiseV(V, Wv, q.dst[i][0], // false branch: non-null
+			       new xClassNonNull( ((xClass)left).type() ) );
+			raiseV(V, Wv, q.dst[i][1], // true branch: null
+			       new xNullConstant() );
+			handled = true;
+		    } // else if (opc == "icmpeq") { }
+		} else if (q.src[i] == def.operands[1]) { // right is source.
+		    if (opc == "acmpeq" &&
+			right instanceof xClass && // not already xClassNonNull
+			left  instanceof xNullConstant) {
+			raiseV(V, Wv, q.dst[i][0], // false branch: non-null
+			       new xClassNonNull( ((xClass)right).type() ) );
+			raiseV(V, Wv, q.dst[i][1], // true branch: null
+			       new xNullConstant() );
+			handled = true;
+		    }
+		}
+		// fall back.
+		if (!handled) {
+		    raiseV(V, Wv, q.dst[i][0], v);
+		    raiseV(V, Wv, q.dst[i][1], v);
+		}
+	    }
 	}
 
 	// visitation.
@@ -205,8 +240,6 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 		   new xClass( HClass.forClass(Throwable.class) ) );
 	}
 	public void visit(CJMP q) {
-	    boolean takeTrue;
-	    boolean takeFalse;
 	    // is test constant?
 	    LatticeVal v = get( q.test );
 	    if (v instanceof xConstant) {
@@ -216,42 +249,30 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 		    raiseE(Ee, Eq, Wq, q.nextEdge(1) ); // true edge.
 		else
 		    raiseE(Ee, Eq, Wq, q.nextEdge(0) ); // false edge.
-		takeTrue = test;
-		takeFalse= !test;
+		// handle sigmas.
+		for (int i=0; i < q.src.length; i++) {
+		    LatticeVal v2 = get( q.src[i] );
+		    if (v2 != null)
+			raiseV(V, Wv, q.dst[i][test?1:0], v2);
+		}
+		return; // done.
 	    } else if (v instanceof xClass) { // ie, not bottom.
 		// both edges are potentially executable.
 		raiseE(Ee, Eq, Wq, q.nextEdge(1) );
 		raiseE(Ee, Eq, Wq, q.nextEdge(0) );
-		takeTrue = takeFalse = true;
-	    } else return; // not enough info.
-	    // look at definition of boolean condition.
-	    /* XXX XXX XXX
-	    Quad def = (Quad) udm.defmap(hc, q.test)[0]; // SSA form, right?
-	    if (def instanceof OPER) {
-		OPER o = (OPER) def;
-		String opc = o.opcode.intern();
-		LatticeVal left = o.operands.length<1?null: get(o.operands[0]);
-		LatticeVal right= o.operands.length<2?null: get(o.operands[1]);
-		int l = (left==null)?-1:whichSigma(q, o.operands[0] );
-		int r = (right==null)?-1:whichSigma(q, o.operands[1] );
-		// repeat twice; switching left and right in between.
-		for (int i=0; i<2; i++) {
-		if (opc == "acmpeq") { // check for test against null.
-		    if (right instanceof xConstant && (l != -1)
-			((xConstant)right).constValue() == null )
-			raiseV();
-		}
-	    }
-	    */ // XXX XXX XXX
-	    // fallback.
-	    for (int i=0; i < q.src.length; i++) {
-		LatticeVal v2 = get ( q.src[i] );
-		if (v2 != null) {
-		    if (takeFalse)
-			raiseV(V, Wv, q.dst[i][0], v2);
-		    if (takeTrue)
-			raiseV(V, Wv, q.dst[i][1], v2);
-		}
+
+		// look at definition of boolean condition.
+		Quad def = (Quad) udm.defMap(hc, q.test)[0];// SSA form, right?
+		if (def instanceof OPER) // only case we care about
+		    handleSigmas((CJMP) q, (OPER) def);
+		else // fallback.
+		    for (int i=0; i < q.src.length; i++) {
+			LatticeVal v2 = get ( q.src[i] );
+			if (v2 != null) {
+			    raiseV(V, Wv, q.dst[i][0], v2);
+			    raiseV(V, Wv, q.dst[i][1], v2);
+			}
+		    }
 	    }
 	}
 	public void visit(COMPONENTOF q) {
@@ -376,13 +397,23 @@ public class SCC implements TypeMap, ConstMap, ExecMap {
 		    raiseV(V, Wv, q.dst, new xFloatConstant(ty, o) );
 		else throw new Error("Unknown OPER result type: "+ty);
 	    } /* else if (allWidth) ... XXX XXX XXX */
-	    else {
-		// RULE 4:
-		HClass ty = q.evalType();
-		if (ty.isPrimitive())
-		    raiseV(V, Wv, q.dst, new xClassNonNull( ty ) );
-		else
-		    raiseV(V, Wv, q.dst, new xClass( ty ) );
+	    else { // not all constant, not all known widths...
+		// special-case ACMPEQ x, null
+		if (q.opcode.equals("acmpeq") &&
+		    ((get( q.operands[0] ) instanceof xNullConstant &&
+		      get( q.operands[1] ) instanceof xClassNonNull) ||
+		     (get( q.operands[0] ) instanceof xClassNonNull &&
+		      get( q.operands[1] ) instanceof xNullConstant) ) )
+		    raiseV(V, Wv, q.dst, // always false.
+			   new xIntConstant(HClass.Boolean, 0));
+		else {
+		    // RULE 4:
+		    HClass ty = q.evalType();
+		    if (ty.isPrimitive())
+			raiseV(V, Wv, q.dst, new xClassNonNull( ty ) );
+		    else
+			raiseV(V, Wv, q.dst, new xClass( ty ) );
+		}
 	    }
 	}
 	public void visit(PHI q) {
