@@ -30,6 +30,7 @@ public class RMAScheduler extends Scheduler {
     private static final int NUM_THREADS_TO_WAIT_FOR = 3;
 
     private long deadlinesMissed = 0;
+    private long deadlinesMade = 0;
 
     protected RMAScheduler() {
 	super();
@@ -99,11 +100,19 @@ public class RMAScheduler extends Scheduler {
 		// Reset work done to zero.
 		startPeriod[threadID] = currentTime - ((currentTime - startPeriod[threadID])%p);
 
-		if (COUNT_MISSED_DEADLINES && (work[threadID]<cost[threadID])) {
-		    deadlinesMissed++;
-		    NoHeapRealtimeThread.print("Missed deadline #");
-		    NoHeapRealtimeThread.print(deadlinesMissed);
-		    NoHeapRealtimeThread.print("\n");
+		if (COUNT_MISSED_DEADLINES) {
+		    if (work[threadID]<cost[threadID]) {
+			++deadlinesMissed;
+			NoHeapRealtimeThread.print("Thread #");
+			NoHeapRealtimeThread.print(threadID);
+			NoHeapRealtimeThread.print(" missed deadline #");
+			NoHeapRealtimeThread.print(deadlinesMissed);
+			NoHeapRealtimeThread.print("/");
+			NoHeapRealtimeThread.print(deadlinesMade+deadlinesMissed);
+			NoHeapRealtimeThread.print("\n");
+		    } else {
+			++deadlinesMade;
+		    }
 		}
  		work[threadID] = 0;
  	    }

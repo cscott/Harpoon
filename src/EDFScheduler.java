@@ -31,6 +31,7 @@ public class EDFScheduler extends Scheduler {
     private static final int NUM_THREADS_TO_WAIT_FOR = 3;
 
     private long deadlinesMissed = 0;
+    private long deadlinesMade = 0;
 
     protected EDFScheduler() {
 	super();
@@ -222,13 +223,21 @@ public class EDFScheduler extends Scheduler {
 		// Reset work done to zero.
 		startPeriod[threadID] = currentTime - ((currentTime - startPeriod[threadID])%p);
 
-		if (COUNT_MISSED_DEADLINES && (work[threadID]<cost[threadID])) {
-		    deadlinesMissed++;
-		    NoHeapRealtimeThread.print("Missed deadline #");
-		    NoHeapRealtimeThread.print(deadlinesMissed);
-		    NoHeapRealtimeThread.print("\n");
+		if (COUNT_MISSED_DEADLINES) {
+		    if (work[threadID]<cost[threadID]) {
+			++deadlinesMissed; 
+			NoHeapRealtimeThread.print("Thread #");
+			NoHeapRealtimeThread.print(threadID);
+			NoHeapRealtimeThread.print(" missed deadline #");
+			NoHeapRealtimeThread.print(deadlinesMissed);
+			NoHeapRealtimeThread.print("/");
+			NoHeapRealtimeThread.print(deadlinesMade+deadlinesMissed);
+			NoHeapRealtimeThread.print("\n");
+		    } else {
+			++deadlinesMade;
+		    }
+		    work[threadID] = 0;
 		}
- 		work[threadID] = 0;
  	    }
  	}
 	long minPeriod = Long.MAX_VALUE;
