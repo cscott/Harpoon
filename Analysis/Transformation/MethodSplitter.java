@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.20 2000-11-14 18:27:25 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.21 2001-01-25 20:21:01 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -136,6 +136,11 @@ public abstract class MethodSplitter implements java.io.Serializable {
 	    }
 	    splitM.getMutator().setModifiers(orig.getModifiers());
 	    splitM.getMutator().setSynthetic(orig.isSynthetic());
+	    // XXX: we currently can't add "renamed" constructors, so
+	    // if we're splitting a constructor make it private to
+	    // ensure that it is non-virtual.
+	    if (orig instanceof HConstructor)
+		splitM.getMutator().addModifiers(Modifier.PRIVATE);
 	    /* now add this to known versions */
 	    versions.put(swpair, splitM);
 	    split2orig.put(splitM, swpair);
