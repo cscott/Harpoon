@@ -153,7 +153,9 @@ public class NativeIO {
 
     public native static void registerWrite(int fd);
 
-    public native static int[] getFDs();
+    public native static int getFDs(int[] array);
+
+    public native static int getFDsSmart(boolean block, int[] array);
 
   static {
     System.loadLibrary("C_IO");
