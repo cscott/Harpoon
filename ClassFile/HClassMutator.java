@@ -9,7 +9,7 @@ package harpoon.ClassFile;
  * @see HClass#getMutator
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassMutator.java,v 1.1.2.4 2000-01-11 04:52:45 cananian Exp $
+ * @version $Id: HClassMutator.java,v 1.1.2.5 2000-01-11 08:20:06 cananian Exp $
  */
 public interface HClassMutator {
     public HField addDeclaredField(String name, HClass type)
@@ -29,6 +29,8 @@ public interface HClassMutator {
     public HConstructor addConstructor(String descriptor)
 	throws DuplicateMemberException;
     public HConstructor addConstructor(HClass[] paramTypes)
+	throws DuplicateMemberException;
+    public HConstructor addConstructor(HConstructor template)
 	throws DuplicateMemberException;
     public void removeConstructor(HConstructor c)
 	throws NoSuchMemberException;
