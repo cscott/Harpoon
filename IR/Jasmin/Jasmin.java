@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.24 1999-11-09 02:19:18 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.25 1999-11-09 02:46:33 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -103,7 +103,9 @@ public class Jasmin {
 
 	//FIX ME
 	//This is wrong....
-	out.println("    .limit stack "+(((Integer)tuple[1]).intValue()+2));
+	int depth=finddepth(map, tp, hm, hc);
+
+	out.println("    .limit stack "+depth);
 	WorkSet done=new WorkSet();
 	Visitor visitor=new Visitor(out, map,hc,tp);
 	Quad start=(Quad)hc.getRootElement();
@@ -1179,15 +1181,40 @@ public class Jasmin {
 	}
     }
 
+    private int finddepth(Map map, TypeMap tp, HMethod hm, HCode hc) {
+	//Output assembly from the quads
+	//Build mapping from temps to localvars/stack
 
+	WorkSet done=new WorkSet();
+	DepthVisitor visitor=new DepthVisitor(map,hc,tp);
+	Quad start=(Quad)hc.getRootElement();
+	METHOD m=(METHOD)start.next(1);
+	//Loop through the handlers
+	//We do this to label the quad ranges protected by the handler
+	for (int i=1;i<m.nextLength();i++) {
+	    HANDLER h=(HANDLER)m.next(i);
+	    Enumeration e=h.protectedQuads();
+	    while(e.hasMoreElements()) {
+		Quad q=(Quad)e.nextElement();
+	    }
+	}
+	//Visit all the quads
+	visitAllDepth(visitor,start.next(1), done);
+	return visitor.max();
+    }
 
-
-
-
-
-
-
-
+    private static final void visitAllDepth(DepthVisitor visitor, Quad start, Set qm) {
+	//Visit the node passed to us
+	start.accept(visitor);
+	//add this node to the done list
+	qm.add(start);
+	//visit the kids
+        Quad[] ql = start.next();
+        for (int i=0; i<ql.length; i++) {
+            if (qm.contains(ql[i])) continue; // skip if already done.
+            visitAllDepth(visitor, ql[i],qm);
+        }
+    }
 
     class DepthVisitor extends QuadVisitor {
 	Map tempmap;
@@ -1223,6 +1250,10 @@ public class Jasmin {
 	    maxcheck(depth1);
 	    depth1+=store(q,q.dst());
 	    depth.put(q, new Integer(depth1));
+	}
+
+	int max() {
+	    return max;
 	}
 
 	void maxcheck(int t) {
@@ -1308,13 +1339,25 @@ public class Jasmin {
 	}
 
 	public void visit(PHI q) {
-	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    int depth1=0;
+	    for (int i=0;i<q.prevLength();i++) {
+		if (depth.containsKey(q.prev(i))) {
+		    depth1=((Integer) (depth.get(q.prev(i)))).intValue();
+		    break;
+		}
+	    }
 	    maxcheck(depth1);
 	    depth.put(q, new Integer(depth1));
 	}
 
 	public void visit(FOOTER q) {
-	    int depth1=((Integer) (depth.get(q.prev(0)))).intValue();
+	    int depth1=0;
+	    for (int i=0;i<q.prevLength();i++) {
+		if (depth.containsKey(q.prev(i))) {
+		    depth1=((Integer) (depth.get(q.prev(i)))).intValue();
+		    break;
+		}
+	    }
 	    maxcheck(depth1);
 	    depth.put(q, new Integer(depth1));
 	}
