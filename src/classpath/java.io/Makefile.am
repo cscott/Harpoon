@@ -13,4 +13,5 @@ JAVASRC=
 
 EXTRA_DIST=$(JAVASRC)
 
-include $(top_srcdir)/JavaRules.make
+#uncomment this if you actually add any java files to JAVASRC
+#include $(top_srcdir)/JavaRules.make
