@@ -27,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.25 2000-04-02 07:15:03 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.26 2000-04-02 19:47:59 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -315,8 +315,9 @@ abstract class InterProcPA {
 		      pig_caller.tau.activeThreadSet(), mu);
 
 	// bring the edge ordering relation into the caller's graph
-	bring_eo(pig_caller.eo, old_caller_I, pig_callee.eo,
-		 pig_callee.G.O, mu);
+	if(!PointerAnalysis.IGNORE_EO)
+	    bring_eo(pig_caller.eo, old_caller_I, pig_callee.eo,
+		     pig_callee.G.O, mu);
 
 	// recompute the escape info
 	pig_caller.G.propagate();

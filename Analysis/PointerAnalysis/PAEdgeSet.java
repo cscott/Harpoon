@@ -25,7 +25,7 @@ import harpoon.Temp.Temp;
  than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.13 2000-04-02 07:15:04 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.14 2000-04-02 19:47:59 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -206,6 +206,24 @@ public class PAEdgeSet {
 		visitor.visit(node);
 	    }
 	}
+    }
+
+
+    /** Returns the set of field <code>f</code> edges that originate in
+	node <code>node</code>; <code>Set</code> version. */
+    public final Set getEdgesFromSet(PANode node, String f){
+	Set set = new HashSet();
+	for(Iterator it = pointedNodes(node,f).iterator(); it.hasNext();){
+	    PANode node2 = (PANode) it.next();
+	    set.add(new PAEdge(node, f, node2));
+	}
+	return set;
+    }
+
+    /** Returns the set of field <code>f</code> edges that originate in
+	node <code>node</code>; <code>Iterator</code> version. */
+    public final Iterator getEdgesFrom(PANode node, String f){
+	return getEdgesFromSet(node, f).iterator();
     }
     
     /** Visits all the nodes pointed by the variable <code>v</code>. */

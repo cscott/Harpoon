@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.25 2000-04-02 09:42:46 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.26 2000-04-02 19:48:00 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -71,7 +71,9 @@ public class ParIntGraph {
 	G   = new PointsToGraph();
 	tau = new PAThreadMap();
 	ar  = new ActionRepository();
-	eo  = new EdgeOrdering();
+	
+	eo = PointerAnalysis.IGNORE_EO ? null : new EdgeOrdering();
+
 	touched_threads = new HashSet();
     }
     
@@ -82,7 +84,10 @@ public class ParIntGraph {
 	G.join(pig2.G);
 	tau.join(pig2.tau);
 	ar.join(pig2.ar);
-	eo.join(pig2.eo);
+
+	if(!PointerAnalysis.IGNORE_EO)
+	    eo.join(pig2.eo);
+
 	touched_threads.addAll(pig2.touched_threads);
     }
 
@@ -128,11 +133,14 @@ public class ParIntGraph {
 		System.out.println("The ar's are different");
 	    return false;
 	}
-	if(!eo.equals(pig2.eo)){
-	    if(DEBUG2)
-		System.out.println("The eo's are different");
-	    return false;
-	}
+
+	if(!PointerAnalysis.IGNORE_EO)
+	    if(!eo.equals(pig2.eo)){
+		if(DEBUG2)
+		    System.out.println("The eo's are different");
+		return false;
+	    }
+
 	if(!touched_threads.equals(pig2.touched_threads)){
 	    if(DEBUG2)
 		System.out.println("The touched_thread's are different");
@@ -161,10 +169,14 @@ public class ParIntGraph {
     /** <code>clone</code> produces a copy of the <code>this</code>
 	Parallel Interaction Graph. */
     public Object clone(){
+
+	EdgeOrdering _eo = 
+	    PointerAnalysis.IGNORE_EO ? null : (EdgeOrdering)eo.clone();
+
 	return new ParIntGraph((PointsToGraph)G.clone(),
 			       (PAThreadMap)tau.clone(),
 			       (ActionRepository)ar.clone(),
-			       (EdgeOrdering)eo.clone(),
+			       _eo,
 			       (HashSet)((HashSet)touched_threads).clone());
     }
 
@@ -175,6 +187,17 @@ public class ParIntGraph {
 	class nodes, normally or exceptionally returned nodes or the
 	started thread nodes) */
     public ParIntGraph keepTheEssential(PANode[] params, boolean is_main){
+	ParIntGraph pig2 = retain_essential(params, is_main);
+
+	if(AGGRESSIVE_SHRINKING){
+	    pig2.aggressiveShrinking();
+	    pig2 = retain_essential(params, is_main);
+	}
+
+	return pig2;
+    }
+
+    private final ParIntGraph retain_essential(PANode[] params,boolean is_main){
 	HashSet remaining_nodes = new HashSet();
 	remaining_nodes.addAll(tau.activeThreadSet());
 
@@ -185,15 +208,13 @@ public class ParIntGraph {
 
 	ActionRepository _ar = ar.keepTheEssential(remaining_nodes);
 
-	EdgeOrdering _eo = eo.keepTheEssential(remaining_nodes);
+	EdgeOrdering _eo = 
+	    PointerAnalysis.IGNORE_EO ? null : 
+	    eo.keepTheEssential(remaining_nodes);
+
 	// the "touched_threads" info is valid only for captured threads
 	// i.e. not for the remaining nodes (accessible from the outside).
-	ParIntGraph pig2 = new ParIntGraph(_G,_tau,_ar,_eo,Collections.EMPTY_SET);
-
-	if(AGGRESSIVE_SHRINKING)
-	    pig2.aggressiveShrinking();
-
-	return pig2;
+	return new ParIntGraph(_G, _tau, _ar, _eo, Collections.EMPTY_SET);
     }
 
     /** Remove the load nodes that don't lead to anything interesting.
@@ -339,7 +360,8 @@ public class ParIntGraph {
 
 	return
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
-			    ar.csSpecialize(map, call), eo.specialize(map),
+			    ar.csSpecialize(map, call),
+			    PointerAnalysis.IGNORE_EO? null: eo.specialize(map),
 			    PANode.specialize_set(touched_threads, map));
     }
 
@@ -359,7 +381,8 @@ public class ParIntGraph {
 	
 	return
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
-			    ar.tSpecialize(map, run), eo.specialize(map),
+			    ar.tSpecialize(map, run), 
+			    PointerAnalysis.IGNORE_EO? null: eo.specialize(map),
 			    PANode.specialize_set(touched_threads, map));
     }
 
@@ -378,7 +401,8 @@ public class ParIntGraph {
 	
 	return
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
-			    ar.tSpecialize(map, run), eo.specialize(map),
+			    ar.tSpecialize(map, run),
+			    PointerAnalysis.IGNORE_EO? null: eo.specialize(map),
 			    PANode.specialize_set(touched_threads, map));
     }
 
@@ -389,7 +413,10 @@ public class ParIntGraph {
 	G.remove(nodes);
 	tau.remove(nodes);
 	ar.removeNodes(nodes);
-	eo.removeNodes(nodes);
+
+	if(!PointerAnalysis.IGNORE_EO)
+	    eo.removeNodes(nodes);
+
 	touched_threads.removeAll(nodes);
     }
 
@@ -426,7 +453,9 @@ public class ParIntGraph {
 	}
 
 	ar.removeEdges(fake_outside_edges);
-	eo.removeEdges(fake_outside_edges);
+
+	if(!PointerAnalysis.IGNORE_EO)
+	    eo.removeEdges(fake_outside_edges);
     }
 
     /** Pretty-print function for debug purposes. 
@@ -436,7 +465,9 @@ public class ParIntGraph {
 	return
 	    "\nParIntGraph{\n" + G + " " + tau + 
 	    " Touched threads: " + touchedToString() + "\n" +
-	    ar /* + eo */ + "}"; 
+	    ar + 
+	    (PointerAnalysis.IGNORE_EO ? "" : eo.toString()) + 
+	    "}";
     }
 
     // Produces a string representation of the

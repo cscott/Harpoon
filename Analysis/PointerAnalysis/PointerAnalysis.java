@@ -66,7 +66,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.45 2000-04-02 07:15:04 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.46 2000-04-02 19:48:00 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -85,6 +85,13 @@ public class PointerAnalysis {
     public static final boolean STATS = true;
     public static boolean SHOW_NODES = false;
     public static final boolean DETAILS2 = true;
+
+
+    /** Hack to speed it up: it appears to me that the edge ordering
+	relation is not extremely important: in recursive methods or in
+	methods with loops, it tends to be just a cartesian product between
+	I and O. */
+    public static final boolean IGNORE_EO = true;
 
     /** Controls the recording of data about the thread nodes that are
 	touched after being started. */
@@ -627,8 +634,10 @@ public class PointerAnalysis {
 	public void visit(GET q){
 	    Temp l2 = q.objectref();
 	    HField hf = q.field();
+
 	    // do not analyze loads from non-pointer fields
 	    if(hf.getType().isPrimitive()) return;
+
 	    if(l2 == null){
 		// special treatement of the static fields
 		l2 = ArtificialTempFactory.getTempFor(hf);
@@ -645,7 +654,7 @@ public class PointerAnalysis {
 	public void visit(AGET q){
 	    // All the elements of an array are collapsed in a single
 	    // node, referenced through a conventional named field
-	    //process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
+	    process_load(q, q.dst(), q.objectref(), ARRAY_CONTENT);
 	}
 	
 	/** Does the real processing of a load statement. */
@@ -673,7 +682,10 @@ public class PointerAnalysis {
 		PANode load_node = nodes.getCodeNode(q,PANode.LOAD); 
 		set_S.add(load_node);
 		lbbpig.G.O.addEdges(set_E,f,load_node);
-		lbbpig.eo.add(set_E,f,load_node,lbbpig.G.I);
+
+		if(!PointerAnalysis.IGNORE_EO)
+		    lbbpig.eo.add(set_E, f, load_node, lbbpig.G.I);
+
 		lbbpig.G.I.addEdges(l1,set_S);
 		lbbpig.G.propagate(set_E);
 
@@ -756,7 +768,7 @@ public class PointerAnalysis {
 	public void visit(ASET q){
 	    // All the elements of an array are collapsed in a single
 	    // node
-	    // process_store(q.objectref(),ARRAY_CONTENT,q.src());
+	    process_store(q.objectref(), ARRAY_CONTENT, q.src());
 	}
 	
 	/** Does the real processing of a store statement */
@@ -826,18 +838,15 @@ public class PointerAnalysis {
 	    return hclass.getName().equals("java.lang.Thread");
 	}
 
-
 	/** Process an acquire statement. */
 	public void visit(MONITORENTER q){
 	    process_acquire_release(q, q.lock());
 	}
 
-
 	/** Process a release statement. */
 	public void visit(MONITOREXIT q){
 	    process_acquire_release(q, q.lock());
 	}
-
 
 	// Does the real processing for acquire/release statements.
 	private void process_acquire_release(Quad q, Temp l){
@@ -1225,5 +1234,32 @@ public class PointerAnalysis {
     }
     */
 
+    /*
+    ////////// SPECIAL HANDLING FOR SOME NATIVE METHODS ////////////////////
+
+    final ParIntGraph getExpParIntGraph(MetaMethod mm){
+	HMethod hm = mm.getHMethod();
+
+	ParIntGraph pig = (ParIntGraph) hash_proc_ext.get(mm);
+	if(pig == null){
+	    pig = ext_pig_for_native(hm);
+	    if(pig != null) hash_proc_ext.put(mm, pig);
+	}
+
+	return pig;
+    }
+
+    private final ParIntGraph ext_pig_for_native(HMethod hm){
+	HClass hclass = hm.getDeclaringClass();
+	String clname = hclass.getName();
+	String hmname = hm.getName();
+
+	if(clname.equals("java.lang.Object") &&
+	   hmname.equals("hashCode"));
+	    
+    }
+    */
+
 }
+
 

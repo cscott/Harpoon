@@ -37,7 +37,7 @@ import java.util.Set;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Matching.java,v 1.1.2.4 2000-03-02 04:45:30 salcianu Exp $
+ * @version $Id: Matching.java,v 1.1.2.5 2000-04-02 19:47:59 salcianu Exp $
  */
 abstract class Matching {
 
@@ -168,7 +168,7 @@ abstract class Matching {
     // these prealocated objects gain us some efficiency, they are used
     // in rule 22 and rule 32, only to search into the edge ordering relation
     static PAEdge inside_edge  = new PAEdge(null, "", null);
-    static PAEdge outside_edge = new PAEdge(null,  "", null);
+    static PAEdge out_edge = new PAEdge(null, "", null);
 
     /** Applies rule 22: matches an outside edge starting from node1 in 
 	pig[i] against an inside edge from pig[i] (the same analysis scope).
@@ -188,7 +188,7 @@ abstract class Matching {
 	// from the inference rule
 	Set nodes3 = new_mappings_for_node1;
 
-	outside_edge.n1 = node1;
+	out_edge.n1 = node1;
 
 	Enumeration flags = pig[i].G.O.allFlagsForNode(node1);
 	while(flags.hasMoreElements()){
@@ -199,17 +199,24 @@ abstract class Matching {
 	    Set nodes2 = pig[i].G.O.pointedNodes(node1,f);
 	    if(nodes2.isEmpty()) continue;
 	    
-	    outside_edge.f = f;
+	    out_edge.f = f;
 	    Iterator it2 = nodes2.iterator();
 	    while(it2.hasNext()){
 		PANode node2 = (PANode) it2.next();
-		outside_edge.n2 = node2;
+		out_edge.n2 = node2;
 
 		boolean changed = false;
 
 		// analyze the inside edges that are already created when
 		// outside edge is read.
-		Iterator it_edges = pig[i].eo.getBeforeEdges(outside_edge);
+
+		Iterator it_edges = null;
+
+		if(PointerAnalysis.IGNORE_EO)
+		    it_edges = pig[i].G.I.getEdgesFrom(out_edge.n1, out_edge.f);
+		else
+		    it_edges = pig[i].eo.getBeforeEdges(out_edge);
+
 		while(it_edges.hasNext()){
 		    PAEdge inside_edge = (PAEdge) it_edges.next();
 		    // only edges started in one of the possible node3 nodes
@@ -302,7 +309,7 @@ abstract class Matching {
 	    String f = (String) flags.nextElement();
 	    
 	    inside_edge.f  = f;
-	    outside_edge.f = f;
+	    out_edge.f = f;
 
 	    // nodes2 stands for all the nodes that could play
 	    // the role of n2 from the inference rule
@@ -312,19 +319,20 @@ abstract class Matching {
 	    Iterator it3 = nodes3.iterator();
 	    while(it3.hasNext()){
 		PANode node3 = (PANode) it3.next();
-		outside_edge.n1 = node3;
+		out_edge.n1 = node3;
 
 		Iterator it4 = pig[i].G.O.pointedNodes(node3,f).iterator();
 		while(it4.hasNext()){
 		    PANode node4 = (PANode) it4.next();
-		    outside_edge.n2 = node4;
+		    out_edge.n2 = node4;
 		    
 		    Iterator it2 = nodes2.iterator();
 		    while(it2.hasNext()){
 			PANode node2 = (PANode) it2.next();
 			inside_edge.n2 = node2;
 
-			if(pig[i].eo.wasBefore(inside_edge, outside_edge))
+			if(PointerAnalysis.IGNORE_EO || 
+			   pig[i].eo.wasBefore(inside_edge, out_edge))
 			    if(mu[ib].add(node4,node2)){
 				new_info[ib].add(node4,node2);
 				W[i].add(node4);
