@@ -3,3 +3,7 @@ for the StrongARM backend. (Frame/CodeGen)
 
 Currently contains basic infrastructure for StrongARM code elements,
 more coming once the classes compile, as well as code generation itself.
+
+This is currently based off of the same HCode, etc. superclasses that
+Quads use. In the near future it will be modified to use the 
+harpoon.IR.Assem.* superclasses.
