@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.43 2000-01-24 07:58:10 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.44 2000-01-24 17:27:39 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -941,7 +941,8 @@ public class AsyncCode {
 							      new HClass[0])))) {
 		HMethod hmrun=old.getDeclaringClass().getMethod("run",
 							       new HClass[0]);
-		if (blockingcalls.contains(hmrun))
+//              This code not needed anymore
+//		if (blockingcalls.contains(hmrun))
 		    if (!old2new.containsKey(hmrun)) {
 			HClass hcl=old.getDeclaringClass();
 			Set classes=ch.children(hcl);

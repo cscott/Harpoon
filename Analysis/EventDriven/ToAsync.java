@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.11 2000-01-24 07:58:10 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.12 2000-01-24 17:27:40 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -63,26 +63,26 @@ public class ToAsync {
 	async_todo.push(hc);
 
 	//Add run methods in...make them blocking
-	HClass hcthrd=linker.forName("java.lang.Runnable");
-	Set children=ch.children(hcthrd);
-	Iterator childit=children.iterator();
+//  	HClass hcthrd=linker.forName("java.lang.Runnable");
+//  	Set children=ch.children(hcthrd);
+//  	Iterator childit=children.iterator();
 
-	while(childit.hasNext()) {
-	    try {
-		HClass child=(HClass)childit.next();
+//  	while(childit.hasNext()) {
+//  	    try {
+//  		HClass child=(HClass)childit.next();
 
-		if (!child.isInterface()) {
-		    HMethod hmrun=child.getDeclaredMethod("run",
-						  new HClass[0]);
-		    if (old2new.containsKey(hmrun))
-			continue;
-		    async_todo.add(ucf.convert(hmrun));
-		    HMethod temp=AsyncCode.makeAsync(old2new, hmrun,
-						     ucf,linker);
-		}
-	    } catch (NoSuchMethodError e) {
-	    }
-	}
+//  		if (!child.isInterface()) {
+//  		    HMethod hmrun=child.getDeclaredMethod("run",
+//  						  new HClass[0]);
+//  		    if (old2new.containsKey(hmrun))
+//  			continue;
+//  		    async_todo.add(ucf.convert(hmrun));
+//  		    HMethod temp=AsyncCode.makeAsync(old2new, hmrun,
+//  						     ucf,linker);
+//  		}
+//  	    } catch (NoSuchMethodError e) {
+//  	    }
+//  	}
 
 	WorkSet other=new WorkSet();
 	WorkSet done_other=new WorkSet();
