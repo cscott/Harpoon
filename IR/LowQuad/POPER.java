@@ -10,10 +10,11 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>POPER</code> is an extended version of
- * <code>harpoon.IR.Quads.OPER</code>, with several new opcodes.
+ * <code>harpoon.IR.Quads.OPER</code>, with new opcodes defined in
+ * <code>LQop</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: POPER.java,v 1.1.2.1 1999-01-21 05:19:15 cananian Exp $
+ * @version $Id: POPER.java,v 1.1.2.2 1999-01-21 06:37:25 cananian Exp $
  */
 public class POPER extends harpoon.IR.Quads.OPER {
     

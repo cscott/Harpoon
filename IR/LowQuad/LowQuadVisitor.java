@@ -8,7 +8,7 @@ package harpoon.IR.LowQuad;
  * make Martin happy.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LowQuadVisitor.java,v 1.1.2.2 1999-01-21 05:19:14 cananian Exp $
+ * @version $Id: LowQuadVisitor.java,v 1.1.2.3 1999-01-21 06:37:23 cananian Exp $
  */
 public abstract class LowQuadVisitor extends harpoon.IR.Quads.QuadVisitor {
     protected LowQuadVisitor() { }
@@ -38,10 +38,22 @@ public abstract class LowQuadVisitor extends harpoon.IR.Quads.QuadVisitor {
     }
 
     // Visitor functions for new LowQuads.
-    public void visit(LowQuad q) { visit((harpoon.IR.Quads.Quad)q); }
-    public void visit(PCALL q) { visit((LowQuad)q); }
-    public void visit(PGET q)  { visit((LowQuad)q); }
-    public void visit(POPER q) { visit((harpoon.IR.Quads.Quad)q); }
-    public void visit(PPTR q)  { visit((LowQuad)q); }
-    public void visit(PSET q)  { visit((LowQuad)q); }
+    public void visit(LowQuad q)    { visit((harpoon.IR.Quads.Quad)q); }
+    public void visit(POPER q)      { visit((harpoon.IR.Quads.Quad)q); }
+    public void visit(PCALL q)      { visit((LowQuad)q); }
+    public void visit(PGET q)       { visit((LowQuad)q); }
+    public void visit(PSET q)       { visit((LowQuad)q); }
+
+    // PPTR:
+    public void visit(PPTR q)       { visit((LowQuad)q); }
+    public void visit(PARRAY q)     { visit((PPTR)q); }
+    public void visit(PFIELD q)     { visit((PPTR)q); }
+    public void visit(PMETHOD q)    { visit((PPTR)q); }
+    // PCONST:
+    public void visit(PCONST q)     { visit((LowQuad)q); }
+    public void visit(PAOFFSET q)   { visit((PCONST)q); }
+    public void visit(PFOFFSET q)   { visit((PCONST)q); }
+    public void visit(PMOFFSET q)   { visit((PCONST)q); }
+    public void visit(PFCONST q)    { visit((PCONST)q); }
+    public void visit(PMCONST q)    { visit((PCONST)q); }
 }
