@@ -21,10 +21,11 @@ import harpoon.Temp.TempFactory;
  * <code>EventDrivenCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.3 1999-11-20 07:00:23 bdemsky Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.4 1999-11-20 19:49:50 bdemsky Exp $
  */
-public class EventDrivenCode extends Code {
-    
+public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
+    public static final String codename = "quad-no-ssa";
+
     /** Creates a <code>EventDrivenCode</code>. */
     public EventDrivenCode(HMethod parent, HMethod newmain, Temp[] params) {
         super(parent, null);
@@ -100,7 +101,7 @@ public class EventDrivenCode extends Code {
 			   true, false, new Temp[0]);
 	THROW throwq2=new THROW(this.qf, null, exc2);
 	Quad.addEdge(c1, 0, c2, 0);
-	Quad.addEdge(c2, 1, throwq,0);
+	Quad.addEdge(c2, 1, throwq2,0);
 
 
 	System.out.println("Debug 5");
