@@ -4,6 +4,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.DerivationGenerator;
@@ -13,7 +14,7 @@ import harpoon.IR.Tree.TreeFactory;
  * of a memory allocation routine.
  * @author Duncan Bryce <duncan@lcs.mit.edu>
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationStrategy.java,v 1.1.2.4 2000-02-16 06:18:09 cananian Exp $
+ * @version $Id: AllocationStrategy.java,v 1.1.2.5 2000-04-04 00:38:15 cananian Exp $
  */
 public abstract class AllocationStrategy {
     /** Return a <code>Tree.Exp</code> created with the given
@@ -21,5 +22,6 @@ public abstract class AllocationStrategy {
      *  memory <code>length</code> bytes long. */
     public abstract Exp memAlloc(TreeFactory tf, HCodeElement source,
 				 DerivationGenerator dg,
+				 AllocationProperties ap,
 				 Exp length);
 }

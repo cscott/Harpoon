@@ -4,6 +4,7 @@
 package harpoon.Backend.Runtime1;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.FieldMap;
@@ -58,7 +59,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.24 2000-03-27 02:27:35 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.25 2000-04-04 00:38:15 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -172,6 +173,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // shift return pointer appropriately for an object reference.
     public Exp objAlloc(TreeFactory tf, HCodeElement source,
 			DerivationGenerator dg,
+			AllocationProperties ap,
 			HClass objectType, Exp length) {
 	Temp Tobj = new Temp(tf.tempFactory(), "rt");
 	return new ESEQ
@@ -183,7 +185,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	       DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
 	       new TEMP(tf, source, Type.POINTER, Tobj)),
 	       as.memAlloc
-	       (tf, source, dg,
+	       (tf, source, dg, ap,
 		new BINOP
 		(tf, source, Type.POINTER, Bop.ADD,
 		 length,
@@ -236,6 +238,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     }
     public Translation.Exp arrayNew(TreeFactory tf, HCodeElement source,
 				    DerivationGenerator dg,
+				    AllocationProperties ap,
 				    HClass arrayType, Translation.Exp length) {
 	Util.assert(arrayType.isArray());
 	// temporary storage for created array.
@@ -266,7 +269,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		DECLARE(dg, HClass.Void/* not an obj yet*/, Tarr,
 			new TEMP(tf, source, Type.POINTER, Tarr)),
 		objAlloc // allocate array data
-		(tf, source, dg, arrayType,
+		(tf, source, dg, ap, arrayType,
 		 new BINOP // compute array data size:
 		 (tf, source, Type.INT, Bop.ADD,
 		  new BINOP // multiply...
@@ -573,11 +576,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 
     public Translation.Exp objectNew(TreeFactory tf, HCodeElement source,
 				     DerivationGenerator dg,
+				     AllocationProperties ap,
 				     HClass classType, boolean initialize) {
 	Util.assert(!classType.isArray());
 	Util.assert(!classType.isPrimitive());
 	int length = objectSize(classType);
-	Exp object = objAlloc(tf, source, dg, classType,
+	Exp object = objAlloc(tf, source, dg, ap, classType,
 			      new CONST(tf, source, length));
 	if (initialize) {
 	    // use memset to initialize all fields to 0.

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory;
 import harpoon.Backend.Maps.NameMap;
@@ -33,7 +34,7 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.4 2000-03-09 03:56:17 cananian Exp $
+ * @version  $Id: AppelAllocationStrategy.java,v 1.1.2.5 2000-04-04 00:38:15 cananian Exp $
  */
 public class AppelAllocationStrategy extends AllocationStrategy {
     final Frame frame;
@@ -52,7 +53,8 @@ public class AppelAllocationStrategy extends AllocationStrategy {
    *  of the specified size.   
    */
     public Exp memAlloc(TreeFactory tf, HCodeElement src,
-			DerivationGenerator dg, Exp size)
+			DerivationGenerator dg, AllocationProperties ap,
+			Exp size)
     {
 	NameMap	     m_nm = frame.getRuntime().nameMap;
 	LABEL        l0, l1, l2, l3, l4;

@@ -4,6 +4,7 @@
 package harpoon.Backend.Generic;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
@@ -29,7 +30,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.8 2000-02-16 06:17:25 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.9 2000-04-04 00:38:04 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -98,6 +99,7 @@ public abstract class Runtime {
 	 *  (class pointer, length field) *are* initialized properly. */
 	public abstract Exp arrayNew(TreeFactory tf, HCodeElement source,
 				     DerivationGenerator dg,
+				     AllocationProperties ap,
 				     HClass arraytype, Exp length);
 
 	/** Return a <code>Translation.Exp</code> which tests the
@@ -136,6 +138,7 @@ public abstract class Runtime {
 	 *  and initialized. */
 	public abstract Exp objectNew(TreeFactory tf, HCodeElement source,
 				      DerivationGenerator dg,
+				      AllocationProperties ap,
 				      HClass classType, boolean initialize);
 
 	/** Return a <code>Translation.Exp</code> which represents

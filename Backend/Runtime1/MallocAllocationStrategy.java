@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
@@ -22,7 +23,7 @@ import harpoon.Temp.Temp;
  * same prototype as <code>malloc()</code> to do the allocation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MallocAllocationStrategy.java,v 1.1.2.3 2000-03-09 03:56:17 cananian Exp $
+ * @version $Id: MallocAllocationStrategy.java,v 1.1.2.4 2000-04-04 00:38:15 cananian Exp $
  */
 public class MallocAllocationStrategy extends AllocationStrategy {
     final Frame frame;
@@ -37,7 +38,15 @@ public class MallocAllocationStrategy extends AllocationStrategy {
     }
     public Exp memAlloc(TreeFactory tf, HCodeElement source,
 			DerivationGenerator dg,
+			AllocationProperties ap,
 			Exp length) {
+	return buildAllocCall(tf, source, dg, ap, funcname, length, null);
+    }
+    protected Exp buildAllocCall(TreeFactory tf, HCodeElement source,
+				 DerivationGenerator dg,
+				 AllocationProperties ap,
+				 String funcname, Exp length, ExpList addlArgs)
+    {
 	Label func = new Label(frame.getRuntime().nameMap
 			       .c_function_name(funcname));
 	Temp Tret = new Temp(tf.tempFactory(), "ma");
@@ -51,7 +60,7 @@ public class MallocAllocationStrategy extends AllocationStrategy {
 	      (NAME)
 	      DECLARE(dg, HClass.Void/*some random c function*/,
 	      new NAME(tf, source, func)),
-	      new ExpList(length, null)),
+	      new ExpList(length, addlArgs)),
 	     DECLARE(dg, HClass.Void/*not an obj yet, just memory*/, Tret,
 	     new TEMP(tf, source, Type.POINTER, Tret)));
     }

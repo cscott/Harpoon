@@ -6,6 +6,8 @@ package harpoon.IR.Tree;
 import harpoon.Analysis.DefMap;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsImpl;
+import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
@@ -69,7 +71,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.75 2000-04-02 14:25:28 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.76 2000-04-04 00:38:19 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -85,22 +87,25 @@ class ToTree {
      *  and <code>ReachingDefs</code> for <code>LowQuadNoSSA</code>. */
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
 	this(tf, code,
+	     new harpoon.Analysis.DefaultAllocationInformation(),
 	     new ToTreeHelpers.DefaultEdgeOracle(),
 	     new ToTreeHelpers.DefaultFoldNanny(),
 	     new ReachingDefsImpl(code));
     }
     public ToTree(final TreeFactory tf, final LowQuadSSI code) {
 	this(tf, code,
+	     new harpoon.Analysis.DefaultAllocationInformation(),
 	     new ToTreeHelpers.MinMaxEdgeOracle(code),
 	     new ToTreeHelpers.SSISimpleFoldNanny(code),
 	     new ToTreeHelpers.SSIReachingDefs(code));
     }
     /** Class constructor. */
     public ToTree(final TreeFactory tf, harpoon.IR.LowQuad.Code code,
+		  AllocationInformation ai,
 		  EdgeOracle eo, FoldNanny fn, ReachingDefs rd) {
 	Util.assert(((Code.TreeFactory)tf).getParent()
 		    .getName().equals("tree"));
-	translate(tf, code, eo, fn, rd);
+	translate(tf, code, ai, eo, fn, rd);
     }
     
     /** Returns a <code>TreeDerivation</code> object for the
@@ -113,6 +118,7 @@ class ToTree {
     }
 
     private void translate(TreeFactory tf, harpoon.IR.LowQuad.Code code,
+			   AllocationInformation ai,
 			   EdgeOracle eo, FoldNanny fn, ReachingDefs rd) {
 
 	Quad root = (Quad)code.getRootElement();
@@ -121,7 +127,7 @@ class ToTree {
 
 	// Construct a list of harpoon.IR.Tree.Stm objects
 	TranslationVisitor tv = new TranslationVisitor
-	    (tf, rd, (Derivation) code, eo, fn, m_dg, ctm);
+	    (tf, rd, (Derivation) code, ai, eo, fn, m_dg, ctm);
 						       
 	// traverse, starting with the METHOD quad.
 	dfsTraverse((harpoon.IR.Quads.METHOD)root.next(1), 0,
@@ -183,6 +189,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     private final Derivation quadDeriv;
     private final DerivationGenerator treeDeriv;
+    public final AllocationInformation allocInfo;
     public final EdgeOracle edgeOracle;
     public final FoldNanny  foldNanny;
     public final ReachingDefs reachingDefs;
@@ -190,6 +197,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     public TranslationVisitor(TreeFactory tf,
 			      ReachingDefs reachingDefs,
 			      Derivation quadDeriv,
+			      AllocationInformation allocInfo,
 			      EdgeOracle edgeOracle,
 			      FoldNanny foldNanny,
 			      DerivationGenerator treeDeriv,
@@ -201,6 +209,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	m_rtb	       = m_tf.getFrame().getRuntime().treeBuilder;
 	this.quadDeriv      = quadDeriv;
 	this.treeDeriv	    = treeDeriv;
+	this.allocInfo	    = allocInfo;
 	this.edgeOracle     = edgeOracle;
 	this.foldNanny      = foldNanny;
 	this.reachingDefs   = reachingDefs;
@@ -305,7 +314,9 @@ static class TranslationVisitor extends LowQuadVisitor {
 		initializer = constZero(q, arrayClasses[i]);
 	    else
 		initializer = m_rtb.arrayNew
-		    (m_tf, q, treeDeriv, arrayClasses[i],
+		    (m_tf, q, treeDeriv,
+		     MAP(allocInfo.query(q)),
+		     arrayClasses[i],
 		     new Translation.Ex
 		     (_TEMP(q, HClass.Int, dimTemps[i]))).unEx(m_tf);
 	    // output: d1[i] = d2 = initializer.
@@ -491,7 +502,8 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     public void visit(harpoon.IR.Quads.NEW q) { 
 	addMove(q, q.dst(),
-		m_rtb.objectNew(m_tf, q, treeDeriv, q.hclass(), true));
+		m_rtb.objectNew(m_tf, q, treeDeriv, MAP(allocInfo.query(q)),
+				q.hclass(), true));
     }
 	
     public void visit(harpoon.IR.Quads.PHI q) {
@@ -835,6 +847,24 @@ static class TranslationVisitor extends LowQuadVisitor {
 	addStmt(new DATUM(m_tf, src, new CONST(m_tf, src, 8, false, 0)));
 	// align to proper word boundary.  (be safe, align 8)
 	addStmt(new ALIGN(m_tf, src, 8));
+    }
+    // do appropriate temp mapping on allocationproperties object
+    private AllocationProperties MAP(final AllocationProperties ap) {
+	if (ap.allocationHeap()==null) return ap;
+	else return new AllocationProperties() {
+	    public boolean hasInteriorPointers() {
+		return ap.hasInteriorPointers();
+	    }
+	    public boolean canBeStackAllocated() {
+		return ap.canBeStackAllocated();
+	    }
+	    public boolean canBeThreadAllocated() {
+		return ap.canBeThreadAllocated();
+	    }
+	    public Temp allocationHeap() {
+		return m_ctm.tempMap(ap.allocationHeap());
+	    }
+	};
     }
 			   
     private void addStmt(Stm stm) { 
