@@ -35,7 +35,7 @@ import java.util.List;
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.1.2.5 2000-10-06 21:19:23 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.1.2.6 2000-11-16 05:23:05 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor
@@ -81,7 +81,9 @@ public abstract class JumpOptimization extends Simplification {
 		    ((Tree)succ[0].to()).kind() == TreeKind.JUMP) {
 		    JUMP jump = (JUMP) succ[0].to();
 		    Util.assert(jump.targets!=null);
-		    if (jump.targets.tail==null) { // only one target.
+		    // note that self-loops are not considered useless.
+		    if (jump.targets.tail==null && // only one target.
+			!label.label.equals(jump.targets.head)) {
 			Label _l = (Label) labelmap.find(jump.targets.head);
 			labelmap.union(label.label, jump.targets.head);
 			Util.assert(labelmap.find(label.label).equals(_l));
