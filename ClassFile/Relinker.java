@@ -16,7 +16,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.10 2001-11-12 22:54:17 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.11 2001-11-19 19:27:25 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -212,8 +212,10 @@ public class Relinker extends Linker implements java.io.Serializable {
     }
     HClass unwrap(HClass hc) {
 	if (hc==null || hc.isPrimitive()) return hc;
+	/*
 	if (((HClassProxy)hc).sameLinker)
 	    return linker.forDescriptor(hc.getDescriptor());
+	*/
 	return ((HClassProxy)hc).proxy;
     }
     HField wrap(HField hf) {
