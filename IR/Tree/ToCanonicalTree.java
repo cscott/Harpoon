@@ -19,7 +19,7 @@ import java.util.Hashtable;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.2 1999-04-05 21:50:45 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.3 1999-04-26 10:58:08 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -83,9 +83,10 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     // translate to canonical form
     private Tree translate(TreeFactory tf, TreeCode code, Hashtable dT) {
 	TreeMap tm = new TreeMap();
+	Stm rootClone = (Stm)((Stm)code.getRootElement()).clone(tf);
 	CanonicalizingVisitor cv = new CanonicalizingVisitor(tf, tm, code, dT);
-	((Stm)code.getRootElement()).visit(cv);
-	return tm.get((Stm)code.getRootElement());
+	rootClone.visit(cv);
+	return tm.get(rootClone);
     }
 
     // Visitor class to translate to canonical form
@@ -127,12 +128,12 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		eseq.exp.visit(this);
 		eseq.stm.visit(this);
 		SEQ tmp = new SEQ
-		  (s.getFactory(), s, 
-		   s, 
-		   new MOVE
-		   (s.getFactory(), s, 
-		    treeMap.get(eseq.exp), 
-		    treeMap.get(s.src)));
+		    (tf, s, 
+		     s, 
+		     new MOVE
+		     (tf, s, 
+		      treeMap.get(eseq.exp), 
+		      treeMap.get(s.src)));
 		tmp.visit(this);
 		treeMap.map(s, tmp);
 	    }
@@ -158,9 +159,10 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	public void visit(ESEQ e) { 
 	    e.stm.visit(this);
 	    e.exp.visit(this);
-	    treeMap.map(e, new ESEQ(e.getFactory(), e, 
-			    seq(treeMap.get(e.stm), ((ESEQ)treeMap.get(e.exp)).stm),
-			    ((ESEQ)treeMap.get(e.exp)).exp));
+	    treeMap.map(e, new ESEQ(tf, e, 
+				    seq(treeMap.get(e.stm), 
+					((ESEQ)treeMap.get(e.exp)).stm),
+				    ((ESEQ)treeMap.get(e.exp)).exp));
 	}
 
 	/* public void visit(TEMP e) { 
@@ -217,14 +219,13 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		}
 	    }
 	}
-    }
 
-        
-    /********************************************************************
-     *                                                                  *
-     *                      Utility Methods                             *
-     *                                                                  *
-     *******************************************************************/
+	Stm seq(Stm a, Stm b) {
+	    if (isNop(a)) return b;
+	    else if (isNop(b)) return a;
+	    else return new SEQ(tf, a, a, b);
+	}
+    }
 
     static boolean commute(Stm a, Exp b) {
 	return isNop(a) || (b instanceof NAME) || (b instanceof CONST);
@@ -232,12 +233,6 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 
     static boolean isNop(Stm s) {
 	return (s instanceof EXP) && (((EXP)s).exp instanceof CONST);
-    }
-
-    static Stm seq(Stm a, Stm b) {
-	if (isNop(a)) return b;
-	else if (isNop(b)) return a;
-	else return new SEQ(a.getFactory(), a, a, b);
     }
 }
 
