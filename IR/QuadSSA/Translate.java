@@ -6,6 +6,7 @@ import harpoon.ClassFile.*;
 import harpoon.ClassFile.Bytecode.Op;
 import harpoon.ClassFile.Bytecode.Operand;
 import harpoon.ClassFile.Bytecode.OpClass;
+import harpoon.ClassFile.Bytecode.OpConstant;
 import harpoon.ClassFile.Bytecode.OpLocalVariable;
 import harpoon.ClassFile.Bytecode.Instr;
 import harpoon.ClassFile.Bytecode.InGen;
@@ -21,7 +22,7 @@ import java.util.Hashtable;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.4 1998-08-22 05:45:58 cananian Exp $
+ * @version $Id: Translate.java,v 1.5 1998-08-24 19:52:26 cananian Exp $
  */
 
 /*
@@ -122,7 +123,7 @@ class Translate  { // not public.
 	Quad quads = new METHODHEADER(params);
 
 	// translate using state.
-	trans(s);
+	//trans(s); // FIXME
 
 	// return result.
 	return quads;
@@ -132,6 +133,7 @@ class Translate  { // not public.
     }
 
     static final Instr[] transBasicBlock(StateMap s, Instr in) {
+	return null; // FIXME
     }
     static final Quad transInstr(StateMap s, Instr in) {
 	if (in instanceof InGen) return transInstr(s, (InGen) in);
@@ -142,12 +144,33 @@ class Translate  { // not public.
 
     static final HClass objArray = HClass.forClass(Object[].class);
     static final HClass byteArray= HClass.forClass(byte[].class);
+    static final HClass charArray= HClass.forClass(char[].class);
+    static final HClass dblArray = HClass.forClass(double[].class);
+    static final HClass fltArray = HClass.forClass(float[].class);
 
-    static final HMethod objArrayGet = 
-	objArray.getMethod("get", new HClass[] {HClass.INT});
-    static final HMethod objArrayPut =
-	objArray.getMethod("put", new HClass[] {HClass.INT, 
-						objArray.getComponentType()});
+    static HMethod objArrayGet,  objArrayPut;
+    static HMethod byteArrayGet, byteArrayPut;
+    static HMethod charArrayGet, charArrayPut;
+    static HMethod dblArrayGet,  dblArrayPut;
+    static HMethod fltArrayGet,  fltArrayPut;
+
+    static {
+	objArrayGet = objArray.getMethod("get", new HClass[] {HClass.Int});
+	objArrayPut = objArray.getMethod("put", 
+		      new HClass[] {HClass.Int,HClass.forClass(Object.class)});
+	byteArrayGet= byteArray.getMethod("get", new HClass[] {HClass.Int});
+	byteArrayPut= byteArray.getMethod("put", 
+		      new HClass[] {HClass.Int, HClass.forClass(byte.class)});
+	charArrayGet= charArray.getMethod("get", new HClass[] {HClass.Int});
+	charArrayPut= charArray.getMethod("put", 
+		      new HClass[] {HClass.Int, HClass.forClass(char.class)});
+	dblArrayGet = dblArray.getMethod("get", new HClass[] {HClass.Int});
+	dblArrayPut = dblArray.getMethod("put", 
+		      new HClass[] {HClass.Int,HClass.forClass(double.class)});
+	fltArrayGet = fltArray.getMethod("get", new HClass[] {HClass.Int});
+	fltArrayPut = fltArray.getMethod("put", 
+		      new HClass[] {HClass.Int,HClass.forClass(float.class)});
+    }
 
     static final Quad transInstr(StateMap sm, InGen in) {
 	State s = sm.get(in.prev()[0]);
@@ -166,7 +189,7 @@ class Translate  { // not public.
 	    break;
 	case Op.ACONST_NULL:
 	    ns = s.push(new Temp("null"));
-	    q = new LET(in, ns.stack[0], new LeafConst(null, HClass.VOID));
+	    q = new LET(in, ns.stack[0], new LeafConst(null, HClass.Void));
 	    break;
 	case Op.ALOAD:
 	case Op.ALOAD_0:
@@ -190,8 +213,8 @@ class Translate  { // not public.
 						 opd.value().getDescriptor());
 		ns = s.pop().push(new Temp());
 		q = new NEW(in, ns.stack[0], hc);
-		// XXX APPEND.
-		q += new CALL(in, hc.getMethod("<init>","(I)V"),
+		// XXX APPEND FIXME
+		q /*+*/= new CALL(in, hc.getMethod("<init>","(I)V"),
 			      ns.stack[0], new Temp[] {s.stack[0]});
 		break;
 	    }
@@ -223,13 +246,13 @@ class Translate  { // not public.
 	    q = new CALL(in, byteArrayPut, s.stack[2],
 			 new Temp[] {s.stack[1], s.stack[0]});
 	    break;
-	case BIPUSH:
+	case Op.BIPUSH:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
 		int val = ((Byte)opd.getValue()).intValue();
 		ns = s.push(new Temp("iconst"));
 		q = new LET(in, ns.stack[0], 
-			    new LeafConst(new Integer(val), HClass.INT));
+			    new LeafConst(new Integer(val), HClass.Int));
 		break;
 	    }
 	case Op.CALOAD:
@@ -358,11 +381,11 @@ class Translate  { // not public.
 	    ns = s.pop().push(new Temp());
 	    q = new OPER(in, "f2i", ns.stack[0], new Temp[] {s.stack[0]});
 	    break;
-	case FADD:
-	case FDIV:
-	case FMUL:
-	case FREM:
-	case FSUB:
+	case Op.FADD:
+	case Op.FDIV:
+	case Op.FMUL:
+	case Op.FREM:
+	case Op.FSUB:
 	    ns = s.pop(2).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode()), // fadd, fdiv, ...
 			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
@@ -428,19 +451,21 @@ class Translate  { // not public.
 	return q;
     }
     static final Quad transInstr(StateMap s, InCti in) {
+	/*
 	if (in instanceof InSwitch) {
 	} else {
 	    switch(in.getOpcode()) {
 	    case Op.ARETURN:
 	    case Op.DRETURN:
 	    case Op.FRETURN:
-	    case ATHROW:
+	    case Op.ATHROW:
 		ns = s.pop();
 		q = new THROW(in, s.stack[0]);
 		break;
 	    default:
 	    }
 	}
+	*/
 	return null;
     }
     static final Quad transInstr(StateMap s, InMerge in) {
