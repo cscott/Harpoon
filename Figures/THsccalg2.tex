@@ -1,5 +1,5 @@
 RaiseE($e$:edge) =
-\begin{algorithmic}
+\begin{algorithmic}[1]
 \STATE $E_e \gets E_e \cup { e }$
 \LET $n$ be the destination of edge $e$
 \IF{$n \not\in E_n$}
@@ -9,7 +9,7 @@ RaiseE($e$:edge) =
 \end{algorithmic}
 ~\\
 RaiseV($v$:variable, $L$:lattice value) =
-\begin{algorithmic}
+\begin{algorithmic}[1]
 \IF{$V[v] \sqsupset L$}
 \STATE $V[v] \gets L$
 \STATE $W_v \gets W_v \cup \{ v \}$
@@ -17,23 +17,26 @@ RaiseV($v$:variable, $L$:lattice value) =
 \end{algorithmic}
 ~\\
 Visit($n$:node) =
-\begin{algorithmic}
-\FOREACH{assignment $v \gets x \oplus y$ in $n$}
+\begin{algorithmic}[1]
+\FOREACH{assignment ``$v \gets x \oplus y$'' in $n$}
  \STATE RaiseV($v$, $V[x] \oplus V[y]$)
- \COMMENT{see table~\ref{tab:sccmeet1}}
+ \COMMENT{binop rule: see table~\ref{tab:sccmeet1}}
 \ENDFOR
-\FOREACH{assignment $v \gets \text{MEM}(\ldots)$ or 
-                    $v \gets \text{CALL}(\ldots)$ in $n$}
+               \EMPTYLINE
+\FOREACH{assignment ``$v \gets \text{MEM}(\ldots)$'' or 
+                    ``$v \gets \text{CALL}(\ldots)$'' in $n$}
  \STATE RaiseV($v$, $\top$)
 \ENDFOR
-\FOREACH{assignment $v \gets \phi(x_1,\ldots,x_n)$ in $n$}
+               \EMPTYLINE
+\FOREACH{assignment ``$v \gets \phi(x_1,\ldots,x_n)$'' in $n$}
  \FOREACH{variable $x_i$ corresponding to predecessor edge $e_i$ of $n$}
   \IF{$e_i \in E_e$}
    \STATE RaiseV($v$, $V[v] \meet V[x_i]$)
-   \COMMENT{see table~\ref{tab:sccmeet1}}
+   \COMMENT{meet rule: see table~\ref{tab:sccmeet1}}
   \ENDIF
  \ENDFOR
 \ENDFOR
+               \EMPTYLINE
 \FOREACH{branch ``if $v$ goto $L_1$ else $L_2$'' in $n$}
  \STATE $L \gets V[v]$
  \IF{$L=\top$ or $L=c$ where $c$ signifies ``true''}

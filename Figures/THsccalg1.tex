@@ -1,5 +1,5 @@
 Init($G$:CFG) =
-\begin{algorithmic}
+\begin{algorithmic}[1]
 \STATE $E_e \gets \emptyset$
 \STATE $E_n \gets \emptyset$
 \FOREACH {variable $v$ in $G$}
@@ -12,7 +12,7 @@ Init($G$:CFG) =
 \end{algorithmic}
 ~\\
 Analyze($G$:CFG) =
-\begin{algorithmic}
+\begin{algorithmic}[1]
 \LET $r$ be the start node of graph $G$
 \STATE $E_n \gets E_n \cup \{ r \}$
 \STATE $W_n \gets \{ r \}$
