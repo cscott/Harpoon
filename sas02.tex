@@ -1,9 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.1 2002-05-09 02:49:36 cananian Exp $
+% $Id: sas02.tex,v 1.2 2002-05-10 17:26:20 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\documentclass[preprint]{acmconf}
-\documentclass{acmconf}
-% don't forget to turn off 'preprint' before submission!
+\documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
 %\usepackage{amsthm} % proof environment
 %\usepackage{amstext} % the \text command for math mode (replaces \mbox)
@@ -23,21 +21,21 @@
 \newcommand{\topfigrule}{\vspace*{9.6pt}%
   \rule{0.88\columnwidth}{0.4pt}\vspace{-10pt} }
 
-\title{\bf Data Size Optimizations for Java Programs}
+\title{Data Size Optimizations for Java Programs}
 
-\author{C.~Scott~Ananian and Martin~Rinard\\
-        Laboratory for Computer Science\\
-        Massachusetts Institute of Technology\\ 
-        Cambridge, MA 02139 \\ 
-        {\tt \{cananian, rinard\}@lcs.mit.edu} }
+\author{C.~Scott~Ananian \and Martin~Rinard}
+\institute{%
+Laboratory for Computer Science\\
+Massachusetts Institute of Technology\\ 
+Cambridge, MA 02139 \\
+\email{\{cananian, rinard\}@lcs.mit.edu}
+}
 
 \begin{document}
-% in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.1 $ $}{$ $Revision: 1.1 $ $}
 \bibliographystyle{plain}
-
+%
 \maketitle
-
+%
 % abstract
 \begin{abstract}
 We present a set of techniques for reducing the memory consumption of
@@ -60,11 +58,10 @@ our combined techniques can significantly reduce the amount
 of memory required to store the objects in our benchmark
 suite.  Some of the optimizations reduce the overall execution time;
 others may impose modest performance penalties.
-
 \end{abstract}
-
+%
 \section{Introduction}
-
+%
 This paper presents a set of techniques for reducing the
 amount of data space required to represent objects
 in object-oriented programs. Our techniques optimize
@@ -150,14 +147,14 @@ of experimental results that characterize the impact
 of our transformations.
 % on running time and using various memory metrics?
 \end{itemize}
-
+%
 \section{Example}
-
+%
 We next present several examples that illustrate the kinds of 
 analyses and transformations that our compiler performs.
-
+%
 \subsection{Field Reduction and Constant Field Elimination}
-
+%
 Figure~\ref{fig:value} presents the {\tt Value} class, which is 
 a wrapper around either an {\tt Integer} object or a {\tt Float}
 object. The {\tt type} field indicates which kind of object
@@ -257,7 +254,7 @@ Note that the {\tt value}, {\tt offset}, and {\tt count}
 fields are all initialized when the string is constructed
 and do not change during the lifetime of the string.
 
-\begin{figure}[tp]
+\begin{figure}%[tp]
 \begin{samplecode}
 public final class String \{\\
 \>private final char value[];\\
@@ -309,7 +306,7 @@ if not, it allocates a {\tt BigString} object. This transformation
 therefore eliminates the {\tt offset} field in the majority
 of strings. 
 
-\begin{figure}[tp]
+\begin{figure}%[tp]
 \begin{samplecode}
 public final class SmallString \{\\
 \>private final char value[];\\
@@ -330,7 +327,7 @@ public final class BigString\\
 \label{fig:big-small}
 \end{figure}
 
-\begin{figure}[tp]
+\begin{figure}%[tp]
 \begin{samplecode}
 public SmallString substring(int start) \{\\
 \>int noff = offset + start;\\
@@ -426,12 +423,12 @@ space savings. Note that the combination of claz compression
 and hash/lock elimination produces a common-case object header
 size of one byte --- one byte for a claz index and no
 space at all for hash code or lock information. 
-
+%
 \section{Analysis Algorithms}
-
+%
 In this section we will present details of the analyses that enable
 our transformations.
-
+%
 \subsection{Class Hierarchy Analysis}
 We start with a static class hierarchy analysis to collect the set of
 instantiated classes and callable methods.  This allows us to generate
@@ -484,7 +481,7 @@ negative and positive numbers, which we do by splitting the set of
 values into negative, zero, and positive parts, and describing the
 bitwidth of each individually.
 
-\subsubsection{Value lattice}
+\subsubsection{Value Lattice}
 First consider extending the basic three level value lattice of Wegman and
 Zadeck (Figure~\ref{fig:wzlat}) to allow the classification of
 negative, positive, or zero
@@ -523,7 +520,7 @@ additional rules giving it greater precision for common special cases,
 such as multiplication by
 a one-bit quantity, division by a constant, or bitfield operations on
 positive numbers.
-\begin{figure}[tp]
+\begin{figure}%[tp]
 \begin{eqnarray*}
 -\tuple{M,P} &=& \tuple{P,M}\\
 \tuple{M_l,P_l} + \tuple{M_r,P_r} &=& \tuple{1+\max(M_l,M_r),1+\max(P_l,P_r)}\\
@@ -540,7 +537,7 @@ positive numbers.
   for clarity.}\label{fig:bitrules}
 \end{figure}
 
-\subsubsection{Treatment of fields}
+\subsubsection{Treatment of Fields}
 Dataflow on this bitwidth lattice is performed on the entire Java
 program interprocedurally.  The analysis is what Heintze and Tardieu
 \cite{heintze01}
@@ -556,7 +553,7 @@ fields; reads of constant fields are replaced with their constant
 value and the field is eliminated.  Fields which we do not discover
 any reads of during our analysis are also removed as unused.
 
-\subsubsection{Other details}
+\subsubsection{Other Details}
 Our analysis handles method calls by merging the lattice values of the
 method parameters at the call-site with the formal parameters of the
 method.  Similarly, the return value of the method is propagated back
@@ -770,14 +767,14 @@ We note briefly here that, although we use profiling to select desirable
 fields for static specialization, it is entirely possible that an
 ``opportunity''-based heuristic based only on the constructor
 classification step could yield good results.
-
+%
 \section{Implementation Issues}
-
+%
 In this section we will talk briefly about some of the practical
 issues arising in an implementation of our space-saving techniques.
-
-\subsection{Byte-packing}
-
+%
+\subsection{Byte-Packing}
+%
 \begin{figure*}
 \centering
 \begin{tabular}{|l|}
@@ -804,7 +801,7 @@ class A \{\\
   header has been omitted for clarity.}
 \label{fig:packing}
 \end{figure*}
-
+%
 A typical Java implementation may waste large amounts of space by
 aligning fields for the most efficient memory access.
 Figure~\ref{fig:packing} illustrates how a class with an integer,
@@ -869,7 +866,7 @@ Section~\ref{sec:byte-pack}).
 % header optimizations.
 % pointer compression?
 
-\subsection{External hashtable implementation}
+\subsection{External Hashtable Implementation}
 \label{sec:extern-impl}
 Close attention to the implementation of the hashtable used to
 implement field and hash/lock externalization is
@@ -908,10 +905,10 @@ is not confused for an object pointer by a conservative garbage
 collector.  Precise garbage-collection implementations need to
 remember to add the values stored in the hashtable to the
 collector's root set.
-
+%
 \section{Experimental Results}
 \label{sec:results}
-
+%
 We have implemented all of the analyses and transformations described
 in this paper in the MIT FLEX compiler infrastructure.%
 \footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} 
@@ -920,9 +917,9 @@ of our optimizations by compiling the SPECjvm98 benchmarks with
 this compiler, then measuring the resulting space savings and
 performance.   All benchmarks were run on a dual-processor 900 MHz
 Pentium III running Linux.
-
+%
 \subsection{Memory Savings}
-
+%
 To evaluate the effectiveness of our technique at reducing the
 amount of memory required to execute the program, 
 we first ran an instrumented version of each
@@ -940,7 +937,7 @@ technique reduced the size of the live heap data.
   transformations.}
 \label{fig:live-heap}
 \end{figure}
-
+%
 Figure~\ref{fig:live-heap} presents the total space savings numbers. This
 figure contains a bar for each application, with the bar broken
 down into categories that indicate the percentage of live data from 
@@ -968,16 +965,16 @@ Figure~\ref{fig:total-alloc} presents the space savings according to this
 metric.  By comparing to the previous figure, you will notice that
 long-lived objects apparently provide us with more opportunities to
 optimize.
-
+%
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/oopsla-ttlalloc.eps}
 \caption{Cumulative reduction in dynamic allocation achieved with
   our transformations.}
 \label{fig:total-alloc}
 \end{figure}
-
+%
 \subsection{Objects Versus Arrays}
-
+%
 The majority of our optimizations are designed to optimize
 object fields rather than arrays. For context, we present numbers 
 that characterize the reductions in total allocation for objects only,
@@ -994,23 +991,23 @@ The reason for our poor performance on {\tt
 allocates so much less memory than the other benchmarks that its bar
 is barely visible.  Arrays account for 79\% of {\tt mpegaudio}'s total
 allocations.
-
+%
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/oopsla-objalloc.eps}
 \caption{Reduction in non-array dynamic allocation achieved with
   our transformations.}
 \label{fig:non-array}
 \end{figure}
-
+%
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/spec-space.eps}
 \caption{Total allocation in spec benchmarks.}
 \label{fig:object-array-pointer}
 \end{figure}
-
+%
 \subsection{Execution Times} 
 \label{sec:byte-pack}
-
+%
 We next evaluate the execution time impact of applying our space
 optimizations. Figure~\ref{fig:performance} presents the normalized execution 
 times of each application after the application of our sequence
@@ -1026,17 +1023,17 @@ would improve its performance.  Field externalization (including
 hash/lock externalization) causes the expected penalty for hashtable
 lookup; note that synchronization elimination would greatly reduce the
 cost of hash/lock externalization.
-
+%
 \begin{figure}
 \includegraphics[scale=0.32,clip=true]{Figures/oopsla-speed.eps}
 \caption{Runtime performance of space optimizations.}
 \label{fig:performance}
 \end{figure}
-
-% distribution of mostly-N fields?
-
-\section{Related work}
-
+%
+%%% distribution of mostly-N fields?
+%
+\section{Related Work}
+%
 Many researchers have focused on the problem of reducing the amount of
 header space required to represent Java
 locks~\cite{BKMS98,OK99,ADGKRW99}. The basic issue is that the vast
@@ -1094,9 +1091,8 @@ gives much more consistent savings over a wide range of benchmarks.
 %to the array.  A similar technique could be used in this work to
 %extend the utility of bitwidth information discovered on related fields.
 
-
 \section{Conclusions}
-
+%
 We have presented a set of techniques for reducing the memory
 consumption of object-oriented programs.  Our techniques include
 program analyses to detect unused, constant, or overly-wide fields,
