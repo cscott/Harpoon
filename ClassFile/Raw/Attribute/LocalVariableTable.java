@@ -8,7 +8,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * within which a local variable has a value.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LocalVariableTable.java,v 1.1 1998-08-02 08:20:32 cananian Exp $
+ * @version $Id: LocalVariableTable.java,v 1.2 1998-08-02 09:25:31 cananian Exp $
  * @see AttributeLocalVariableTable
  */
 public class LocalVariableTable {
@@ -96,6 +96,8 @@ public class LocalVariableTable {
   public String name() { return name_index().val; }
   public String descriptor() { return descriptor_index().val; }
 
+  public int end_pc() { return start_pc + length; }
+  
   /** Pretty-print the contents of this attribute.
    *  @param indent the indentation level to use.
    */

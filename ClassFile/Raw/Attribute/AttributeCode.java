@@ -12,7 +12,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * attribute in each <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeCode.java,v 1.10 1998-08-02 07:36:52 cananian Exp $
+ * @version $Id: AttributeCode.java,v 1.11 1998-08-02 09:25:31 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable
@@ -126,12 +126,12 @@ public class AttributeCode extends Attribute {
    * @param index the index of the local variable to look up.
    * @return the name of the local, or null.
    */
-  public String localName(int index) {
+  public String localName(int pc, int index) {
     for(int i=0; i<attributes.length; i++)
       if (attributes[i] instanceof AttributeLocalVariableTable) {
 	AttributeLocalVariableTable alvt = 
 	  (AttributeLocalVariableTable) attributes[i];
-	String name = alvt.localName(index);
+	String name = alvt.localName(pc, index);
 	if (name!=null) return name;
       }
     // Can't find a name for this in any table.

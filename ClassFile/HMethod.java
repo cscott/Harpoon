@@ -4,6 +4,7 @@ import harpoon.ClassFile.Raw.Attribute.Attribute;
 import harpoon.ClassFile.Raw.Attribute.AttributeCode;
 import harpoon.ClassFile.Raw.Attribute.AttributeExceptions;
 import harpoon.ClassFile.Raw.Attribute.AttributeSynthetic;
+import harpoon.ClassFile.Raw.Attribute.AttributeLocalVariableTable;
 import harpoon.ClassFile.Raw.Constant.ConstantClass;
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
@@ -16,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.7 1998-08-02 05:29:52 cananian Exp $
+ * @version $Id: HMethod.java,v 1.8 1998-08-02 09:25:15 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -27,6 +28,7 @@ public class HMethod implements HMember {
   harpoon.ClassFile.Raw.MethodInfo methodinfo;
   AttributeCode code;
   AttributeExceptions exceptions;
+  AttributeSynthetic synthetic;
 
   /** Create an <code>HMethod</code> from a raw method_info structure. */
   protected HMethod(HClass parent, 
@@ -38,12 +40,16 @@ public class HMethod implements HMember {
     this.parameterTypes=null;
     this.exceptionTypes=null;
     // Crunch the attribute information.
-    this.code = null;  this.exceptions=null;
+    this.code = null;
+    this.exceptions=null;
+    this.synthetic=null;
     for (int i=0; i<methodinfo.attributes.length; i++) {
       if (methodinfo.attributes[i] instanceof AttributeCode)
 	this.code = (AttributeCode) methodinfo.attributes[i];
-      if (methodinfo.attributes[i] instanceof AttributeExceptions)
+      else if (methodinfo.attributes[i] instanceof AttributeExceptions)
 	this.exceptions = (AttributeExceptions) methodinfo.attributes[i];
+      else if (methodinfo.attributes[i] instanceof AttributeSynthetic)
+	this.synthetic = (AttributeSynthetic) methodinfo.attributes[i];
     }
     // Add the default code representation.
     if (this.code != null) // interface methods don't have code attributes.
@@ -139,6 +145,33 @@ public class HMethod implements HMember {
     return HClass.copy(parameterTypes);
   }
   /**
+   * Returns an array of <code>String</code> objects giving the declared
+   * names of the formal parameters of the method.  The length of the
+   * returned array is equal to the number of formal parameters.
+   * If there is no <code>LocalVariableTable</code> attribute available
+   * for this method, then every element of the returned array will be
+   * <code>null</code>.
+   */
+  public String[] getParameterNames() {
+    if (parameterNames==null) {
+      parameterNames = new String[getParameterTypes().length];
+      // for non-static methods, 0th local variable is 'this'.
+      int offset = (Modifier.isStatic(getModifiers()))?0:1;
+      // assign names.
+      for (int i=0; i<parameterNames.length; i++)
+	parameterNames[i]=
+	  ((code==null)?null:
+	   code.localName(0/*pc*/, offset + i));
+      // done.
+    }
+    // Copy parameterNames array, if necessary.
+    if (parameterNames.length==0) return parameterNames;
+    String[] retval = new String[parameterNames.length];
+    System.arraycopy(parameterNames,0,retval,0,parameterNames.length);
+    return retval;
+  }
+  private String[] parameterNames=null;
+  /**
    * Returns an array of <code>HClass</code> objects that represent the
    * types of the checked exceptions thrown by the underlying method
    * represented by this <code>HMethod</code> object.  Returns an array
@@ -167,10 +200,7 @@ public class HMethod implements HMember {
    * Determines whether this <code>HMethod</code> is synthetic.
    */
   public boolean isSynthetic() {
-    for (int i=0; i<methodinfo.attributes.length; i++)
-      if (methodinfo.attributes[i] instanceof AttributeSynthetic)
-	return true;
-    return false;
+    return (synthetic!=null);
   }
 
   /**

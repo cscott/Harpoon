@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.14 1998-08-02 06:57:42 cananian Exp $
+ * @version $Id: HClass.java,v 1.15 1998-08-02 09:25:15 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -229,7 +229,7 @@ public class HClass {
       result.append('V');
     else { // it's an object, not a primitive type
       result.append('L');
-      result.append(classfile.this_class().name().replace('/','.'));
+      result.append(classfile.this_class().name().replace('.','/'));
       result.append(';');
     }
     return result.toString();
@@ -862,10 +862,16 @@ public class HClass {
       }
       mstr.append('(');
       HClass[] mpt = hm[i].getParameterTypes();
+      String[] mpn = hm[i].getParameterNames();
       for (int j=0; j<mpt.length; j++) {
 	mstr.append(getSimpleTypeName(mpt[j]));
 	mstr.append(' ');
-	mstr.append('p'); mstr.append(j);
+	// use appropriate formal parameter name.
+	if (mpn[j]!=null)
+	  mstr.append(mpn[j]);
+	else { // don't know it; use generic.
+	  mstr.append('p'); mstr.append(j);
+	}
 	if (j<mpt.length-1)
 	  mstr.append(", ");
       }

@@ -17,7 +17,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * not included unless debugging flags are given to the compiler.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLocalVariableTable.java,v 1.11 1998-08-02 08:20:31 cananian Exp $
+ * @version $Id: AttributeLocalVariableTable.java,v 1.12 1998-08-02 09:25:31 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.7"
  * @see AttributeCode
  * @see Attribute
@@ -74,13 +74,16 @@ public class AttributeLocalVariableTable extends Attribute {
   }
 
   /** Get the (debugging) name of a local variable.
+   * @param  pc the pc at which the inquiry is being made.
    * @param  index the index of the local variable to query.
    * @return the name of the index'th local variable, or null
    *         if none can be found.
    */
-  public String localName(int index) {
+  public String localName(int pc, int index) {
     for (int i=0; i<local_variable_table.length; i++)
-      if (local_variable_table[i].index == index)
+      if ((local_variable_table[i].index == index) &&
+	  (local_variable_table[i].start_pc <= pc) &&
+	  (pc <= local_variable_table[i].end_pc()))
 	return local_variable_table[i].name();
     return null;
   }
