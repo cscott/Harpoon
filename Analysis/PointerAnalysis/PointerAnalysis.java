@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.31 2000-03-23 21:29:02 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.32 2000-03-23 22:51:21 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -851,6 +851,9 @@ public class PointerAnalysis {
 	
     };
     
+
+    // Quad Visitor used by analayze_basic_block
+    private PAVisitor pa_visitor = new PAVisitor();
     
     /** Analyzes a basic block - a Parallel Interaction Graph is computed at
      *  the beginning of the basic block, it is next updated by all the 
@@ -867,7 +870,6 @@ public class PointerAnalysis {
 	    System.out.println();
 	}
 
-	PAVisitor visitor = new PAVisitor();	
 	Iterator instrs = bb.statements().iterator();
 	// bbpig is the graph at the *bb point; it will be 
 	// updated till it become the graph at the bb* point
@@ -888,7 +890,7 @@ public class PointerAnalysis {
 	    
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction
-	    q.accept(visitor);
+	    q.accept(pa_visitor);
 	}
 
 	bb2pig.put(bb,bbpig);
