@@ -11,11 +11,17 @@ import harpoon.IR.Tree.Code;
  * selection of <code>SAInsn</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.2 1999-02-09 05:45:33 andyb Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.3 1999-02-16 21:14:39 andyb Exp $
  */
 final class CodeGen {
 
-    /* XXX - not yet implemented */
+    /** Generates StrongARM assembly from the internal Tree representation.
+     *  <BR> XXX - NOT YET IMPLEMENTED.
+     *
+     *  @param  tree    The Tree codeview to generate code from.
+     *  @param  code    The StrongARM codeview to generate code for.
+     *  @return         The newly generated StrongARM instructions.
+     */
     public static final Instr codegen(harpoon.IR.Tree.Code tree,
                                       harpoon.Backend.StrongARM.Code code) {
         return null;

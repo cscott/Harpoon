@@ -20,61 +20,99 @@ import java.util.*;
  * assembly-like syntax (currently without register allocation).
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.2 1999-02-09 05:45:32 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.3 1999-02-16 21:14:39 andyb Exp $
  */
-
 public class Code extends HCode {
     /** The name of this code view. */
     public static final String codename = "strongarm";
     /** The method that this code view represents. */
-    HMethod parent;
+    protected HMethod parent;
     /** The StrongARM instructions composing this code view. */
-    Instr instrs;
+    protected Instr[] instrs;
     /** Instruction factory. */
     final InstrFactory inf;
 
-    Code(final HMethod parent, final Instr instrs) {
-        this.parent = parent;
-        this.instrs = instrs;
+    /** Creates a new <code>InstrFactory</code> for this codeview.
+     *  
+     *  @param  parent  The method which this codeview corresponds to.
+     *  @return         Returns a new instruction factory for the scope
+     *                  of the parent method and this codeview.
+     */
+    protected InstrFactory newINF(final HMethod parent) {
         final String scope = parent.getDeclaringClass().getName() + "." +
             parent.getName() + parent.getDescriptor() + "/" + getName();
-        this.inf = new InstrFactory() {
+        return new InstrFactory() {
             private final TempFactory tf = Temp.tempFactory(scope);
-            private int id=0;
+            private int id = 0;
             public TempFactory tempFactory() { return tf; }
             public HCode getParent() { return Code.this; }
-            synchronized int getUniqueID() { return id++; }
+            public synchronized int getUniqueID() { return id++; }
         };
-        /*instrs = CodeGen.codegen(tree, this); */
     }
 
-    /* XXX - not yet implemented */
-    public static void register() {
+    /** Creates a new codeview with a given parent method and
+     *  assembly instructions.
+     *
+     *  @param  parent  The method which this codeview corresponds to.
+     *  @param  instrs  A list of StrongARM assembly instructions,
+     *                  may be null.
+     */
+    Code(final HMethod parent, final Instr[] instrs) {
+        this.parent = parent;
+        this.instrs = instrs; 
+        this.inf = newINF(parent);
     }
 
+    /** Registers this codeview so that it will be recognized later. <BR>
+     *  XXX - NOT YET IMPLEMENTED.
+     */
+    public static void register() { }
+
+    /** Returns the method which this codeview is representing code for.
+     *
+     *  @return         An <code>HMethod</code> for this codeview's
+     *                  parent method.
+     */
     public HMethod getMethod() { return parent; }
 
+    /** Returns the name of this code view.
+     *
+     *  @return         The String naming this codeview, "strongarm".
+     */
     public String getName() { return codename; }
 
-    /* XXX - re-implement? */
-    public HCodeElement[] getElements() {
-        return null;
-    }
+    /** Returns an array of the instructions in this codeview. <BR>
+     *
+     *  @return         An array of HCodeElements containing the Instrs
+     *                  that make up this codeview.
+     */
+    public HCodeElement[] getElements() { return instrs; }
 
-    /* XXX - re-implement? */
+    /** Returns an enumeration of the instructions in this codeview. <BR>
+     *  XXX - NOT YET IMPLEMENTED.
+     *
+     *  @return         An Enumeration containing the Instrs that make
+     *                  up this codeview.
+     */
     public Enumeration getElementsE() {
         return null;
     }
-    
-    public HCodeElement getRootElement() { return instrs; }
-
-    public HCodeElement[] getLeafElements() { return null; }
-
+   
+    /** Returns an array factory to create the instruction elements
+     *  of this codeview.
+     *
+     *  @return         An ArrayFactory which produces Instrs.
+     */
     public ArrayFactory elementArrayFactory() { return Instr.arrayFactory; }
 
-    /*
+    /** Displays the assembly instructions of this codeview. Attempts
+     *  to do so in a well-formatted, easy to read way. <BR>
+     *  XXX - currently uses generic, not so easy to read, printer.
+     *
+     *  @param  pw      A java.io.PrintWriter to send the formatted
+     *                  output to.
+     */
     public void print(java.io.PrintWriter pw) {
-        Print.print(pw, this);
+        super.print(pw);
     }
-    */
 }
