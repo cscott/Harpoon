@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.57 1999-07-14 12:44:28 cananian Exp $
+% $Id: thesis.tex,v 1.58 1999-08-01 10:11:32 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[12pt,titlepage]{article}
+\documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
 % fonts
 %\usepackage{beton}\usepackage{euler}
@@ -26,14 +26,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.57 $ $}
+\date{\today \\ $ $Revision: 1.58 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.57 $ $}{$ $Revision: 1.57 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.58 $ $}{$ $Revision: 1.58 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -644,7 +644,7 @@ $O(E+N^2)$ algorithm.  I hope to do better using the properties of the
 PST.  I want an $O(E V_0)$ algorithm, which means solving the
 one-variable case in $O(E)$.  Argh.
 \fixme{Either do this or punt it.  Our infrastructure actually gives
-us liveness straight from the stack state during translation, so we
+us decent liveness info straight from the stack state during translation, so we
 don't need a fast liveness algorithm; we get what we need `for free'.}
 
 \subsubsection{Variable renaming}
@@ -700,39 +700,76 @@ PST, is $O(EV_0 + NV_{SSI})$.
 \subsubsection{Discussion}
 Note that our algorithm for placing \phisigfunction{s} in
 SSI form is
-\emph{optimistic}; that is, we at first assume every node in the
+\emph{pessimistic}; that is, we at first assume every node in the
 control-flow graph with input arity larger than one requires a
 \phifunction{} for every variable and every node with out-arity larger
 than one requires a \sigfunction{} for every variable, and then use
 the PST and liveness information to determine safe places to
 \emph{omit} \phisigfunction[or]{s}.  Most SSA construction
-algorithms, by contrast, are \emph{pessimistic}; they assume no
+algorithms, by contrast, are \emph{optimistic}; they assume no
 \phisigfunction[or]{s} are needed and attempt to determine where
-they are necessary.  In my experience, pessimistic algorithms tend to
+they are provably necessary.  In my experience, optimistic algorithms tend to
 have poor time bounds because of the possibility of input graphs like
 figure~\vref{fig:evil}.  Proving that all but two nodes require
 \phisigfunction[and/or]{s} for the variable $a$ in this example seems to
-inherently
-require $O(N)$ passes over the graph; the \phifunction{s} ``spread''
-one node left from the circled node on each pass.  On the other hand,
-an optimistic algorithm assumes the correct answer at the start, fails
+inherently require $O(N)$ passes over the graph; each pass can prove
+that \phisigfunction[or]{s} are required for only those nodes adjacent to
+nodes tagged in the previous pass.  Starting with the circled node, the
+\phisigfunction{s} spread one node left on each pass. On the other hand,
+an pessimistic algorithm assumes the correct answer at the start, fails
 to show that any \phisigfunction[or]{s} can be removed, and
 terminates in one pass.\fixme{Are we \emph{sure} similar worst cases
-don't exist for the optimistic algorithm?}
+don't exist for the pessimistic algorithm?}
 
 \begin{myfigure}[t]
 \centering\renewcommand*{\figscale}{0.25}\input{Figures/evil}
-\caption{A worst-case CFG for ``pessimistic'' algorithms.}
+\caption{A worst-case CFG for ``optimistic'' algorithms.}
 \label{fig:evil}
 \end{myfigure}
 
-\subsection{Uses and applications}
+\subsection{Space complexity of SSI form}
+See figure \vref{fig:phisigdata}.%
+\fixme{Import discussion from appendix here.}
+
+\begin{myfigure}[t]
+\input{Figures/phisig}
+\caption{Statistical analysis to determine typical values for $V_{SSI}$.}
+\label{fig:phisigdata}
+\end{myfigure}
+
+\section{Uses and applications of SSI}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.
 	Also bitwidth analysis.}%
 \fixme{Write this.
 Use the techniques of \cite{kennedy98:strength} to do loop-invariant
 code motion, strength reduction, and partial-redundancy-elimination
 using SSI form?}
+
+\subsection{My Snazzy Constant Propagation (MSC)}
+My Snazzy Constant Propagation is a powerful analysis tool which
+derives its efficiency from SSI form.  It is built on Wegman and
+Zadeck's Sparse Conditional Constant (SCC) algorithm
+\cite{wegman91:scc} and removes unnecessary array-bounds and
+null-pointer checks, computes variable types, and performs
+floating-point- and string-constant-propagation in addition to the
+integer constant propagation of standard SCC.\footnote{It also washes
+the dishes and does the laundry.  It does not do windows$^{TM}$.}
+
+We will describe this algorithm incrementally, beginning with the
+standard SCC constant-propagation algorithm for review.  Section
+\vref{sec:bitwidth} will discuss an extension to MSC which does
+\newterm{bit-width analysis}.
+
+\subsubsection{Wegman and Zadeck's SCC algorithm}
+\begin{myfigure}
+\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat1}
+\caption{Three-level lattice for SCC.}
+\label{fig:scclat}
+\end{myfigure}
+The SCC algorithm works on a simple three-level lattice, shown in
+figure \vref{fig:scclat}.
+
+\subsection{Bit-width analysis}\label{sec:bitwidth}
 
 \begin{myfigure}[t]
 \centering\renewcommand*{\figscale}{0.6}\input{Figures/THlattice}

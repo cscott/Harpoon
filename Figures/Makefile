@@ -31,7 +31,7 @@ THex1base.tex: $(EX1FIG)
 	| sed -e 's/STMT[3789]//' $(SEDCMD) -e 's/\([PXYZ]\)_[01234]/\1/g'> $@
 
 # default fig->tex rule -- insert a snippet from head.tex
-%.tex: %.fig head.tex Makefile
+%.tex: %.fig head.tex
 	fig2dev -L latex -m 1.0 $< \
 	| sed -e '/begin{picture}/,/end{picture}/s/SetFigFont/MySetFigFont/g' \
 	      -e '/setlength{.unitlength}/r head.tex' > $@
@@ -41,6 +41,13 @@ THex1base.tex: $(EX1FIG)
 THcqex2.tex: THcqex.fig
 	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 0 12 0.0000 2/{foo=1;next} {print; foo=0;}" < $< | \
 	fig2dev -L latex -m 0.5 > $@
+
+#default gnu-plot to latex rule
+%.tex: %.gnuplot
+	gnuplot $< | uniq > $@
+
+# extra dependencies for data files of gnuplots
+phisig.tex: phisig.data-sorted
 
 clean:
 	$(RM) THex1*.tex *.fig.bak evil.tex \
