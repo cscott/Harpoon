@@ -9,7 +9,7 @@ import java.util.List;
  * <code>GraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.8 2000-07-20 21:05:37 pnkfelix Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.9 2000-07-21 23:58:12 pnkfelix Exp $
  */
 
 public abstract class GraphColorer  {
@@ -76,7 +76,6 @@ public abstract class GraphColorer  {
 	    throw new RuntimeException
 		("Something went horribly wrong with the color search");
 	} 
-	
     }
 
     /** Attempts to color <code>graph</code> using only

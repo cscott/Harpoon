@@ -23,7 +23,7 @@ import java.util.Iterator;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.10 2000-07-21 21:54:40 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.11 2000-07-21 23:58:12 pnkfelix Exp $ 
  */
 
 public class SparseGraph extends ColorableGraphImpl { // implements ColorableGraph {
@@ -320,6 +320,12 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
     }
     
 
+          /***** ColorableGraph Support methods *****/
+    
+    /** Wrapper method that calls <code>super.addNode(n)</code>.
+	Needed to resolve ambiguity in method resolution at
+	compile-time. 
+    */
     public void addNode( Node n ) {
 	super.addNode(n);
     }
@@ -353,7 +359,7 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 	     <code>this</code> is otherwise unchanged.
     */
     public void resetGraph() {
-
+	super.resetGraph();
     }
 
     /** Reverts the graph to an uncolored state.
@@ -361,7 +367,7 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 	<BR> <B>effects:</B> clears the Node -> Color mapping.
     */
     public void resetColors() {
-
+	super.resetColors();
     }
 
     /** Sets the color of <code>n</code>.
