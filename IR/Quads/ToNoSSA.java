@@ -22,20 +22,20 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.13 1999-06-14 07:12:08 pnkfelix Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.14 1999-07-12 21:59:05 bdemsky Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
-  private CloningTempMap  m_ctm;
-  private Derivation      m_derivation;
-  private Quad            m_quads;
-  private TypeMap         m_typeMap;
+    private CloningTempMap  m_ctm;
+    private Derivation      m_derivation;
+    private Quad            m_quads;
+    private TypeMap         m_typeMap;
     
     static class DerivationI implements Derivation {
 	public DList derivation(HCodeElement hce, Temp t) { return null; }
     }
 
-  public ToNoSSA(QuadFactory newQF, Code code)
+    public ToNoSSA(QuadFactory newQF, Code code)
     {
 	this(newQF, code, new DerivationI());	   
     }
@@ -44,103 +44,103 @@ public class ToNoSSA implements Derivation, TypeMap
 	public HClass typeMap(HCode hc, Temp t) {return null;}
     }
   
-  public ToNoSSA(QuadFactory newQF, Code code, Derivation derivation)
+    public ToNoSSA(QuadFactory newQF, Code code, Derivation derivation)
     {
 	this(newQF, code, derivation, new TypeMapI());
     }
 
-  public ToNoSSA(final QuadFactory newQF, Code code,
-		 Derivation derivation, TypeMap typeMap) {
-      Util.assert(code.getName().equals("quad-ssa") ||
-		  code.getName().equals("low-quad-ssa") ||
-		  code.getName().equals("quad-with-try"));
+    public ToNoSSA(final QuadFactory newQF, Code code,
+		   Derivation derivation, TypeMap typeMap) {
+	Util.assert(code.getName().equals("quad-ssa") ||
+		    code.getName().equals("low-quad-ssa") ||
+		    code.getName().equals("quad-with-try"));
     
-      final Hashtable dT = new Hashtable();
+	final Hashtable dT = new Hashtable();
 
-      m_ctm   = new CloningTempMap
- 	  (((Quad)code.getRootElement()).getFactory().tempFactory(),
-	   newQF.tempFactory());
-      m_quads = translate(newQF, derivation, typeMap, dT, code);
-      m_derivation = new Derivation() {
-	public DList derivation(HCodeElement hce, Temp t) {
-	  return ((t==null)||(hce==null))? null:
-	    (DList)dT.get(new Tuple(new Object[] { hce, t }));
-	}
-      };
-      m_typeMap = new TypeMap() {
-	  public HClass typeMap(HCode hc, Temp t) {
-	      Util.assert(t.tempFactory()==newQF.tempFactory());
-	      Object type = dT.get(t);   // Ignores hc parameter
-	      if (type instanceof Error) 
+	m_ctm   = new CloningTempMap
+	    (((Quad)code.getRootElement()).getFactory().tempFactory(),
+	     newQF.tempFactory());
+	m_quads = translate(newQF, derivation, typeMap, dT, code);
+	m_derivation = new Derivation() {
+	    public DList derivation(HCodeElement hce, Temp t) {
+		return ((t==null)||(hce==null))? null:
+		(DList)dT.get(new Tuple(new Object[] { hce, t }));
+	    }
+	};
+	m_typeMap = new TypeMap() {
+	    public HClass typeMap(HCode hc, Temp t) {
+		Util.assert(t.tempFactory()==newQF.tempFactory());
+		Object type = dT.get(t);   // Ignores hc parameter
+		if (type instanceof Error) 
 		throw (Error)((Error)type).fillInStackTrace();
-	      else                       
+		else                       
 		return (HClass)type;
-	  }
-      };
-  }
+	    }
+	};
+    }
 
-  public DList derivation(HCodeElement hce, Temp t)
+    public DList derivation(HCodeElement hce, Temp t)
     { return m_derivation.derivation(hce, t); }
 
-  public Quad getQuads()        { return m_quads; }
-  public HClass typeMap(HCode hc, Temp t) { 
-    // Ignores HCode parameter
-    return m_typeMap.typeMap(hc, t);
-  }
+    public Quad getQuads()        { return m_quads; }
+    public HClass typeMap(HCode hc, Temp t) { 
+	// Ignores HCode parameter
+	return m_typeMap.typeMap(hc, t);
+    }
 
-  /**
-   * Translates the code in the supplied codeview from SSA to No-SSA form, 
-   * returning the new root <code>Quad</code>.  The <code>Hashtable</code>
-   * parameter is used to maintain derivation information.
-   * 
-   * @parameter qf    the <code>QuadFactory</code> which will manufacture the
-   *                  translated <code>Quad</code>s.
-   * @parameter dT    a <code>Hashtable</code> containing the derivation 
-   *                  information of the specified codeview.
-   * @parameter dT a <code>Hashtable</code> in which to place the updated
-   *                  derivation information.  
-   * @parameter code  the codeview containing the <code>Quad</code>s to 
-   *                  translate.
-   */
-  private Quad translate(QuadFactory qf, Derivation derivation, 
-			 TypeMap typeMap, Hashtable dT, Code code)
+    /**
+     * Translates the code in the supplied codeview from SSA to No-SSA form, 
+     * returning the new root <code>Quad</code>.  The <code>Hashtable</code>
+     * parameter is used to maintain derivation information.
+     * 
+     * @parameter qf    the <code>QuadFactory</code> which will manufacture the
+     *                  translated <code>Quad</code>s.
+     * @parameter dT    a <code>Hashtable</code> containing the derivation 
+     *                  information of the specified codeview.
+     * @parameter dT a <code>Hashtable</code> in which to place the updated
+     *                  derivation information.  
+     * @parameter code  the codeview containing the <code>Quad</code>s to 
+     *                  translate.
+     */
+    private Quad translate(QuadFactory qf, Derivation derivation, 
+			   TypeMap typeMap, Hashtable dT, Code code)
     {
-      CloningTempMap  ctm;
-      NameMap         nm;
-      Quad            old_header, qTmp;
-      QuadMap         qm;
-      LowQuadVisitor  v;
+	CloningTempMap  ctm;
+	NameMap         nm;
+	Quad            old_header, qTmp;
+	QuadMap         qm;
+	LowQuadVisitor  v;
 
-      old_header   = (Quad)code.getRootElement();
-      nm           = new NameMap(); 
-      qm           = new QuadMap(m_ctm, code, derivation, dT, typeMap);
+	old_header   = (Quad)code.getRootElement();
+	nm           = new NameMap(); 
+	qm           = new QuadMap(m_ctm, code, derivation, dT, typeMap);
 
-      // Remove all SIGMAs from the code
-      v = new SIGMAVisitor(m_ctm, nm, qf, qm);
-      for (Enumeration e = code.getElementsE(); e.hasMoreElements();)
-	((Quad)e.nextElement()).visit(v);
+	// Remove all SIGMAs from the code
+	v = new SIGMAVisitor(m_ctm, nm, qf, qm);
+	for (Enumeration e = code.getElementsE(); e.hasMoreElements();)
+	    ((Quad)e.nextElement()).visit(v);
       
-      // Rename variables appropriately to account for the removed SIGMAs
-      qm.rename(qf, nm, nm);
+	// Rename variables appropriately to account for the removed SIGMAs
+	qm.rename(qf, nm, nm);
 
-      // Connect the edges of these new Quads
-      for (Enumeration e = code.getElementsE(); e.hasMoreElements();) {
-	qTmp       = (Quad)e.nextElement();
-	Edge[] el  = qTmp.nextEdge();   
-	for (int i=0; i<el.length; i++)
-	  Quad.addEdge(qm.get((Quad)el[i].from()),
-		       el[i].which_succ(),
-		       qm.get((Quad)el[i].to()),
-		       el[i].which_pred());
-      }
+	// Connect the edges of these new Quads
+	for (Enumeration e = code.getElementsE(); e.hasMoreElements();) {
+	    qTmp       = (Quad)e.nextElement();
+	    Edge[] el  = qTmp.nextEdge();   
+	    for (int i=0; i<el.length; i++)
+		Quad.addEdge(qm.get((Quad)el[i].from()),
+			     el[i].which_succ(),
+			     qm.get((Quad)el[i].to()),
+			     el[i].which_pred());
+	}
 
-      // Modify this new CFG by emptying PHI nodes
-      v = new PHIVisitor(qf, dT, nm);
-      for (Enumeration e = code.getElementsE(); e.hasMoreElements();)
-	qm.get((Quad)e.nextElement()).visit(v);
+	// Modify this new CFG by emptying PHI nodes
+	v = new PHIVisitor(qf, dT, nm);
+	for (Enumeration e = code.getElementsE(); e.hasMoreElements();)
+	    qm.get((Quad)e.nextElement()).visit(v);
 
-      // Return the head of the new CFG
-      return qm.get(old_header);
+	// Return the head of the new CFG
+	return qm.get(old_header);
     }
 
 }
@@ -154,72 +154,72 @@ public class ToNoSSA implements Derivation, TypeMap
  */
 class SIGMAVisitor extends LowQuadVisitor
 {
-  private CloningTempMap m_ctm;
-  private NameMap        m_nm;
-  private QuadFactory    m_qf;
-  private QuadMap        m_qm;
+    private CloningTempMap m_ctm;
+    private NameMap        m_nm;
+    private QuadFactory    m_qf;
+    private QuadMap        m_qm;
 
-  public SIGMAVisitor(CloningTempMap ctm, NameMap nm, 
-		      QuadFactory qf, QuadMap qm)
+    public SIGMAVisitor(CloningTempMap ctm, NameMap nm, 
+			QuadFactory qf, QuadMap qm)
     {
-      m_ctm         = ctm;
-      m_nm          = nm;
-      m_qf          = qf;
-      m_qm          = qm;
+	m_ctm         = ctm;
+	m_nm          = nm;
+	m_qf          = qf;
+	m_qm          = qm;
     }
   
-  public void visit(Quad q)
+    public void visit(Quad q)
     {
-      Quad qm = (Quad)(q.clone(m_qf, m_ctm));
-      m_qm.put(q, qm); 
+	Quad qm = (Quad)(q.clone(m_qf, m_ctm));
+	m_qm.put(q, qm); 
     }
   
-  public void visit(AGET q)    { visit((Quad)q); }
-  public void visit(ASET q)    { visit((Quad)q); }
-  public void visit(CALL q)    { visit((Quad)q); }
-  public void visit(GET q)     { visit((Quad)q); }
-  public void visit(HANDLER q) { visit((Quad)q); }
-  public void visit(OPER q)    { visit((Quad)q); }
-  public void visit(SET q)     { visit((Quad)q); }
+    public void visit(AGET q)    { visit((Quad)q); }
+    public void visit(ASET q)    { visit((Quad)q); }
+    public void visit(CALL q)    { visit((Quad)q); }
+    public void visit(GET q)     { visit((Quad)q); }
+    public void visit(HANDLER q) { visit((Quad)q); }
+    public void visit(OPER q)    { visit((Quad)q); }
+    public void visit(SET q)     { visit((Quad)q); }
 
-  public void visit(CJMP q)
+    public void visit(CJMP q)
     {
-      SIGMA  q0;
-      int    arity, numSigmas;
+	SIGMA  q0;
+	int    arity, numSigmas;
       
-      q0         = new CJMP(m_qf, q, map(q.test()), new Temp[] {});
-      numSigmas  = q.numSigmas();
-      arity      = q.arity();
+	q0         = new CJMP(m_qf, q, map(q.test()), new Temp[] {});
+	numSigmas  = q.numSigmas();
+	arity      = q.arity();
 
-      for (int i=0; i<numSigmas; i++)
-	for (int j=0; j<arity; j++)
-	  renameSigma(q, j, i);
+	for (int i=0; i<numSigmas; i++)
+	    for (int j=0; j<arity; j++)
+		renameSigma(q, j, i);
 
-      m_qm.put(q, q0);
+	m_qm.put(q, q0);
     }
 
-  public void visit(SWITCH q)
+    public void visit(SWITCH q)
     {
-      SIGMA  q0;
-      int    arity, numSigmas;
-      int[]  keys;
+	SIGMA  q0;
+	int    arity, numSigmas;
+	int[]  keys;
       
-      keys       = new int[q.keysLength()];
-      System.arraycopy(q.keys(), 0, keys, 0, q.keysLength());
-      q0         = new SWITCH(m_qf, q, map(q.index()), keys, new Temp[] {});
-      numSigmas  = q.numSigmas();
-      arity      = q.arity();
+	keys       = new int[q.keysLength()];
+	System.arraycopy(q.keys(), 0, keys, 0, q.keysLength());
+	q0         = new SWITCH(m_qf, q, map(q.index()), keys, new Temp[] {});
+	numSigmas  = q.numSigmas();
+	arity      = q.arity();
 
-      for (int i=0; i<numSigmas; i++)
-	for (int j=0; j<arity; j++)
-	  renameSigma(q, j, i);
+	for (int i=0; i<numSigmas; i++)
+	    for (int j=0; j<arity; j++)
+		renameSigma(q, j, i);
 
-      m_qm.put(q, q0);
+	m_qm.put(q, q0);
     }
   
-  private Temp map(Temp t) { return (t==null)?null:m_ctm.tempMap(t); }  
+    private Temp map(Temp t) { return (t==null)?null:m_ctm.tempMap(t); }  
 
-  private void renameSigma(SIGMA q, int dstIndex, int srcIndex) 
+    private void renameSigma(SIGMA q, int dstIndex, int srcIndex) 
     { m_nm.map(map(q.dst(srcIndex, dstIndex)), map(q.src(srcIndex))); }
 }
 
@@ -231,98 +231,114 @@ class SIGMAVisitor extends LowQuadVisitor
  */
 class PHIVisitor extends LowQuadVisitor
 {
-  private Hashtable       m_dT;
-  private QuadFactory     m_qf;
-  private NameMap         m_nm;
+    private Hashtable       m_dT;
+    private QuadFactory     m_qf;
+    private NameMap         m_nm;
 
-  public PHIVisitor(QuadFactory qf, Hashtable dT, NameMap nm)
+    public PHIVisitor(QuadFactory qf, Hashtable dT, NameMap nm)
     {      
-      m_dT          = dT;
-      m_qf          = qf;
-      m_nm          = nm;
+	m_dT          = dT;
+	m_qf          = qf;
+	m_nm          = nm;
     }
 
-  public void visit(Quad q) { }
+    public void visit(Quad q) { }
 
-  public void visit(AGET q)    { visit((Quad)q); }
-  public void visit(ASET q)    { visit((Quad)q); }
-  public void visit(CALL q)    { visit((Quad)q); }
-  public void visit(GET q)     { visit((Quad)q); }
-  public void visit(HANDLER q) { visit((Quad)q); }
-  public void visit(OPER q)    { visit((Quad)q); }
-  public void visit(SET q)     { visit((Quad)q); }
+    public void visit(AGET q)    { visit((Quad)q); }
+    public void visit(ASET q)    { visit((Quad)q); }
+    public void visit(CALL q)    { visit((Quad)q); }
+    public void visit(GET q)     { visit((Quad)q); }
+    public void visit(HANDLER q) { visit((Quad)q); }
+    public void visit(OPER q)    { visit((Quad)q); }
+    public void visit(SET q)     { visit((Quad)q); }
   
-  public void visit(LABEL q)
+    public void visit(LABEL q)
     {
-      int numPhis = q.numPhis(), arity = q.arity();
+	LABEL label = new LABEL(m_qf, q, q.label(), new Temp[0], q.arity());
+	int numPhis = q.numPhis(), arity = q.arity();
+
+	for (int i=0; i<numPhis; i++)
+	    for (int j=0; j<arity; j++)
+		pushBack(q, i, j);
       
-      for (int i=0; i<numPhis; i++)
-	for (int j=0; j<arity; j++)
-	  pushBack(q, i, j);
-      
-      //removePHIs(q, new LABEL(m_qf, q, q.label(), new Temp[] {}, q.arity()));
-      removeTuples(q);  // Updates derivation table
+	//removePHIs(q, new LABEL(m_qf, q, q.label(), new Temp[] {}, q.arity()));
+	removeTuples(q);  // Updates derivation table
+
+	Quad []prev=q.prev();
+	Quad []next=q.next(); Util.assert(next.length==1);
+	for(int i=0;i<prev.length;i++) {
+	    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),label,i);
+	}
+	Quad.addEdge(label,0,next[0],q.nextEdge(0).which_pred());
     }
       
-  public void visit(PHI q)
+    public void visit(PHI q)
     {
-      int numPhis = q.numPhis(), arity = q.arity();
-      
-      for (int i=0; i<numPhis; i++)
-	for (int j=0; j<arity; j++)
-	  pushBack(q, i, j);
+	PHI phi = new PHI(q.getFactory(), q, new Temp[0], q.arity());
 
-      //removePHIs(q, new PHI(m_qf, q, new Temp[] {}, q.arity()));
-      removeTuples(q);  // Updates derivation table
+	int numPhis = q.numPhis(), arity = q.arity();
+	for (int i=0; i<numPhis; i++)
+	    for (int j=0; j<arity; j++)
+		pushBack(q, i, j);
+
+	//removePHIs(q, new PHI(m_qf, q, new Temp[] {}, q.arity()));
+	removeTuples(q);  // Updates derivation table
+
+	Quad []prev=q.prev();
+	Quad []next=q.next(); Util.assert(next.length==1);
+	for(int i=0;i<prev.length;i++) {
+	    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),phi,i);
+	}
+	Quad.addEdge(phi,0,next[0],q.nextEdge(0).which_pred());
     }
 
-  private void removePHIs(PHI q, PHI q0)
+    private void removePHIs(PHI q, PHI q0)
     {
-      Edge[] el;
+	Edge[] el;
       
-      el = q.prevEdge();
-      for (int i=0; i<el.length; i++)
-	Quad.addEdge(q.prev(i), q.prevEdge(i).which_succ(),
-		     q0, q.prevEdge(i).which_pred());
+	el = q.prevEdge();
+	for (int i=0; i<el.length; i++)
+	    Quad.addEdge(q.prev(i), q.prevEdge(i).which_succ(),
+			 q0, q.prevEdge(i).which_pred());
       
-      el = q.nextEdge();
-      for (int i=0; i<el.length; i++) {
-	Quad.addEdge(q0, q.nextEdge(i).which_pred(),
-		     q.next(i), q.nextEdge(i).which_succ());
-      }
+	el = q.nextEdge();
+	for (int i=0; i<el.length; i++) {
+	    Quad.addEdge(q0, q.nextEdge(i).which_pred(),
+			 q.next(i), q.nextEdge(i).which_succ());
+	}
       
     }
 
-  private void removeTuples(Quad q)
+    private void removeTuples(Quad q)
     {
-      Temp[] tDef = q.def(), tUse = q.use();       
-      Tuple t;
+	Temp[] tDef = q.def(), tUse = q.use();       
+	Tuple t;
 
-      for (int i=0; i<tDef.length; i++) {
-	t = new Tuple(new Object[] { q, tDef[i] });
-	m_dT.remove(t);
-      }
-      for (int i=0; i<tUse.length; i++) {
-	t = new Tuple(new Object[] { q, tUse[i] });
-	m_dT.remove(t);
-      }
+	for (int i=0; i<tDef.length; i++) {
+	    t = new Tuple(new Object[] { q, tDef[i] });
+	    m_dT.remove(t);
+	}
+	for (int i=0; i<tUse.length; i++) {
+	    t = new Tuple(new Object[] { q, tUse[i] });
+	    m_dT.remove(t);
+	}
     }
   
 
-  private void pushBack(PHI q, int dstIndex, int srcIndex)
+    private void pushBack(PHI q, int dstIndex, int srcIndex)
     {
-      Edge from = q.prevEdge(srcIndex);
-      MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
-			   q.src(dstIndex, srcIndex));
-      Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
-      Quad.addEdge(m, 0, q, from.which_pred());
+	Edge from = q.prevEdge(srcIndex);
+	MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
+			     q.src(dstIndex, srcIndex));
+	Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
+	Quad.addEdge(m, 0, q, from.which_pred());
 
-      // Type information does not change, *but* we need to update
-      // the derivation table
-      DList dlDst = (DList)m_dT.get(new Tuple(new Object[] { q, m.dst() }));
-      DList dlSrc = (DList)m_dT.get(new Tuple(new Object[] { q, m.src() }));
-      if (dlDst!=null) m_dT.put(new Tuple(new Object[] { m, m.dst() }), dlDst);
-      if (dlSrc!=null) m_dT.put(new Tuple(new Object[] { m, m.src() }), dlSrc);
+	// Type information does not change, *but* we need to update
+	// the derivation table
+	DList dlDst = (DList)m_dT.get(new Tuple(new Object[] { q, m.dst() }));
+	DList dlSrc = (DList)m_dT.get(new Tuple(new Object[] { q, m.src() }));
+	if (dlDst!=null) m_dT.put(new Tuple(new Object[] { m, m.dst() }), dlDst);
+	if (dlSrc!=null) m_dT.put(new Tuple(new Object[] { m, m.src() }), dlSrc);
     }
 
 }
@@ -330,104 +346,104 @@ class PHIVisitor extends LowQuadVisitor
 
 class QuadMap 
 {
-  private CloningTempMap  m_ctm;
-  private Code            m_code;
-  private Derivation      m_derivation;
-  private Hashtable       m_dT;
-  private TypeMap         m_typeMap;
+    private CloningTempMap  m_ctm;
+    private Code            m_code;
+    private Derivation      m_derivation;
+    private Hashtable       m_dT;
+    private TypeMap         m_typeMap;
 
-  final private Hashtable h = new Hashtable();
+    final private Hashtable h = new Hashtable();
 
-  QuadMap(CloningTempMap ctm, Code code, Derivation derivation, 
-	  Hashtable dT, TypeMap typeMap)
+    QuadMap(CloningTempMap ctm, Code code, Derivation derivation, 
+	    Hashtable dT, TypeMap typeMap)
     {
-      m_ctm         = ctm;
-      m_code        = code;
-      m_derivation  = derivation;
-      m_dT          = dT;
-      m_typeMap     = typeMap;
+	m_ctm         = ctm;
+	m_code        = code;
+	m_derivation  = derivation;
+	m_dT          = dT;
+	m_typeMap     = typeMap;
     }
 
-  boolean contains(Quad old)  { return h.containsKey(old); }  
+    boolean contains(Quad old)  { return h.containsKey(old); }  
 
-  Quad get(Quad old) { 
-    return (Quad)h.get(old);
-  }
+    Quad get(Quad old) { 
+	return (Quad)h.get(old);
+    }
 
-  void put(Quad qOld, Quad qNew)
+    void put(Quad qOld, Quad qNew)
     {
-      h.put(qOld, qNew);
-      updateDTInfo(qOld, qNew);
+	h.put(qOld, qNew);
+	updateDTInfo(qOld, qNew);
     }
   
-  // usemap not used -- remove redundant parameter
-  //
-  void rename(QuadFactory qf, TempMap defmap, TempMap usemap)
+    // usemap not used -- remove redundant parameter
+    //
+    void rename(QuadFactory qf, TempMap defmap, TempMap usemap)
     {
-      for (Enumeration e = ((Hashtable)h.clone()).keys(); 
-	   e.hasMoreElements();) {
-	Quad head, key, value, newValue; Tuple tuple;
+	for (Enumeration e = ((Hashtable)h.clone()).keys(); 
+	     e.hasMoreElements();) {
+	    Quad head, key, value, newValue; Tuple tuple;
 
-	key      = (Quad)e.nextElement();
-	value    = (Quad)h.get(key);	
-	newValue = (Quad)value.rename(qf, defmap, usemap);
-	h.put(key, newValue);
-	for (int i=0; i<2; i++) {
-	  Temp[] tmps = (i==0)?value.def():value.use();
-	  for (int j=0; j<tmps.length; j++) {
-	    tuple = new Tuple(new Object[] { value, tmps[j] });
-	    if (m_dT.containsKey(tuple)) {
-	      DList dl = DList.rename((DList)m_dT.get(tuple), defmap);
-	      Temp tmp = (i==0)?newValue.def()[j]:newValue.use()[j];
-	      m_dT.put(new Tuple(new Object[] { newValue, tmp }), dl);
+	    key      = (Quad)e.nextElement();
+	    value    = (Quad)h.get(key);	
+	    newValue = (Quad)value.rename(qf, defmap, usemap);
+	    h.put(key, newValue);
+	    for (int i=0; i<2; i++) {
+		Temp[] tmps = (i==0)?value.def():value.use();
+		for (int j=0; j<tmps.length; j++) {
+		    tuple = new Tuple(new Object[] { value, tmps[j] });
+		    if (m_dT.containsKey(tuple)) {
+			DList dl = DList.rename((DList)m_dT.get(tuple), defmap);
+			Temp tmp = (i==0)?newValue.def()[j]:newValue.use()[j];
+			m_dT.put(new Tuple(new Object[] { newValue, tmp }), dl);
+		    }
+		    if (m_dT.containsKey(tmps[j])) {
+			m_dT.put(defmap.tempMap(tmps[j]), m_dT.get(tmps[j]));
+		    }
+		}
 	    }
-	    if (m_dT.containsKey(tmps[j])) {
-	      m_dT.put(defmap.tempMap(tmps[j]), m_dT.get(tmps[j]));
-	    }
-	  }
 	}
-      }
     }
       
-  /* UTILITY METHODS FOLLOW */
+    /* UTILITY METHODS FOLLOW */
 
-  private Temp map(Temp t) 
+    private Temp map(Temp t) 
     { return (t==null)?null:m_ctm.tempMap(t); }  
       
-  private void updateDTInfo(Quad qOld, Quad qNew)
+    private void updateDTInfo(Quad qOld, Quad qNew)
     {
-      Util.assert(qOld!=null && qNew != null);
+	Util.assert(qOld!=null && qNew != null);
 
-      DList dl; HClass hc; Temp[] tmps; Temp newTmp;
+	DList dl; HClass hc; Temp[] tmps; Temp newTmp;
 
-      for (int j=0; j<2; j++) {
-	tmps = (j==0)?qOld.def():qOld.use();
-	for (int i=0; i<tmps.length; i++) {
-	  dl = DList.clone(m_derivation.derivation(qOld, tmps[i]), m_ctm);
-	  if (dl!=null) { // If tmps[i] is a derived ptr, update deriv info.
-	    m_dT.put(new Tuple(new Object[] { qNew, map(tmps[i]) }),dl);
-	    m_dT.put(map(tmps[i]), 
-		     new Error("*** Can't type a derived pointer: " + 
-			       map(tmps[i])));
-	  }
-	  else { // If the tmps[i] is NOT a derived pointer, assign its type
-	    hc = m_typeMap.typeMap(m_code, tmps[i]);
-	    if (hc!=null) {
-	      m_dT.put(map(tmps[i]), hc);
+	for (int j=0; j<2; j++) {
+	    tmps = (j==0)?qOld.def():qOld.use();
+	    for (int i=0; i<tmps.length; i++) {
+		dl = DList.clone(m_derivation.derivation(qOld, tmps[i]), m_ctm);
+		if (dl!=null) { // If tmps[i] is a derived ptr, update deriv info.
+		    m_dT.put(new Tuple(new Object[] { qNew, map(tmps[i]) }),dl);
+		    m_dT.put(map(tmps[i]), 
+			     new Error("*** Can't type a derived pointer: " + 
+				       map(tmps[i])));
+		}
+		else { // If the tmps[i] is NOT a derived pointer, assign its type
+		    hc = m_typeMap.typeMap(m_code, tmps[i]);
+		    if (hc!=null) {
+			m_dT.put(map(tmps[i]), hc);
+		    }
+		}
 	    }
-	  }
 	}
-      }
     }
 }
 
 class NameMap implements TempMap {
-  Hashtable h = new Hashtable();
-  public Temp tempMap(Temp t) {
-    while (h.containsKey(t)) { t = (Temp)h.get(t); }
-    return t;
-  }
-  public void map(Temp Told, Temp Tnew) { h.put(Told, Tnew); }
+    Hashtable h = new Hashtable();
+    public Temp tempMap(Temp t) {
+	while (h.containsKey(t)) { t = (Temp)h.get(t); }
+	return t;
+    }
+    public void map(Temp Told, Temp Tnew) { h.put(Told, Tnew); }
 }
 
 
