@@ -11,7 +11,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.13 1998-10-11 03:01:18 cananian Exp $
+ * @version $Id: Temp.java,v 1.14 1998-11-10 00:47:41 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -54,21 +54,17 @@ public class Temp {
   public Temp(Temp t) {
     this(t.name);
   }
-  /** Rename this temp. */
-  public void rename(String prefix) {
-    Temp lamb = new Temp(prefix);
-    this.name = lamb.name;
-    this.index= lamb.index;
-    lamb = null; // destroy the sacrificial lamb.
-  }
-  /** Rename this temp. */
-  public void rename(Temp t) { rename(t.name); }
 
   /** Returns the name of this temporary */
   public String name() { return name + "_" + index; }
 
   /** Returns a string representation of this temporary. */
   public String toString() { return name(); }
+
+  /** Returns a hashcode for this temporary.
+   *  The hashcode is the same as the hashcode of the hashcode's name.
+   */
+  public int hashCode() { return name().hashCode(); }
 
   /** For debugging purposes: reset all temp variable counters to zero. */
   //public static void clear() { table.clear(); }
