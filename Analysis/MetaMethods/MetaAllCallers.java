@@ -13,6 +13,8 @@ import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
 
+import harpoon.Util.Util;
+
 /**
  * <code>MetaAllCallers</code> is the dual of <code>MetaCallGraph</code>.
  It computes the callers (<code>MetaMethod</code>s) of each meta-method from the
@@ -21,7 +23,7 @@ import harpoon.Util.DataStructs.LightRelation;
  precomputed graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaAllCallers.java,v 1.1.2.4 2000-07-02 08:37:40 salcianu Exp $
+ * @version $Id: MetaAllCallers.java,v 1.1.2.5 2000-12-07 00:43:52 salcianu Exp $
  */
 public class MetaAllCallers implements java.io.Serializable {
 
@@ -75,7 +77,10 @@ public class MetaAllCallers implements java.io.Serializable {
 	    MetaMethod[] mms = mcg.getCallees(mm_caller);
 	    for(int i = 0 ; i < mms.length ; i++){
 		MetaMethod mm_callee = mms[i];
-		callers.add(mm_callee,mm_caller);
+		Util.assert((mm_caller != null) && (mm_callee != null),
+			    "mm_caller = " + mm_caller +
+			    "i = " + i + "/" + mms.length);
+		callers.add(mm_callee, mm_caller);
 	    }
 	}
 

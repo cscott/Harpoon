@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.34 2000-11-16 03:04:35 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.35 2000-12-07 00:43:57 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable {
 
@@ -438,18 +438,28 @@ public class PointsToGraph implements Cloneable {
 
     // TODO: keep the essential should be modified to use this method.
     // there is a lot of code duplication here.
-    PointsToGraph copy_from_roots(final Set roots, final Set remaining_nodes) {
+    PointsToGraph copy_from_roots(final Set vars, final Set roots,
+				  final Set remaining_nodes) {
 	remaining_nodes.addAll(roots);
 
-	PAEdgeSet _O = new LightPAEdgeSet();
-	PAEdgeSet _I = new LightPAEdgeSet();
+	final PAEdgeSet _O = new LightPAEdgeSet();
+	final PAEdgeSet _I = new LightPAEdgeSet();
+
+	for(Iterator it = vars.iterator(); it.hasNext(); ) {
+	    final Temp v = (Temp) it.next();
+	    I.forAllPointedNodes
+		(v,
+		 new PANodeVisitor(){
+			 public void visit(PANode node) {
+			     _I.addEdge(v, node);
+			     remaining_nodes.add(node);
+			 }
+		     });
+	}
 
 	// the same sets of return nodes and exceptions
 	Set _r    = (Set) ((LinearSet) r).clone();
 	Set _excp = (Set) ((LinearSet) excp).clone();
-	// Add the normal return & exception nodes to the set of roots
-	remaining_nodes.addAll(r);
-	remaining_nodes.addAll(excp);
 
 	// worklist of "to be explored" nodes
 	final PAWorkList worklist = new PAWorkList();
@@ -465,7 +475,7 @@ public class PointsToGraph implements Cloneable {
 	    };
 
 	while(!worklist.isEmpty()){
-	    PANode node = (PANode)worklist.remove();
+	    PANode node = (PANode) worklist.remove();
 	    O.copyEdges(node, _O);
 	    I.copyEdges(node, _I);
 	    O.forAllPointedNodes(node, visitor);

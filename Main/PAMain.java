@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.86 2000-11-16 00:02:01 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.87 2000-12-07 00:44:01 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -275,7 +275,7 @@ public abstract class PAMain {
 	    SAMain.hcf = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.do_it();
-	    System.out.println("Backend time : " +
+	    System.out.println("Backend time: " +
 			       (time() - g_tstart) + "ms");
 	}
     }

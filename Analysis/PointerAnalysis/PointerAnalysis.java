@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.72 2000-11-16 03:04:34 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.73 2000-12-07 00:43:57 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -1078,6 +1078,9 @@ public class PointerAnalysis {
 
 	// go through all the instructions of this basic block
 	HCodeElement[] instrs = lbb.getElements();
+
+	//System.out.println("BBINSTR: " + Debug.code2str(instrs[0]));
+
 	int len = instrs.length;
 	for(int i = 0; i < len; i++){
 	    Quad q = (Quad) instrs[i];
@@ -1088,6 +1091,11 @@ public class PointerAnalysis {
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction
 	    q.accept(pa_visitor);
+	}
+
+	if(DEBUG2 || MEGA_DEBUG){
+	    System.out.println("After:");
+	    System.out.println(lbbpig);
 	}
 
 	// if there was a pair, store the pair computed by the inter proc
@@ -1111,8 +1119,6 @@ public class PointerAnalysis {
 	}
 
 	if(DEBUG2 || MEGA_DEBUG){
-	    System.out.println("After:");
-	    System.out.println(lbbpig);
 	    System.out.print("Next BBs: ");
 	    Object[] next_lbbs = lbb.getNextLBBs();
 	    Arrays.sort(next_lbbs, UComp.uc);

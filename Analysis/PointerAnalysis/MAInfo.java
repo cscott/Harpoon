@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.42 2000-11-15 21:48:38 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.43 2000-12-07 00:43:56 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -244,6 +244,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	HCode hcode = hcf.convert(mm.getHMethod());
 	((harpoon.IR.Quads.Code) hcode).setAllocationInformation(this);
 
+	Set nodes = new HashSet();
+	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
+	    Quad quad = (Quad) it.next();
+	    if((quad instanceof NEW) ||
+	       (quad instanceof ANEW))
+		nodes.add(node_rep.getCodeNode(quad, PANode.INSIDE));
+	}
+	System.out.println("inside nodes " + mm.getHMethod() + " " + nodes);
+
 	// Obtain a clone of the internal pig (no interthread analysis yet)
 	// at the end of hm and "cosmetize" it a bit.
 	ParIntGraph pig = (ParIntGraph) pa.getIntParIntGraph(mm).clone();
@@ -254,7 +263,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	if(DEBUG)
 	    System.out.println("Parallel Interaction Graph:" + pig);
 
-	generate_aps(mm, pig);
+	generate_aps(mm, pig, nodes);
 
 	if(DO_PREALLOCATION)
 	    try_prealloc(mm, hcode, pig);
@@ -269,9 +278,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // INPUT: a metamethod mm and the pig at its end.
     // ACTION: goes over all the level 0 inside nodes from pig
     //       and try to stack allocate or thread allocate them.
-    private void generate_aps(MetaMethod mm, ParIntGraph pig) {
+    private void generate_aps(MetaMethod mm, ParIntGraph pig, Set nodes) {
 	// we study only level 0 nodes (ie allocated in THIS method).
-	Set nodes = getLevel0InsideNodes(pig);
+	// Set nodes = getLevel0InsideNodes(pig);
 
 	if(DO_STACK_ALLOCATION) {
 	    if(DEBUG) System.out.println("Stack allocation");
@@ -1279,7 +1288,14 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     private HEADER get_cloned_code(CALL cs, HMethod caller,
 				 Map old2new, HCodeFactory hcf)
 	throws CloneNotSupportedException {
-	HMethod hm = cs.method();
+
+	// get the only method that is called by cs.
+	MetaMethod[] mms = mcg.getCallees(new MetaMethod(caller, true), cs);
+	Util.assert(mms.length == 1,
+		    "Trying to inline a call site with " + mms.length +
+		    " callees");
+	HMethod hm = mms[0].getHMethod();
+
 	HCode hcode_orig = hcf.convert(hm);
 
 	System.out.println("caller = " + caller);
