@@ -17,12 +17,18 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.1.2.2 2000-04-03 23:46:46 cananian Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.1.2.3 2000-04-04 01:52:09 cananian Exp $
  */
-public class DefaultAllocationInformation implements AllocationInformation {
+public class DefaultAllocationInformation
+    implements AllocationInformation, java.io.Serializable {
     
+    /** A static instance of the singleton 
+     *  <code>DefaultAllocationInformation</code> object. */
+    public static final AllocationInformation SINGLETON =
+	new DefaultAllocationInformation();
+
     /** Creates a <code>DefaultAllocationInformation</code>. */
-    public DefaultAllocationInformation() { }
+    private DefaultAllocationInformation() { }
 
     /** Return an <code>AllocationProperties</code> object for the given
      *  allocation site.  The allocation site must be either a
@@ -58,6 +64,11 @@ public class DefaultAllocationInformation implements AllocationInformation {
 	return false; // no interior pointers.
     }
 	
+    // serialization support.
+    private Object readResolve() throws java.io.ObjectStreamException {
+	return SINGLETON; // maintain singleton.
+    }
+
     /* Statically allocate the two possible allocation properties. */
     private static final AllocationProperties
 	HAS_INTERIOR_POINTERS = new MyAP() {
@@ -67,10 +78,12 @@ public class DefaultAllocationInformation implements AllocationInformation {
 	    public boolean hasInteriorPointers() { return false; }
 	};
     /* convenience class for code reuse. */
-    private static abstract class MyAP implements AllocationProperties {
+    private static abstract class MyAP
+	implements AllocationProperties, java.io.Serializable {
 	public abstract boolean hasInteriorPointers();
 	public boolean canBeStackAllocated() { return false; }
 	public boolean canBeThreadAllocated() { return false; }
+	public boolean useOwnHeap() { return false; }
 	public Temp allocationHeap() { return null; }
     }
 }

@@ -72,7 +72,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.77 2000-04-04 00:49:59 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.78 2000-04-04 01:52:24 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -88,14 +88,14 @@ class ToTree {
      *  and <code>ReachingDefs</code> for <code>LowQuadNoSSA</code>. */
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
 	this(tf, code,
-	     new harpoon.Analysis.DefaultAllocationInformation(),
+	     harpoon.Analysis.DefaultAllocationInformation.SINGLETON,
 	     new ToTreeHelpers.DefaultEdgeOracle(),
 	     new ToTreeHelpers.DefaultFoldNanny(),
 	     new ReachingDefsImpl(code));
     }
     public ToTree(final TreeFactory tf, final LowQuadSSI code) {
 	this(tf, code,
-	     new harpoon.Analysis.DefaultAllocationInformation(),
+	     harpoon.Analysis.DefaultAllocationInformation.SINGLETON,
 	     new ToTreeHelpers.MinMaxEdgeOracle(code),
 	     new ToTreeHelpers.SSISimpleFoldNanny(code),
 	     new ToTreeHelpers.SSIReachingDefs(code));

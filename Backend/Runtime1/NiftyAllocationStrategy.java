@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * thread-clustered-allocation strategies.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NiftyAllocationStrategy.java,v 1.1.2.1 2000-04-04 00:38:15 cananian Exp $
+ * @version $Id: NiftyAllocationStrategy.java,v 1.1.2.2 2000-04-04 01:52:22 cananian Exp $
  */
 public class NiftyAllocationStrategy extends MallocAllocationStrategy {
 
@@ -40,7 +40,9 @@ public class NiftyAllocationStrategy extends MallocAllocationStrategy {
 	if (ap.hasInteriorPointers()) funcname = "NGBL_malloc_atomic";
 	if (ap.canBeStackAllocated()) funcname = "NSTK_malloc";
 	if (ap.canBeThreadAllocated())funcname = "NTHR_malloc";
+	if (ap.useOwnHeap())          funcname = "NTHR_malloc_first";
 	if (ap.allocationHeap()!=null) {
+	    funcname = "NTHR_malloc_other";
 	    // this is somewhat bogus, since the heap-association object is
 	    // most certainly an *object*, *not* Void -- but it can't hurt
 	    // since the association object will be kept live by other means
