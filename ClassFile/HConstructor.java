@@ -7,7 +7,7 @@ import java.lang.reflect.Modifier;
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.4 1998-08-01 22:55:13 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.5 1998-08-08 14:38:37 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass
@@ -19,6 +19,8 @@ public class HConstructor extends HMethod {
 			 harpoon.ClassFile.Raw.MethodInfo methodinfo) {
     super(parent, methodinfo);
   }
+  /** Allow HArrayConstructor to subclass and override. */
+  HConstructor(HClass parent) { super(parent); }
 
   /**
    * Returns the name of this constructor, as a string.  This is always

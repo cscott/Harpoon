@@ -3,6 +3,7 @@ package harpoon.ClassFile;
 import java.lang.reflect.Modifier;
 import harpoon.ClassFile.Raw.Attribute.AttributeSynthetic;
 import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
+import harpoon.ClassFile.Raw.Constant.ConstantValue;
 
 /**
  * A <code>HField</code> provides information about a single field of a class
@@ -10,7 +11,7 @@ import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.8 1998-08-04 01:49:38 cananian Exp $
+ * @version $Id: HField.java,v 1.9 1998-08-08 14:38:37 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -25,6 +26,10 @@ public class HField implements HMember {
     this.hclass = parent;
     this.fieldinfo = fieldinfo;
     this.type = HClass.forDescriptor(fieldinfo.descriptor());
+  }
+  /** Allow HArrayField to subclass and override. */
+  HField(HClass parent, HClass type) { 
+    this.hclass=parent; this.type=type; this.fieldinfo=null;
   }
 
   /** 
@@ -64,6 +69,17 @@ public class HField implements HMember {
   public String getDescriptor() {
     return fieldinfo.descriptor();
   }
+  /**
+   * Returns the constant value of this <code>HField</code>, if
+   * it is a constant field.
+   * @return the wrapped value, or <code>null</code> if 
+   *         <code>!isConstant()</code>.
+   */
+  public Object getConstant() {
+    if (!isConstant()) return null;
+    ConstantValue c = (ConstantValue) attrconst.constantvalue_index();
+    return c.value();
+  }
 
   /**
    * Determines whether this <code>HField</code> represents a constant
@@ -71,10 +87,13 @@ public class HField implements HMember {
    */
   public boolean isConstant() {
     for (int i=0; i<fieldinfo.attributes.length; i++)
-      if (fieldinfo.attributes[i] instanceof AttributeConstantValue)
+      if (fieldinfo.attributes[i] instanceof AttributeConstantValue) {
+	attrconst=(AttributeConstantValue)fieldinfo.attributes[i];
 	return true;
+      }
     return false;
   }
+  AttributeConstantValue attrconst=null;
   /**
    * Determines whether this <code>HField</code> is synthetic.
    */
@@ -164,3 +183,7 @@ public class HField implements HMember {
     return dst;
   }
 }
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:

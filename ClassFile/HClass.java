@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.24 1998-08-08 13:46:16 cananian Exp $
+ * @version $Id: HClass.java,v 1.25 1998-08-08 14:38:37 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -270,9 +270,14 @@ public class HClass {
    */
   public HField[] getDeclaredFields() {
     if (declaredFields==null) {
-      if (isPrimitive() || isArray()) 
+      if (isPrimitive()) {
 	declaredFields = new HField[0];
-      else {
+      } else if (isArray()) {
+	declaredFields = new HField[] {
+	  new HArrayField(this, "length", HClass.Int,
+			  Modifier.PUBLIC | Modifier.FINAL)
+	};
+      } else {
 	declaredFields = new HField[classfile.fields.length];
 	for (int i=0; i<declaredFields.length; i++)
 	  declaredFields[i] = new HField(this, classfile.fields[i]);
@@ -423,13 +428,27 @@ public class HClass {
   public HMethod[] getDeclaredMethods() {
     if (declaredMethods==null) {
       if (isPrimitive()) {
+	// primitives have no methods.
 	declaredMethods = new HMethod[0];
       } else if (isArray()) {
-	declaredMethods = new HMethod[] {
-	  new HArrayMethod(this,"get","(I)"+getDescriptor().substring(1)),
-	  new HArrayMethod(this,"set","(I"+getDescriptor().substring(1)+")V"),
-	  new HArrayMethod(this,"clone","()V") };
+	// Make appropriate phantom methods for an array.
+	declaredMethods = new HMethod[3+dims];
+	// Make 'dims' constructors.
+	String desc = "I"; // array dimension is an integer.
+	int i;
+	for (i=0; i<dims; i++, desc+="I")
+	  declaredMethods[i] = 
+	    new HArrayConstructor(this,"("+desc+")V");
+	// Add special get/set access methods.
+	declaredMethods[i++] =
+	  new HArrayMethod(this,"get","(I)"+getDescriptor().substring(1));
+	declaredMethods[i++] =
+	  new HArrayMethod(this,"set","(I"+getDescriptor().substring(1)+")V");
+	// override 'clone' so it doesn't throw an exception.
+	declaredMethods[i++] =
+	  new HArrayMethod(this,"clone","()Ljava/lang/Object;");
       } else {
+	// Read methods from classfile.methods.
 	declaredMethods = new HMethod[classfile.methods.length];
 	for (int i=0; i<declaredMethods.length; i++) {
 	  if (classfile.methods[i].name().equals("<init>")) // constructor
@@ -667,7 +686,8 @@ public class HClass {
    * @return an array of interfaces implemented by this class.
    */
   public HClass[] getInterfaces() {
-    if (isPrimitive() || isArray()) return new HClass[0];
+    if (isPrimitive()) return new HClass[0];
+    if (isArray()) return new HClass[] { forName("java.lang.Cloneable") };
     HClass in[] = new HClass[classfile.interfaces_count()];
     for (int i=0; i< in.length; i++)
       in[i] = forName(classfile.interfaces(i).name().replace('/','.'));
@@ -1002,3 +1022,7 @@ public class HClass {
     return dst;
   }
 }
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:
