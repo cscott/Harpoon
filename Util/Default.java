@@ -21,7 +21,7 @@ import java.util.SortedMap;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.13 2001-11-04 00:20:38 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.14 2001-11-04 19:25:38 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -135,6 +135,25 @@ public abstract class Default  {
 	    }
 	}
     }
+    /** A pair constructor method more appropriate for <code>Set</code>
+     *  views of <code>Map</code>s and <code>MultiMap</code>s.
+     *  The returned object is an instance of <code>Map.Entry</code>;
+     *  the only (real) difference from the pairs returned by
+     *  <code>Default.pair()</code> is the definition of
+     *  <code>hashCode()</code>, which corresponds to <code>Map.Entry</code>
+     *  (being <code>key.hashCode() ^ value.hashCode()</code> ) rather
+     *  than <code>List</code> (which would be 
+     *  <code>31*(31+key.hashCode())+value.hashCode()</code> ). This is
+     *  an annoying distinction; I wish the JDK API authors had made
+     *  these consistent. The <code>Map.Entry</code> returned is immuatable.
+     */
+    public static Map.Entry entry(final Object key, final Object value) {
+	return new AbstractMapEntry() {
+		public Object getKey() { return key; }
+		public Object getValue() { return value; }
+	    };
+    }
+
     /** A serializable comparator. */
     private static interface SerializableComparator
 	extends Comparator, java.io.Serializable { /* only declare */ }
