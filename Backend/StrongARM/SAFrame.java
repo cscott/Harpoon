@@ -10,11 +10,21 @@ import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.OffsetMap;
-import harpoon.IR.Assem.InstrList;
+import harpoon.Backend.Maps.OffsetMap32;
+import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.CALL;
+import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.MOVE;
+import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.SEQ;
+import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.TreeFactory;
+import harpoon.Temp.Label;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
@@ -23,18 +33,17 @@ import harpoon.Util.Util;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.5 1999-02-26 23:22:27 andyb Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.6 1999-03-08 09:03:51 andyb Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
     private static Temp[] regLiveOnExit = new Temp[5];
     private static Temp[] regGeneral = new Temp[11];
-    /** TempFactory used to create register temps */
     private static TempFactory regtf;
-    /** TempFactory used to create global temps needed for memory
-     *  allocation and garbage collection */
     private TempFactory tf;
     private AllocationStrategy mas;
+    private static OffsetMap offmap;
+    private static int nextPtr;
 
     static {
         regtf = new TempFactory() {
@@ -69,12 +78,15 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
         regLiveOnExit[2] = reg[13]; // sp
         regLiveOnExit[3] = reg[15]; // pc
         regLiveOnExit[4] = reg[1]; // return exceptional value
+        offmap = new OffsetMap32(null);
+        nextPtr = 0x0fff0000; // arbitrary value
     }
 
     public SAFrame() { 
         mas = new DefaultAllocationStrategy(this);
     }
 
+    /* "method" constructor, use for per-method initializations */
     public Frame newFrame(String scope) {
         SAFrame fr = new SAFrame();
         fr.tf = Temp.tempFactory(scope);
@@ -89,19 +101,40 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 
     public Temp[] getGeneralRegisters() { return regGeneral; }
 
+    /* Generic version of the next six methods copied from 
+     * DefaultFrame for now */
     public Stm callGC(TreeFactory tf, HCodeElement src) { 
-        return null;
+        return new CALL(tf, src,
+                        new TEMP(tf, src,
+                                 Type.POINTER, new Temp(tf.tempFactory())),
+                        new TEMP(tf, src,
+                                 Type.POINTER, new Temp(tf.tempFactory())),
+                        new NAME(tf, src, new Label("_RUNTIME_GC")),
+                        null); 
     }
 
-    public Exp getMemLimit(TreeFactory tf, HCodeElement src) { return null; }
+    public Exp getMemLimit(TreeFactory tf, HCodeElement src) { 
+        return new CONST(tf, src, 4000000);
+    }
 
-    public MEM getNextPtr(TreeFactory tf, HCodeElement src) { return null; }
+    public MEM getNextPtr(TreeFactory tf, HCodeElement src) { 
+        return new MEM(tf, src, Type.INT,
+                       new CONST(tf, src, nextPtr));
+    }
 
-    public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) { return null; }
+    public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) { 
+        return new CALL(tf, src,
+                        new TEMP(tf, src,
+                                 Type.POINTER, new Temp(tf.tempFactory())),
+                        new TEMP(tf, src,
+                                 Type.POINTER, new Temp(tf.tempFactory())),
+                        new NAME(tf, src, new Label("_RUNTIME_OOM")),
+                        null);
+    }
 
     public Exp memAlloc(Exp size) { return mas.memAlloc(size); }
 
-    public OffsetMap getOffsetMap() { return null; }
+    public OffsetMap getOffsetMap() { return offmap; }
 
     public TempFactory tempFactory() { return tf; }
 
@@ -109,10 +142,37 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
                             Temp[] paramdsts) { 
-        return null; 
+        Stm prologue = null, move = null;
+        int i = 0;
+        for (i = 0; i < paramdsts.length && i < 4; i++) {
+            move = new MOVE(tf, src,
+                            new TEMP(tf, src, Type.INT, paramdsts[i]),
+                            new TEMP(tf, src, Type.INT, reg[i]));
+            if (prologue == null) {
+                prologue = move;
+            } else {
+                prologue = new SEQ(tf, src, move, prologue);
+            }
+        }
+        return prologue;
     }
 
-    public InstrList procLiveOnExit(InstrList body) { return body; }
+    public Instr[] procLiveOnExit(Instr[] body) { 
+        return body; 
+    }
 
-    public InstrList procAssemDirectives(InstrList body) { return body; }
+    public Instr[] procAssemDirectives(Instr[] body) { 
+        Util.assert((body != null) && (body.length > 0));
+        Instr[] newbody = new Instr[body.length + 4];
+        HCodeElement src = body[0];
+        InstrFactory inf = ((Instr)src).getFactory();
+        newbody[0] = new Instr(inf, src, ".text", null, null);
+        newbody[1] = new Instr(inf, src, ".align 0", null, null);
+        newbody[2] = new Instr(inf, src, ".global " + 
+                        offmap.label(inf.getMethod()) + ":", null, null);
+        newbody[3] = new Instr(inf, src, 
+                        offmap.label(inf.getMethod()) + ":", null, null);
+        System.arraycopy(body, 0, newbody, 4, body.length);
+        return newbody; 
+    }
 }
