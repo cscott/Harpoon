@@ -27,7 +27,7 @@ import java.util.Arrays;
  * single-entry single-exit region.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.1.2.6 2001-06-19 16:30:14 pnkfelix Exp $ */
+ * @version $Id: InstrGroup.java,v 1.1.2.7 2001-06-22 16:47:32 pnkfelix Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -227,7 +227,10 @@ public class InstrGroup {
 		// else gather up all defs and pass them out
 		Util.assert(i == ig.entry);
 		Instr curr = ig.exit;
-		Collection set = new HashSet();
+		
+		// start with defs in last instr (shifting them to the
+		// start of the group)
+		Collection set = new HashSet( curr.defC() );
 
 		do {
 		    Util.assert( curr.getGroups().contains(ig) );
