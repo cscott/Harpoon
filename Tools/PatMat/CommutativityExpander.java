@@ -11,7 +11,7 @@ import java.util.*;
  * <code>Spec.ExpBinop</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CommutativityExpander.java,v 1.1.2.2 2000-02-18 22:25:07 cananian Exp $
+ * @version $Id: CommutativityExpander.java,v 1.1.2.3 2000-02-19 01:41:49 cananian Exp $
  */
 public abstract class CommutativityExpander  {
     //hide constructor.
@@ -65,10 +65,17 @@ public abstract class CommutativityExpander  {
 	// make normal combinations first.
 	ExpListAndPred[] combos = makeAllCombinations(exp.kids());
 	// check whether this exp rules is commutative & worth expanding.
-	if (exp.opcode instanceof Spec.LeafOp &&
-	    harpoon.IR.Tree.Bop.isCommutative(((Spec.LeafOp)exp.opcode).op) &&
-	    !(exp.left instanceof Spec.ExpId &&
-	      exp.right instanceof Spec.ExpId)) {
+	if ( // first off, one of left/right has to be non-id
+	    !(exp.left instanceof Spec.ExpId&&exp.right instanceof Spec.ExpId)
+	    && // also, if op is a leafop, it needs to be a commutative one.
+	    (exp.opcode instanceof Spec.LeafId ||
+	     (exp.opcode instanceof Spec.LeafOp &&
+	      harpoon.IR.Tree.Bop.isCommutative(((Spec.LeafOp) exp.opcode).op))
+	     )) {
+	    // check to see if an extra predicate is needed.
+	    String extrapred = (exp.opcode instanceof Spec.LeafOp) ? null :
+		"harpoon.IR.Tree.Bop.isCommutative(" +
+		                           ((Spec.LeafId)exp.opcode).id + ")";
 	    // okay, reverse kids and make some more combos.
 	    ExpListAndPred[] newcombos = new ExpListAndPred[combos.length * 2];
 	    for (int i=0; i<combos.length; i++) {
@@ -77,7 +84,8 @@ public abstract class CommutativityExpander  {
 		Spec.ExpList nel =
 		    new Spec.ExpList(source.explist.tail.head,
 				new Spec.ExpList(source.explist.head, null));
-		newcombos[2*i+1] = new ExpListAndPred(nel, source.pred);
+		newcombos[2*i+1] =
+		    new ExpListAndPred(nel, addPred(source.pred, extrapred));
 	    }
 	    combos = newcombos;
 	}
@@ -177,6 +185,8 @@ public abstract class CommutativityExpander  {
 	return "("+p1+") && ("+p2+")";
     }
     private static Spec.DetailList addPred(Spec.DetailList dl, String pred) {
+	if (pred==null)
+	    return dl;
 	if (dl==null)
 	    return new Spec.DetailList(new Spec.DetailPredicate(pred), null);
 	if (dl.head instanceof Spec.DetailPredicate) {
