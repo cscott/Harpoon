@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.74 1999-10-15 03:49:26 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.75 1999-10-15 19:14:24 cananian Exp $
  */
 %%
 
@@ -1301,6 +1301,13 @@ MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, CONST<i,p>(c), d)), src)
 		      null, new Temp[]{ src, d }));   
 }%
 
+MOVE(MEM<l,d>(dst), src) %{
+    emit(new InstrMEM(instrFactory, ROOT, "str `s0l, [`s1]",
+		      null, new Temp[]{ src, dst }));   
+    emit(new InstrMEM(instrFactory, ROOT, "str `s0h, [`s1, #4]",
+		      null, new Temp[]{ src, dst }));   
+}%
+
 RETURN(val) %{
     // FSK: leaving OUT exception handling by passing excep-val in r1
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
@@ -1494,20 +1501,20 @@ NATIVECALL(retval, func, arglist) %{
     }  
 }%
 
-DATA(CONST<i>(exp)) %{
-    emitDIRECTIVE( ROOT, "\t.word "+exp.intValue());
+DATA(CONST<i,f>(exp)) %{
+    int i = (ROOT.data.type()==Type.INT) ? exp.intValue()
+		: Float.floatToIntBits(exp.floatValue());
+    String lo = "0x"+Integer.toHexString(i);
+    emitDIRECTIVE( ROOT, "\t.word "+lo+" @ "+exp);
 }%
 
-DATA(CONST<l>(exp)) %{
-    long l = exp.longValue();
-    emitDIRECTIVE( ROOT, "\t.word "+(l&0xFFFFFFFFL)+" @ lsb");
-    emitDIRECTIVE( ROOT, "\t.word "+((l>>32)&0xFFFFFFFFL)+" @ long "+l);
-}%
-
-DATA(CONST<f>(exp)) %{
-    emitDIRECTIVE( ROOT, "\t.word 0x" +
-		   Integer.toHexString(Float.floatToIntBits(exp.floatValue()))+
-		   " @ float " + exp.floatValue());
+DATA(CONST<l,d>(exp)) %{
+    long l = (ROOT.data.type()==Type.LONG) ? exp.longValue()
+		: Double.doubleToLongBits(exp.doubleValue());
+    String lo = "0x"+Integer.toHexString((int)l);
+    String hi = "0x"+Integer.toHexString((int)(l>>32));
+    emitDIRECTIVE( ROOT, "\t.word "+lo+" @ lo("+exp+")");
+    emitDIRECTIVE( ROOT, "\t.word "+hi+" @ hi("+exp+")");
 }%
 
 DATA(CONST<p>(exp)) %{
@@ -1554,6 +1561,14 @@ SEGMENT(STATIC_OBJECTS) %{
 
 SEGMENT(STATIC_PRIMITIVES) %{
     emitDIRECTIVE( ROOT, ".data 5\t@.section static_primitives");
+}%
+
+SEGMENT(STRING_CONSTANTS) %{
+    emitDIRECTIVE( ROOT, ".data 6\t@.section string_constants");
+}%
+
+SEGMENT(STRING_DATA) %{
+    emitDIRECTIVE( ROOT, ".data 7\t@.section string_data");
 }%
 
 SEGMENT(TEXT) %{
