@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.11 1998-09-10 20:48:16 cananian Exp $
+ * @version $Id: GET.java,v 1.12 1998-09-10 22:52:35 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -38,7 +38,10 @@ public class GET extends Quad {
 
     /** Returns the Temp used by this Quad. 
      * @return the <code>objectref</code> field. */
-    public Temp[] use() { return new Temp[] { objectref }; }
+    public Temp[] use() { 
+	if (objectref==null) return new Temp[0];
+	else return new Temp[] { objectref }; 
+    }
     /** Returns the Temp defined by this Quad.
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
