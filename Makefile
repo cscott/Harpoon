@@ -22,7 +22,7 @@ INSTALLDIR=public_html/Harpoon/
 ISOURCES=$(wildcard src/graph/*.idl src/corba/*.idl)
 BISOURCES=$(wildcard src/corba/UAV/*.idl)
 JSOURCES=$(wildcard src/*.java src/graph/*.java src/util/*.java src/corba/*.java src/ipaq/*.java)
-GJSOURCES1=imagerec/graph/*.java imagerec/corba/*.java FrameManip/*.java
+GJSOURCES1=imagerec/graph/*.java imagerec/corba/*.java FrameManip/*.java Img/*.java
 GJSOURCES=$(GJSOURCES1) omg/org/CosPropertyService/*.java ATRManip/*.java quo/*.java rss/*.java
 ICHANNEL_SOURCES=*.idl
 JCHANNEL_SOURCES=RtecBase/*.java RtecDefaultEventData/*.java RtecEventChannelAdmin/*.java RtecEventChannelAdmin/EventChannelPackage/*.java RtecEventComm/*.java RtecScheduler/*.java TimeBase/*.java
@@ -39,7 +39,7 @@ CONTRIB=$(shell find contrib -type f | grep -v 'CVS' | grep -v '.cvsignore')
 RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES) 
 RELEASE += $(BISOURCES) $(MANIFEST) $(SCRIPTS)
 EVENTDIRS=com TimeBase RtecBase RtecDefaultEventData RtecEventChannelAdmin RtecEventComm RtecScheduler
-JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org ipaq
+JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org ipaq Img
 ZDIRS=edu
 
 # figure out what the current CVS branch is, by looking at the Makefile
@@ -107,7 +107,7 @@ all:    clean doc imagerec.jar # imagerec.tgz
 clean:
 	@echo Cleaning up docs and jars.
 	@rm -rf doc $(JDIRS) $(EVENTDIRS) $(ZDIRS) META-INF
-	@rm -f *.jar *.jar.TIMESTAMP imagerec.tgz imagerec.tgz.TIMESTAMP *.idl
+	@rm -f *.jar *.jar.TIMESTAMP imagerec.tgz imagerec.tgz.TIMESTAMP *.idl *.java
 #	@rm -f ChangeLog
 
 doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
@@ -552,7 +552,7 @@ jars: clean doc movie/tank.jar
 	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
 	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
 	@$(JAR) cfm ATR-ZEN.jar src/manifest/ATR-ZEN.jar.MF $(JDIRS) $(ZDIRS)
-	@rm -rf $(EVENTDIRS) *.idl $(JDIRS) $(ZDIRS)
+	@rm -rf $(EVENTDIRS) *.idl $(JDIRS) $(ZDIRS) META-INF
 	@date '+%-d-%b-%Y at %r %Z.' > ATR-ZEN.jar.TIMESTAMP
 
 
