@@ -17,6 +17,7 @@ import harpoon.ClassFile.HFieldMutator;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.Linker;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
@@ -66,7 +67,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.4 2001-01-14 08:28:52 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.5 2001-01-14 08:55:27 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -92,6 +93,12 @@ public class SyncTransformer
 
     // for statistics:
     private final boolean noFieldModification=false;
+    // configuration:
+    private final boolean useSmartFieldOracle=true;
+    private final boolean useSmartCheckOracle=false;
+
+    // FieldOracle to use.
+    final FieldOracle fieldOracle;
 
     /** Cache the <code>java.lang.Class</code> <code>HClass</code>. */
     private final HClass HCclass;
@@ -119,22 +126,27 @@ public class SyncTransformer
     private final Set safeMethods;
 
     /** Creates a <code>SyncTransformer</code> with no safe methods. */
-    public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l) {
-	this(hcf, ch, l, Collections.EMPTY_SET);
+    public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
+			   HMethod mainM, Set roots) {
+	this(hcf, ch, l, mainM, roots, Collections.EMPTY_SET);
     }
     /** Creates a <code>SyncTransformer</code> with a safe method set loaded
      *  from the specified resource name. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
+			   HMethod mainM, Set roots,
 			   String resourceName) {
-	this(hcf, ch, l, parseResource(l, resourceName));
+	this(hcf, ch, l, mainM, roots, parseResource(l, resourceName));
     }
     /** Creates a <code>SyncTransformer</code> with the specified safe
      *  method set. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
+			   HMethod mainM, Set roots,
 			   Set safeMethods) {
-	// input is SSA...
+	// hcf should be SSI. our input is SSA...
         super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
 	// and output is NoSSA
+	Util.assert(hcf.getCodeName()
+		    .equals(harpoon.IR.Quads.QuadSSI.codename));
 	Util.assert(codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename));
 	this.safeMethods = safeMethods;
@@ -182,6 +194,18 @@ public class SyncTransformer
 	// our 'unique' value.
 	this.HFflagvalue = objM.addDeclaredField("flagValue", HCobj);
 	HFflagvalue.getMutator().addModifiers(Modifier.FINAL|Modifier.STATIC);
+
+	// set up our field oracle.
+	if (!useSmartFieldOracle) {
+	    this.fieldOracle = new SimpleFieldOracle();
+	} else {
+	    // filter out HClasses from rootset
+	    Set myroots = new HashSet(roots);
+	    for (Iterator it=myroots.iterator(); it.hasNext(); )
+		if (!(it.next() instanceof HMethod)) it.remove();
+	    // create fieldoracle
+	    this.fieldOracle = new GlobalFieldOracle(ch, mainM, myroots, hcf);
+	}
     }
     protected String mutateDescriptor(HMethod hm, Token which) {
 	if (which==WITH_TRANSACTION)
@@ -215,7 +239,10 @@ public class SyncTransformer
 	// recursively decend the dominator tree, rewriting as we go.
 	if (! ("harpoon.Runtime.Transactions".equals
 	       (hc.getMethod().getDeclaringClass().getPackage()))) {
-	    Tweaker tw = new Tweaker(qF, (which==WITH_TRANSACTION));
+	    CheckOracle co = new SimpleCheckOracle();
+	    if (useSmartCheckOracle)
+		co = new HoistingCheckOracle(hc, UseDefer.DEFAULT, co);
+	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION));
 	    tweak(new DomTree(hc, false), qM, tw);
 	    tw.fixup();
 	}
@@ -248,15 +275,17 @@ public class SyncTransformer
 	final Temp currtrans; // current transaction.
 	private final Map fixupmap = new HashMap();
 	private final Set typecheckset = new HashSet();
-	final CheckOracle co=new SimpleCheckOracle(); //XXX
-	final FieldOracle fo=new SimpleFieldOracle(); //XXX
+	final CheckOracle co;
+	final FieldOracle fo;
 	final TempSplitter ts=new TempSplitter();
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList handlers = null; // points to current abort handler
-	Tweaker(FOOTER qF, boolean with_transaction) {
+	Tweaker(CheckOracle co, FOOTER qF, boolean with_transaction) {
+	    this.co = co;
+	    this.fo = fieldOracle; // cache in this object.
 	    this.footer = qF;
-	    this.qf = qF.getFactory();;
+	    this.qf = qF.getFactory();
 	    this.tf = this.qf.tempFactory();
 	    // indicate that we're inside transaction context, but
 	    // that we need to rethrow TransactionAbortExceptions

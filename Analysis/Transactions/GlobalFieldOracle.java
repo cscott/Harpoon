@@ -13,6 +13,7 @@ import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HInitializer;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.GET;
@@ -37,7 +38,7 @@ import java.util.Set;
  * synchronized contexts.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GlobalFieldOracle.java,v 1.1.2.1 2001-01-14 07:53:44 cananian Exp $
+ * @version $Id: GlobalFieldOracle.java,v 1.1.2.2 2001-01-14 08:55:27 cananian Exp $
  */
 class GlobalFieldOracle extends FieldOracle {
     Set syncRead = new HashSet(); Set syncWrite = new HashSet();
@@ -143,6 +144,9 @@ class GlobalFieldOracle extends FieldOracle {
 	    //   or in calledUnsync list of a method ever called sync.
 	    W.addAll(roots); // all roots called sync
 	    W.remove(mainM); // except main method.
+	    for (Iterator it=W.iterator(); it.hasNext(); )
+		if (((HMethod)it.next()) instanceof HInitializer)
+		    it.remove(); // and except static initializers.
 	    for (Iterator it=mi.calledSync.keySet().iterator(); it.hasNext();){
 		HMethod hm = (HMethod) it.next();
 		W.addAll(mi.calledSync.getValues(hm));
