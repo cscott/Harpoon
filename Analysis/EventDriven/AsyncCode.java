@@ -61,7 +61,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.26 2000-01-14 07:56:26 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.27 2000-01-14 08:59:55 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -977,12 +977,12 @@ public class AsyncCode {
 	// get the interface that the continuation needs to implement
 	final HClass inter = linker.forName("harpoon.Analysis.ContBuilder." + 
 					    interPref + "ResultContinuation");
-	
-	final HClass environment = linker.forName
-	    ("harpoon.Analysis.EnvBuilder.Environment");
-	System.out.println(continuationClass+"    "+
-			   continuationClass.getLinker()
-			   +"   "+environment.getLinker());
+	contMutator.addInterface(inter);
+	//	final HClass environment = linker.forName
+	//	    ("harpoon.Analysis.EnvBuilder.Environment");
+	//	System.out.println(continuationClass+"    "+
+	//			   continuationClass.getLinker()
+	//			   +"   "+environment.getLinker());
 	// clone template's constructor HCode
 //  	HConstructor hc = null;
 //  	HConstructor nhc = null;
