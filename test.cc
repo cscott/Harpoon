@@ -27,8 +27,8 @@ void doanalysis() {
   gettimeofday(&begin,NULL);
   exportmodel->doabstraction();
   exportmodel->getdomainrelation()->fixstuff();
-
-  exportmodel->breakspec();
+  /*  This should be ifdef'd in */
+  /*  exportmodel->breakspec();*/
   
   exportmodel->docheck();
   exportmodel->doconcrete();

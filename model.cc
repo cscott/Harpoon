@@ -5,7 +5,7 @@
 #include "aparser.h"
 #include "cparser.h"
 #include "oparser.h"
-#include "rparser.h"
+//#include "rparser.h"
 #include "dmodel.h"
 #include "omodel.h"
 #include "amodel.h"
@@ -66,7 +66,7 @@ model::model(char * abstractfile, char * modelfile, char *spacefile,char *struct
 }
 
 void model::reset() {
-  typmap->reset();
+  //  typmap->reset(); Don't rebuild trees
   domainrelation->reset();
 }
 
@@ -372,7 +372,7 @@ void model::parsemodelfile(char *modelfile) {
    This information is used only by the fault injection mechanism.  
    This file should be read only after the testspace file.
 */
-void model::parserangefile(char *rangefile) 
+/*void model::parserangefile(char *rangefile) 
 {
   ifstream *ifs=new ifstream();
   ifs->open(rangefile);
@@ -401,7 +401,7 @@ void model::parserangefile(char *rangefile)
 
   ifs->close();
   delete(ifs);
-}
+}*/
 
 
 

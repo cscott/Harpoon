@@ -11,19 +11,22 @@ void handler(int signal);
 void installhandlers();
 extern struct StackElement * stackptr;
 
-#define STARTREPAIR(repair, label) { \
-  jmp_buf save_buf;     \
-  if (setjmp(save_buf)) { \
+#define STARTREPAIR(repair, label)  \
+  jmp_buf label_save_buf;     \
+  if (setjmp(label_save_buf)) { \
     repair \
-    goto label$error; \
+    resetanalysis(); \
+    goto label_error; \
   } \
-  pushstack(&stackptr, &save_buf); \
-}
+label_error:\
+  pushstack(&stackptr, &label_save_buf);
+
+
+
 
 #define ENDREPAIR(label) popstack(&stackptr); \
-  goto label$skip;\
-label$error: \
-label$skip:
+  goto label_skip;\
+label_skip:
 
 
 #endif
