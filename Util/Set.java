@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * membership test, union element, and remove element operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Set.java,v 1.3.2.2 1998-12-09 21:44:28 cananian Exp $
+ * @version $Id: Set.java,v 1.3.2.3 1998-12-28 23:28:11 cananian Exp $
  */
 
 public class Set implements Worklist {
@@ -18,6 +18,10 @@ public class Set implements Worklist {
     /** Creates an empty <code>Set</code>. */
     public Set() {
         h = new Hashtable();
+    }
+    /** Clear this set. */
+    public void clear() {
+	h.clear();
     }
     /** Remove a member from the <code>Set</code>. */
     public void remove(Object o) {
