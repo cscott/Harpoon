@@ -30,7 +30,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.1 1999-12-18 22:42:19 duncan Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.2 1999-12-20 03:04:17 duncan Exp $
  */
 public abstract class AlgebraicSimplification { 
     // Define new operator constants that can be masked together. 
@@ -239,14 +239,14 @@ public abstract class AlgebraicSimplification {
 	// const | exp --> exp | const
 	// const ^ exp --> exp ^ const
 	//
-	Rule commuteRule = new Rule() { 
+	Rule commute = new Rule() { 
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
 		    return 
-		        ((_OP(b.op) & _ADD|_MUL|_AND|_OR|_XOR) != 0) &&
-		        ((_KIND(b.left) & _CONST|_CONST0) != 0) &&
+		        ((_OP(b.op) & (_ADD|_MUL|_AND|_OR|_XOR)) != 0) &&
+		        ((_KIND(b.left) & (_CONST|_CONST0)) != 0) &&
 		        ((_KIND(b.right) & ~(_CONST|_CONST0|_CONSTNULL)) != 0) &&
 		        (!b.isFloatingPoint());
 		}
@@ -326,11 +326,15 @@ public abstract class AlgebraicSimplification {
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
-		    return 
-		        _KIND(b.right) == _CONST                    && 
-		        (_KIND(b.left) & (_BINOP|_UNOP|_TEMP)) != 0 &&
-		        b.op == Bop.MUL                             &&
-		        !b.isFloatingPoint(); 
+		    if (_KIND(b.right) != _CONST) { return false; } 
+		    else { 
+			CONST c = (CONST)b.right; 
+			return 
+			    c.value.longValue() > 0                     &&
+		            (_KIND(b.left) & (_BINOP|_UNOP|_TEMP)) != 0 &&
+		            b.op == Bop.MUL                             &&
+		            !b.isFloatingPoint(); 
+		    }
 		}
 	    }
 	    public Exp apply(Exp e) { 
@@ -359,6 +363,7 @@ public abstract class AlgebraicSimplification {
 	// 
 	DEFAULT_RULES.add(combineConstants); 
 	DEFAULT_RULES.add(removeZero); 
+	DEFAULT_RULES.add(commute); 
 	DEFAULT_RULES.add(doubleNegative); 
 	DEFAULT_RULES.add(negZero); 
 	DEFAULT_RULES.add(mulToShift); 
@@ -470,6 +475,7 @@ public abstract class AlgebraicSimplification {
 	
     }
 
+
     /**
      * Converts an arbitrary multiplication by a positive constant into a 
      * series of shifts, additions, and multiplies. Based on the m4 macros
@@ -480,7 +486,8 @@ public abstract class AlgebraicSimplification {
      * <code>AlgebraicSimplification</code> class.  However, this method is
      * public because it could conceivably be of use in other transformations.
      *
-     * <b>Requires:</b>  m is a 32-bit or 64-bit integer constant
+     * <b>Requires:</b>  m is a <i>positive</i> 32-bit or 64-bit 
+     *                   integer constant
      *
      * @return  an Exp which contains no multiplications, yet 
      *          represents the same value as (n*m). 
@@ -488,9 +495,8 @@ public abstract class AlgebraicSimplification {
     public static Exp mul2shift(Exp n, CONST m) { 
 	TreeFactory tf    = n.getFactory();
 
-	// Number of bits <-- (size of data type) - (size of sign bit)
-	int  numbits    = (n.isDoubleWord() ? 64 : 32) - 1; 
-	int  state      = 0; 
+	int  numbits    = n.isDoubleWord() ? 64 : 32;
+	int  ones       = 0; 
 	long multiplier = m.value.longValue(); 
 	Exp  product    = new CONST(tf, n, 0); 
 
@@ -499,39 +505,48 @@ public abstract class AlgebraicSimplification {
 	// 1) if n is a complex expression, this is inefficient.  May
 	//    need to copy it to a TEMP first and return an ESEQ. 
 	// 
-	// 2) the booth recoding performed by this algorithm is a little
-	//    overzealous.  Recoding strings of 1's of length 1 leads to
-	//    extra operations. 
 	for (int i=0; i<numbits; i++) { 
 	    int bitI = (int)((multiplier >> i) & 1); 
-	    if (state == bitI) { /* Do nothing */ } 
-	    else if (state == 1) { 
-		product = new BINOP
-		    (tf, n, n.type(), Bop.ADD,
-		     product, 
-		     new BINOP
-		     (tf, n, n.type(), Bop.SHL, 
-		      n.build(n.kids()), 
-		      new CONST(tf, n, i))); 
-	    } 
-	    else if (state == 0) { 
-		product = new BINOP
-		    (tf, n, n.type(), Bop.ADD, 
-		     product, 
-		     new UNOP
-		     (tf, n, n.type(), Uop.NEG, 
-		      new BINOP
-		      (tf, n, n.type(), Bop.SHL, 
-		       n.build(n.kids()), 
-		       new CONST(tf, n, i)))); 
-	    }
-	    else { 
-		throw new Error("Invalid state: " + state); 
-	    }
-	    
-	    state = (int)((multiplier >> i) & 1); 
-	}
+	    if (bitI == 0) { 
+		if (ones < 3) { // Not enough ones to warrant a booth recoding
+		    for (int bit = i-ones; bit<i; bit++) { 
+			product = new BINOP
+			    (tf, n, n.type(), Bop.ADD, 
+			     product, 
+			     new BINOP
+			     (tf, n, n.type(), Bop.SHL,
+			      n.build(n.kids()), 
+			      new CONST(tf, n, bit))); 
+		    }
+		}
+		else { // In this case we will see gains from a booth recoding
+		    product = new BINOP
+			(tf, n, n.type(), Bop.ADD, 
+			 product, 
+			 new UNOP
+			 (tf, n, n.type(), Uop.NEG, 
+			  new BINOP
+			  (tf, n, n.type(), Bop.SHL, 
+			   n.build(n.kids()), 
+			   new CONST(tf, n, i-ones)))); 
 
+		    product = new BINOP
+			(tf, n, n.type(), Bop.ADD,
+			 product, 
+			 new BINOP
+			 (tf, n, n.type(), Bop.SHL, 
+			  n.build(n.kids()), 
+			  new CONST(tf, n, i))); 
+		}
+		ones = 0; // Reset the count of ones. 
+
+	    } // if (bitI == 0) { 
+	    else { 
+		// The current bit is a one.  Increase the ones count. 
+		ones++;
+	    }
+	}
+	
 	return product; 
     }
 
