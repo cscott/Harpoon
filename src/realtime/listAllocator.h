@@ -13,8 +13,7 @@
 #include "../gc/precise_gc.h"
 #endif
 
-#define INIT_LIST_ALLOCATOR_SIZE 7013 
-/* Large prime to make collisions unlikely */
+#define INIT_LIST_ALLOCATOR_SIZE 70131
 
 struct ListAllocator {
   struct ObjectList* objects;

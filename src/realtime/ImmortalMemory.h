@@ -7,6 +7,7 @@
 #ifndef _Included_ImmortalMemory
 #define _Included_ImmortalMemory
 #include "RTJmalloc.h"
+#include "fni-wrap.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

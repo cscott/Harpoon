@@ -17,6 +17,7 @@ inline struct ObjectList* ObjectList_new(size_t initSize) {
   struct ObjectList* ol = (struct ObjectList*)
     RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct ObjectList));
   ol->used = 0;
+  initSize = initSize - (initSize%PROBE_INC) + PROBE_INC + 1;
   ol->objects =
     (void*)RTJ_MALLOC_UNCOLLECTABLE((ol->size = initSize) * sizeof(Object));
   memset(ol->objects, 0, initSize * sizeof(Object));
@@ -32,9 +33,11 @@ void ObjectList_insert(struct ObjectList* ol, Object object) {
   flex_mutex_lock(&(ol->lock));
   if (ol->used > (ol->size >> 1)) { 
     Object* oldObjects = ol->objects;
+    size_t oldSize = ol->size;
+    ol->size = (ol->size<<1)-((ol->size<<1)%PROBE_INC) + PROBE_INC + 1;
     ol->objects =
-      (void*)RTJ_MALLOC_UNCOLLECTABLE((ol->size <<= 1) * sizeof(Object)); /* Resize */
-    for (i = 0; i < (ol->size >> 1); i++) { /* Rehash */
+      (void*)RTJ_MALLOC_UNCOLLECTABLE(ol->size * sizeof(Object)); /* Resize */
+    for (i = 0; i < oldSize; i++) { /* Rehash */
       Object oldObject = oldObjects[i];
       if (oldObject == Object_null) {
 	continue;

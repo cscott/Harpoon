@@ -113,8 +113,11 @@ static void remove_running_thread(void *cl) {
 static void wait_on_running_thread() {
 #ifdef WITH_PRECISE_GC
   // may need to stop for GC
-  while (pthread_mutex_trylock(&gc_thread_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap)
+#endif
+    while (pthread_mutex_trylock(&gc_thread_mutex))
+      if (halt_for_GC_flag) halt_for_GC();
 #endif
   pthread_mutex_lock(&running_threads_mutex);
 #ifdef WITH_PRECISE_GC
@@ -179,8 +182,11 @@ static void remove_running_thread() {
 #ifdef WITH_PRECISE_GC
   struct gc_thread_list *gctl = gc_running_threads.next, *prev = NULL;
   // may need to stop for GC
-  while (pthread_mutex_trylock(&gc_thread_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap)
+#endif
+    while (pthread_mutex_trylock(&gc_thread_mutex))
+      if (halt_for_GC_flag) halt_for_GC();
 #endif
   pthread_mutex_lock(&running_threads_mutex);
 #ifdef WITH_PRECISE_GC
@@ -212,8 +218,11 @@ static void remove_running_thread() {
 static void wait_on_running_thread() {
 #ifdef WITH_PRECISE_GC
   // may need to stop for GC
-  while (pthread_mutex_trylock(&gc_thread_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap)
+#endif
+    while (pthread_mutex_trylock(&gc_thread_mutex))
+      if (halt_for_GC_flag) halt_for_GC();
 #endif
   pthread_mutex_lock(&running_threads_mutex);
 #ifdef WITH_PRECISE_GC
@@ -640,6 +649,8 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   struct closure_struct cls =
     { _this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   int status;
+  jclass noHeapThreadClass = 
+    (*env)->FindClass(env, "javax/realtime/NoHeapRealtimeThread");
   assert(runID!=NULL/* run() is certainly callable! */);
   /* first of all, see if this thread has already been started. */
   if (FNI_GetJNIData(env, _this)!=NULL) {
@@ -663,8 +674,11 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   /* now startup the new pthread */
 #ifdef WITH_PRECISE_GC
   /* may need to stop for GC */
-  while (pthread_mutex_trylock(&gc_thread_mutex))
-    if (halt_for_GC_flag) halt_for_GC();
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!(*env)->IsInstanceOf(env, _this, noHeapThreadClass))
+#endif
+    while (pthread_mutex_trylock(&gc_thread_mutex))
+      if (halt_for_GC_flag) halt_for_GC();
 #endif  
   pthread_mutex_lock(&(cls.parampass_mutex));
   status = pthread_create(&nthread, &nattr,
@@ -673,7 +687,10 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   pthread_cond_wait(&(cls.parampass_cond), &(cls.parampass_mutex));
   /* okay, we're done, man. Release our resources. */
 #ifdef WITH_PRECISE_GC
-  pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!(*env)->IsInstanceOf(env, _this, noHeapThreadClass))
+#endif
+    pthread_mutex_unlock(&gc_thread_mutex);
 #endif
   pthread_cond_destroy(&(cls.parampass_cond));
   pthread_mutex_unlock(&(cls.parampass_mutex));
