@@ -1,11 +1,13 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
-SUBDIRS = jni java.io java.lang java.net java.util java.util.zip \
+SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
+	java.util java.util.zip \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
-DIST_SUBDIRS = jni java.io java.lang java.net java.util java.util.zip \
+DIST_SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
+	java.util java.util.zip \
         gc clheap nativeio stats cam
 EXTRA_DIST = README
 
@@ -52,6 +54,7 @@ libflexc1_la_SOURCES =
 libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
 	java.io/libjavaio.la java.lang/libjavalang.la \
+	java.lang.reflect/libjavalangreflect.la \
 	java.net/libjavanet.la \
 	java.util/libjavautil.la \
 	java.util.zip/libjavautilzip.la \
@@ -70,6 +73,7 @@ endif
 libflexc_la_SOURCES =
 libflexc_la_LIBADD = \
         java.io/libjavaio.la java.lang/libjavalang.la \
+	java.lang.reflect/libjavalangreflect.la \
 	java.net/libjavanet.la \
 	java.util/libjavautil.la \
         java.util.zip/libjavautilzip.la
