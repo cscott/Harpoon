@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.4 2003-04-11 00:31:08 cananian Exp $
+ * @version $Id: Javap.java,v 1.5 2003-05-30 18:00:18 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -36,7 +36,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	AttributeSourceFile asf = (AttributeSourceFile)
 	    findAttribute(raw, "SourceFile");
 	if (asf!=null)
-	    System.out.println("Compiled from "+asf.sourcefile());
+	    System.out.println("Compiled from \""+asf.sourcefile()+"\"");
 	// get generic signature.
 	AttributeSignature asig = (AttributeSignature)
 	    findAttribute(raw, "Signature");
@@ -312,7 +312,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	boolean first=true;
 	while (descriptor.charAt(off)!='>') {
 	    OffsetAndString oas =
-		munchTypeSig(descriptor.substring(off));
+		munchVariantTypeSig(descriptor.substring(off));
 	    if (first) first=false;
 	    else sb.append(", ");
 	    sb.append(oas.string);
@@ -353,13 +353,33 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	// done.
 	return new OffsetAndString(sb.toString(), off);
     }
+    static OffsetAndString munchVariantTypeSig(String descriptor) {
+	StringBuffer sb = new StringBuffer();
+	int off=0;
+	// first characters in signature could be variance specifiers -/+/=/*
+	switch(descriptor.charAt(off)) {
+	case '*':
+	    return new OffsetAndString("*", 1);
+	case '-':
+	case '+':
+	case '=':
+	    sb.append(descriptor.charAt(off++));
+	    break;
+	}
+	// rest is a standard type signature
+	OffsetAndString oas = munchTypeSig(descriptor.substring(off));
+	sb.append(oas.string);
+	off+=oas.offset;
+	return new OffsetAndString(sb.toString(), off);
+    }
     static OffsetAndString munchTypeSig(String descriptor) {
 	switch(descriptor.charAt(0)) {
 	case '[': { // arrays
 	    int arrcnt=1;
 	    while (descriptor.charAt(arrcnt)=='[')
 		arrcnt++;
-	    OffsetAndString oas = munchTypeSig(descriptor.substring(arrcnt));
+	    OffsetAndString oas =
+		munchVariantTypeSig(descriptor.substring(arrcnt));
 	    return new OffsetAndString
 		(oas.string+Util.repeatString("[]",arrcnt), oas.offset+arrcnt);
 	}
