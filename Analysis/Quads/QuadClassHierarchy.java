@@ -14,6 +14,7 @@ import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HANDLER;
 import harpoon.IR.Quads.INSTANCEOF;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
@@ -43,7 +44,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.22 2000-10-20 16:03:52 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.23 2000-10-20 18:54:28 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -272,6 +273,13 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 					  classKnownChildren,
 					  classMethodsUsed,
 					  classMethodsPending);
+		    }
+		    if (Q instanceof HANDLER &&
+			((HANDLER)Q).caughtException() != null) {
+			discoverClass(((HANDLER)Q).caughtException(), W, done,
+				      classKnownChildren,
+				      classMethodsUsed,
+				      classMethodsPending);
 		    }
 		}
 	    }
