@@ -4,16 +4,16 @@
 package harpoon.Main;
 
 import harpoon.ClassFile.*;
-//import harpoon.IR.Properties.Edges;
-//import harpoon.Temp.Temp;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.*;
 
 import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 /**
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.1 1998-10-12 10:11:27 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.2 1998-10-12 11:22:08 cananian Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {
@@ -44,58 +44,61 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 
 	out.println("graph: {");
 	out.println("title: \"Call graph rooted at "+m.getName()+"\"");
-	String[] setup = { //"x: 30", "y: 30",
-	                   //"height: 800", "width: 500",
+	String[] setup = { "x: 30", "y: 30",
+	                   "height: 800", "width: 500",
 			   "stretch: 60", "shrink: 100",
-			   "ignore_singles: no",
 			   "display_edge_labels: no",
 			   "classname1: \"class summary\"",
 			   "classname2: \"call graph\"",
 			   "hidden: 1",
-			   // "layoutalgorithm: ???",
+			   "layoutalgorithm: maxdepthslow",
+			   "finetuning: no",
+			   "cmin: 50 rmin:50 pmin: 50",
 	};
 	for (int i=0; i<setup.length; i++)
 	    out.println(setup[i]);
 
-	// make class names.
-	/*
-	int z=1;
-	for (Enumeration e = ch.classes(); e.hasMoreElements(); z++) {
-	    HClass hc = (HClass) e.nextElement();
-	    //out.println("classname"+z+": \""+hc.getName()+"\"");
-	    //out.println("hidden: "+z);
-	}
-	out.println("classname"+z+": \"call graph\"");
-	*/
-	// make nodes.
-	for (Enumeration e = ch.classes(); e.hasMoreElements(); ) {
-	    HClass hc = (HClass) e.nextElement();
-	    HMethod hm[] = hc.getDeclaredMethods();
-	    for (int i=0; i<hm.length; i++)
-		out.println("  node: { title:\""+nodeString(hm[i])+"\" }");
-	}
-	// make invisible summary-node edges
-	int z=1;
-	for (Enumeration e = ch.classes(); e.hasMoreElements(); /*z++*/) {
-	    HClass hc = (HClass) e.nextElement();
-	    HMethod hm[] = hc.getDeclaredMethods();
-	    for (int i=0; i<hm.length; i++) {
-		out.println(edgeString(hm[(i==0?hm.length:i)-1],hm[i],
-				       "linestyle: invisible class: "+z));
-	    }
-	} z++;
-	// make edges.
+	// traverse the call tree.
+	StringBuffer nodes = new StringBuffer();
+	StringBuffer edges = new StringBuffer();
+
 	UniqueVector uv = new UniqueVector();
 	uv.addElement(m);
 	for (int i=0; i<uv.size(); i++) {
+	    // make node
 	    HMethod hm = (HMethod) uv.elementAt(i);
-	    HMethod children[] = cg.calls(hm);
-	    for (int j=0; j<children.length; j++) {
-		uv.addElement(children[j]);
-		out.println(edgeString(hm, children[j], "class: "+z));
+	    nodes.append("node: { title:\""+nodeString(hm)+"\" ");
+	    nodes.append("textcolor: "+nodeColor(hm)+" }\n");
+	    // make edges
+	    HMethod child[] = cg.calls(hm);
+	    for (int j=0; j<child.length; j++) {
+		edges.append(edgeString(hm, child[j], 
+					"class: 2 color: "+nodeColor(hm)));
+		uv.addElement(child[j]); // add to worklist.
 	    }
 	}
-	// done.
+	// make invisible summary-node edges
+	Hashtable classMethods = new Hashtable();
+	for (int i=0; i<uv.size(); i++) {
+	    HMethod hm = (HMethod) uv.elementAt(i);
+	    HClass  hc = hm.getDeclaringClass();
+	    Vector v = (Vector) classMethods.get(hc);
+	    if (v==null) { v = new Vector(); classMethods.put(hc, v); }
+	    v.addElement(hm);
+	}
+	for (Enumeration e = classMethods.keys(); e.hasMoreElements(); ) {
+	    HClass hc = (HClass) e.nextElement();
+	    Vector v = (Vector) classMethods.get(hc);
+	    for (int i=0; i<v.size(); i++) {
+		int from = ( (i==0)?v.size():i ) - 1;
+		edges.append(edgeString((HMethod) v.elementAt(from),
+					(HMethod) v.elementAt(i),
+					"linestyle: invisible class: 1"));
+	    }
+	}
+	// print all this schtuff out.
+	out.println(nodes);
+	out.println(edges);
 	out.println("}");
     }
 
@@ -105,7 +108,7 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 	    "sourcename: \""+nodeString(from)+"\" " +
 	    "targetname: \""+nodeString( to )+"\" " +
 	    ( (otherinfo==null)?"":otherinfo ) +
-	    "}";
+	    "}\n";
     }
     static String nodeString(HMethod m) {
 	// Modified version of HMethod.toString.
@@ -125,6 +128,15 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 	r.append(')');
 	return r.toString();
     }
+    static String nodeColor(HMethod m) {
+	// list of color values to skip:
+	int not[]=new int[]{ 0/*white*/, 4/*yellow*/, 6/*cyan*/, 28/*pink*/};
+	int color = m.getDeclaringClass().hashCode()%(32-not.length);
+	for (int i=0; i<not.length; i++)
+	    if (color >= not[i]) color++;
+	return ""+color;
+    }
+	
     // From HField:
     static String getTypeName(HClass hc) {
 	if (hc.isArray()) {
