@@ -10,10 +10,10 @@ import java.util.NoSuchElementException;
  * <p>The <code>remove()</code> method is <b>not</b> implemented.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayIterator.java,v 1.1.2.1 1999-06-15 20:25:56 sportbilly Exp $
+ * @version $Id: ArrayIterator.java,v 1.1.2.2 1999-06-16 02:35:02 cananian Exp $
  */
 
-public class ArrayIterator implements Iterator {
+public class ArrayIterator extends UnmodifiableIterator implements Iterator {
     final Object[] oa;
     int i = 0;
 
@@ -27,8 +27,5 @@ public class ArrayIterator implements Iterator {
 	    return oa[i++];
 	else
 	    throw new NoSuchElementException();
-    }
-    public void remove() {
-	throw new UnsupportedOperationException();
     }
 }

@@ -10,13 +10,14 @@ import java.util.Iterator;
 import java.util.Set;
 
 import harpoon.Util.FilterIterator;
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.WorkSet;
 /**
  * <code>Liveness</code> is a local-variable liveness analysis on Bytecode
  * form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Liveness.java,v 1.1.2.4 1999-02-25 02:09:46 cananian Exp $
+ * @version $Id: Liveness.java,v 1.1.2.5 1999-06-16 02:34:59 cananian Exp $
  */
 public class Liveness  {
     /** internal data structure is a hashtable of boolean arrays */
@@ -186,13 +187,10 @@ public class Liveness  {
 		}
 		public Iterator iterator() {
 		    // simple integer iterator
-		    Iterator i = new Iterator() {
+		    Iterator i = new UnmodifiableIterator() {
 			int i=0;
 			public boolean hasNext() { return (i < lvsize); }
 			public Object next() { return new Integer(i++); }
-			public void remove() {
-			    throw new UnsupportedOperationException();
-			}
 		    };
 		    // filtered by liveness method.
 		    return new FilterIterator(i, new FilterIterator.Filter() {

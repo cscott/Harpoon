@@ -11,9 +11,9 @@ import java.util.NoSuchElementException;
  * <code>Iterator</code> to generate a new one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterIterator.java,v 1.1.2.1 1999-02-23 11:54:50 cananian Exp $
+ * @version $Id: FilterIterator.java,v 1.1.2.2 1999-06-16 02:35:02 cananian Exp $
  */
-public class FilterIterator implements Iterator {
+public class FilterIterator extends UnmodifiableIterator implements Iterator {
     /*final*/ Iterator i;
     /*final*/ Filter f;
     /** Creates a <code>FilterIterator</code>. */
@@ -39,9 +39,6 @@ public class FilterIterator implements Iterator {
     }
     public boolean hasNext() {
 	return !done;
-    }
-    public void remove() {
-	throw new UnsupportedOperationException();
     }
 
     public static class Filter { // default is an identity mapping.

@@ -2,6 +2,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.Util.IteratorEnumerator;
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.Enumeration;
@@ -13,7 +14,7 @@ import java.util.NoSuchElementException;
  * both <code>Translate</code> and <code>Print</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HandlerSet.java,v 1.1.2.3 1999-03-03 02:35:12 cananian Exp $
+ * @version $Id: HandlerSet.java,v 1.1.2.4 1999-06-16 02:34:59 cananian Exp $
  */
 final public class HandlerSet {
     final HANDLER h;
@@ -55,7 +56,7 @@ final public class HandlerSet {
     /** Returns an iterator over the <code>HANDLER</code>s in the given
      *  <code>HandlerSet</code>. */
     public static final Iterator iterator(final HandlerSet hs) {
-	return new Iterator() {
+	return new UnmodifiableIterator() {
 	    HandlerSet hsp = hs;
 	    public boolean hasNext() { return (hsp!=null); }
 	    public Object  next() {
@@ -63,7 +64,6 @@ final public class HandlerSet {
 		catch (NullPointerException e)
 		{ throw new NoSuchElementException(); }
 	    }
-	    public void remove() { throw new UnsupportedOperationException(); }
 	};
     }
     /** Determines if a given <code>HandlerSet</code> contains a given

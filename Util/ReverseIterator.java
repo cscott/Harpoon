@@ -13,9 +13,9 @@ import java.util.List;
  * in reverse order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReverseIterator.java,v 1.1.2.2 1999-03-02 19:37:49 cananian Exp $
+ * @version $Id: ReverseIterator.java,v 1.1.2.3 1999-06-16 02:35:02 cananian Exp $
  */
-public class ReverseIterator implements Iterator {
+public class ReverseIterator extends UnmodifiableIterator implements Iterator {
     final List l = new ArrayList();
     int i;
 
@@ -31,8 +31,5 @@ public class ReverseIterator implements Iterator {
 	try { return l.get(i--); }
 	catch (IndexOutOfBoundsException e)
 	{ throw new NoSuchElementException(); }
-    }
-    public void remove() {
-	throw new UnsupportedOperationException();
     }
 }

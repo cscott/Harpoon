@@ -17,6 +17,7 @@ import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Util.ArrayEnumerator;
+import harpoon.Util.UnmodifiableIterator;
 
 import java.util.*;
 
@@ -25,7 +26,7 @@ import java.util.*;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.6 1999-05-25 16:45:58 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.7 1999-06-16 02:34:58 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -79,14 +80,13 @@ public abstract class Code extends HCode {
      *                  making up this code view.  The root Instr is
      *                  the first element in the iteration. */
     public Iterator getElementsI() { 
-	return new Iterator() {
+	return new UnmodifiableIterator() {
 	    Set visited = new HashSet();
 	    Stack s = new Stack();
 	    {
 		s.push(getRootElement());
 		visited.add(s.peek());
 	    }
-	    public void remove() { throw new UnsupportedOperationException(); }
 	    public boolean hasNext() { return !s.isEmpty(); }
 	    public Object next() {
 		if (s.empty()) throw new NoSuchElementException();

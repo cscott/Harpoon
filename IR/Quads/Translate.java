@@ -25,6 +25,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.AbstractMapEntry;
 import harpoon.Util.ListComparator;
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -50,7 +51,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.16 1999-02-25 19:00:55 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.17 1999-06-16 02:34:59 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -197,7 +198,7 @@ final class Translate { // not public.
 			}
 			public boolean isEmpty() { return js==null; }
 			public Iterator iterator() {
-			    return new Iterator() {
+			    return new UnmodifiableIterator() {
 				private JSRStack jsp=js;
 				public boolean hasNext() { return jsp!=null; }
 				public Object next() {
@@ -213,9 +214,6 @@ final class Translate { // not public.
 					    return oldjsp.target;
 					}
 				    }; // END anonymous Map.Entry
-				}
-				public void remove() {
-				    throw new UnsupportedOperationException();
 				}
 			    }; // END anonymous Iterator
 			}

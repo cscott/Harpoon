@@ -6,6 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractSet;
@@ -27,7 +28,7 @@ import java.util.Stack;
  * from a cycle-equivalency set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SESE.java,v 1.1.2.6 1999-05-19 06:45:08 andyb Exp $
+ * @version $Id: SESE.java,v 1.1.2.7 1999-06-16 02:34:52 cananian Exp $
  */
 public class SESE  {
     /** Root of <code>Region</code> tree. */
@@ -113,7 +114,7 @@ public class SESE  {
     public Iterator depthFirst() { return iterator(false); }
 
     private Iterator iterator(final boolean topdown) {
-	return new Iterator() {
+	return new UnmodifiableIterator() {
 	    LinkedList ll = new LinkedList();
 	    { ll.add(topLevel); }
 	    public boolean hasNext() { return !ll.isEmpty(); }
@@ -121,9 +122,6 @@ public class SESE  {
 		Region r = (Region) (topdown?ll.removeFirst():ll.removeLast());
 		ll.addAll(r.children());
 		return r;
-	    }
-	    public void remove() {
-		throw new UnsupportedOperationException();
 	    }
 	};
     }
@@ -195,14 +193,11 @@ public class SESE  {
 	    this.size = 1+((next==null)?0:next.size);
 	}
 	static Iterator elements(final RegionList rl) {
-	    return new Iterator() {
+	    return new UnmodifiableIterator() {
 		RegionList rlp = rl;
 		public boolean hasNext() { return rlp!=null; }
 		public Object next() {
 		    Region r = rlp.region; rlp=rlp.next; return r;
-		}
-		public void remove() {
-		    throw new UnsupportedOperationException();
 		}
 	    };
 	}

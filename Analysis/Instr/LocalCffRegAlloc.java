@@ -21,6 +21,7 @@ import harpoon.Util.CloneableIterator;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.MaxPriorityQueue;
 import harpoon.Util.BinHeapPriorityQueue;
+import harpoon.Util.UnmodifiableIterator;
 
 import java.util.Set;
 import java.util.Collection;
@@ -43,7 +44,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.19 1999-06-16 01:54:29 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.20 1999-06-16 02:34:58 cananian Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -579,7 +580,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// the below object may be better suited (more efficient) but
 	// I'm not certain of its correctness and at this point I
 	// don't want to waste time debugging it.
-	class RefIterator {
+	class RefIterator extends UnmodifiableIterator {
 	    private Instr instr;
 	    private Temp next;
 	    private int index;
@@ -632,9 +633,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 		return rtrn;
 	    }
-	    public void remove() {
-		throw new UnsupportedOperationException();
-	    } 
 	}
 
 

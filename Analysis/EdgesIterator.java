@@ -4,6 +4,7 @@
 package harpoon.Analysis;
 
 import harpoon.IR.Properties.HasEdges;
+import harpoon.Util.UnmodifiableIterator;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -14,9 +15,9 @@ import java.util.HashSet;
  * <code>HasEdges</code> objects. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: EdgesIterator.java,v 1.1.2.2 1999-05-19 06:45:08 andyb Exp $
+ * @version $Id: EdgesIterator.java,v 1.1.2.3 1999-06-16 02:34:52 cananian Exp $
  */
-public class EdgesIterator implements Iterator {
+public class EdgesIterator extends UnmodifiableIterator implements Iterator {
     
     private Set worklist;
     private Set done;
@@ -55,10 +56,4 @@ public class EdgesIterator implements Iterator {
 	}
 	return e;
     }
-
-    /** not implemented in this.
-	<BR> <B>effects:</B> throws an
-	OperationNotImplementedException. 
-    */
-    public void remove() { throw new UnsupportedOperationException(); }
 }

@@ -10,13 +10,12 @@ import java.util.Iterator;
  * into an <code>Iterator</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: EnumerationIterator.java,v 1.1.2.1 1999-02-23 07:12:08 cananian Exp $
+ * @version $Id: EnumerationIterator.java,v 1.1.2.2 1999-06-16 02:35:02 cananian Exp $
  */
-public class EnumerationIterator implements Iterator {
+public class EnumerationIterator extends UnmodifiableIterator implements Iterator {
     private final Enumeration e;
     /** Creates a <code>EnumerationIterator</code>. */
     public EnumerationIterator(Enumeration e) { this.e = e; }
     public boolean hasNext() { return e.hasMoreElements(); }
     public Object next() { return e.nextElement(); }
-    public void remove() { throw new UnsupportedOperationException(); }
 }

@@ -8,8 +8,9 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.Util;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,7 +24,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.9 1999-02-23 11:50:45 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.10 1999-06-16 02:34:59 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -84,14 +85,13 @@ public abstract class Code extends HCode {
      *  this code view.  The root of the graph is the first element
      *  in the iteration. */
     public Iterator getElementsI() {
-	return new Iterator() {
+	return new UnmodifiableIterator() {
 	    Set visited = new HashSet();
 	    Stack s = new Stack();
 	    { // initialize stack/set.
 		s.push(getLeafElements()[0]); visited.add(s.peek());
 		s.push(getRootElement());     visited.add(s.peek());
 	    } 
-	    public void remove() { throw new UnsupportedOperationException(); }
 	    public boolean hasNext() { return !s.isEmpty(); }
 	    public Object next() {
 		if (s.empty()) throw new NoSuchElementException();

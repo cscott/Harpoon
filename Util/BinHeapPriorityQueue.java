@@ -20,7 +20,7 @@ import java.util.Iterator;
  * speed becomes an issue. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.3 1999-06-15 04:35:22 pnkfelix Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.4 1999-06-16 02:35:02 cananian Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
@@ -164,13 +164,10 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     public Iterator iterator() {
 	// return a wrapping iterator, to ensure that the state of
 	// 'priorities' is kept consistent
-	return new Iterator() {
-	    Iterator inner = heap.iterator();
+	return new UnmodifiableIterator() {
+	    final Iterator inner = heap.iterator();
 	    public boolean hasNext() { return inner.hasNext();} 
 	    public Object next() {return inner.next();}
-	    public void remove() {
-		throw new UnsupportedOperationException();
-	    }
 	};
     }
 

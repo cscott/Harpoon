@@ -15,7 +15,7 @@ import java.util.Stack;
  * binary search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentSet.java,v 1.1.2.1 1999-04-08 06:56:39 cananian Exp $
+ * @version $Id: PersistentSet.java,v 1.1.2.2 1999-06-16 02:35:02 cananian Exp $
  */
 public class PersistentSet  {
     final PersistentTreeNode root;
@@ -86,7 +86,7 @@ public class PersistentSet  {
 		final Stack s = new Stack();
 		if (root!=null) s.push(root);
 
-		return new Iterator() {
+		return new UnmodifiableIterator() {
 		    public boolean hasNext() {
 			return !s.isEmpty();
 		    }
@@ -98,9 +98,6 @@ public class PersistentSet  {
 			if (n.right!=null) s.push(n.right);
 			if (n.left!=null)  s.push(n.left);
 			return n.key; /* element */
-		    }
-		    public void remove() {
-			throw new UnsupportedOperationException();
 		    }
 		};
 	    }
