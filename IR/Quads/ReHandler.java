@@ -36,7 +36,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.43.2.1 2000-01-11 09:51:13 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.43.2.2 2000-01-12 07:04:19 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -976,7 +976,7 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	this.todo=todo;
 	this.typecast=new HashMap();
 	this.visited=new WorkSet();
-	this.otype=((Code)hc).qf.getLinker().forDescriptor("[Ljava.lang.Object;");
+	this.otype=((Code)hc).qf.getLinker().forDescriptor("[Ljava/lang/Object;");
     }
 
     public Map typecast() {
