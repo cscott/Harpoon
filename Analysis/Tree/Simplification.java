@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.3.2.1 2002-02-27 08:33:37 cananian Exp $
+ * @version $Id: Simplification.java,v 1.3.2.2 2002-03-15 16:31:11 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -51,7 +51,7 @@ public abstract class Simplification {
      * tree form.  Clones the tree before simplifying it in-place.
      */
     public static HCodeFactory codeFactory(final HCodeFactory parent,
-					   final List rules) {
+					   final List<Rule> rules) {
 	assert parent.getCodeName().equals(CanonicalTreeCode.codename);
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
@@ -142,7 +142,7 @@ public abstract class Simplification {
      * @param rules the set of simplification rules to apply to the elements
      *              of <code>root</code>. 
      */ 
-    public static void simplify(Tree root, DerivationGenerator dg, List rules)
+    public static void simplify(Tree root, DerivationGenerator dg, List<Rule> rules)
     {
 	// Shouldn't pass a null ptr. 
 	assert root != null && rules != null; 
@@ -163,10 +163,10 @@ public abstract class Simplification {
 	private boolean changed = false;
 
 	public SimplificationVisitor(Tree root, DerivationGenerator dg,
-				     List rules) { 
+				     List<Rule> rules) { 
 	    this.tf = root.getFactory();
 	    this.dg = dg;
-	    this.rules = (Rule[]) rules.toArray(new Rule[rules.size()]); 
+	    this.rules = rules.toArray(new Rule[rules.size()]); 
 	    // evaluate each subtree from leaves up to root.
 	    postorder(root);
 	}

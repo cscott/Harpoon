@@ -60,6 +60,8 @@ Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/CheckOracle.java
 Analysis/Tree/AlignmentAnalysis.java
 Analysis/Tree/CacheEquivalence.java
+Analysis/Tree/MemHoisting.java
+Analysis/Tree/Simplification.java
 Backend/Analysis/ClassFieldMap.java
 Backend/Analysis/PackedClassFieldMap.java
 Backend/Analysis/SortedClassFieldMap.java
