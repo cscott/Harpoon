@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.62 1999-08-05 19:10:00 cananian Exp $
+% $Id: thesis.tex,v 1.63 1999-08-17 16:39:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -15,6 +15,9 @@
 \usepackage{comdef}
 \newcommand*{\figscale}{1.0}
 
+% Meet symbol
+\newcommand{\meet}{\ensuremath{\sqcap}}
+
 % number tables and figures according to section
 \let\oldsection\section
 \renewcommand{\section}{\setcounter{figure}{0}\setcounter{table}{0}\oldsection}
@@ -27,14 +30,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.62 $ $}
+\date{\today \\ $ $Revision: 1.63 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.62 $ $}{$ $Revision: 1.62 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.63 $ $}{$ $Revision: 1.63 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -82,12 +85,14 @@ our hope is that it will allow the FLEX compiler to achieve a similar
 integration of practical implementation and mathematical elegance.
 
 \section{Context and goals}
-%The first paper directly addressing an IR as a separate feature of a
-%compiler was Foo and Bar in \cite{foobar}.\fixme{Find real references.}
-The Static Single Assignment (SSA) form was introduced by 
-Alpern, Rosen, Wegman and Zadeck
+Strong et al.\ \cite{strong58}\footnote{Attribution by 
+Aho \cite{aho88:dragon}.} first advocated the use of compiler
+intermediate representations in a 1958 committee report.  Their
+idealistic ``universal intermediate language'' was called UNCOL.
+Thirty years later, the Static Single Assignment (SSA) form was
+introduced by  Alpern, Rosen, Wegman and Zadeck
 as a tool for efficient optimization in a pair of POPL
-papers \cite{alpern88:ssa,rosen88:gvn}, and three years later Cytron
+papers \cite{alpern88:ssa,rosen88:gvn}, and three years after that Cytron
 and Ferrante joined Rosen, Wegman, and Zadeck in explaining how to
 compute SSA form efficiently in what has since become the 
 ``canonical'' SSA paper \cite{cytron89:ssa}.  Johnson and Pingali
@@ -239,7 +244,7 @@ section \ref{sec:bidirectional}.
 Static Single Information (SSI) form derives many features from Static
 Single Assignment (SSA) form, as described by Cytron in
 \cite{cytron89:ssa}.  We will review SSA form to provide context for
-our definition of SSI form in section \ref{sec:ssi}.
+our definition of SSI form in section~\ref{sec:ssi}.
 
 \subsection{Definition of SSA form}
 
@@ -769,6 +774,31 @@ form, which we will describe in section \ref{sec:sccssi}. Section
 \caption{Three-level lattice and two-level executability lattice for SCC.}
 \label{fig:scclat1}
 \end{myfigure}
+\begin{table}\centering
+$\begin{array}{|l|cccc|} \hline
+\meet & \bot & c & d (\not= c) & \top \\ \hline
+\bot  & \bot & c & d  & \top \\
+c     &   c  & c &\top & \top \\
+\top  & \top &\top&\top& \top \\ \hline
+\end{array}%
+\quad\quad%
+\begin{array}{|l|ccc|}\hline
+\oplus& \bot &   d  & \top \\ \hline
+\bot  & \bot &   d  & \top \\
+c     &   c  &c\oplus d& \top \\
+\top  & \top & \top & \top \\ \hline
+\end{array}$
+\caption{Meet and binary operation rules for SCC.}
+\label{tab:sccmeet1}
+\end{table}
+\begin{myalgorithm}\small
+\input{Figures/THsccalg1.tex}
+\caption{SCC algorithm for SSA form.}\label{alg:scc}
+\end{myalgorithm}
+\begin{myalgorithm}\small
+\input{Figures/THsccalg2.tex}
+\caption{SCC algorithm for SSA form, cont.}
+\end{myalgorithm}
 The SCC algorithm works on a simple three-level value lattice
 associated with variable definition points and a two-level
 executability lattice associated with flow-graph edges.  These
@@ -794,7 +824,9 @@ that the control flow edge is traversed in some execution of the
 program (marked ``executable''), or if it can be proven that the edge
 is never traversed in any valid program path (marked ``not
 executable'').  The algorithm works with SSA form, and is presented
-as algorithm \ref{alg:scc}.  The time complexity of SCC is
+as algorithm \ref{alg:scc}.  Binary operations on lattice values and
+combination at $\phi$-nodes follow the rules in
+table~\ref{tab:sccmeet1}. The time complexity of SCC is
 $O(E+U_{SSA})$, where $U_{SSA}$ is the number of variable
 \newterm{uses} in the SSA representation of the program.
 

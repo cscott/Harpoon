@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.54 1999-08-03 05:01:35 cananian Exp $
+% $Id: harpoon.bib,v 1.55 1999-08-17 16:39:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -1262,6 +1262,57 @@
   address =	 {Lisbon, Portugal},
   month =	 apr,
   annote =	 {Use of SSAPRE to do loop-invariant removal, etc.}
+}
+
+@InProceedings{diwan92:gc,
+  author = 	 {Amer Diwan and Eliot Moss and Richard Hudson},
+  title = 	 {Compiler support for garbage collection in a
+                  statically typed language},
+  booktitle = 	 PLDI92,
+  pages =	 {273-282},
+  year =	 1992,
+  address =	 {San Francisco, CA},
+  month =	 jun,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/143095/p273-diwan/},
+  annote =	 {Basis of our backend design.}
+}
+
+@InProceedings{stichnoth99:gc,
+  author = 	 {James M. Stichnoth and Guei-Yuan Lueh and Michal Cierniak},
+  title = 	 {Support for garbage collection at every instruction
+                  in a Java compiler},
+  booktitle = 	 PLDI99,
+  pages =	 {118-127},
+  year =	 1999,
+  address =	 {Atlanta, GA},
+  month =	 may,
+  url =          {http://www.acm.org/pubs/citations/proceedings/pldi/301618/p118-stichnoth/}
+}
+
+@Article{strong58,
+  author = 	 {J. Strong and J. Wegstein and A. Tritter and
+                  J. Olsztyn and O. Mock and T. Steel},
+  title = 	 {The problem of programming communication with
+                  changing machines: a proposed solution},
+  journal = 	 {Communications of the {ACM}},
+  year = 	 1958,
+  volume =	 1,
+  number =	 8,
+  pages =	 {12-18},
+  month =	 aug,
+  note =	 {Part 2: 1(9):9-15.
+                  Report of the Share Ad-Hoc committee on Universal
+                  Languages}, 
+  annote =	 {First suggestion on the utility of a compiler IR.
+                  Reference from \cite{aho88:dragon}.}
+}
+
+@Book{aho88:dragon,
+  author =	 {Alfred V. Aho and Ravi Sethi and Jeffrey D. Ullman},
+  title = 	 {Compilers: Principles, Techniques, and Tools},
+  publisher = 	 {Addison-Wesley},
+  year = 	 1988,
+  note =	 {The ``Dragon Book''}
 }
 
 %%%% Misc.
