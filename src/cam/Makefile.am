@@ -9,7 +9,7 @@ noinst_LTLIBRARIES = libcam.la
 CAMSRC =\
 		    CaptureHeader.h  DeviceCtl.c  DeviceInfo.c \
 		    VideoCapture.c  VideoCapture.h \
-	            AltVideo.c AltVideo.h
+	            AltVideo.c AltVideo.h IPaqVideo.h IPaqVideo.c
 if CAMERA
 libcam_la_SOURCES = $(CAMSRC)
 endif
@@ -17,7 +17,7 @@ endif
 # define it even when it's not necessary (when CAMERA is set)
 EXTRA_DIST = $(CAMSRC)
 
-JAVASRC=AltVideo.java
+JAVASRC=AltVideo.java IPaqVideo.java
 JARFILE=video.jar
 EXTRA_DIST += $(JAVASRC)
 

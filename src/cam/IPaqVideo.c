@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <linux/videodev.h>
 #include <string.h>
+#include "IPaqVideo.h"
 
 /* Philips camera defaults */
 #define H3600_BACKPAQ_CAMERA_PHILIPS_CLOCK_DIVISOR      3     /* 15 fps */
@@ -75,13 +76,13 @@
 #define H3600_BACKPAQ_CAMERA_PHILIPS_CR1_PDOWN		(1<<0)  
 
 struct h3600_backpaq_camera_philips {
-	unsigned short clock_divisor;      /* 9 = 5 fps */
-	unsigned short interrupt_fifo;
-	unsigned char  read_polling_mode;  /* Force "read" to use polling mode */
-	unsigned char  flip;               /* Set to TRUE to invert image */
-
-	unsigned short electronic_shutter;
-	unsigned char  subrow;
+    unsigned short clock_divisor;      /* 9 = 5 fps */
+    unsigned short interrupt_fifo;
+    unsigned char  read_polling_mode;  /* Force "read" to use polling mode */
+    unsigned char  flip;               /* Set to TRUE to invert image */
+    
+    unsigned short electronic_shutter;
+    unsigned char  subrow;
 };
 
 
@@ -100,14 +101,14 @@ struct h3600_backpaq_camera_philips_gains {
 };
 
 enum h3600_camera_type {
-	H3600_SMAL,
-	H3600_PHILIPS
+    H3600_SMAL,
+    H3600_PHILIPS
 };
 
 struct h3600_backpaq_camera_type {
-	unsigned char  model;              /* See "backpaq.h" for a list of the camera types */
-	unsigned char  orientation;        /* 0 = portrait, 1 = landscape */
-	enum h3600_camera_type type;       /* General type */
+    unsigned char  model;              /* See "backpaq.h" for a list of the camera types */
+    unsigned char  orientation;        /* 0 = portrait, 1 = landscape */
+    enum h3600_camera_type type;       /* General type */
 };
 
 /*
@@ -151,18 +152,18 @@ int fd = 0;
 unsigned char* buf = NULL;
 
 int setup() {
-  /* Read the camera type */
-  fd = open(VIDEO_DEVICE, O_RDONLY | O_NOCTTY);
-
-  ioctl(fd, H3600CAM_G_TYPE, &ctype);
-  
-  if (ctype.type == H3600_SMAL) {
-    fprintf(stderr, "SMaL Camera not supported!\n");
-    fflush(stderr);
-    return -1;
-  }
-
-  return camera_properties(128, 128, 5, 0, 0, 0, 640, 480);
+    /* Read the camera type */
+    fd = open(VIDEO_DEVICE, O_RDONLY | O_NOCTTY);
+    
+    ioctl(fd, H3600CAM_G_TYPE, &ctype);
+    
+    if (ctype.type == H3600_SMAL) {
+	fprintf(stderr, "SMaL Camera not supported!\n");
+	fflush(stderr);
+	return -1;
+    }
+    
+    return camera_properties(128, 128, 5, 0, 0, 0, 640, 480);
 }
   
 int camera_properties(int desired_brightness, /* 0-255 */
@@ -174,75 +175,135 @@ int camera_properties(int desired_brightness, /* 0-255 */
 		      int width, /* 640 352 320 176 160 */
 		      int height /* 480 288 240 144 120 */)
 {
-  int oldsize = size;
-  ioctl(fd, VIDIOCGPICT, &vpic); 
-
-  /* Fix picture information */
-  vpic.palette = VIDEO_PALETTE_RGB24;
-  vpic.brightness = ((unsigned int)desired_brightness) * 256;
-  vpic.contrast = (unsigned int)desired_contrast * 256;
-  
-  ioctl(fd, VIDIOCSPICT, &vpic);
-  ioctl(fd, VIDIOCGPICT, &vpic); 
-  ioctl(fd, VIDIOCGWIN, &vwin);
-  
-  /* Fix the capture window stuff */
-  vwin.width = width;
-  vwin.height = height;
-  
-  ioctl(fd, VIDIOCSWIN, &vwin);
-  ioctl(fd, VIDIOCGWIN, &vwin);
-  
-  /* Set up the parameters */
-  ioctl(fd, H3600CAM_PH_G_PARAMS, &philips);
-  
-  philips.clock_divisor     = 45 / desired_fps;
-  philips.read_polling_mode = desired_poll;
-  philips.flip              = desired_flip;
-  
-  ioctl(fd, H3600CAM_PH_S_PARAMS, &philips);
-  ioctl(fd, H3600CAM_PH_G_PARAMS, &philips);
-
-  size = vwin.height * vwin.width * vpic.depth / 8;
-  if (!buf) {
-    buf = (unsigned char *) malloc(size);
-  } else if (size != oldsize) {
-    buf = (unsigned char *) realloc(buf, size);
-  }
-  return 0;
+    int oldsize = size;
+    ioctl(fd, VIDIOCGPICT, &vpic); 
+    
+    /* Fix picture information */
+    vpic.palette = VIDEO_PALETTE_RGB24;
+    vpic.brightness = ((unsigned int)desired_brightness) * 256;
+    vpic.contrast = (unsigned int)desired_contrast * 256;
+    
+    ioctl(fd, VIDIOCSPICT, &vpic);
+    ioctl(fd, VIDIOCGPICT, &vpic); 
+    ioctl(fd, VIDIOCGWIN, &vwin);
+    
+    /* Fix the capture window stuff */
+    vwin.width = width;
+    vwin.height = height;
+    
+    ioctl(fd, VIDIOCSWIN, &vwin);
+    ioctl(fd, VIDIOCGWIN, &vwin);
+    
+    /* Set up the parameters */
+    ioctl(fd, H3600CAM_PH_G_PARAMS, &philips);
+    
+    philips.clock_divisor     = 45 / desired_fps;
+    philips.read_polling_mode = desired_poll;
+    philips.flip              = desired_flip;
+    
+    ioctl(fd, H3600CAM_PH_S_PARAMS, &philips);
+    ioctl(fd, H3600CAM_PH_G_PARAMS, &philips);
+    
+    size = vwin.height * vwin.width * vpic.depth / 8;
+    if (!buf) {
+	buf = (unsigned char *) malloc(size);
+    } else if (size != oldsize) {
+	buf = (unsigned char *) realloc(buf, size);
+    }
+    return 0;
 }
 
 int read_frame() {
-  return read(fd, buf, size);
+    return read(fd, buf, size);
+}
+
+int read_frame_buf(unsigned char* buf) {
+    return read(fd, buf, size);
 }
 
 int shutdown() {
-  return close(fd);
+    return close(fd);
 }
 
-void print_frame() {
-  int i;
-  printf("P6\n640 480 255\n");
-
-  for (i=0; i<size; i++) 
-    printf("%c", buf[i]);
-  printf("\n");
+/*
+ * Class:     IPaqVideo
+ * Method:    setup
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_IPaqVideo_setup
+(JNIEnv *env, jobject ipaq) {
+    setup();
 }
 
-int main(int argc, char **argv)
-{
-  setup();
-  read_frame();
-  read_frame();
-  print_frame();
-  shutdown();
-  
-  return 0;
+/*
+ * Class:     IPaqVideo
+ * Method:    capture
+ * Signature: ([B[B[B)V
+ */
+JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B_3B_3B
+(JNIEnv *env, jobject ipaq, 
+ jbyteArray rvals, jbyteArray gvals, jbyteArray bvals) {
+    int i, j;
+    jbyte *rbuf = (*env)->GetByteArrayElements(env, rvals, NULL);
+    jbyte *gbuf = (*env)->GetByteArrayElements(env, gvals, NULL);
+    jbyte *bbuf = (*env)->GetByteArrayElements(env, bvals, NULL);
+    jsize rbf_length = (*env)->GetArrayLength(env, rvals);
+    jsize gbf_length = (*env)->GetArrayLength(env, gvals);
+    jsize bbf_length = (*env)->GetArrayLength(env, bvals);
+    jsize bf_length = rbf_length<gbf_length?rbf_length:gbf_length;
+    bf_length = bbf_length<bf_length?bbf_length:bf_length;
+    bf_length = (size/3)<bf_length?(size/3):bf_length;
+
+    /* bf_length contains the minimum length */
+
+    read_frame();
+
+    j = 0;
+    for (i=0; i<bf_length; i++) {
+	j += 3;
+	rbuf[i] = (jbyte)buf[j]; 
+	gbuf[i] = (jbyte)buf[j+1];
+	bbuf[i] = (jbyte)buf[j+2];
+    }
+
+    (*env)->ReleaseByteArrayElements(env, rvals, rbuf, 0);
+    (*env)->ReleaseByteArrayElements(env, gvals, gbuf, 0);
+    (*env)->ReleaseByteArrayElements(env, bvals, bbuf, 0);
 }
 
+/*
+ * Class:     IPaqVideo
+ * Method:    capture
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_IPaqVideo_capture___3B
+(JNIEnv *env, jobject ipaq, jbyteArray vals) {
+    jbyte *vbuf = (*env)->GetByteArrayElements(env, vals, NULL);
+    jsize bf_length = (*env)->GetArrayLength(env, vals);
+    int i;
 
+    if (bf_length != size) {
+	jclass excls = (*env)->FindClass(env, "java/lang/Error");
+	char desc[200];
+	snprintf(desc, 200, "Wrong size of array in capture: %d != %d.", 
+		 bf_length, size);
+	(*env)->ThrowNew(env, excls, desc);
+    }
+    
+    read_frame_buf((unsigned char*)vbuf);
 
+    (*env)->ReleaseByteArrayElements(env, vals, vbuf, 0);
+}
 
-
-
-
+/*
+ * Class:     IPaqVideo
+ * Method:    unsafeSetProperties
+ * Signature: (BBBBZZII)V
+ */
+JNIEXPORT void JNICALL Java_IPaqVideo_unsafeSetProperties
+(JNIEnv *env, jobject ipaq, jbyte brightness, jbyte contrast, jbyte fps, jbyte gain, 
+ jboolean poll, jboolean flip, jint width, jint height) {
+    camera_properties((int)brightness, (int)contrast, (int)fps, (int)gain,
+		      (poll==JNI_TRUE)?(int)1:(int)0, (flip==JNI_TRUE)?(int)1:(int)0, 
+		      (int)width, (int)height);
+}
