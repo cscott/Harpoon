@@ -45,7 +45,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.29 2001-02-22 01:52:00 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.30 2001-03-13 18:11:54 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -338,7 +338,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	if (isVirtual && S.nonvirtual.contains(m)) {
 	    // this is the first virtual invocation of a previously
 	    // nonvirtual method.
-	    S.nonvirtual.remove(m);
+	    // [removing m from S.nonvirtual will be done below,
+	    //  near the call to methodPush(S, nm)]
 	} else if (S.done.contains(m) || S.W.contains(m)) {
 	    // we've done this guy before
 	    return;
@@ -367,9 +368,12 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
 					     m.getDescriptor());
-		    if (S.done.contains(nm))
+		    Util.assert(isVirtual); // shouldn't be here otherwise.
+		    if (!S.done.contains(nm))
+			methodPush(S, nm);
+		    else if (!S.nonvirtual.contains(nm))
 			continue; // nothing new to discover.
-		    methodPush(S, nm);
+		    else S.nonvirtual.remove(nm); // since we're virtual here.
 		} catch (NoSuchMethodError e) { }
 	    // add all children to the worklist.
 	    Set knownChildren = (Set) S.classKnownChildren.get(c);
