@@ -466,7 +466,7 @@ _javanet_connect(JNIEnv *env, jobject this, jobject addr, jint port)
   si.sin_addr.s_addr = netaddr;
   si.sin_port = htons(((short)port));
 
-  if (do_blocking_io) (*do_blocking_io)(fd, (char)1);
+/*   if (do_blocking_io) (*do_blocking_io)(fd, (char)1); */
   rc = connect(fd, (struct sockaddr *) &si, sizeof(struct sockaddr_in));
   if (rc == -1)
     { JCL_ThrowException(env, IO_EXCEPTION, strerror(errno)); return; }
@@ -779,12 +779,12 @@ _javanet_recvfrom(JNIEnv *env, jobject this, jarray buf, int offset, int len,
   for (;;)
     {
       if (addr == NULL) {
-	if (do_blocking_io) (*do_blocking_io)(fd, 1);
+/* 	if (do_blocking_io) (*do_blocking_io)(fd, 1); */
 	rc = recvfrom(fd, p + offset, len, 0, 0, 0);
       } else {
           memset(&si, 0, sizeof(struct sockaddr_in));
           si_len = sizeof(struct sockaddr_in);
-	  if (do_blocking_io) (*do_blocking_io)(fd, 1);
+/* 	  if (do_blocking_io) (*do_blocking_io)(fd, 1); */
           rc = recvfrom(fd, p + offset, len, 0, (struct sockaddr *) &si, &si_len);
         }
 
@@ -847,7 +847,7 @@ _javanet_sendto(JNIEnv *env, jobject this, jarray buf, int offset, int len,
   if (addr == 0)
     {
       DBG("_javanet_sendto(): Sending....\n");
-      if (do_blocking_io) (*do_blocking_io)(fd, (char)0);
+/*       if (do_blocking_io) (*do_blocking_io)(fd, (char)0); */
       rc = send(fd, p + offset, len, 0);
     }
   else
@@ -858,7 +858,7 @@ _javanet_sendto(JNIEnv *env, jobject this, jarray buf, int offset, int len,
       si.sin_port = (unsigned short)port;
       
       DBG("_javanet_sendto(): Sending....\n");
-      if (do_blocking_io) (*do_blocking_io)(fd, (char)0);
+/*       if (do_blocking_io) (*do_blocking_io)(fd, (char)0); */
       rc = sendto(fd, p + offset, len, 0, (struct sockaddr *) &si, sizeof(struct sockaddr_in));
     }
 
