@@ -31,7 +31,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.3 2001-07-06 21:21:08 wbeebee Exp $
+ * @version $Id: Runtime.java,v 1.1.2.4 2001-07-09 23:54:19 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Runtime1.Runtime {
     public Runtime(Frame frame, AllocationStrategy as,
@@ -52,6 +52,6 @@ public class Runtime extends harpoon.Backend.Runtime1.Runtime {
 	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
 	return new harpoon.Backend.Runtime2.TreeBuilder(this, f.getLinker(),
 							ch, as,
-							f.pointersAreLong());
+							f.pointersAreLong(),0);
     }
 }

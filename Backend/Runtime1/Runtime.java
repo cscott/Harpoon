@@ -29,7 +29,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.37 2001-03-01 22:29:13 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.38 2001-07-09 23:54:16 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -77,9 +77,15 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	Frame f = (Frame) ((Object[])closure)[0];
 	AllocationStrategy as = (AllocationStrategy) ((Object[])closure)[1];
 	ClassHierarchy ch = (ClassHierarchy) ((Object[])closure)[2];
+	// ooh, ooh, properties!
+	// set this to non-zero to enable pointer masking.  a good value
+	// is four.
+	int align = Integer.parseInt
+	    (System.getProperty("harpoon.runtime1.pointer.alignment","0"));
 	return new harpoon.Backend.Runtime1.TreeBuilder(this, f.getLinker(),
 							ch, as,
-							f.pointersAreLong());
+							f.pointersAreLong(),
+							align);
     }
 
     public HCodeFactory nativeTreeCodeFactory(final HCodeFactory hcf) {

@@ -38,7 +38,7 @@ import java.util.List;
  * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.1.2.6 2001-07-06 21:20:55 wbeebee Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.1.2.7 2001-07-09 23:53:50 cananian Exp $
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
@@ -159,11 +159,11 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime2.Runtime {
 	if (System.getProperty("harpoon.runtime", "1").equals("2")) {
 	    return new harpoon.Backend.Runtime1
 		.TreeBuilder(this, f.getLinker(), ch, as, f.pointersAreLong(), 
-			     Realtime.NOHEAP_CHECKS?0:4);
+				 Realtime.NOHEAP_CHECKS?0:4) { };
 	} else {
 	    return new harpoon.Backend.Runtime2
 		.TreeBuilder(this, f.getLinker(), ch, as, f.pointersAreLong(),
-			     Realtime.NOHEAP_CHECKS?0:4);
+				 Realtime.NOHEAP_CHECKS?0:4) { };
 	    
 	}
     }
