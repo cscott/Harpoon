@@ -69,11 +69,17 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.74 2000-03-30 22:16:46 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.75 2000-04-02 14:25:28 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
     private DerivationGenerator m_dg = new DerivationGenerator();
+    // turning this option on enables assertion checking every dispatch
+    // to ensure the target method is not null (which happens when the
+    // method has been proven to be uncallable by the classhierarchy)
+    private static boolean checkDispatch =
+	!System.getProperty("harpoon.check.dispatch", "no")
+	.equalsIgnoreCase("no");
    
     /** Class constructor.  Uses the default <code>EdgeOracle</code>
      *  and <code>ReachingDefs</code> for <code>LowQuadNoSSA</code>. */
@@ -600,6 +606,17 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    params = new ExpList(_TEMP(qParams[i], q), params);      
 	}
 
+	// if debugging option enabled, check that this dispatch pointer is
+	// non-null, and call a special reporting function if it is.
+	if (checkDispatch) {
+	    Temp pT = new Temp(m_tf.tempFactory(), "ptr");
+	    addStmt(new MOVE(m_tf, q, _TEMP(q, HClass.Void, pT), ptr));
+	    emitAssert(m_tf, q,
+		       new BINOP(m_tf, q, Type.POINTER, Bop.CMPEQ,
+				 _TEMP(q, HClass.Void, pT),new CONST(m_tf, q)),
+		       false, "method pointer != null");
+	    ptr = _TEMP(q, HClass.Void, pT);
+	}
 	addStmt(new CALL
 	    (m_tf, q, 
 	     retvalT, retexT,
@@ -786,6 +803,40 @@ static class TranslationVisitor extends LowQuadVisitor {
      *                                                          *
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
+    private void emitAssert(TreeFactory m_tf, HCodeElement src,
+			    Exp cond, boolean condShouldBeTrue,
+			    String assertion) {
+	Label Lsafe = new Label(), Lunsafe = new Label();
+	Label Lassert = new Label(), Lfile = new Label();
+	addStmt(new CJUMP(m_tf, src, cond, 
+			  condShouldBeTrue ? Lsafe : Lunsafe,
+			  condShouldBeTrue ? Lunsafe : Lsafe));
+	addStmt(new LABEL(m_tf, src, Lunsafe, false));
+	// unsafe jump!  call reporting function.
+	Label Lreporter = new Label(m_nm.c_function_name("__assert_fail"));
+	addStmt(new NATIVECALL(m_tf, src, null, new NAME(m_tf, src, Lreporter),
+			       new ExpList
+			       (new NAME(m_tf, src, Lassert), new ExpList
+				(new NAME(m_tf, src, Lfile), new ExpList
+				 (new CONST(m_tf, src, src.getLineNumber()),
+				  new ExpList(new CONST(m_tf, src), null))))
+			       ));
+	    addStmt(new LABEL(m_tf, src, Lassert, false));
+	    emitString(m_tf, src, assertion);
+	    addStmt(new LABEL(m_tf, src, Lfile, false));
+	    emitString(m_tf, src, src.getSourceFile());
+	    addStmt(new LABEL(m_tf, src, Lsafe, false));
+    }
+    private void emitString(TreeFactory m_tf, HCodeElement src, String s) {
+	for (int i=0; i<s.length(); i++)
+	    addStmt(new DATUM(m_tf, src, new CONST(m_tf, src, 8, false,
+						   (int) s.charAt(i))));
+	// null-terminate:
+	addStmt(new DATUM(m_tf, src, new CONST(m_tf, src, 8, false, 0)));
+	// align to proper word boundary.  (be safe, align 8)
+	addStmt(new ALIGN(m_tf, src, 8));
+    }
+			   
     private void addStmt(Stm stm) { 
         m_stmList.add(stm);
     }
