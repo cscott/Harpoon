@@ -65,14 +65,14 @@ java -jar GUI.jar nopause nocorba 3
 Example #2 (with CORBA):
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Edit the .jacorb_properties file in your home directory to point to
-your name service.
+Copy the .jacorb_properties file from contrib/ to your home directory
+and modify the ORBInitRef.NameService= to point to the name service.
 
 Start the JacORB NameService:
   java -jar ns.jar /users/wbeebee/.jacorb
 
 Start the ALERT server:
-  java -jar trackerStub.jar "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+  java -jar trackerStub.jar timer "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
 
 Start the ATR:
   java -jar ATR.jar timer 3 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
@@ -105,9 +105,31 @@ Start the Embedded ATR:
 Start the Ground ATR:
   java -jar groundATR.jar notimer headless 1 "embedToGround" "groundToEmbed" -ORBInitRef NameService=file://users/wbeebee/.jacorb
 
+Wierdness:
+~~~~~~~~~
 Note: Use the CORBA names "LMCO ATR" and "ATR Alert" only for drop-in compatibility 
 with the existing Lockheed-Martin ATR.
 
+For complicated objects on some systems, you may need to specify the -Xss1M option to increase the 
+Java thread stack size to 1M:
+java -Xss1M ...
+
+Also, if you're using the TAO NameService instead of the JacORB NameService,
+you may have to use -DORBInitRef.NameService:
+java -DORBInitRef.NameService=...
+
+However, if you're trying to connect to the JacORB NameService, do not
+use the -DORBInitRef.NameService option, as it will cause a NullPointerException 
+in JacORB.
+
+Oddly, JacORB sometimes seems to work improperly if the .jacorb_properties NameService is different
+from the one specified at the command line.  
+
+Use -Djava.compiler=none for interpreted mode instead of the HotSpot JIT or for debugging if you
+need to.  Note that interpreted code runs slower than JIT'ed code.
+
+See the JacORB manual at http://www.jacorb.org/docs/ProgrammingGuide_1_4_1.pdf for more information.
+(Also note that that's the manual for 1.4.1, not 1.3.30.)
 
 For main development, develop in src/Main.java and use 'make' and 'make run' 
 
