@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.57 1998-09-09 22:24:09 cananian Exp $
+ * @version $Id: Translate.java,v 1.58 1998-09-09 22:29:08 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -282,7 +282,7 @@ class Translate  { // not public.
 		    Quad monitorBlock = new HEADER(ts.in);
 		    // Recursively generate monitor quads.
 		    ns = s.enterMonitor().pop();
-		    trans(new TransState(ns, ts.in, monitorBlock, 0),
+		    trans(new TransState(ns, ts.in.next()[0], monitorBlock, 0),
 			  Tzero, Tnull);
 		    // Make and link MONITOR
 		    q = new MONITOR(ts.in, s.stack[0], monitorBlock);
@@ -336,10 +336,11 @@ class Translate  { // not public.
 		    Quad.addEdge(q, 0, q0, 0);
 		    Quad.addEdge(q0,0, q1, 0);
 		    Quad.addEdge(q1,0, q2, 0);
-		    Instr in = tsi.in;
-		    if (isMonitor)
+		    Instr in;
+		    if (isMonitor) {
 			ns = tsi.initialState.exitMonitor();
-		    else {// if (isJSR)
+			in = tsi.in.next()[0];
+		    } else { // if (isJSR)
 			ns = tsi.initialState.exitJSR();
 			in = ts.in.next()[0];
 		    }
@@ -349,10 +350,11 @@ class Translate  { // not public.
 		// default branch.
 		TransState tsi = 
 		    (TransState) ns.nest[0].continuation.elementAt(i);
-		Instr in = tsi.in;
-		if (isMonitor)
+		Instr in;
+		if (isMonitor) {
 		    ns = tsi.initialState.exitMonitor();
-		else {// if (isJSR)
+		    in = tsi.in.next()[0];
+		} else { // if (isJSR)
 		    ns = tsi.initialState.exitJSR();
 		    in = ts.in.next()[0];
 		}
