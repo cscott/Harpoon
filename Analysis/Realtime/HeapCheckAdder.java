@@ -135,17 +135,27 @@ public class HeapCheckAdder extends Simplification {
 		    seenList.add(mem);
 		    if (dg.typeMap(memExp) != null) {
 		        Temp t = new Temp(tf.tempFactory(), "heapRef");
-			result = new ESEQ(tf, e, 
-					  new MOVE(tf, e, tempRef(dg, tf, memExp, t), memExp),
-					  new ESEQ(tf, e, addCheck(tf, memExp, dg, t), 
-						   memRef(tf, mem, dg, t)));
+			result = 
+			    new ESEQ(tf, e, 
+				     new MOVE(tf, e, tempRef(dg, tf, memExp, t), memExp),
+				     new ESEQ(tf, e, addCheck(tf, memExp, dg, t), 
+					      memRef(tf, mem, dg, t)));
 			UPDATE(dg, e, result);
+		    } else {
+			DList dl = dg.derivation(memExp);
+			while (dl != null) {
+			    result = new ESEQ(tf, e, addCheck(tf, memExp, dg, dl.base), 
+					      result);
+			    dl = dl.next;
+			}
 		    }
 		    if (mem.type() == Type.POINTER) { 
 			Temp t = new Temp(tf.tempFactory(), "heapRef");
-		        result = new ESEQ(tf, e, new MOVE(tf, e, tempRef(dg, tf, mem, t), result),
-					  new ESEQ(tf, e, addCheck(tf, mem, dg, t),
-						   tempRef(dg, tf, mem, t)));
+		        result = 
+			    new ESEQ(tf, e, 
+				     new MOVE(tf, e, tempRef(dg, tf, mem, t), result),
+				     new ESEQ(tf, e, addCheck(tf, mem, dg, t),
+					      tempRef(dg, tf, mem, t)));
 			UPDATE(dg, e, result);
 		    }
 		    return result;
@@ -172,6 +182,12 @@ public class HeapCheckAdder extends Simplification {
 			stmList.add(new MOVE(tf, mem, tempRef(dg, tf, memExp, t), memExp));
 			stmList.add(addCheck(tf, memExp, dg, t));
 			mem = memRef(tf, mem, dg, t);
+		    } else {
+			DList dl = dg.derivation(memExp);
+			while (dl != null) {
+			    stmList.add(addCheck(tf, memExp, dg, dl.base));
+			    dl = dl.next;
+			}
 		    }
 		    if ((mem.type() == Type.POINTER) && (dg.typeMap(src) != null)) { 
 			Temp t = new Temp(tf.tempFactory(), "heapRef");

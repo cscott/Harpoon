@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.28 2001-07-03 21:35:07 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.1.2.29 2001-07-10 19:26:41 wbeebee Exp $
  */
 
 public class Realtime {
@@ -241,7 +241,7 @@ public class Realtime {
 	roots.add(linker.forName("javax.realtime.LTMemory")
 		  .getMethod("checkAccess", new HClass[] { object }));
 	roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
-	
+
 	if(REALTIME_THREADS)
 	    {
 		roots.add(linker.forName("javax.realtime.QuantaThread")
