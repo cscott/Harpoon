@@ -24,6 +24,7 @@ cvs-add:
 	done
 cvs-commit: cvs-add
 	cvs commit
+commit: cvs-commit # convenient abbreviation
 
 doc:	doc/TIMESTAMP
 
@@ -59,7 +60,7 @@ wipe:	clean doc-clean
 
 backup:
 	$(RM) ../harpoon-backup.tar.gz
-	cd ..; tar czvf harpoon-backup.tar.gz CVSROOT
+	cd ..; tar czf harpoon-backup.tar.gz CVSROOT
 	scp ../harpoon-backup.tar.gz \
 		miris.lcs.mit.edu:public_html/Projects/Harpoon
 	$(RM) ../harpoon-backup.tar.gz
