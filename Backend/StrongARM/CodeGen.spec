@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.68 1999-10-14 15:57:44 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.69 1999-10-14 16:11:29 cananian Exp $
  */
 %%
 
@@ -236,8 +236,8 @@ import java.util.Iterator;
 	// continue until there are no more bits to load...
 	boolean first=true;
 	while (val!=0) {
-	  // get next eight-bit chunk
-	  int eight = val & (0xFF << Util.ffs(val)-1);
+	  // get next eight-bit chunk (shift amount has to be even)
+	  int eight = val & (0xFF << ((Util.ffs(val)-1) & ~1));
 	  if (first) {
 	    first=false;
 	    sb.append(MOV+reg+", #"+eight+
@@ -255,7 +255,7 @@ import java.util.Iterator;
     private int steps(int v) {
 	int r=0;
 	for ( ; v!=0; r++)
-	   v &= ~(0xFF << Util.ffs(v)-1);
+	   v &= ~(0xFF << ((Util.ffs(v)-1) & ~1));
 	return r;
     }
 %%
@@ -1501,8 +1501,8 @@ DATA(CONST<i>(exp)) %{
 
 DATA(CONST<l>(exp)) %{
     long l = exp.longValue();
-    emitDIRECTIVE( ROOT, "\t.word "+(l&0xFFFFFFFF)+" @ lsb");
-    emitDIRECTIVE( ROOT, "\t.word "+((l>>32)&0xFFFFFFFF)+" @ long "+l);
+    emitDIRECTIVE( ROOT, "\t.word "+(l&0xFFFFFFFFL)+" @ lsb");
+    emitDIRECTIVE( ROOT, "\t.word "+((l>>32)&0xFFFFFFFFL)+" @ long "+l);
 }%
 
 DATA(CONST<f>(exp)) %{
