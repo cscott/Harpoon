@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.12 2000-01-05 20:20:55 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.13 2000-01-06 16:38:41 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -83,6 +83,7 @@ public class AsyncCode {
 	
 	while(!cont_todo.isEmpty()) {
 	    Quad quadc=(Quad) cont_todo.pop();
+	    System.out.println("AsyncCode building continuation for "+quadc);
 	    ContVisitor cv=new ContVisitor(cont_todo, async_todo, 
 					   old2new, cont_map, 
 					   env_map, liveness,
@@ -135,15 +136,19 @@ public class AsyncCode {
 	    //nmh is the HMethod we wish to attach this HCode to
 	    HMethod nhm=(HMethod)old2new.get(hmethod);
 	    //mark header flag
+	    System.out.println("ContVisiting"+ q);
 	    header=true;
 	    clonevisit.reset(nhm,q.getFactory().tempFactory(),false);
+	    System.out.println("Reset clone visitor");
 	    copy(q,-1);
+	    System.out.println("Finished copying");
 	    ucf.update(nhm, clonevisit.getCode());
 	}
 
 	public void visit(CALL q) {
 	    //need to build continuation for this CALL
 	    //nmh is the HMethod we wish to attach this HCode to
+	    System.out.println("ContVisiting"+ q);
 	    HClass hclass=(HClass) cont_map.get(q);
 	    HClass throwable=HClass.forName("java.lang.Throwable");
 	    HMethod resume=
@@ -156,12 +161,14 @@ public class AsyncCode {
 	    //Resume method
 	    clonevisit.reset(resume,q.getFactory().tempFactory(), true);
 	    copy(q,0);
+	    System.out.println("Finished resume copying");
 	    //addEdges should add appropriate headers
 	    ucf.update(resume, clonevisit.getCode());
 
 	    //Exception method
 	    clonevisit.reset(exception, q.getFactory().tempFactory(), true);
 	    copy(q,1);
+	    System.out.println("Finished exception copying");
 	    //addEdges should add appropriate headers
 	    ucf.update(exception, clonevisit.getCode());
 	}
@@ -184,10 +191,12 @@ public class AsyncCode {
 		    Quad[] next=nq.next();
 		    for (int i=0; i<next.length;i++)
 			if (!done.contains(next[i]))
-			    todo.push(q);
+			    todo.push(next[i]);
 		}
 	    }
+	    System.out.println("Start addEdges");
 	    clonevisit.addEdges(q,resumeexception);
+	    System.out.println("Finished addEdges");
 	}
 
 	public boolean isHeader() {
@@ -267,9 +276,9 @@ public class AsyncCode {
 	public void addEdges(Quad q, int resumeexception) {
 	    QuadFactory qf=hcode.getFactory();
 	    TempFactory tf=qf.tempFactory();
-	    FOOTER footer=new FOOTER(qf, null, linkFooters.size());
+	    FOOTER footer=new FOOTER(qf, null, linkFooters.size()+1);
 	    Iterator fiterator=linkFooters.iterator();
-	    int count=0;
+	    int count=1;
 	    while(fiterator.hasNext())
 		Quad.addEdge((Quad)fiterator.next(), 0, footer, count++);
 	    if (resumeexception!=-1) {
@@ -365,7 +374,7 @@ public class AsyncCode {
 				todo.push(next[i]);
 			    Quad cn=(Quad)quadmap.get(next[i]);
 			    //add the edge in
-			    Quad.addEdge(cnq,i,nq,q.nextEdge(i).which_pred());
+			    Quad.addEdge(cnq,i,cn,q.nextEdge(i).which_pred());
 			}
 		    }
 		}
@@ -435,12 +444,12 @@ public class AsyncCode {
 		    Temp nretval=ctmap.tempMap(q.retval());
 		    call=new CALL(hcode.getFactory(), q, constructor,
 				  new Temp[] {newt,nretval}, null,retex,
-				  true,false,new Temp[0]);
+				  false,false,new Temp[0]);
 		} else {
 		    //***** Tailcall eventually
 		    call=new CALL(hcode.getFactory(), q, constructor,
 				  new Temp[] {newt}, null, retex,
-				  true, false, new Temp[0]);
+				  false, false, new Temp[0]);
 		}
 		Quad.addEdge(newq,0,call,0);
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
@@ -498,7 +507,7 @@ public class AsyncCode {
 		Temp retex=new Temp(tf);
 		CALL call=new CALL(hcode.getFactory(), q, constructor,
 			      new Temp[] {newt,nretval}, null,retex,
-			      true,false,new Temp[0]);
+			      false,false,new Temp[0]);
 		Quad.addEdge(newq,0,call,0);
 		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
 		Quad.addEdge(call,1,qthrow,0);
@@ -655,7 +664,7 @@ public class AsyncCode {
 
 	// get the return type for the replacement HMethod
 	final HClass newReturnType = HClass.forName
-	    ("harpoon.Analysis.ContBuilder" + pref + "Continuation");
+	    ("harpoon.Analysis.ContBuilder." + pref + "Continuation");
 
 	// find a unique name for the replacement HMethod
 	final String methodNamePrefix = original.getName() + "Async_";
