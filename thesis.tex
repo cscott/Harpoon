@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.64 1999-08-17 18:38:46 cananian Exp $
+% $Id: thesis.tex,v 1.65 1999-08-18 16:05:26 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -30,14 +30,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.64 $ $}
+\date{\today \\ $ $Revision: 1.65 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.64 $ $}{$ $Revision: 1.64 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.65 $ $}{$ $Revision: 1.65 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -797,7 +797,7 @@ c     &   c  &c\oplus d& \top \\
 \end{myalgorithm}
 \begin{myalgorithm}\small
 \input{Figures/THsccalg2.tex}
-\caption{SCC algorithm for SSA form, cont.}
+\caption{SCC algorithm for SSA form, cont.}\label{alg:scc2}
 \end{myalgorithm}
 The SCC algorithm works on a simple three-level value lattice
 associated with variable definition points and a two-level
@@ -827,8 +827,16 @@ executable'').  The algorithm works with SSA form, and is presented
 as algorithm \ref{alg:scc}.  Binary operations on lattice values and
 combination at $\phi$-nodes follow the rules in
 table~\ref{tab:sccmeet1}. The time complexity of SCC is
-$O(E+U_{SSA})$, where $U_{SSA}$ is the number of variable
-\newterm{uses} in the SSA representation of the program.
+$O(N+U_{SSA})$, where $U_{SSA}$ is the number of variable
+\newterm{uses} in the SSA representation of the program.  This can be
+verified easily: the procedure \code{RaiseE} puts each node on the
+$W_n$ worklist at most once, and \code{RaiseV} puts a variable on the
+$W_v$ worklist at most $D$ times, where $D$ is the maximum lattice
+depth.  The \code{Visit} procedure can thus be invoked a maximum of
+$N$ times by line~\ref{line:visitWn} of algorithm~\ref{alg:scc}, and a
+maximum of $U_{SSA}D$ times by line~\ref{line:visitWv}.  The
+lattice depth $D$ is the constant 2 in this version of the algorithm,
+yielding the previously cited time complexity.
 
 \subsubsection{SCC/SSI: predication using \sigfunction{s}.}\label{sec:sccssi}
 \begin{myfigure}%
@@ -846,21 +854,33 @@ else              & else \\
 \caption{A simple constant-propagation example.}
 \label{fig:ssa_vs_ssi}
 \end{myfigure}
+\begin{myalgorithm}\small
+\input{Figures/THsccssi.tex}
+\caption{A revised \code{Visit} procedure for SCC/SSI.}\label{alg:sccssi}
+\end{myalgorithm}
 Porting the SCC algorithm from SSA to SSI form immediately increases
 the number of constants we can find.  A simple example is shown in
 figure \ref{fig:ssa_vs_ssi}: the version of the program on the right
-is in SSI form, and SCC/SSI --- unlike SCC/SSA --- can
+is in SSI form, and SCC/SSI---unlike SCC/SSA---can
 determine that \code{\subvar{foo}{2}} is a constant with value 1
 (although nothing can be said about the value of
 \code{\subvar{foo}{0}} or \code{\subvar{foo}{1}}) and therefore that
 \code{\subvar{bar}{0}}, \code{\subvar{bar}{1}}, and
-\code{\subvar{bar}{2}} are constants with the value 2.%
-\fixme{Write up the SCC algorithm modifications necessary for SSI form.}
+\code{\subvar{bar}{2}} are constants with the value 2.
 SSI form creates a new name for \code{bar} at the conditional branch
-to indicate that more information about its value is known.  The utility
-of this \newterm{predicated analysis} will become more evident as the SCC
-value lattice is extended to cover more constant types.
-\fixme{Time bounds for SCC/SSI.}
+to indicate that more information about its value is known.
+
+Only the \code{Visit} procedure must be updated for SCC/SSI: lattice
+update rules for \sigfunction{s} must be added.
+Algorithm~\ref{alg:sccssi} shows a new \code{Visit} procedure for the
+two-level integer constant lattice of Wegman and Zadeck's SCC/SSA;
+with this restricted value set only integer equality tests tap the
+algorithm's full power.  The utility of SCC/SSI's \newterm{predicated
+analysis} will become more evident as the value lattice is extended to
+cover more constant types.
+
+The time complexity of the updated algorithm is identical to that of
+SCC/SSA: $O(N+U_{SSA})$, by the same argument as before.
 
 \subsubsection{Extending the value domain}
 \begin{myfigure}

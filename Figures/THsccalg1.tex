@@ -24,12 +24,12 @@ Analyze($G$:CFG) =
   \IF{$n$ has only one outgoing edge $e$}
    \STATE RaiseE($e$)
   \ENDIF
-  \STATE Visit($n$)
+  \STATE Visit($n$) \label{line:visitWn}
  \ENDIF
  \IF{$W_v$ is not empty}
   \STATE remove some variable $v$ from $W_v$
   \FOREACH{node $n$ containing a use of $v$}
-   \STATE Visit($n$)
+   \STATE Visit($n$) \label{line:visitWv}
   \ENDFOR
  \ENDIF
 \UNTIL{both $W_v$ and $W_n$ are empty}

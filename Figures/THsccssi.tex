@@ -1,0 +1,22 @@
+Visit($n$:node) =
+\begin{myalgorithmic}
+\newcommand{\Lx}{\ensuremath{L[x]}\xspace}
+\newcommand{\Ly}{\ensuremath{L[y]}\xspace}
+\STATE \COMMENT{Assignment rules as on page \pageref{alg:scc2}}
+               \EMPTYLINE
+\FOREACH{branch ``if $x=y$ goto $e_1$ else $e_2$'' in $n$}
+ \IF{$L[x] \sqsupset \bot$ and $L[y] \sqsupset \bot$}
+  \IF{$L[x]=c$ and $L[y]=d$}
+   \IF{$c=d$}
+    \STATE RaiseE($e_1$) ; RaiseV($x_1$, $c$) ; RaiseV($y_1$, $d$)
+   \ELSE
+    \STATE RaiseE($e_2$) ; RaiseV($x_2$, $c$) ; RaiseV($y_2$, $d$)
+   \ENDIF
+  \ELSE[Either \Lx or \Ly is $\top$]
+   \STATE RaiseE($e_1$) ; RaiseE($e_2$)
+   \STATE RaiseV($x_1$, min($L[x]$, $L[y]$)) ; RaiseV($x_2$, $L[x]$)
+   \STATE RaiseV($y_1$, min($L[x]$, $L[y]$)) ; RaiseV($y_2$, $L[y]$)
+  \ENDIF
+ \ENDIF
+\ENDFOR
+\end{myalgorithmic}

@@ -32,7 +32,7 @@ thesis.dvi: Figures/THex1base.tex \
 	Figures/THdeaddata.tex Figures/THdeadalg.tex Figures/THlattice.tex \
 	Figures/phisig.tex Figures/THlat1.tex Figures/THlat2.tex \
 	Figures/THlat3.tex Figures/THlat4.tex Figures/THlat5.tex \
-	Figures/THsccalg1.tex Figures/THsccalg2.tex
+	Figures/THsccalg1.tex Figures/THsccalg2.tex Figures/THsccssi.tex
 # thesis figure rules
 Figures/%: always
 	$(MAKE) -C Figures $(notdir $@)

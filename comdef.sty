@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.17 1999-08-18 14:51:05 cananian Exp $
+% $Id: comdef.sty,v 1.18 1999-08-18 16:05:26 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -119,7 +119,7 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 % magic
 \newenvironment{myalgorithmic}[1][1]{\begin{algorithmic}[#1]%
  % additional statement commands.
- \newcommand{\FOREACH}[1]{\FOR{\textbf{each} #1}}%
+ \newcommand{\FOREACH}[1]{\FOR{\textbf{each} ##1}}%
  \newcommand{\LET}{\STATE \textbf{let}\xspace}%
  %\newcommand{\EMPTYLINE}{\vspace{0.6\baselineskip}}
  \newcommand{\EMPTYLINE}{\STATE}%
