@@ -12,11 +12,12 @@ import harpoon.ClassFile.HMethod;
  * methods in <code>java.io.File</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFile.java,v 1.1.2.2 2000-01-13 23:48:10 cananian Exp $
+ * @version $Id: INFile.java,v 1.1.2.3 2000-01-27 11:26:26 cananian Exp $
  */
 public class INFile {
     static final void register(StaticState ss) {
-	ss.register(isFile0(ss));
+	// JDK 1.1 only
+	try { ss.register(isFile0(ss)); } catch (NoSuchMethodError e) {}
     }
     // test existence of a file.
     private static final NativeMethod isFile0(StaticState ss0) {

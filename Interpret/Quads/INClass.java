@@ -14,7 +14,7 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.5 2000-01-13 23:48:10 cananian Exp $
+ * @version $Id: INClass.java,v 1.1.2.6 2000-01-27 11:26:26 cananian Exp $
  */
 public class INClass {
     static final void register(StaticState ss) {
@@ -33,6 +33,7 @@ public class INClass {
 	ss.putNativeClosure(ss.HCclass, new Hashtable());
 	// JDK 1.2 only
 	try { ss.register(registerNatives(ss)); } catch (NoSuchMethodError e){}
+	try { ss.register(getClassLoader0(ss)); } catch (NoSuchMethodError e){}
     }
     static final ObjectRef forClass(StaticState ss, HClass hc)
 	throws InterpretedThrowable {
@@ -218,6 +219,13 @@ public class INClass {
     private static final NativeMethod registerNatives(StaticState ss0) {
 	final HMethod hm =
 	    ss0.HCclass.getMethod("registerNatives",new HClass[0]);
+	return new NullNativeMethod(hm);
+    }
+    // JDK 1.2 only: Class.getClassLoader0()
+    private static final NativeMethod getClassLoader0(StaticState ss0) {
+	// always return 'null', indicating the boot class loader.
+	final HMethod hm =
+	    ss0.HCclass.getMethod("getClassLoader0",new HClass[0]);
 	return new NullNativeMethod(hm);
     }
 }

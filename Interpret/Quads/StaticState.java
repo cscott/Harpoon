@@ -19,7 +19,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.12 2000-01-23 05:53:29 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.13 2000-01-27 11:26:26 cananian Exp $
  */
 final class StaticState extends HCLibrary implements java.io.Serializable {
     /** which linker to use. */
@@ -96,6 +96,7 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
     private StackFrame stack(int i) {
 	return (StackFrame) callStack.elementAt(callStack.size()-i-1);
     }
+    HMethod getCaller() { return stack(1).getMethod(); }
     void pushStack(StackFrame sf) { callStack.push(sf); }
     void popStack() { callStack.pop(); }
     void printStackTrace(PrintWriter pw) {

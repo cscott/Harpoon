@@ -14,7 +14,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.7 2000-01-13 23:48:10 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.8 2000-01-27 11:26:26 cananian Exp $
  */
 final class INSystem {
     static final void register(StaticState ss) {
@@ -25,6 +25,8 @@ final class INSystem {
 	ss.register(setOut0(ss));
 	ss.register(setErr0(ss));
 	// JDK 1.2 only
+	try { ss.register(getCallerClass(ss)); } catch (NoSuchMethodError e){}
+	try { ss.register(mapLibraryName(ss)); } catch (NoSuchMethodError e){}
 	try { ss.register(registerNatives(ss)); } catch (NoSuchMethodError e){}
     }
     private static final NativeMethod currentTimeMillis(StaticState ss0) {
@@ -147,6 +149,33 @@ final class INSystem {
 		ObjectRef obj = (ObjectRef) params[0];
 		ss.update(ss.HCsystem.getField("err"), obj);
 		return null;
+	    }
+	};
+    }
+    // JDK 1.2 only: System.getCallerClass()
+    private static final NativeMethod getCallerClass(StaticState ss0) {
+	final HMethod hm =
+	    ss0.HCsystem.getMethod("getCallerClass", new HClass[0]);
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		// look at call state:
+		HMethod callerM = ss.getCaller();
+		// wrap in an interpreted Class object.
+		return INClass.forClass(ss, callerM.getDeclaringClass());
+	    }
+	};
+    }
+    // JDK 1.2 only: System.mapLibraryName()
+    private static final NativeMethod mapLibraryName(StaticState ss0) {
+	final HMethod hm =
+	    ss0.HCsystem.getMethod("getLibraryName",
+				   new HClass[] { ss0.HCstring } );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		// the identity function
+		return (ObjectRef) params[0];
 	    }
 	};
     }
