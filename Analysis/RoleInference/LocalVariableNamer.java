@@ -16,7 +16,7 @@ import java.io.InputStream;
  * <code>LocalVariableNamer</code>
  * 
  * @author  root <root@windsurf.lcs.mit.edu>
- * @version $Id: LocalVariableNamer.java,v 1.1.2.1 2001-06-07 15:16:25 bdemsky Exp $
+ * @version $Id: LocalVariableNamer.java,v 1.1.2.2 2001-06-14 20:14:04 bdemsky Exp $
  */
 public class LocalVariableNamer {
 
@@ -80,11 +80,28 @@ public class LocalVariableNamer {
                 // indicates that we should probably not depend on the
                 // table being sorted, but every instance i've seen has
                 // been sorted.
-                for (int pc=start_pc; pc<=end_pc; pc++) {
+                for (int pc=start_pc; pc<end_pc; pc++) {
                     // check for lv entry at this pc
                     String ln = alvt.localName(pc, lv_index);
                     if (ln!=null) return ln;
                 }
+            }
+        }
+
+        for (int i=0; i<alnt.line_number_table.length; i++) {
+            if (alnt.line_number_table[i].line_number==line_number) {
+                int start_pc = alnt.line_number_table[i].start_pc;
+                int end_pc = ac.code.length;
+                if (i+1<alnt.line_number_table.length)
+                    end_pc = alnt.line_number_table[i+1].start_pc;
+                // xxx: the javadoc for AttributeLocalVariableTable
+                // indicates that we should probably not depend on the
+                // table being sorted, but every instance i've seen has
+                // been sorted.
+		int pc=end_pc;
+		// check for lv entry at this pc
+		String ln = alvt.localName(pc, lv_index);
+		if (ln!=null) return ln;
             }
         }
         /* no relevant entries found. */

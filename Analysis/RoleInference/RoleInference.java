@@ -43,7 +43,7 @@ import java.util.Set;
  * <code>RoleInference</code>
  * 
  * @author  bdemsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.1.2.5 2001-06-07 15:16:25 bdemsky Exp $
+ * @version $Id: RoleInference.java,v 1.1.2.6 2001-06-14 20:14:04 bdemsky Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -126,8 +126,8 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 							new HClass[] {strclass, objclass});
 	    killlocalmethod=roleclass.getDeclaredMethod("killlocal",
 							new HClass[] {strclass});
-	    returnmethod=roleclass.getDeclaredMethod("returnmethod", new HClass[0]);
-	    invokemethod=roleclass.getDeclaredMethod("invokemethod", new HClass[] {methodclass});
+	    returnmethod=roleclass.getDeclaredMethod("returnmethod", new HClass[]{objclass});
+	    invokemethod=roleclass.getDeclaredMethod("invokemethod", new HClass[] {methodclass, HClass.Int});
 	}
 
 	public void visit(Quad q) {
@@ -453,14 +453,17 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    {
 		Temp texc=new Temp(q.getFactory().tempFactory());
 		Temp tmethod=new Temp(q.getFactory().tempFactory());
+		Temp tmethod2=new Temp(q.getFactory().tempFactory());
 		HMethod method=q.getFactory().getMethod();
 		CONST mconst=new CONST(q.getFactory(),q, tmethod, method,
 				       methodclass);
+		CONST sconst=new CONST(q.getFactory(),q, tmethod2, method.isStatic()?new Integer(1):new Integer(0), HClass.Int);
 		CALL cn=new CALL(q.getFactory(), q, invokemethod,
-				 new Temp[]{tmethod}, null, texc,
+				 new Temp[]{tmethod,tmethod2}, null, texc,
 				 false, false, new Temp[0]);
 		PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
-		Quad.addEdge(mconst, 0, cn,0);
+		Quad.addEdge(mconst, 0, sconst,0);
+		Quad.addEdge(sconst, 0, cn,0);
 		Quad.addEdge(cn,0,phi,0);
 		Quad.addEdge(cn,1,phi,1);
 		Quad.addEdge(phi,0,q.next(0),q.nextEdge(0).which_pred());
@@ -494,14 +497,24 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	public void visit(RETURN q) {
 	    //Method return
 	    Temp texc=new Temp(q.getFactory().tempFactory());
-
+	    Temp treturn=null;
+	    CONST nconst=null;
+	    if (hc.getMethod().getReturnType().isPrimitive()||q.retval()==null) {
+		treturn=new Temp(q.getFactory().tempFactory());
+		nconst=new CONST(q.getFactory(),q, treturn, null, HClass.Void);
+	    } else treturn=q.retval();
 	    CALL nc=new CALL(q.getFactory(),q,returnmethod,
-			     new Temp[0], null,texc,
+			     new Temp[] {treturn},null,texc,
 			     false,false, new Temp[0]);
 	    PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
 	    Quad.addEdge(nc,0,phi,0);
 	    Quad.addEdge(nc,1,phi,1);
-	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(), nc,0);
+	    if (nconst==null)
+		Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(), nc,0);
+	    else {
+		Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(), nconst,0);
+		Quad.addEdge(nconst,0,nc,0);
+	    }
 	    Quad.addEdge(phi,0,q,0);
 	}
 
@@ -510,7 +523,7 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    Temp texc=new Temp(q.getFactory().tempFactory());
 
 	    CALL nc=new CALL(q.getFactory(),q,returnmethod,
-			     new Temp[0], null,texc,
+			     new Temp[]{q.throwable()}, null,texc,
 			     false,false, new Temp[0]);
 	    PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
 	    Quad.addEdge(nc,0,phi,0);
