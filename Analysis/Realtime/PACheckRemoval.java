@@ -4,17 +4,23 @@
 package harpoon.Analysis.Realtime;
 
 import harpoon.IR.Quads.Quad;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.Analysis.ClassHierarchy;
+
+import java.util.Set;
 
 /**
  * <code>PACheckRemoval</code> is a complex, pointer analysis based
  * implementation of the <codE>CheckRemoval</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PACheckRemoval.java,v 1.1.2.1 2001-01-23 01:08:41 salcianu Exp $ */
+ * @version $Id: PACheckRemoval.java,v 1.1.2.2 2001-01-23 21:09:50 wbeebee Exp $ */
 public class PACheckRemoval implements CheckRemoval {
     
     /** Creates a <code>PACheckRemoval</code>. */
-    public PACheckRemoval() {
+    public PACheckRemoval(Linker linker, ClassHierarchy ch, HCodeFactory hc,
+			  Set roots) {
         
     }
 

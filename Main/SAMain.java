@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.132 2001-01-22 22:17:54 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.133 2001-01-23 21:09:53 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -205,7 +205,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	    roots.add(mainM);
 	    if (Realtime.REALTIME_JAVA) {
-	      Realtime.setupRoots(linker, roots);
+	      roots.addAll(Realtime.getRoots(linker));
 	    }
 	    if (rootSetFilename!=null) try {
 		addToRootSet(roots, rootSetFilename);
@@ -290,7 +290,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (Realtime.REALTIME_JAVA) {
 		hcf = Realtime.setupCode(linker, classHierarchy, hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-		hcf = Realtime.addChecks(linker, classHierarchy, hcf);
+		hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
 	    }                                           
 	} // don't need the root set anymore.
 
