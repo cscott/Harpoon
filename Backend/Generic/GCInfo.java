@@ -16,6 +16,7 @@ import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.8 2000-03-02 05:33:08 kkz Exp $
+ * @version $Id: GCInfo.java,v 1.1.2.9 2000-03-07 03:43:21 kkz Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that
@@ -80,7 +81,7 @@ public abstract class GCInfo {
 	protected Map stackDerivations;
 	protected Set liveStackOffsetLocs;
 	protected Set liveMachineRegLocs;
-	protected StackOffsetLoc[] calleeSaved;
+	protected Map calleeSaved;
 	/** Creates a <code>GCPoint</code> object 
 	    @param label
 	           the <code>Label</code> identifying
@@ -94,15 +95,13 @@ public abstract class GCInfo {
 	           a <code>Set</code> of <code>CommonLoc</code>s that
 		   represent live pointers at the given GC point
 	    @param calleeSaved
-	           an array of <code>StackOffsetLoc</code>s 
-		   where the contents of some callee-saved register 
-		   with register index i has been stored at index i in
-                   the array. The definition of register index in this 
-		   context corresponds to the definition in
-                   <code>harpoon.Backend.Maps.BackendDerivation.Register</code>
+	           a <code>Map</code> of the callee-saved
+		   <code>BackendDerivation.Register</code>s to
+		   the <code>StackOffsetLoc</code>s 
+		   where its contents has been stored
 	*/
 	public GCPoint(Instr gcPoint, Label label, Map liveDerivations,
-		       Set locations, StackOffsetLoc[] calleeSaved) {
+		       Set locations, Map calleeSaved) {
 	    this.gcPoint = gcPoint;
 	    this.label = label;
 	    this.calleeSaved = calleeSaved;
@@ -146,26 +145,138 @@ public abstract class GCInfo {
 	}
 	/** Returns the <code>Label</code> identifying the GC point */
 	public Label label() { return label; }
-	/** Returns the <code>Map</code> of live derived pointers in
-	    <code>MachineRegLoc</code>s to the derivation information
-	    in the form of <code>DLoc</code>s for that GC point */
-	public Map regDerivations() { return regDerivations; }
-	/** Returns the <code>Map</code> of live derived pointers in
-	    <code>StackOffsetLoc</code>s to the derivation information
-	    in the form of <code>DLoc</code>s for that GC point */
-	public Map stackDerivations() { return stackDerivations; }
-	/** Returns the <code>Set</code> of live, non-derived pointers
-	    in <code>StackOffsetLoc</code>s at that GC point */
-	public Set liveStackOffsetLocs() { return liveStackOffsetLocs; }
-	/** Returns the <code>Set</code> of live, non-derived pointers
-	    in <code>MachineRegLoc</code>s at that GC point */
-	public Set liveMachineRegLocs() { return liveMachineRegLocs; }
-	/** Returns the array of <code>StackOffsetLoc</code>s 
-	    where the contents callee-save registers have been dumped.
-	    The definition of register index in this context corresponds 
-	    to the definition in
-	    <code>harpoon.Backend.Maps.BackendDerivation.Register</code> */
-	public StackOffsetLoc[] calleeSaved() { return calleeSaved; }
+	/** Returns an unmodifiable <code>Map</code> of live derived 
+	    pointers in <code>MachineRegLoc</code>s to the derivation 
+	    information in the form of <code>DLoc</code>s for that 
+	    GC point */
+	public Map regDerivations() { 
+	    return Collections.unmodifiableMap(regDerivations); 
+	}
+	/** Returns an unmodifiable <code>Map</code> of live derived 
+	    pointers in <code>StackOffsetLoc</code>s to the 
+	    derivation information in the form of <code>DLoc</code>s 
+	    for that GC point */
+	public Map stackDerivations() { 
+	    return Collections.unmodifiableMap(stackDerivations); 
+	}
+	/** Returns an unmodifiable <code>Set</code> of live, 
+	    non-derived pointers in <code>StackOffsetLoc</code>s 
+	    at that GC point */
+	public Set liveStackOffsetLocs() { 
+	    return Collections.unmodifiableSet(liveStackOffsetLocs); 
+	}
+	/** Returns an unmodifiable <code>Set</code> of live, 
+	    non-derived pointers in <code>MachineRegLoc</code>s 
+	    at that GC point */
+	public Set liveMachineRegLocs() { 
+	    return Collections.unmodifiableSet(liveMachineRegLocs); 
+	}
+	/** Returns an unmodifiable <code>Map</code> of callee-saved
+	    <code>BackendDerivation.Register</code>s to the
+	    <code>CommonLoc</code>s where its contents has been stored */
+	public Map calleeSaved() {
+	    return Collections.unmodifiableMap(calleeSaved); 
+	}
+    }
+    /** <code>WrappedMachineRegLoc</code> is a wrapper object for
+	<code>MachineRegLoc</code>s that implement special
+	<code>equals</code> and <code>hashCode</code> methods.
+	Two <code>WrappedMachineRegLoc</code> objects are equal
+	if the underlying <code>MachineRegLoc</code>s represent
+	the same register.
+    */
+    public static class WrappedMachineRegLoc {
+	protected MachineRegLoc mrl;
+	/** Creates a <code>WrappedMachineRegLoc</code> object */
+	public WrappedMachineRegLoc(MachineRegLoc mrl) {
+	    this.mrl = mrl;
+	}
+	/** Returns the abstract index of underlying 
+	    <code>MachineRegLoc</code> in the register file.
+	    The index returned is identical to what is
+	    returned by the <code>regIndex</code> method of
+	    the underlying <code>MachineRegLoc</code> object.
+	*/
+	public int regIndex() {
+	    return mrl.regIndex();
+	}
+	/** Compares two <code>WrappedMachineRegLoc</code> objects
+	    for equality. Two <code>WrappedMachineRegLoc</code>
+	    objects are equal if they represent the same register.
+	*/
+	public boolean equals(Object obj) {
+	    try {
+		return (regIndex() == ((WrappedMachineRegLoc)obj).regIndex());
+	    } catch (ClassCastException cce) {
+		return false;
+	    }
+	}
+	/** Returns the hash code value for the object. Two
+	    <code>WrappedMachineRegLoc</code> return the same hash 
+	    code if the underlying <code>MachineRegLoc</code>
+	    objects represent the same register.
+	*/
+	public int hashCode() {
+	    // okay, i'm cheating quite a bit in this implementation
+	    // but this s the simplest way I can think of to ensure 
+	    // that two WrappedMachineRegLoc objects referring to the 
+	    // same abstract register are equal
+	    return ((new Integer(regIndex())).hashCode());
+	}
+    }
+    /** <code>WrappedStackOffsetLoc</code> is a wrapper object for
+	<code>StackOffsetLoc</code>s that implement special
+	<code>equals</code> and <code>hashCode</code> methods.
+	Two <code>StackOffsetLoc</code> objects are equal
+	if the underlying <code>StackOffsetLoc</code>s represent
+	the same stack offset.
+    */
+    public static class WrappedStackOffsetLoc {
+	protected StackOffsetLoc sol;
+	/** Creates a <code>WrappedStackOffsetLoc</code> object */
+	public WrappedStackOffsetLoc(StackOffsetLoc sol) {
+	    this.sol = sol;
+	}
+	/** Returns the abstract stack offset of underlying 
+	    <code>StackOffsetLoc</code>. The absolute location
+	    in memory to which a stack offset refers is
+	    context-dependent. For example, the stack offset of
+	    an object in one method may have the same abstract
+	    value as the stack offset of another object in a
+	    different method, but they do not necessarily refer
+	    to the same absolute location in the stack.
+	    The stack offset returned is identical to what is
+	    returned by the <code>stackOffset</code> method of
+	    the underlying <code>StackOffsetLoc</code> object.
+	*/
+	public int stackOffset() {
+	    return sol.stackOffset();
+	}
+	/** Compares two <code>WrappedStackOffsetLoc</code> objects
+	    for equality. Two <code>WrappedStackOffsetLoc</code>
+	    objects are equal if they refer to the same abstract
+	    stack offset.
+	*/
+	public boolean equals(Object obj) {
+	    try {
+		return (stackOffset() == 
+			((WrappedStackOffsetLoc)obj).stackOffset());
+	    } catch (ClassCastException cce) {
+		return false;
+	    }
+	}
+	/** Returns the hash code value for the object. Two
+	    <code>WrappedStackOffsetLoc</code> return the same hash 
+	    code if the underlying <code>StackOffsetLoc</code> refer
+	    to the same abstract stack offset.
+	*/
+	public int hashCode() {
+	    // okay, i'm cheating quite a bit in this implementation
+	    // but this s the simplest way I can think of to ensure 
+	    // that two WrappedStackOffsetLoc objects referring to the 
+	    // same abstract stack offset are equal
+	    return ((new Integer(stackOffset())).hashCode());
+	}
     }
     /** 
 	Derivation information stored as <code>CommonLoc</code>s.
