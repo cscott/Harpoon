@@ -27,7 +27,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.10 1999-10-28 02:40:30 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.11 1999-10-28 04:45:31 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -333,7 +333,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    // pull a class from the worklist
 	    HClass c = (HClass) cW.pull();
 	    // see if we should add method-of-c to method worklist.
-	    if (instedClasses.contains(c))
+	    if (c.isInterface() || instedClasses.contains(c))
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
 					     m.getDescriptor());
