@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.50 2002-09-23 00:14:28 cananian Exp $
+% $Id: ptran.tex,v 1.51 2002-09-23 01:50:59 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.50 $ $}
+\date{\today \\ $ $Revision: 1.51 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -59,7 +59,55 @@ companionship based on approximated singularity.  We will then show
 how to construct a compositional pointer analysis which uses
 \newterm{possible companions} to guide its treatment of call sites.
 
-\section{Terms} % should be section 0?
+\section{Companion objects}
+Given a heap $H: O\times F\times O$ consisting of tuples where
+\tuple{a,f,b} means that field $f$ of object $a$ points to $b$, and a
+partition $P:O\to R$ of the heap assigning representatives $r\in R$ to
+sets of object $o\in O$, we say that two objects $a$ and $b$ are
+\newterm{to-companions} in $f$ if $C_{to}^O(H,P,a,f,b)$ is true, and
+\newterm{from-companions} in $f$ if $C_{from}^O(H,P,a,f,b)$ is true,
+where
+\begin{eqnarray*}
+C_{to}^O(H,P,a,f,b) &=& \tuple{c,f,b}\in H \wedge P(a)=P(c) \implies a=c
+\\
+C_{from}^O(H,P,a,f,b) &=& \tuple{a,f,c}\in H \wedge P(b)=P(c) \implies b=c
+\end{eqnarray*}
+Intuitively, if $a$ is a to-companion through $f$ of $b$, it means
+that no other object $c$ with the same representative as $a$ may point
+to $b$ through field $f$.  Similarly, if $a$ if a from-companion
+through $f$ of $b$, then no other object $c$ with the same
+representative as $b$ may be pointed to by $a$ through field $f$.
+For heaps representing a single program point, all tuples
+\tuple{a,f,b} represent from-companions, since an object can point to
+at most one other object through a given field at any program point.%
+\footnote{Note that objects can be companions even if there are no
+edges between them in the heap.}
+
+We will often want to speak of companion relationships between object
+\textit{representatives}.  We say representative $r$ is a to (from)
+companion through $f$ of $s$ if $C_{to}^R(H,P,r,f,s)$
+($C_{from}^R(H,P,r,f,s)$), where:
+\begin{eqnarray*}
+C_{to}^R(H,P,r,f,s) &=& \forall a,b\in O : P(a)=r \wedge P(b)=s \implies C_{to}^O(H,P,a,f,b)
+\\
+C_{from}^R(H,P,r,f,s) &=& \forall a,b\in O : P(a)=r \wedge P(b)=s \implies C_{from}^O(H,P,a,f,b)
+\end{eqnarray*}
+
+We may generalize over $H^*$, the set of all possible heaps that may occur
+during program execution, as follows:
+\begin{eqnarray*}
+\mathcal{C}_{to}^R(P,r,f,s) &=& \forall H\in H^*: C_{to}^R(H,P,r,f,s)
+ = C_{to}^R(\cup_{H\in H^*} H, P, r, f, s)
+\\
+\mathcal{C}_{from}^R(P,r,f,s) &=& \forall H\in H^*: C_{from}^R(H,P,r,f,s)
+ = C_{from}^R(\cup_{H\in H^*} H, P, r, f, s)
+\end{eqnarray*}
+
+Note that these formulations may be true for edges not actually
+present in heap $H$.  For this reason, we will usually only speak of the
+companionship of edges known to be in the heap.
+
+\section{Singular Values}
 We will use $v\in V$ for variables and $s\in S$ for statements.  The
 function $\func{use}:S\to 2^V$ returns the set of variables whose
 values are used in a given statement; the function $\func{def}:S\to
@@ -68,8 +116,6 @@ We call a tuple \tuple{v,s} a \newterm{static value}, as it represents
 a variable's possible values at a given program point.%
 \footnote{As opposed to a ``dynamic value'', which would represent the
   unique value of the variable at a given moment during a possible execution.}
-
-\section{Singular Values}
 
 We say a program variable $v$ is \newterm{singular} at a statement $s$
 if $v$ will have a different value at every execution of $s$.  An
