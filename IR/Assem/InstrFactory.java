@@ -8,15 +8,24 @@ import harpoon.Temp.TempFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A <code>InstrFactory</code> is responsible for generating 
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.6 1999-08-25 23:48:17 pnkfelix Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.7 1999-08-26 00:04:13 pnkfelix Exp $
  */
 public abstract class InstrFactory {
+    /** Tracks the last <code>Instr</code> that was constructed from
+	<code>this</code> so that it can be updated when the next
+	<code>Instr</code> is created.
+    */
     Instr lastEmitted;
+
+    Map labelToInstrLABELmap = new HashMap();
 
     /** Returns the <code>TempFactory</code> to use for creating
      *  <code>Temp</code>s which are used as arguments to <code>Instr</code>s

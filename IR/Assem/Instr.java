@@ -15,14 +15,20 @@ import harpoon.Util.ArrayFactory;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.Vector;
+import java.util.List;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.AbstractCollection;
 
 /**
  * <code>Instr</code> is the primary class for representing
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.27 1999-08-25 23:55:53 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.28 1999-08-26 00:04:13 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
