@@ -32,7 +32,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.90.2.2 1998-11-25 10:43:28 cananian Exp $
+ * @version $Id: Translate.java,v 1.90.2.3 1998-11-25 20:14:22 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -1104,7 +1104,7 @@ class Translate  { // not public.
 		Quad.addEdge(q3, 0, q4, 0);
 		Quad.addEdge(q4, 0, q,  0);
 		Quad.addEdge(q5, 0, q6, 0);
-		Quad.addEdge(q6, 0, q2.next(0), 0);
+		Quad.addEdge(q6, 0, q2.next(0), q2.nextEdge(0).which_pred());
 		Quad.addEdge(q2, 0, q6, 1);
 		q = q3;
 	    }
