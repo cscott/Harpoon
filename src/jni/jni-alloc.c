@@ -3,6 +3,10 @@
 #include <jni-private.h>
 
 #include <stdlib.h>
+#include "config.h"
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 
 /* eventually many of these? */
 void *FNI_RawAlloc(JNIEnv *env, jsize length) {

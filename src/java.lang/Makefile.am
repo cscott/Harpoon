@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
+INCLUDES = @IFLAGS@
 
 noinst_LTLIBRARIES = libjavalang.la
 

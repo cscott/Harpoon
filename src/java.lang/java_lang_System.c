@@ -7,6 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "config.h"
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
+
 
 /* utility method */
 static void _putProperty(JNIEnv *env, jobject propobj, jmethodID methodID,

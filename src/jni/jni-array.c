@@ -5,6 +5,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "config.h"
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 
 JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive(JNIEnv *, jobject);
 
