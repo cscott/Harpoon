@@ -25,7 +25,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.8 2000-05-16 01:03:51 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.9 2000-05-16 01:32:33 salcianu Exp $
  */
 abstract class Stats {
 
@@ -211,7 +211,7 @@ abstract class Stats {
 	    HCode hcode = bcf.convert(hm);
 	    int bsize = hcode.getElementsL().size();
 	    total += bsize;
-	    System.out.print(hm + " " + bsize + " bytecode instrs");
+	    System.out.println(hm + " " + bsize + " bytecode instrs");
 	}
 	System.out.println("TOTAL: " + total + " bytecode instrs");
 	System.out.println();
