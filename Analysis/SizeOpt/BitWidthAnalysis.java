@@ -61,10 +61,12 @@ import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -75,22 +77,23 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.2 2001-07-17 16:51:38 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.3 2001-07-18 01:43:35 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
+    final static boolean DEBUG = true;
     final Linker linker;
     final HCodeFactory hcf;
     final ClassHierarchy ch;
 
     /** Creates a <code>BitWidthAnalysis</code>. */
     public BitWidthAnalysis(Linker linker, HCodeFactory hcf,
-			    ClassHierarchy ch, HMethod main) {
+			    ClassHierarchy ch, Set roots) {
 	Util.assert(hcf.getCodeName().equals(QuadSSI.codename));
 	this.linker = linker;
 	this.hcf = hcf;
 	this.ch = ch;
-	analyze(main);
+	analyze(roots);
     }
 
     /*-----------------------------*/
@@ -103,13 +106,16 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     final Map V = new HashMap();
     /** Mapping from <code>HField</code>s to lattice values. */
     final Map Vf = new HashMap();
-    /** Mapping from <code>HMethod</code> x parameter number to lattice val. */
-    final Map Vp = new HashMap();
     /** Mapping from <code>Temp</code>s to <code>Quad</code>s which use them.*/
     final MultiMap useMap = new GenericMultiMap(Factories.arrayListFactory);
     /** Mapping from <code>HField</code>s to <code>Quad</code>s which read
 	them. */
     final MultiMap fieldMap = new GenericMultiMap(new AggregateSetFactory());
+    /** Mapping from <code>HMethod</code>s to <code>METHOD</code>s. */
+    final Map methodMap = new HashMap();
+    /** Mapping from <code>HMethod</code>s to <code>CALL</code> quads
+     *  which may invoke them. */
+    final MultiMap callMap = new GenericMultiMap(new AggregateSetFactory());
 
     /*---------------------------*/
     // public information accessor methods.
@@ -181,16 +187,20 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	return bw.minusWidth();
     }
 
-    /* Temp-to-uses code. */
-    private void scanone(HMethod hm) {
+    /** Create methodMap, useMap */
+    private void scan_one(HMethod hm) {
 	HCode hc = hcf.convert(hm);
 	if (hc==null) return; // abstract method.
+	if (DEBUG) System.out.println("SCAN_ONE: "+hm);
 	for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    // add entries to useMap.
 	    Temp[] used = q.use();
 	    for (int i=0; i<used.length; i++)
 		useMap.add(used[i], q);
+	    // add entry to methodMap
+	    if (q instanceof METHOD)
+		methodMap.put(hm, q);
 	}
     }
 
@@ -198,7 +208,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     // Analysis code.
 
     /** Main analysis method. */
-    private void analyze(HMethod main) {
+    private void analyze(Set roots) {
 	// Initialize worklists.
 	Worklist Wv = new WorkSet(); // variable worklist.
 	Worklist Wq = new WorkSet(); // block worklist.
@@ -207,12 +217,37 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	// Make instance of visitor class.
 	SCCVisitor visitor = new SCCVisitor(Wv, Wq, Wf);
 
-	// put the root entry on the worklist and mark it executable.
-	HCodeElement root = hcf.convert(main).getRootElement();
-	Util.assert(root instanceof Quad,
-		    "SCC analysis works only on QuadSSI form.");
-	Wq.push(root);
-	Eq.add(root);
+	// make root methods set (ignore classes)
+	List root_methods = new ArrayList(roots);
+	for (Iterator it=root_methods.iterator(); it.hasNext(); )
+	    if (!(it.next() instanceof HMethod))
+		it.remove();
+	// all static initializers to root methods set
+	for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
+	    HMethod hm = ((HClass)it.next()).getClassInitializer();
+	    if (hm!=null) root_methods.add(hm);
+	}
+	// put all root methods on the worklist & mark as executable.
+	for (Iterator it=root_methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    scan_one(hm);
+	    METHOD method = (METHOD) methodMap.get(hm);
+	    if (method==null) continue; // native method in root set.
+	    Wq.push(method);
+	    Eq.add(method);
+	    // set up parameters.
+	    int j=0;
+	    if ( !hm.isStatic() ) // raise 'this' variable (non-null!)
+		raiseV(V, Wv, method.params(j++),
+		       new xClassNonNull( hm.getDeclaringClass() ) );
+	    HClass[] pt = hm.getParameterTypes();
+	    for (int k=0; k < pt.length; j++, k++)
+		raiseV(V, Wv, method.params(j),
+		       pt[k].isPrimitive() ?
+		       new xClassNonNull( toInternal(pt[k]) ) :
+		       new xClass( pt[k] ) );
+	}
+	// XXX: main method *could* use xClassExact on String[] arg.
 
 	// Iterate until worklists are empty.
 	while (! (Wq.isEmpty() && Wv.isEmpty() && Wf.isEmpty()) ) {
@@ -260,6 +295,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     }
     /** Raise element t to a in V, adding t to Wv if necessary. */
     void raiseV(Map V, Worklist Wv, Temp t, LatticeVal a) {
+	Util.assert(a!=null);
 	LatticeVal old = get( t );
 	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	// only allow raising value in lattice.
@@ -270,6 +306,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     }
     /** Raise field hf to a in Vf, adding reads of hf to Wf if necessary. */
     void raiseV(Map V, Worklist Wf, HField hf, LatticeVal a) {
+	Util.assert(a!=null);
 	LatticeVal old = get( hf );
 	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	// only allow raising value in lattice.
@@ -481,15 +518,51 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(ASET q) { /* do nothing. */ }
 	public void visit(CALL q) {
-	    // find callable methods.
-	    //  raise Vparam of all callable methods.
-	    //  analysis of callable method RETURN/THROW will in turn
-	    //   raiseE on appropriate outgoing edge and raiseV on
-	    //   retval/retex -- don't forget sigmas when raiseE'ing.
-	    //  if *native* method in callable methods set, then
-	    //   must use conservative retval, edge assumptions,
-	    //   (which are the ones below)
-	    // XXXXXXXXXXXXXXXXXXXXXXXX
+	    // don't analyze this quad until all params are known.
+	    for (int i=0; i<q.paramsLength(); i++)
+		if (get(q.params(i))==null)
+		    return;
+	    // find methods callable from this site.
+	    HMethod hm = q.method();
+	    List callable = new ArrayList(4);
+	    if (q.isVirtual()) { // need type info for virtual methods.
+		Util.assert(!hm.isStatic());
+		LatticeVal v = get( q.params(0) );
+		Util.assert(v!=null && v instanceof xClassNonNull, DEBUG ? (Object) (v+" in "+q+" in "+q.getFactory().getMethod()) : v);
+		HClass ty = ((xClass) v).type();
+		Util.assert(!ty.isPrimitive(), v);
+		// when hm.getDeclaringClass() is an interface, the
+		// implementations may not share a common superclass which
+		// implements that interface.
+		if (!ty.isInstanceOf(hm.getDeclaringClass()))
+		    ty = hm.getDeclaringClass(); // always safe to fall back.
+		hm = ty.getMethod(hm.getName(), hm.getDescriptor());
+		if (!(v instanceof xClassExact))
+		    callable.addAll(ch.overrides(ty,hm,true));
+	    }
+	    callable.add(hm);
+	    // for every callable method, raise its Vparam.
+	    // flag if any callable methods are native.
+	    boolean anyNative = true;//false;
+	    Temp[] myparams = q.params();
+	    for (Iterator it=callable.iterator(); it.hasNext(); ) {
+		HMethod hmm = (HMethod) it.next();
+		callMap.add(hmm, q); // keep callMap updated.
+		if (Modifier.isNative(hmm.getModifiers())) anyNative = true;
+		if (!methodMap.containsKey(hmm)) scan_one(hmm);
+		METHOD method = (METHOD) methodMap.get(hmm);
+		if (method==null) continue; // abstract or native method.
+		for (int i=0; i<myparams.length; i++)
+		    raiseV(V, Wv, method.params(i), get( myparams[i] ));
+		// also mark "method" executable.
+		Wq.push(method); Eq.add(method);
+		// analysis of "method" (in particular, the RETURN/THROW
+		// quads) will raiseE on appropriate outgoing edge and
+		// raiseV on retval/retex.
+	    }
+	    if (!anyNative) return; // done.
+	    // if *native* method in callable methods set, then use
+	    // conservative retval/retex/edge assumptions.
 	    if (q.retval() != null) {
 		// in the bytecode world, everything's an int.
 		HClass ty = q.method().getReturnType();
@@ -615,14 +688,15 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public void visit(FOOTER q) { /* do nothing. */ }
 	public void visit(GET q) {
 	    // variable gets current lattice val of field.
-	    raiseV(V, Wv, q.dst(), get( q.field() ) );
+	    LatticeVal v = get( q.field() );
+	    if (v==null) return; // wait for field initialization.
+	    raiseV(V, Wv, q.dst(), v);
 	    // add to list of reading quads.
 	    fieldMap.add(q.field(), q);
+	    if (DEBUG) System.out.println("READ OF "+q.field()+" GETS "+get( q.field() ));
 	}
 	public void visit(HEADER q) {
-	    // mark both edges executable.
-	    raiseE(Ee, Eq, Wq, q.nextEdge(0));
-	    raiseE(Ee, Eq, Wq, q.nextEdge(1));
+	    Util.assert(false); /* we should "skip to the METHOD" */
 	}
 	public void visit(INSTANCEOF q) {
 	    // no guarantee that src is not null.
@@ -648,17 +722,9 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    }
 	}
 	public void visit(METHOD q) {
-	    HMethod m = q.getFactory().getMethod();
-	    HClass[] pt = m.getParameterTypes();
-	    int j=0;
-	    if (!m.isStatic() ) // raise 'this' variable (non-null!)
-		raiseV(V, Wv, q.params(j++),
-		       new xClassNonNull( m.getDeclaringClass() ) );
-	    for (int k=0; k < pt.length; j++, k++)
-		if (pt[k].isPrimitive())
-		    raiseV(V, Wv, q.params(j), new xClassNonNull( toInternal(pt[k]) ) );
-		else
-		    raiseV(V, Wv, q.params(j), new xClass( pt[k] ) );
+	    /* do very little */
+	    Util.assert(methodMap.get(q.getFactory().getMethod())==q);
+	    if (DEBUG) System.out.println("METHOD: "+q.getFactory().getMethod());
 	}
 	public void visit(MONITORENTER q) { /* do nothing. */ }
 	public void visit(MONITOREXIT q) { /* do nothing. */ }
@@ -825,12 +891,31 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		}
 	    } // for each phi function.
 	}
-	public void visit(RETURN q) { /* do nothing. */ }
+	public void visit(RETURN q) {
+	    if (get( q.retval() )==null) return; // wait for definition!
+	    // for all CALLs which may invoke this method...
+	    for (Iterator it=callMap.getValues(q.getFactory().getMethod())
+		     .iterator(); it.hasNext(); ) {
+		CALL call = (CALL) it.next();
+		// raiseV on retval.
+		if (q.retval()!=null)
+		    raiseV(V, Wv, call.retval(), get( q.retval() ));
+		// raiseE on appropriate outgoing edge.
+		raiseE(Ee, Eq, Wq, call.nextEdge(0));
+		// (don't forget sigmas)
+		for (int i=0; i < call.numSigmas(); i++) {
+		    LatticeVal v2 = get ( call.src(i) );
+		    if (v2 != null)
+			raiseV(V, Wv, call.dst(i, 0), v2.rename(call, 0));
+		}
+	    }
+	}
 	public void visit(SET q) {
 	    /* widen type of field */
 	    LatticeVal v = get( q.src() );
 	    if (v != null)
 		raiseV(V, Wf, q.field(), v);
+	    if (DEBUG) System.out.println("WRITE TO "+q.field()+" OF "+get( q.field() ));
 	}
 	public void visit(SWITCH q) {
 	    LatticeVal v = get( q.index() );
@@ -862,7 +947,24 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		}
 	    }
 	}
-	public void visit(THROW q) { /* do nothing. */ }
+	public void visit(THROW q) {
+	    if (get( q.throwable() )==null) return; // wait for definition!
+	    // for all CALLs which may invoke this method...
+	    for (Iterator it=callMap.getValues(q.getFactory().getMethod())
+		     .iterator(); it.hasNext(); ) {
+		CALL call = (CALL) it.next();
+		// raiseV on retex.
+		raiseV(V, Wv, call.retex(), get( q.throwable() ));
+		// raiseE on appropriate outgoing edge.
+		raiseE(Ee, Eq, Wq, call.nextEdge(1));
+		// (don't forget sigmas)
+		for (int i=0; i < call.numSigmas(); i++) {
+		    LatticeVal v2 = get ( call.src(i) );
+		    if (v2 != null)
+			raiseV(V, Wv, call.dst(i, 1), v2.rename(call, 1));
+		}
+	    }
+	}
 	public void visit(TYPESWITCH q) {
 	    LatticeVal v = get( q.index() );
 	    if (v instanceof xClass) {
@@ -1211,7 +1313,8 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public xClass(HClass type) {
 	    Util.assert(type!=HClass.Boolean && type!=HClass.Byte &&
 			type!=HClass.Short && type!=HClass.Char,
-			"Not an internal type ("+type+")");
+			DEBUG?(Object)("Not an internal type ("+type+")")
+			:type);
 	    this.type = type;
 	}
 	public HClass type() { return type; }
@@ -1234,6 +1337,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     static class xClassNonNull extends xClass {
 	public xClassNonNull(HClass type) { 
 	    super( type );
+	    Util.assert(type!=HClass.Void);
 	}
 	public String toString() { 
 	    return "xClassNonNull: { " + type + " }";
@@ -1283,7 +1387,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return xca!=null && super.equals(xca) && xca.length == length;
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
+	    if (!(v instanceof xClassArray)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
@@ -1334,7 +1438,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		xbw.plusWidth  == plusWidth;
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
+	    if (!(v instanceof xBitWidth)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
@@ -1360,7 +1464,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    ((xInstanceofResult)o).tested == tested);
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xBitWidth)) return false;
+	    if (!(v instanceof xInstanceofResult)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
@@ -1405,7 +1509,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return true;
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xBitWidth)) return false;
+	    if (!(v instanceof xOperBooleanResult)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
@@ -1473,7 +1577,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    return (o instanceof xNullConstant);
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClass) ) return false;
+	    if (!(v instanceof xNullConstant) ) return false;
 	    if (v.equals(this) ) return false;
 	    return true;
 	}
@@ -1493,7 +1597,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    ((xFloatConstant)o).value.equals(value));
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
+	    if (!(v instanceof xFloatConstant)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
@@ -1518,7 +1622,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    ((xStringConstant)o).value.equals(value));
 	}
 	public boolean higherThan(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return false;
+	    if (!(v instanceof xStringConstant)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
 	}
