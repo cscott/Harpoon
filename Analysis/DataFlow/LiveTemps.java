@@ -25,7 +25,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.10 2000-01-31 20:48:56 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.11 2000-02-01 00:56:24 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars {
     private Map hceToBB; 
@@ -63,13 +63,14 @@ public class LiveTemps extends LiveVars {
     */	     
     public LiveTemps(Iterator basicBlocks, Set liveOnProcExit,
 		     UseDefer ud) {
+	this.ud = ud;
+
 	// duplicating code from LiveVars.java
 	CloneableIterator blocks = new CloneableIterator(basicBlocks);
 	Set universe = findUniverse((Iterator) blocks.clone());
 	universe.addAll(liveOnProcExit);
 	
 	mySetFactory = new BitSetFactory(universe);
-	this.ud = ud;
 	
 	initializeHceToBB( (Iterator)blocks.clone() ); 
 
@@ -125,9 +126,10 @@ public class LiveTemps extends LiveVars {
 	     <code>hce</code>. 
     */
     public Set getLiveBefore(HCodeElement hce) {
-	// live_before(hce) <-- UNION(USE(hce), (live_after(hce) - DEF(hce)))
-	Set liveBefore = this.getLiveAfter(hce); 
-	liveBefore.removeAll(ud.defC(hce)); 
+	// live_before(hce) <-- 
+	//      UNION( USE(hce), (live_after(hce) - DEF(hce)))
+	Set liveBefore = mySetFactory.makeSet(this.getLiveAfter(hce)); 
+	liveBefore.removeAll(ud.defC(hce));
 	liveBefore.addAll(ud.useC(hce));
 	
 	return liveBefore; 
@@ -153,20 +155,15 @@ public class LiveTemps extends LiveVars {
     public Set getLiveAfter(HCodeElement hce) {
 	Util.assert(this.hceToBB.containsKey(hce)); 
 
-	System.out.println("FSK: getLiveAfter called");
+	// System.out.println("FSK: getLiveAfter called");
 
-	BasicBlock bb        = (BasicBlock)this.hceToBB.get(hce); 
+	BasicBlock bb = (BasicBlock) this.hceToBB.get(hce); 
 	
 	if (lastBB != bb) {
 	    hce2liveAfter.clear();
 	    lastBB = bb;
-	}
-	
-	if (hce2liveAfter.containsKey(hce)) {
-	    return (Set) hce2liveAfter.get(hce);
-	} else {
-	    Set        liveAfter = this.getLiveOnExit(bb); 
-	    HCodeElement current   = bb.getLast(); 
+	    Set liveAfter = 
+		mySetFactory.makeSet(this.getLiveOnExit(bb));
 
 	    // Starting from the last element in hce's basic block,
 	    // traverse the block in reverse order, until hce is
@@ -174,20 +171,23 @@ public class LiveTemps extends LiveVars {
 
 	    java.util.ListIterator iter = 
 		bb.statements().listIterator(bb.statements().size());
-	    while(current != hce) {
-		current = (HCodeElement) iter.previous();
-		// put every element into the cache, since we're
-		// bothering to calculate the live sets anyway
-		hce2liveAfter.put(current, 
-				  mySetFactory.makeSet(liveAfter));
+	    
+	    while(iter.hasPrevious()) {
+		HCodeElement current = (HCodeElement) iter.previous();
+		
+		// System.out.println("doing live after for "+current);
+
+		hce2liveAfter.put
+		    (current, mySetFactory.makeSet(liveAfter));
 
 		// update set for before 'current'
 		liveAfter.addAll(ud.useC(current)); 
 		liveAfter.removeAll(ud.defC(current)); 
 	    }
-	    
-	    return liveAfter; 
 	}
+
+	return (Set) hce2liveAfter.get(hce);
+
     }
 
     /** Constructs a <code>Set</code> of all of the <code>Temp</code>s

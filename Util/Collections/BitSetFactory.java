@@ -28,7 +28,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.3 2000-01-27 14:56:00 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.4 2000-02-01 00:56:27 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -57,7 +57,8 @@ public class BitSetFactory extends SetFactory {
 	     <code>Set</code> with the elements from <code>c</code>.
     */ 
     public Set makeSet(Collection c) {
-	BitStringSet bss = new BitStringSet(objToBitIndex.keySet().size(), this);
+	BitStringSet bss = 
+	    new BitStringSet(objToBitIndex.keySet().size(), this);
 	bss.addAll(c);
 	return bss;
     }

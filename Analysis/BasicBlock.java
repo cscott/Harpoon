@@ -46,7 +46,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.15 2000-01-31 23:43:51 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.16 2000-02-01 00:56:12 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -340,16 +340,19 @@ public class BasicBlock {
 		// next pointing at curr, even though that's the
 		// prev-elem, not the next one.  See implementation
 		// below for details 
-		for(i=0; i<index-1; i++) {
+		int bound = Math.min(index, size-1);
+		for(i=0; i < bound; i++) {
 		    curr = grapher.succ(curr)[0].to();
 		}
-
-
 		
-
 		// new final vars to be passed to ListIterator
 		final HCodeElement fcurr = curr;
-		final int fi = i;
+		final int fi = index;
+
+		if (false) System.out.println
+			       (" generating listIterator("+index+")"+
+				" next: "+fcurr+
+				" ind: "+fi);
 
 		return new harpoon.Util.UnmodifiableListIterator() {
 		    HCodeElement next = fcurr; //elem for next() to return
