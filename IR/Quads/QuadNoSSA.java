@@ -17,7 +17,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.18 2000-01-31 03:31:14 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.19 2000-02-13 04:38:09 bdemsky Exp $
  * @see QuadWithTry
  * @see QuadSSI
  */
@@ -47,6 +47,13 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 	this.quads = translator.getQuads();
 	this.typeMap = (tm==null) ? null : translator;
     }
+    QuadNoSSA(QuadRSSI qsa) {
+	super(qsa.getMethod(),null);
+	RSSIToNoSSA translate = new RSSIToNoSSA(this.qf, qsa);
+	this.quads=translate.getQuads();
+	this.typeMap = null;
+    }
+
     protected QuadNoSSA(HMethod parent, Quad quads) {
 	super(parent, quads);
 	this.typeMap = null;
@@ -89,7 +96,17 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
-	} else if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)){
+	} else if (hcf.getCodeName().equals(QuadRSSI.codename)) {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
+		public HCode convert(HMethod m) {
+		    HCode c = hcf.convert(m);
+		    return (c==null) ? null :
+			new QuadNoSSA((QuadRSSI)c);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };	    
+	}else if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)){
 	    // implicit chaining
 	    return codeFactory(QuadWithTry.codeFactory(hcf));
 	} else throw new Error("don't know how to make " + codename +
@@ -113,6 +130,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 	} else throw new Error("don't know how to make " + codename +
 			       " from " + hcf.getCodeName());
     }
+
     /** Return a code factory for QuadNoSSA, using the default code
      *  factory for QuadWithTry. */
     public static HCodeFactory codeFactory() {

@@ -19,14 +19,14 @@ import harpoon.Util.Util;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.6 2000-02-08 07:52:36 bdemsky Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.7 2000-02-13 04:38:09 bdemsky Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
     public static final String codename = "quad-ssi";
 
     /** Creates a <code>Code</code> object from a bytecode object. */
-    QuadSSI(QuadNoSSA qns) 
+    public QuadSSI(QuadNoSSA qns) 
     {
 	super(qns.getMethod(), null);
 	quads = SSIRename.rename(qns, qf);
@@ -71,7 +71,8 @@ public class QuadSSI extends Code /* which extends HCode */ {
 		public String getCodeName() { return codename; }
 	    };
 	} else if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)
-		   || hcf.getCodeName().equals(QuadWithTry.codename)) {
+		   || hcf.getCodeName().equals(QuadWithTry.codename)||
+		   hcf.getCodeName().equals(QuadRSSI.codename)) {
 	    // do some implicit chaining.
 	    return codeFactory(QuadNoSSA.codeFactory(hcf));
 	} else throw new Error("don't know how to make " + codename + 
