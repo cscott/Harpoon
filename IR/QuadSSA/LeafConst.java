@@ -5,9 +5,11 @@ import harpoon.ClassFile.*;
 import harpoon.Util.Util;
 /**
  * <code>LeafConst</code> objects represent constant values.
+ * A <code>LeafConst</code> with type <code>VOID</code> and 
+ * value <code>null</code> stands for the null literal value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LeafConst.java,v 1.1 1998-08-07 09:56:38 cananian Exp $
+ * @version $Id: LeafConst.java,v 1.2 1998-08-22 05:45:58 cananian Exp $
  */
 
 public class LeafConst extends Leaf {

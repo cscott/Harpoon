@@ -3,26 +3,38 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
+import harpoon.ClassFile.Bytecode.Op;
+import harpoon.ClassFile.Bytecode.Operand;
+import harpoon.ClassFile.Bytecode.OpClass;
+import harpoon.ClassFile.Bytecode.OpLocalVariable;
 import harpoon.ClassFile.Bytecode.Instr;
+import harpoon.ClassFile.Bytecode.InGen;
+import harpoon.ClassFile.Bytecode.InCti;
+import harpoon.ClassFile.Bytecode.InMerge;
+import harpoon.ClassFile.Bytecode.InSwitch;
 import harpoon.ClassFile.Bytecode.Code.ExceptionEntry;
 
 import java.lang.reflect.Modifier;
+import java.util.Hashtable;
 /**
  * <code>Translate</code> is a utility class to implement the
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.3 1998-08-22 00:48:36 cananian Exp $
+ * @version $Id: Translate.java,v 1.4 1998-08-22 05:45:58 cananian Exp $
  */
 
 /*
  * To do: figure out interface for trans(State, ...)
+ *        up to, but not including GETFIELD.
  */
 
 /* State holds state *after* execution of corresponding instr. */
 class Translate  { // not public.
     static class State { // inner class
-	/** Current temps used for each position of stack */
+	/** Current temps used for each position of stack.
+	 *  <code>null</code>s are valid placeholders for empty spaces
+	 *  in double-word representations. */
 	Temp stack[];
 	/** Current temps used for local variables */
 	Temp lv[];
@@ -33,9 +45,11 @@ class Translate  { // not public.
 	    this.stack = stack; this.lv = lv; this.tryBlock = tryBlock;
 	}
 	/** Make new state by popping top of stack */
-	State pop() {
-	    Temp stk[] = new Temp[this.stack.length-1];
-	    System.arraycopy(this.stack, 1, stk, 0, stk.length);
+	State pop() { return pop(1); }
+	/** Make new state by popping multiple entries off top of stack */
+	State pop(int n) {
+	    Temp stk[] = new Temp[this.stack.length-n];
+	    System.arraycopy(this.stack, n, stk, 0, stk.length);
 	    return new State(stk, lv, tryBlock);
 	}
 	/** Make new state by pushing temp onto top of stack */
@@ -76,6 +90,14 @@ class Translate  { // not public.
 	}
     }
 
+    /** Associates State objects with Instrs. */
+    class StateMap {
+	Hashtable map;
+	StateMap() { map = new Hashtable(); }
+	void put(Instr in, State s) { map.put(in, s); }
+	State get(Instr in) { return (State) map.get(in); }
+    }
+
     static final Quad trans(harpoon.ClassFile.Bytecode.Code bytecode) {
 	// set up initial state.
 	String[] paramNames = bytecode.getMethod().getParameterNames();
@@ -105,9 +127,324 @@ class Translate  { // not public.
 	// return result.
 	return quads;
     }
-    static final void trans(State s) {
+    static final void trans(StateMap s) {
 	// FIXME do schtuff here.
     }
 
-    static final Instr[] transBasicBlock(State s, 
+    static final Instr[] transBasicBlock(StateMap s, Instr in) {
+    }
+    static final Quad transInstr(StateMap s, Instr in) {
+	if (in instanceof InGen) return transInstr(s, (InGen) in);
+	if (in instanceof InCti) return transInstr(s, (InCti) in);
+	if (in instanceof InMerge) return transInstr(s, (InMerge) in);
+	throw new Error("Unknown Instr type.");
+    }
+
+    static final HClass objArray = HClass.forClass(Object[].class);
+    static final HClass byteArray= HClass.forClass(byte[].class);
+
+    static final HMethod objArrayGet = 
+	objArray.getMethod("get", new HClass[] {HClass.INT});
+    static final HMethod objArrayPut =
+	objArray.getMethod("put", new HClass[] {HClass.INT, 
+						objArray.getComponentType()});
+
+    static final Quad transInstr(StateMap sm, InGen in) {
+	State s = sm.get(in.prev()[0]);
+	State ns;
+	Quad q;
+	switch(in.getOpcode()) {
+	case Op.AALOAD:
+	    ns = s.pop(2).push(new Temp());
+	    q = new CALL(in, objArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.AASTORE:
+	    ns = s.pop(3);
+	    q = new CALL(in, objArrayPut, s.stack[2],
+			 new Temp[] {s.stack[1], s.stack[0]});
+	    break;
+	case Op.ACONST_NULL:
+	    ns = s.push(new Temp("null"));
+	    q = new LET(in, ns.stack[0], new LeafConst(null, HClass.VOID));
+	    break;
+	case Op.ALOAD:
+	case Op.ALOAD_0:
+	case Op.ALOAD_1:
+	case Op.ALOAD_2:
+	case Op.ALOAD_3:
+	    {
+		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
+		ns = s.push(s.lv[opd.getIndex()]);
+		q = null;
+		// Alternate implementation:
+		//ns = s.push(new Temp());
+		//q = new LET(in, ns.stack[0], 
+		//	    new LeafTemp(s.lv[opd.getIndex()]));
+		break;
+	    }
+	case Op.ANEWARRAY:
+	    {
+		OpClass opd = (OpClass) in.getOperand(0);
+		HClass hc = HClass.forDescriptor("[" + 
+						 opd.value().getDescriptor());
+		ns = s.pop().push(new Temp());
+		q = new NEW(in, ns.stack[0], hc);
+		// XXX APPEND.
+		q += new CALL(in, hc.getMethod("<init>","(I)V"),
+			      ns.stack[0], new Temp[] {s.stack[0]});
+		break;
+	    }
+	case Op.ARRAYLENGTH:
+	    ns = s.pop().push(new Temp());
+	    q = new GET(in, ns.stack[0], s.stack[0],
+			objArray.getField("length")); // XXX BOGUS
+	    // What if it's not an Object Array?
+	    break;
+	case Op.ASTORE:
+	case Op.ASTORE_0:
+	case Op.ASTORE_1:
+	case Op.ASTORE_2:
+	case Op.ASTORE_3:
+	    {
+	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
+	    ns = s.pop().assignLV(opd.getIndex(), 
+				  new Temp(s.lv[opd.getIndex()]));
+	    q = new LET(in, ns.lv[opd.getIndex()], s.stack[0]);
+	    break;
+	    }
+	case Op.BALOAD:
+	    ns = s.pop(2).push(new Temp());
+	    q = new CALL(in, byteArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.BASTORE:
+	    ns = s.pop(3);
+	    q = new CALL(in, byteArrayPut, s.stack[2],
+			 new Temp[] {s.stack[1], s.stack[0]});
+	    break;
+	case BIPUSH:
+	    {
+		OpConstant opd = (OpConstant) in.getOperand(0);
+		int val = ((Byte)opd.getValue()).intValue();
+		ns = s.push(new Temp("iconst"));
+		q = new LET(in, ns.stack[0], 
+			    new LeafConst(new Integer(val), HClass.INT));
+		break;
+	    }
+	case Op.CALOAD:
+	    ns = s.pop(2).push(new Temp());
+	    q = new CALL(in, charArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.CASTORE:
+	    ns = s.pop(3);
+	    q = new CALL(in, charArrayPut, s.stack[2],
+			 new Temp[] {s.stack[1], s.stack[0]});
+	    break;
+	case Op.CHECKCAST:
+	    // translate as:
+	    //  if (!(obj instanceof class))
+	    //     throw new ClassCastException();
+	    // XXX FIXME XXX
+	    throw new Error("CHECKCAST unimplemented as of yet.");
+	case Op.D2F:
+	case Op.D2I:
+	    ns = s.pop(2).push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode()) /* "d2f" or "d2i" */,
+			 ns.stack[0], new Temp[] { s.stack[0] });
+	    break;
+	case Op.D2L:
+	    ns = s.pop(2).push(null).push(new Temp());
+	    q = new OPER(in, "d2l", ns.stack[0], 
+			 new Temp[] { s.stack[0] });
+	    break;
+	case Op.DADD:
+	case Op.DDIV:
+	case Op.DMUL:
+	case Op.DREM:
+	case Op.DSUB:
+	    ns = s.pop(4).push(null).push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode()), // dadd, ddiv or dmul
+			 ns.stack[0], new Temp[] { s.stack[2], s.stack[0] });
+	    break;
+	case Op.DALOAD:
+	    ns = s.pop(2).push(null).push(new Temp());
+	    q = new CALL(in, dblArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.DASTORE:
+	    ns = s.pop(4);
+	    q = new CALL(in, dblArrayPut, s.stack[3],
+			 new Temp[] {s.stack[2], s.stack[0]});
+	    break;
+	case Op.DCMPG:
+	case Op.DCMPL:
+	    ns = s.pop(4).push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode())/*"dcmpg" or "dcmpl"*/,
+			 ns.stack[0], new Temp[] { s.stack[2], s.stack[0] });
+	    break;
+	case Op.DCONST_0:
+	case Op.DCONST_1:
+	    {
+		OpConstant opd = (OpConstant) in.getOperand(0);
+		ns = s.push(null).push(new Temp("dconst"));
+		q = new LET(in, ns.stack[0],
+			    new LeafConst(opd.getValue(), opd.getType()));
+		break;
+	    }
+	case Op.DLOAD:
+	case Op.DLOAD_0:
+	case Op.DLOAD_1:
+	case Op.DLOAD_2:
+	case Op.DLOAD_3:
+	    {
+		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
+		ns = s.push(null).push(s.lv[opd.getIndex()]);
+		q = null;
+		break;
+	    }
+	case Op.DNEG:
+	    ns = s.pop(2).push(null).push(new Temp());
+	    q = new OPER(in, "dneg", ns.stack[0], new Temp[] {s.stack[0]});
+	    break;
+	case Op.DSTORE:
+	case Op.DSTORE_0:
+	case Op.DSTORE_1:
+	case Op.DSTORE_2:
+	case Op.DSTORE_3:
+	    {
+	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
+	    ns = s.pop(2).assignLV(opd.getIndex(), 
+				  new Temp(s.lv[opd.getIndex()]));
+	    q = new LET(in, ns.lv[opd.getIndex()], s.stack[0]);
+	    break;
+	    }
+	case Op.DUP:
+	    ns = s.push(s.stack[0]);
+	    q = null;
+	    break;
+	case Op.DUP_X1:
+	    ns = s.pop(2).push(s.stack[0]).push(s.stack[1]).push(s.stack[0]);
+	    q = null;
+	    break;
+	case Op.DUP_X2:
+	    ns = s.pop(3).push(s.stack[0]).push(s.stack[2]).push(s.stack[1])
+		.push(s.stack[0]);
+	    q = null;
+	    break;
+	case Op.DUP2:
+	    ns = s.push(s.stack[1]).push(s.stack[0]);
+	    q = null;
+	    break;
+	case Op.DUP2_X1:
+	    ns = s.pop(3).push(s.stack[1]).push(s.stack[0])
+		.push(s.stack[2]).push(s.stack[1]).push(s.stack[0]);
+	    q = null;
+	    break;
+	case Op.DUP2_X2:
+	    ns = s.pop(4).push(s.stack[1]).push(s.stack[0])
+		.push(s.stack[3]).push(s.stack[2])
+		.push(s.stack[1]).push(s.stack[0]);
+	    q = null;
+	    break;
+	case Op.F2D:
+	case Op.F2L:
+	    ns = s.pop().push(null).push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode()), // "f2d" or "f2l"
+			 ns.stack[0], new Temp[] {s.stack[0]});
+	    break;
+	case Op.F2I:
+	    ns = s.pop().push(new Temp());
+	    q = new OPER(in, "f2i", ns.stack[0], new Temp[] {s.stack[0]});
+	    break;
+	case FADD:
+	case FDIV:
+	case FMUL:
+	case FREM:
+	case FSUB:
+	    ns = s.pop(2).push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode()), // fadd, fdiv, ...
+			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
+	    break;
+	case Op.FALOAD:
+	    ns = s.pop(2).push(new Temp());
+	    q = new CALL(in, fltArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.FASTORE:
+	    ns = s.pop(3);
+	    q = new CALL(in, fltArrayPut, s.stack[2],
+			 new Temp[] {s.stack[1], s.stack[0]});
+	    break;
+	case Op.FCMPG:
+	case Op.FCMPL:
+	    ns = s.pop(2).push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode())/*"fcmpg" or "fcmpl"*/,
+			 ns.stack[0], new Temp[] { s.stack[1], s.stack[0] });
+	    break;
+	case Op.FCONST_0:
+	case Op.FCONST_1:
+	case Op.FCONST_2:
+	    {
+		OpConstant opd = (OpConstant) in.getOperand(0);
+		ns = s.push(new Temp("fconst"));
+		q = new LET(in, ns.stack[0],
+			    new LeafConst(opd.getValue(), opd.getType()));
+		break;
+	    }
+	case Op.FLOAD:
+	case Op.FLOAD_0:
+	case Op.FLOAD_1:
+	case Op.FLOAD_2:
+	case Op.FLOAD_3:
+	    {
+		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
+		ns = s.push(s.lv[opd.getIndex()]);
+		q = null;
+		break;
+	    }
+	case Op.FNEG:
+	    ns = s.pop(2).push(new Temp());
+	    q = new OPER(in, "fneg", ns.stack[0], new Temp[] {s.stack[0]});
+	    break;
+	case Op.FSTORE:
+	case Op.FSTORE_0:
+	case Op.FSTORE_1:
+	case Op.FSTORE_2:
+	case Op.FSTORE_3:
+	    {
+	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
+	    ns = s.pop().assignLV(opd.getIndex(), 
+				  new Temp(s.lv[opd.getIndex()]));
+	    q = new LET(in, ns.lv[opd.getIndex()], s.stack[0]);
+	    break;
+	    }
+
+	default:
+	    throw new Error("Unknown InGen opcode.");
+	}
+	sm.put(in, ns);
+	return q;
+    }
+    static final Quad transInstr(StateMap s, InCti in) {
+	if (in instanceof InSwitch) {
+	} else {
+	    switch(in.getOpcode()) {
+	    case Op.ARETURN:
+	    case Op.DRETURN:
+	    case Op.FRETURN:
+	    case ATHROW:
+		ns = s.pop();
+		q = new THROW(in, s.stack[0]);
+		break;
+	    default:
+	    }
+	}
+	return null;
+    }
+    static final Quad transInstr(StateMap s, InMerge in) {
+	return null;
+    }
 }
+
