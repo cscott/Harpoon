@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.99 2001-09-13 21:55:37 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.100 2001-09-26 18:01:12 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -268,9 +268,34 @@ static class TranslationVisitor extends LowQuadVisitor {
     public void emitLabel(Label label, HCodeElement src) {
 	addStmt(new LABEL(m_tf, src, label, false));
     }
+    /* careful: phis can be conflicted (sources intersect phis != empty set) */
     public void emitPhiFixup(harpoon.IR.Quads.PHI q, int which_pred) {
+	boolean hasConflicts = q.hasConflicts();
+	Translation.Exp srcval[] = new Translation.Exp[q.numPhis()];
+	for (int i=0; i<q.numPhis(); i++) {
+	    srcval[i] = _TEMPte(q.src(i, which_pred), q);
+	    if (hasConflicts) {
+		// move all sources to temps before moving to destinations.
+		Temp treeTemp = new Temp(m_ctm.tempMap(q.dst(i)));
+		HClass type = quadDeriv.typeMap(q, q.dst(i));
+		TEMP T1 = new TEMP(m_tf, q, TYPE(type), treeTemp);
+		TEMP T2 = new TEMP(m_tf, q, TYPE(type), treeTemp);
+		MOVE M = new MOVE(m_tf, q, T1, srcval[i].unEx(m_tf));
+		if (type!=null) {
+		    treeDeriv.putTypeAndTemp(T1, type, treeTemp);
+		    treeDeriv.putTypeAndTemp(T2, type, treeTemp);
+		} else {
+		    DList dl = DList.rename(quadDeriv.derivation(q, q.dst(i)),
+					    m_ctm);
+		    treeDeriv.putDerivation(T1, dl);
+		    treeDeriv.putDerivation(T2, dl);
+		}
+		addStmt(M);
+		srcval[i] = new Translation.Ex(T2);
+	    }
+	}
 	for (int i=0; i<q.numPhis(); i++)
-	    addMove(q, q.dst(i), _TEMPte(q.src(i, which_pred), q));
+	    addMove(q, q.dst(i), srcval[i]);
     }
     public void emitSigmaFixup(harpoon.IR.Quads.SIGMA q, int which_succ) {
 	for (int i=0; i<q.numSigmas(); i++)
