@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.Unreachable;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
@@ -18,18 +19,20 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 /**
  * <code>ResilientUnHandler</code> replaces implicit exception
  * handling with explicit resilient exception handling and removes
  * <code>HANDLER</code> quads from the graph.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: ResilientUnHandler.java,v 1.1 2003-02-19 20:08:07 kkz Exp $ */
+ * @version $Id: ResilientUnHandler.java,v 1.2 2003-03-15 23:24:58 kkz Exp $ */
 final class ResilientUnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS
 	= !Boolean.getBoolean("harpoon.unhandler.noarraychecks");
     // entry point.
     public static final Quad unhandler(final QuadFactory qf, final Code code,
+				       final ClassHierarchy ch,
 				       boolean coalesce_exceptions) {
 	final QuadMap qm = new QuadMap();
 	final HEADER old_header = (HEADER)code.getRootElement();
@@ -37,7 +40,7 @@ final class ResilientUnHandler {
 	final HandlerMap hm = new HandlerMap(qf, old_method);
 	final CloningTempMap ctm = new CloningTempMap(code.qf.tempFactory(),
 						      qf.tempFactory());
-	final StaticState ss = new StaticState(qf, qm, hm, ctm,
+	final StaticState ss = new StaticState(qf, qm, hm, ctm, ch,
 					       coalesce_exceptions);
 	visitAll(new Visitor(new TempInfo(), ss), old_header);
 	// now qm contains mappings from old to new, we just have to link them.
@@ -407,12 +410,14 @@ final class ResilientUnHandler {
 	final QuadMap qm;
 	final HandlerMap hm;
 	final CloningTempMap ctm;
+	final ClassHierarchy ch;
 	final InstanceOfFixupMap iofm = new InstanceOfFixupMap();
 	final boolean coalesce;
 	final List extra = new ArrayList(4);
 	StaticState(QuadFactory qf, QuadMap qm, HandlerMap hm,
-		    CloningTempMap ctm, boolean coalesce) {
+		    CloningTempMap ctm, ClassHierarchy ch, boolean coalesce) {
 	    this.qf = qf; this.qm = qm; this.hm = hm; this.ctm = ctm;
+	    this.ch = ch;
 	    this.coalesce = coalesce;
 	}
 	Temp extra(int i) {
@@ -484,6 +489,8 @@ final class ResilientUnHandler {
 				      defaultConst(head, q.dst(), q.type()));
 		head = qs[0];
 		tail = qs[1];
+	    } else {
+		ti.update(q.objectref(), alsoNonNull(Tobj));
 	    }
 	    ss.qm.put(q, head, tail);
 	    ti.put(q.dst(), Type.top);
@@ -496,6 +503,8 @@ final class ResilientUnHandler {
 				      defaultConst(head, q.dst(), HClass.Int));
 		head = qs[0];
 		tail = qs[1];
+	    } else {
+		ti.update(q.objectref(), alsoNonNull(Tobj));
 	    }
 	    ss.qm.put(q, head, tail);
 	    if (Tobj.isFixedArray())
@@ -561,6 +570,8 @@ final class ResilientUnHandler {
 		Quad[] qs = nullCheck(q, head, tail, q.objectref(), null);
 		head = qs[0];
 		tail = qs[1];
+	    } else {
+		ti.update(q.objectref(), alsoNonNull(Tobj));
 	    }
 	    ss.qm.put(q, head, tail);
 	}
@@ -600,6 +611,9 @@ final class ResilientUnHandler {
 						 q.method().getReturnType()));
 		head = qs[0];
 		tail = qs[1];
+	    } else {
+		if (!q.isStatic()) ti.update(q.params(0),
+					     alsoNonNull(ti.get(q.params(0))));
 	    }
 	    ss.qm.put(q, head, tail);
 	    // nothing known about return values or exceptions thrown.
@@ -632,6 +646,8 @@ final class ResilientUnHandler {
 						       q.field().getType()));
 		    head = qs[0];
 		    tail = qs[1];
+		} else {
+		    ti.update(q.objectref(), alsoNonNull(Tobj));
 		}
 	    }
 	    ss.qm.put(q, head, tail);
@@ -687,6 +703,8 @@ final class ResilientUnHandler {
 		Quad[] qs = nullCheck(q, head, tail, q.lock(), null);
 		head = qs[0];
 		tail = qs[1];
+	    } else {
+		ti.update(q.lock(), alsoNonNull(Tlck));
 	    }
 	    ss.qm.put(q, head, tail);
 	}
@@ -697,6 +715,8 @@ final class ResilientUnHandler {
 		Quad[] qs = nullCheck(q, head, tail, q.lock(), null);
 		head = qs[0];
 		tail = qs[1];
+	    } else {
+		ti.update(q.lock(), alsoNonNull(Tlck));
 	    }
 	    ss.qm.put(q, head, tail);
 	}
@@ -790,6 +810,8 @@ final class ResilientUnHandler {
 		    Quad[] qs = nullCheck(q, head, tail, q.objectref(), null);
 		    head = qs[0];
 		    tail = qs[1];
+		} else {
+		    ti.update(q.objectref(), alsoNonNull(Tobj));
 		}
 	    }
 	    ss.qm.put(q, head, tail);
@@ -818,18 +840,26 @@ final class ResilientUnHandler {
 	    // translate as:
 	    //  if (obj!=null && !(obj instanceof class))
 	    //     throw new ClassCastException();
-	    Quad nq = (Quad) q.clone(qf, ss.ctm), head;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head, tail;
 	    Type Tobj = ti.get(q.objectref());
 	    Temp Tr = ss.extra(0);
 	    Quad q1 = new INSTANCEOF(qf, q, Tr,
 				     Quad.map(ss.ctm, q.objectref()),
 				     q.hclass());
 	    Quad q2 = new CJMP(qf, q, Tr, new Temp[0]);
-	    Quad sub = defaultConst(nq, q.objectref(), q.hclass());
-	    Quad q3 = new PHI(qf, q, new Temp[0], 2);
-	    Quad.addEdges(new Quad[] { q1, q2, sub, q3 });
-	    Quad.addEdge(q2, 1, nq, 0);
-	    Quad.addEdge(nq, 0, q3, 1);
+	    if (isHandled(q, HCclasscastE)) {
+		Quad q3 = _throwException_(qf, q, HCclasscastE);
+		Quad.addEdges(new Quad[] { q1, q2, q3 });
+		Quad.addEdge(q2, 1, nq, 0);
+		tail = nq;
+	    } else {
+		Quad sub = defaultConst(nq, q.objectref(), q.hclass());
+		Quad q3 = new PHI(qf, q, new Temp[0], 2);
+		Quad.addEdges(new Quad[] { q1, q2, sub, q3 });
+		Quad.addEdge(q2, 1, nq, 0);
+		Quad.addEdge(nq, 0, q3, 1);
+		tail = q3;
+	    }
 	    head = q1;
 	    if (!Tobj.isNonNull()) { // specially handle null.
 		Quad q4 = new CONST(qf, q, Tr, null, HClass.Void);
@@ -842,9 +872,9 @@ final class ResilientUnHandler {
 		Quad.addEdge(q6, 1, q7, 0); // if null, branch to a-ok
 		Quad.addEdge(q2, 1, q7, 1); // if instanceof class, goto a-ok
 		Quad.addEdge(q7, 0, nq, 0); // (link PHI to a-ok)
-		head = q4;
+		head = q4; // tail is unchanged
 	    }
-	    ss.qm.put(q, head, q3);
+	    ss.qm.put(q, head, tail);
 	    // no change to type info, since we don't keep track of class
 	}
 
@@ -853,6 +883,19 @@ final class ResilientUnHandler {
 	    return in.isNonNull()?in:Type.nonnull;
 	}
 
+	boolean isHandled(Quad old, HClass HCex) {
+	    HandlerSet hs = ss.hm.handlers(old);
+	    if (hs==null) return false;	    
+	    for(Iterator ee=hs.iterator(); ee.hasNext(); ) {
+		HClass Hcls = ((HANDLER)ee.next()).caughtException();
+		// Hcls==null is the 'catch any' case
+		if (Hcls==null || Hcls.equals(HCex) ||
+		    ss.ch.children(Hcls).contains(HCex))
+		    return true;
+	    }
+	    return false; // no match
+	}
+	
 	//////////////// exceptions.
 	private final HClass HCarraystoreE;
 	private final HClass HCnullpointerE;
@@ -862,7 +905,21 @@ final class ResilientUnHandler {
 	private final HClass HCclasscastE;
 
 	//////////////// runtime checks.
+	Quad intZeroCheck(Quad old, Quad head, Temp Tz) {
+	    QuadFactory qf = head.qf;
+	    Temp Tr = ss.extra(0);
+	    Quad q0 = new CONST(qf, head, Tr, new Integer(0), HClass.Int);
+	    Quad q1 = new OPER(qf, head, Qop.ICMPEQ, Tr,
+			       new Temp[] { Quad.map(ss.ctm,Tz), Tr });
+	    Quad q2 = new CJMP(qf, head, Tr, new Temp[0]);
+	    Quad q3 = _throwException_(qf, old, HCarithmeticE);
+	    Quad.addEdges(new Quad[] { q0, q1, q2, head });
+	    Quad.addEdge(q2, 1, q3, 0);
+	    return q0;
+	}
 	Quad[] intZeroCheck(Quad old, Quad head, Temp Tz, Quad sub) {
+	    if (isHandled(old, HCarithmeticE))
+		return new Quad[] { intZeroCheck(old, head, Tz), head };
 	    QuadFactory qf = head.qf;
 	    Temp Tr = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tr, new Integer(0), HClass.Int);
@@ -875,7 +932,21 @@ final class ResilientUnHandler {
 	    Quad.addEdge(sub, 0, q3, 1);
 	    return new Quad[] { q0, q3 };
 	}
+	Quad longZeroCheck(Quad old, Quad head, Temp Tz) {
+	    QuadFactory qf = head.qf;
+	    Temp Tr = ss.extra(0);
+	    Quad q0 = new CONST(qf, head, Tr, new Long(0), HClass.Long);
+	    Quad q1 = new OPER(qf, head, Qop.LCMPEQ, Tr,
+			       new Temp[] { Quad.map(ss.ctm, Tz), Tr });
+	    Quad q2 = new CJMP(qf, head, Tr, new Temp[0]);
+	    Quad q3 = _throwException_(qf, old, HCarithmeticE);
+	    Quad.addEdges(new Quad[] { q0, q1, q2, head });
+	    Quad.addEdge(q2, 1, q3, 0);
+	    return q0;
+	}
 	Quad[] longZeroCheck(Quad old, Quad head, Temp Tz, Quad sub) {
+	    if (isHandled(old, HCarithmeticE))
+		return new Quad[] { longZeroCheck(old, head, Tz), head };
 	    QuadFactory qf = head.qf;
 	    Temp Tr = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tr, new Long(0), HClass.Long);
@@ -888,7 +959,35 @@ final class ResilientUnHandler {
 	    Quad.addEdge(sub, 0, q3, 1);
 	    return new Quad[] { q0, q3 };
 	}
+	Quad componentCheck(Quad old, Quad head, Temp Tobj, Temp Tsrc) {
+	    QuadFactory qf = head.qf;
+	    Temp Tr = ss.extra(0);
+	    // test Tobj against null & branch around COMPONENTOF.
+	    Quad q0 = new COMPONENTOF(qf, head, Tr,
+				      Quad.map(ss.ctm, Tobj),
+				      Quad.map(ss.ctm, Tsrc));
+	    Quad q1 = new CJMP(qf, head, Tr, new Temp[0]);
+	    Quad q2 = _throwException_(qf, old, HCarraystoreE);
+	    if (ti.get(Tsrc).isNonNull()) {
+		Quad.addEdges(new Quad[] { q0, q1, q2 });
+		Quad.addEdge(q1, 1, head, 0);
+		return q0;
+	    } else { // insert null check if src is not known non-null
+		Quad qa = new CONST(qf, head, Tr, null, HClass.Void);
+		Quad qb = new OPER(qf, head, Qop.ACMPEQ, Tr,
+				   new Temp[] { Quad.map(ss.ctm, Tsrc), Tr });
+		Quad qc = new CJMP(qf, head, Tr, new Temp[0]);
+		Quad qd = new PHI(qf, head, new Temp[0], 2);
+		Quad.addEdges(new Quad[] { qa, qb, qc, q0, q1, q2 });
+		Quad.addEdge(qc, 1, qd, 0);
+		Quad.addEdge(q1, 1, qd, 1);
+		Quad.addEdge(qd, 0, head, 0);
+		return qa;
+	    }
+	}
 	Quad[] componentCheck(Quad old, Quad head, Quad tail, Temp Tobj, Temp Tsrc) {
+	    if (isHandled(old, HCarraystoreE))
+		return new Quad[] { componentCheck(old, head, Tobj, Tsrc), tail };
 	    QuadFactory qf = head.qf;
 	    Temp Tr = ss.extra(0);
 	    // test Tobj against null & branch around COMPONENTOF.
@@ -929,6 +1028,8 @@ final class ResilientUnHandler {
 	    return q0;
 	}
 	Quad[] nullCheck(Quad old, Quad head, Quad tail, Temp Tobj, Quad sub) {
+	    if (isHandled(old, HCnullpointerE))
+		return new Quad[] { nullCheck(old, head, Tobj), tail };
 	    QuadFactory qf = head.qf;
 	    Temp Tr = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tr, null, HClass.Void);
@@ -964,8 +1065,33 @@ final class ResilientUnHandler {
 	    Quad.addEdge(q0, 0, qs[0], 0);
 	    return new Quad[] { q0, qs[1] };
 	}
+	private Quad _boundsCheck_(Quad old, Quad head, Temp Tlen, Temp Ttst,
+				   Temp Textra1) {
+	    assert Tlen.tempFactory()==head.qf.tempFactory();
+	    assert Ttst.tempFactory()==head.qf.tempFactory();
+	    assert Textra1.tempFactory()==head.qf.tempFactory();
+	    QuadFactory qf = head.qf;
+	    Quad q0 = new OPER(qf, head, Qop.ICMPGT, Tlen,
+			       new Temp[] { Tlen, Ttst });
+	    Quad q1 = new CJMP(qf, head, Tlen, new Temp[0]);
+	    Temp Tz = Tlen; // reuse this temp.
+	    Quad q2 = new CONST(qf, head, Tz, new Integer(0), HClass.Int);
+	    Quad q3 = new OPER(qf, head, Qop.ICMPGT, Tz,
+			       new Temp[] { Tz, Ttst });
+	    Quad q4 = new CJMP(qf, head, Tz, new Temp[0]);
+	    Temp Tex = Tlen, Textra2 = Ttst; // reuse temps again.
+	    Quad q5 = new PHI(qf, head, new Temp[0], 2);
+	    Quad q6 = _throwException_(qf, old, HCarrayindexE);
+	    Quad.addEdges(new Quad[] { q0, q1, q5, q6 });
+	    Quad.addEdge(q1, 1, q2, 0);
+	    Quad.addEdges(new Quad[] { q2, q3, q4, head });
+	    Quad.addEdge(q4, 1, q5, 1);
+	    return q0;
+	}
 	private Quad[] _boundsCheck_(Quad old, Quad head, Quad tail, Temp Tlen,
 				   Temp Ttst, Temp Textra1, Quad sub) {
+	    if (isHandled(old, HCarrayindexE))
+		return new Quad[] { _boundsCheck_(old,head,Tlen,Ttst,Textra1), tail };
 	    assert Tlen.tempFactory()==head.qf.tempFactory();
 	    assert Ttst.tempFactory()==head.qf.tempFactory();
 	    assert Textra1.tempFactory()==head.qf.tempFactory();
@@ -991,7 +1117,21 @@ final class ResilientUnHandler {
 	    Quad.addEdge(tail, 0, q6, 1);
 	    return new Quad[] { q0, q6 };
 	}
+	Quad minusCheck(Quad old, Quad head, Temp Ttst) {
+	    QuadFactory qf = head.qf;
+	    Temp Tz = ss.extra(0);
+	    Quad q0 = new CONST(qf, head, Tz, new Integer(0), HClass.Int);
+	    Quad q1 = new OPER(qf, head, Qop.ICMPGT, Tz,
+			       new Temp[] { Tz, Quad.map(ss.ctm, Ttst) });
+	    Quad q2 = new CJMP(qf, head, Tz, new Temp[0]);
+	    Quad q3 = _throwException_(qf, old, HCnegativearrayE);
+	    Quad.addEdges(new Quad[] { q0, q1, q2, head });
+	    Quad.addEdge(q2, 1, q3, 0);
+	    return q0;
+	}
 	Quad[] minusCheck(Quad old, Quad head, Quad tail, Temp Ttst, Quad sub) {
+	    if (isHandled(old, HCnegativearrayE))
+		return new Quad[] { minusCheck(old, head, Ttst), tail };
 	    QuadFactory qf = head.qf;
 	    Temp Tz = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tz, new Integer(0), HClass.Int);
@@ -1048,8 +1188,8 @@ final class ResilientUnHandler {
 	}
 	private CONST defaultConst(Quad head, Temp Tdst, HClass cls) {
 	    cls = defaultClass(cls);
-	    return new CONST
-		(head.qf, head, Quad.map(ss.ctm, Tdst), defaultValue(cls), cls);
+	    return new CONST(head.qf, head, Quad.map(ss.ctm, Tdst), 
+			     defaultValue(cls), cls);
 	}
     }
     static final HClass defaultClass(HClass cls) {

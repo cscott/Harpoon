@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
@@ -14,18 +15,18 @@ import harpoon.ClassFile.HMethod;
  * in SSA form.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: ResilientNoSSA.java,v 1.2 2003-03-10 22:19:25 cananian Exp $ */
+ * @version $Id: ResilientNoSSA.java,v 1.3 2003-03-15 23:24:58 kkz Exp $ */
 public class ResilientNoSSA extends Code {
         /** The name of this code view. */
     public static final String codename = "resilient-no-ssa";
     
     /** Creates a <code>ResilientNoSSA</code> object from a
      *  <code>QuadWithTry</code> object. */
-    ResilientNoSSA(Code qwt, boolean coalesce) {
+    ResilientNoSSA(Code qwt, ClassHierarchy ch, boolean coalesce) {
 	super(qwt.getMethod(), null);
 	assert qwt.getName().equals(QuadWithTry.codename) :
 	    "can't make resilient-no-ssa from "+qwt.getName();
-	this.quads = ResilientUnHandler.unhandler(this.qf, qwt, coalesce);
+	this.quads = ResilientUnHandler.unhandler(this.qf, qwt, ch, coalesce);
 	Peephole.optimize(this.quads);
 	Prune.prune(this);
     }
@@ -47,14 +48,15 @@ public class ResilientNoSSA extends Code {
      *  code factory for <code>QuadWithTry</code>.  Given a code
      *  factory for <code>Bytecode</code>, chain through
      *  <code>QuadWithTry.codeFactory()</code>.  */
-    public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+    public static HCodeFactory codeFactory(final HCodeFactory hcf,
+					   final ClassHierarchy ch) {
 	if (hcf.getCodeName().equals(codename)) return hcf;
 	if (hcf.getCodeName().equals(QuadWithTry.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new ResilientNoSSA((Code)c,
+			new ResilientNoSSA((Code)c, ch,
 					   !Boolean.getBoolean
 					   ("harpoon.quads.nocoalesce"));
 		    // set harpoon.quads.nocoalesce to true to disable
@@ -66,14 +68,8 @@ public class ResilientNoSSA extends Code {
 	    };
 	}else if (hcf.getCodeName().equals(harpoon.IR.Bytecode.Code.codename)){
 	    // implicit chaining
-	    return codeFactory(QuadWithTry.codeFactory(hcf));
+	    return codeFactory(QuadWithTry.codeFactory(hcf), ch);
 	} else throw new Error("don't know how to make " + codename +
 			       " from " + hcf.getCodeName());
     }
-    /** Return a code factory for ResilientNoSSA, using the default
-     *  code factory for QuadWithTry. */
-    public static HCodeFactory codeFactory() {
-	return codeFactory(QuadWithTry.codeFactory());
-    }
 }
-
