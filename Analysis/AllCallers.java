@@ -17,10 +17,11 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 /**
- * <code>AllCallers</code>
+ * <code>AllCallers</code> calculates the transitive closure of the dual
+ * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.1 1999-10-20 03:18:29 kkz Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.2 1999-10-20 03:28:17 kkz Exp $
  */
 
 public class AllCallers {
@@ -28,9 +29,10 @@ public class AllCallers {
     final ClassHierarchy ch;
     final Hashtable g;
 
-    /** Creates a <code>AllCallers</code> object using the specified
+    /** Creates an <code>AllCallers</code> object using the specified
      *  <code>ClassHierarchy</code>. Currently, <code>hcf</code> must be a
-     *  code factory that generates quad-no-ssa-form.
+     *  code factory that generates quad-no-ssa or quad-ssi form because
+     *  the dual of the call graph is build using <code>CallGraph</code>.
      */
     public AllCallers(ClassHierarchy ch, HCodeFactory hcf) {
 	this.hcf = hcf;
@@ -38,6 +40,10 @@ public class AllCallers {
 	this.g = buildGraph();
     }
 
+    /** <code>getCallers</code> returns a <code>Set</code> that contains
+     *  all indirect and direct callers of callable methods that fulfill 
+     *  the predicate in the <code>select</code> method of <code>ms</code>.
+     */
     public Set getCallers(MethodSet ms) {
 	Worklist toadd = new WorkSet();
 	for (Iterator cm = this.ch.callableMethods().iterator(); 
@@ -52,7 +58,8 @@ public class AllCallers {
 	    HMethod callee = (HMethod)toadd.pull();
 	    retval.add(callee);
 	    if (this.g.containsKey(callee)) {
-		for (Iterator callers = ((WorkSet)this.g.get(callee)).iterator(); 
+		for (Iterator callers = 
+			 ((WorkSet)this.g.get(callee)).iterator(); 
 		     callers.hasNext(); ) {
 		    HMethod caller = (HMethod)callers.next();
 		    if (!retval.contains(caller))
@@ -63,13 +70,18 @@ public class AllCallers {
 	return retval;
     }
 
+    /** <code>MethodSet</code> defines the interface whose method
+     *  <code>select</code> is used in <code>getCallers</code> as a
+     *  predicate.
+     */
     public static interface MethodSet {
 	boolean select(HMethod hm);
     }
 
-    /** Builds a directed graph and returns it as a <code>Hashtable</code>
-     *  using the <code>ClassHierarchy</code> and <code>HCodeFactory</code>
+    /** Builds the dual of the call graph using the 
+     *  <code>ClassHierarchy</code> and <code>HCodeFactory</code>
      *  with which the <code>this</code> object was created.
+     *  Returns the call graph as a Hashtable.
      */
     private Hashtable buildGraph() {
 	Hashtable ht = new Hashtable();
