@@ -9,10 +9,12 @@
 #ifdef WITH_THREADS
 #include <sys/time.h>
 #endif
+#ifdef WITH_HEAVY_THREADS
 #include <sched.h> /* for sched_get_priority_min/max */
+#endif
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <time.h> /* for nanosleep */
 #include <unistd.h> /* for usleep */
 #ifdef WITH_CLUSTERED_HEAPS
 #include "../clheap/alloc.h" /* for NTHR_malloc_first/NTHR_free */
@@ -268,12 +270,19 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_sleep
   if (rc != ETIMEDOUT) { /* interrupted? */
     printf("INTERRUPTED!\n");
   }
-#else
+#elif defined(HAVE_NANOSLEEP)
   struct timespec amt;
   amt.tv_sec = millis/1000;
   amt.tv_nsec = 1000*(millis%1000);
   nanosleep(&amt, &amt);
   // XXX check for interruption and throw InterruptedException
+#elif defined(HAVE_USLEEP)
+  usleep(1000L*millis);
+#elif defined(HAVE_SLEEP)
+  sleep((unsigned int)(millis/1000));
+#else
+# warning "No sleep function defined."
+  /* don't sleep at all */
 #endif
 }
 
