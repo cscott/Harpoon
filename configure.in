@@ -31,4 +31,5 @@ arm*) archdir=arm32 ;;
 esac
 
 AC_LINK_FILES(arch/${archdir}, include/asm)
-AC_OUTPUT(Makefile src/Makefile src/jni/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/jni/Makefile
+	  src/java.io/Makefile src/java.lang/Makefile)

@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = -I../include
-SUBDIRS = jni
+SUBDIRS = jni java.io java.lang
 LDADD = ../Java.a Runtime.a
 
 bin_PROGRAMS = print-fixup test-lookup test-reflect

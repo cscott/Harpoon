@@ -1,4 +1,6 @@
-static int fdID = 0;
+#include "java_io_FileDescriptor.h"
+
+static jfieldID fdID = 0;
 
 /*
  * Class:     java_io_FileDescriptor

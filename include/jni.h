@@ -4,8 +4,11 @@
 #ifndef INCLUDED_JNI_H
 #define INCLUDED_JNI_H
 
+#include <stdio.h> /* for NULL */
+
 #include <jni-types.h>
 #include <jni-func.h>
+#include <jni-link.h>
 
 /* constants: */
 
