@@ -1,6 +1,6 @@
 package ClassFile;
 
-class AttributeLocalVariableTable extends AttributeInfo {
+public class AttributeLocalVariableTable extends AttributeInfo {
   int local_variable_table_length;
   LocalVariableTable local_variable_table[];
 
@@ -18,5 +18,15 @@ class AttributeLocalVariableTable extends AttributeInfo {
     local_variable_table = new LocalVariableTable[local_variable_table_length];
     for (int i=0; i<local_variable_table_length; i++)
       local_variable_table[i] = new LocalVariableTable(in, cp);
+  }
+  /** Get the (debugging) name of a local variable.
+   * @param index the index of the local variable to query.
+   * @return the name of the index'th local variable.
+   */
+  public String getName(int index) {
+    for (int i=0; i<local_variable_table.length; i++)
+      if (local_variable_table[i].index == index)
+	return local_variable_table[i].name;
+    return null;
   }
 }
