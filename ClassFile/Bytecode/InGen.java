@@ -5,11 +5,29 @@ import harpoon.Util.Util;
 
 /**
  * <code>InGen</code> is used for non-branching instructions.
+ * An <code>InGen</code> has an opcode and optional operands.
+ * An <code>InGen</code> has exactly one predecessor and exactly
+ * one successor.<p>
+ * Note that <code>InGen</code> contain <code>Operand</code> objects
+ * for all <b>relevant</b>, explicit or implicit operands of the
+ * bytecode instruction.  This means that, for example, an 
+ * <code>iload_0</code> will be given an <Code>OpLocalVariable</code>
+ * operand corresponding to the implicit '0', and conversely that
+ * <code>invokeinterface</code> will <b>not</b> contain operands for
+ * the <code>nargs</code> operand (which is obvious from the method
+ * signature) nor for the dummy placeholder value which trails the
+ * opcode in the raw bytecode array.
+ *
+ * @author  C. Scott Ananian
+ * @version $Id: InGen.java,v 1.9 1998-08-05 00:52:24 cananian Exp $
  */
 public class InGen extends Instr {
   byte opcode;
   Operand operands[];
 
+  /** Create an <code>InGen</code> from a chunk of bytecode starting at
+   *  offset <code>pc</code>. <code>parent</code> is used to lookup
+   *  <code>constant_pool</code> references. */
   public InGen(String sourcefile, int linenumber, 
 	       byte[] code, int pc, Code parent) {
     super(sourcefile, linenumber);
@@ -207,15 +225,21 @@ public class InGen extends Instr {
     }
     // done.  yay.
   }
+  /** Create an integer from an unsigned byte. */
   static int u1(byte[] code, int pc) {
     return ((int) code[pc]) & 0xFF;
   }
+  /** Create an integer from an unsigned two-byte quantity (big-endian). */
   static int u2(byte[] code, int pc) {
     return (u1(code,pc) << 8) | u1(code,pc+1);
   }
 
+  /** Return the bytecode opcode of this instruction.
+   *  @see Op */
   public byte getOpcode() { return opcode; }
+  /** Return a specific operand of this instruction. */
   public Operand getOperand(int i) { return operands[i]; }
+  /** Get all the operands of this instruction. */
   public Operand[] getOperands() { return (Operand[]) Util.copy(operands); }
 
   // provide run-time checks on arity.
@@ -245,4 +269,3 @@ public class InGen extends Instr {
   }
 
 }
-

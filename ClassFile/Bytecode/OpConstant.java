@@ -6,12 +6,21 @@ import harpoon.ClassFile.Raw.Constant.*;
 /**
  * <code>OpConstant</code> represents a constant operand of a java bytecode
  * instruction.  This would typically be taken from the 
- * <code>constant_pool</code>.
+ * <code>constant_pool</code>.<p>
+ * <code>OpConstant</code> represents constant pool entries of type
+ * <code>CONSTANT_Double</code>, <code>CONSTANT_Float</code>,
+ * <code>CONSTANT_Integer</code>, <code>CONSTANT_Long</code>,
+ * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.4 1998-08-04 02:14:45 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.5 1998-08-05 00:52:25 cananian Exp $
  * @see Operand
  * @see Instr
+ * @see harpoon.ClassFile.Raw.Constant.ConstantDouble
+ * @see harpoon.ClassFile.Raw.Constant.ConstantFloat
+ * @see harpoon.ClassFile.Raw.Constant.ConstantInteger
+ * @see harpoon.ClassFile.Raw.Constant.ConstantLong
+ * @see harpoon.ClassFile.Raw.Constant.ConstantString
  */
 public class OpConstant extends Operand {
   Object value;
@@ -26,7 +35,7 @@ public class OpConstant extends Operand {
     if ((!type.isPrimitive() && check!=type) ||
 	( type.isPrimitive() && check!=type.getWrapper()))
       throw new Error("value doesn't match type of OpConstant: " + 
-		      type + "/" + check+":"+(check==type)+":"+type.isPrimitive());
+		      type + "/" + check);
   }
   /** Make a new <code>OpConstant</code> from a 
    *  <code>constant_pool</code> entry. */

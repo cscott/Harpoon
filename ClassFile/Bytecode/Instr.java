@@ -5,10 +5,15 @@ import harpoon.ClassFile.*;
 import java.util.Vector;
 /**
  * <code>Bytecode.Instr</code> is the base type for the specific
- * bytecode instruction classes.
+ * bytecode instruction classes.  It provides standard methods
+ * for accessing the opcode of a specific instruction and for
+ * determining which instructions may preceed or follow it.
+ * <p>As with all <code>HCodeElement</code>s, <code>Instr</code>s are
+ * traceable to an original source file and line number, and have
+ * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.7 1998-08-03 23:14:16 cananian Exp $
+ * @version $Id: Instr.java,v 1.8 1998-08-05 00:52:25 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -37,6 +42,8 @@ public abstract class Instr implements HCodeElement {
   public int getLineNumber() { return linenumber; }
   /** Returns a unique numeric identifier for this element. */
   public int getID() { return id; }
+  /** Returns the java bytecode of this instruction. */
+  public abstract byte getOpcode();
 
   /** Return a list of all the <code>Instr</code>s that can precede
    *  this one. */
@@ -59,7 +66,7 @@ public abstract class Instr implements HCodeElement {
   void removeNext(Instr next) { this.next.removeElement(next); }
 
   /** Internal predecessor list. */
-  protected Vector prev = new Vector(2);
+  Vector prev = new Vector(2);
   /** Internal successor list. */
-  protected Vector next = new Vector(2);
+  Vector next = new Vector(2);
 }

@@ -4,15 +4,23 @@ import harpoon.Util.Util;
 
 /**
  * <code>InCti</code> is used for control-transfer instructions.
+ * It will have exactly one predecessor, and multiple successors.
+ * For conditional branches, the first successor 
+ * (<code>next()[0]</code>) will be the 'fall-through' instruction
+ * (corresponding to branch-not-taken).  For unconditional branches,
+ * the first successor will be the target, if there is one.
+ * Instructions like <code>ireturn</code> have no successors.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InCti.java,v 1.7 1998-08-04 04:09:00 cananian Exp $
+ * @version $Id: InCti.java,v 1.8 1998-08-05 00:52:24 cananian Exp $
  * @see Instr
  */
 public class InCti extends Instr {
   byte opcode;
   int arity;
 
+  /** Create an <code>InCti</code> from a chunk of bytecode starting
+   *  at offest <code>pc</code>. */
   public InCti(String sourcefile, int linenumber, byte[] code, int pc) {
     super(sourcefile, linenumber);
     this.opcode=code[pc];
@@ -33,6 +41,9 @@ public class InCti extends Instr {
       throw new Error("Exceeding arity of CTI.");
     super.addNext(next);
   }
+
+  /** Return the java bytecode opcode of this instruction. */
+  public byte getOpcode() { return opcode; }
 
   /** Return human-readable instruction string. */
   public String toString() {

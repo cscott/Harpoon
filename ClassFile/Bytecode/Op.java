@@ -6,14 +6,16 @@ package harpoon.ClassFile.Bytecode;
  * <p>
  * Included are: <UL>
  * <LI>final static byte constants for all the JVM opcodes.
- * <LI>a function giving the size (number of operands) of an
+ * <LI>a method to convert any byte opcode to the string naming it.
+ * <LI>a method giving the size (number of operands) of an
  *     arbitrary opcode.
- * <LI>a way to tell whether a given opcode is a branch instruction.
- * <LI>a function to decode the targets of any branch instruction.
+ * <LI>a way to tell whether a given opcode is a branch instruction, and
+ *     if so whether the branch is conditional or unconditional.
+ * <LI>a method to decode the targets of any branch instruction.
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.7 1998-08-04 03:28:02 cananian Exp $
+ * @version $Id: Op.java,v 1.8 1998-08-05 00:52:25 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code

@@ -5,14 +5,25 @@ import harpoon.Util.Util;
 /**
  * <code>InSwitch</code> is used for the <code>tableswitch</code> and
  * <code>lookupswitch</code> java bytecode instructions.
- * It is a control-transfer instruction.
+ * It is a control-transfer instruction.  It should have exactly
+ * one predecessor.  The first successor will be the default
+ * target; each subsequent successor corresponds to a <code>case</code>
+ * of the switch statement; the match key can be looked up using the
+ * <code>key</code> method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InSwitch.java,v 1.1 1998-08-04 04:09:01 cananian Exp $
+ * @version $Id: InSwitch.java,v 1.2 1998-08-05 00:52:24 cananian Exp $
+ * @see Instr
  */
 public class InSwitch extends InCti {
   int keys[];
 
+  /** Constructor.  Creates an <code>InSwitch</code> from a chunk of
+   *  bytecode starting at the given pc.
+   *  @exception Error if the opcode at <code>code[pc]</code> doesn't
+   *             correspond to a <code>tableswitch</code> or
+   *             <code>lookupswitch</code>.
+   */
   public InSwitch(String sourcefile, int linenumber, byte[] code, int pc) {
     super(sourcefile, linenumber, code, pc);
     int pad = 3-(pc%4);
@@ -34,11 +45,15 @@ public class InSwitch extends InCti {
 	keys[i+1]=low+i;
     } else throw new Error("InSwitch constructor given invalid opcode.");
   }
-  public int key(int index) {
+  int key(int index) {
     if (index<0) throw new Error("Invalid key lookup index.");
     if (index==0) throw new Error("No key for default target.");
     return keys[index];
   }
+  /** Returns the case key corresponding to the given branch target.
+   *  @exception Error if the default target or
+   *                   an instruction not corresponding to a target is given.
+   */
   public int key(Instr target) {
     Instr[] targets = next();
     for (int i=0; i<targets.length; i++)
@@ -66,5 +81,6 @@ public class InSwitch extends InCti {
       ( u1(code,pc+2) <<  8) |
       ( u1(code,pc+3) <<  0);
   }
+  /** Make integer from <i>unsigned</i> byte. */
   int u1(byte[] code, int pc) { return ((int)code[pc])&0xFF; }
 }

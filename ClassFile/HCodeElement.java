@@ -5,10 +5,12 @@ package harpoon.ClassFile;
  * method's executable instructions should implement.<p>
  * <code>HCodeElement</code>s are "components" of an <code>HCode</code>.
  * The correspond roughly to "an instruction" in the <code>HCode</code>
- * "list of instructions".
+ * "list of instructions".  Each <code>HCodeElement</code> should be
+ * traceable to an original source file and line number, and possess
+ * a unique numeric identifier.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeElement.java,v 1.4 1998-08-03 06:42:13 cananian Exp $
+ * @version $Id: HCodeElement.java,v 1.5 1998-08-05 00:52:20 cananian Exp $
  * @see HCode
  * @see harpoon.ClassFile.Bytecode.Instr
  */
