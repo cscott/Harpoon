@@ -52,7 +52,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.1.2.3 2001-02-27 18:48:27 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.1.2.4 2001-02-27 21:20:47 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -145,7 +145,7 @@ public class DataReflectionMemberList extends Data {
 		public HClass type() { return type; }
 		public Label label() { return memberLabel(hm, "obj"); }
 		public Object get(HField hf) {
-		    if (HFclazz.equals(hf)) {
+		    if (hf.equals(HFclazz)) {
 			final HClass hc = hf.getDeclaringClass();
 			return new ObjectInfo() {
 			    public HClass type() { return HCclass; }
@@ -159,11 +159,18 @@ public class DataReflectionMemberList extends Data {
 		    }
 		    //XXX: Methods and Field objects have lots of fields.
 		    //we basically zero-fill everything.
-		    if (HFslot.equals(hf)) return new Integer(0);
+		    if (hf.equals(HFslot)) return new Integer(0);
 		    return null;
 		}
-		final HField HFclazz = type.getField("clazz");
-		final HField HFslot = type.getField("slot");
+		HField HFclazz = null, HFslot = null;
+		{
+		    // our hacked reflection classes don't have these fields,
+		    // don't have a cow.
+		    try {
+			HFclazz=type.getField("clazz");
+			HFslot=type.getField("slot");
+		    } catch (NoSuchFieldError e) { /* ignore */ }
+		}
 	    };
 	    stmlist.add(m_ob.buildObject(tf, info, true));
 	}
