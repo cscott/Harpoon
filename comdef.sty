@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.26 1999-09-02 15:15:49 cananian Exp $
+% $Id: comdef.sty,v 1.27 1999-11-11 19:57:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,10 +20,16 @@
 \newenvironment{mytable}[1][tbp]
 	{\begin{table}[#1]\linespread{1}}% no line at top.
 	{\vspace{8pt}\hrule\end{table}}
+\newenvironment{mytable*}[1][tbp]
+	{\begin{table*}[#1]\linespread{1}}% no line at top.
+	{\vspace{8pt}\hrule\end{table*}}
 % put horizontal rules at top and bottom of figure environment
 \newenvironment{myfigure}[1][tbp]
 	{\begin{figure}[#1]\linespread{1}\hrule\vspace{8pt}}
 	{\vspace{8pt}\hrule\end{figure}}
+\newenvironment{myfigure*}[1][tbp]
+	{\begin{figure*}[#1]\linespread{1}\hrule\vspace{8pt}}
+	{\vspace{8pt}\hrule\end{figure*}}
 % put horizontal rules at top and bottom of algorithm environment
 \newenvironment{myalgorithm}[1][tbp]
 	{\begin{algorithm}[#1]\linespread{1}\hrule\vspace{8pt}}
