@@ -25,11 +25,12 @@ import java.io.Serializable;
  * &quot;change*&quot; methods.  This is also supposed to be very
  * convenient: most of the compiler stages will modify only a small
  * part of the compiler state (most usually, only a new code factory).
- * <code>new</code> should be used only for the very first
- * <code>CompilerState</code>.
+ * Also, <code>CompilerState.EMPTY_STATE</code> contains the initial,
+ * empty compiler state (initial meaning &quot;at the beginning of the
+ * compiler&quot;)
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerState.java,v 1.3 2003-04-17 00:25:19 salcianu Exp $ */
+ * @version $Id: CompilerState.java,v 1.4 2003-04-17 00:27:13 salcianu Exp $ */
 public class CompilerState implements Cloneable, Serializable {
    
     private CompilerState() { }
