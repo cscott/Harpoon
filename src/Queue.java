@@ -52,7 +52,7 @@ public class Queue {
 	throws IllegalArgumentException {
 	this.notify = notify;
 	if ((maximum<1)||(maximum>MAX_SIZE)) {
-	    throw new IllegalArgumentException("Maximum must be at least 1.");
+	    throw new IllegalArgumentException("Maximum must be at least 1 and no more than " + MAX_SIZE +".");
 	}
 	this.queue = new Object[maximum];
 
@@ -66,7 +66,7 @@ public class Queue {
     /** Set <code>this</code> to empty. */
     public void clear() {
 	int idx;
-	while (!indices.compareAndSet(idx=indices.get(), 
+	while (!indices.compareAndSet(idx=indices.get(),
 				      (((idx&WRITE_MASK)/MAX_SIZE)&READ_MASK)*(MAX_SIZE+1))) {}
     }
 
@@ -215,11 +215,8 @@ public class Queue {
      *  which has <code>noHeap</code> characteristics.
      */
     public void waitForRead() {
-	while(isFull()) {
-	    //    try{
-		this.wait();
-		//} catch(InterruptedException e) {}
-      	}
+	while(isFull())
+	    this.wait();
     }
 	
     /** Force this <code>java.lang.Object</code> to replace the last one.
