@@ -94,24 +94,26 @@ JNIEXPORT jint JNICALL Java_java_io_RandomAccessFile_read
  * Signature: ([BII)I
  */
 JNIEXPORT jint JNICALL Java_java_io_RandomAccessFile_readBytes
-  (JNIEnv *env, jobject objRAF, jbyteArray buf, jint start, jint len) {
+  (JNIEnv *env, jobject objRAF, jbyteArray ba, jint start, jint len) {
     int              fd, result;
     jobject          fdObj;
-    jbyte            nbuf[len];
+    jbyte            buf[len];
 
     assert(inited);
+
+    if (len==0) return 0; /* don't even try to read anything. */
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
     
-    result = read(fd, (void*)buf, 1);
+    result = read(fd, (void*)buf, len);
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 	return -1; /* could return anything; value is ignored. */
     }
 
-    (*env)->SetByteArrayRegion(env, buf, start, result, nbuf); 
+    (*env)->SetByteArrayRegion(env, ba, start, result, buf); 
 
     /* Java language spec requires -1 at EOF, not 0 */ 
     return (jint)(result ? result : -1);
@@ -147,21 +149,23 @@ JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_write
  * Signature: ([BII)V
  */
 JNIEXPORT void JNICALL Java_java_io_RandomAccessFile_writeBytes
-  (JNIEnv *env, jobject objRAF, jbyteArray buf, jint start, jint len) {
+  (JNIEnv *env, jobject objRAF, jbyteArray ba, jint start, jint len) {
     int              fd, result;
     jobject          fdObj;
-    jbyte            nbuf[len-start];
+    jbyte            buf[len];
     int written = 0;
 
     assert(inited);
 
     fdObj  = (*env)->GetObjectField(env, objRAF, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
-    (*env)->GetByteArrayRegion(env, buf, start, len, nbuf); 
+    (*env)->GetByteArrayRegion(env, ba, start, len, buf); 
     if ((*env)->ExceptionOccurred(env)) return; /* bail */
 
+    if (len==0) return; /* don't even try to write anything. */
+
     while (written < len) {
-	result = write(fd, (void*)(nbuf+written), len-written);
+	result = write(fd, (void*)(buf+written), len-written);
 	if (result==0) {
 	    (*env)->ThrowNew(env, IOExcCls, "No bytes written");
 	    return;

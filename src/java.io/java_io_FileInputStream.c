@@ -99,25 +99,27 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
  * Signature: ([BII)I
  */
 JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
-(JNIEnv * env, jobject obj, jbyteArray buf, jint start, jint len) { 
+(JNIEnv * env, jobject obj, jbyteArray ba, jint start, jint len) { 
     int              fd, result;
     jobject          fdObj;
-    jbyte            nbuf[len];
+    jbyte            buf[len];
 
     /* If static data has not been loaded, load it now */
     if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
 
+    if (len==0) return 0; /* don't even try to read anything. */
+
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
     
-    result = read(fd, (void*)buf, 1);
+    result = read(fd, (void*)buf, len);
 
     if (result==-1) {
 	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 	return -1; /* could return anything; value is ignored. */
     }
 
-    (*env)->SetByteArrayRegion(env, buf, start, result, nbuf); 
+    (*env)->SetByteArrayRegion(env, ba, start, result, buf); 
 
     /* Java language spec requires -1 at EOF, not 0 */ 
     return (jint)(result ? result : -1);

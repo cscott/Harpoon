@@ -113,10 +113,10 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_write
  * Signature: ([BII)V
  */
 JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
-(JNIEnv * env, jobject obj, jbyteArray buf, jint start, jint len) { 
+(JNIEnv * env, jobject obj, jbyteArray ba, jint start, jint len) { 
     int              fd, result;
     jobject          fdObj;
-    jbyte            nbuf[len-start];
+    jbyte            buf[len];
     int written = 0;
 
     /* If static data has not been loaded, load it now */
@@ -124,11 +124,13 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
-    (*env)->GetByteArrayRegion(env, buf, start, len, nbuf); 
+    (*env)->GetByteArrayRegion(env, ba, start, len, buf);
     if ((*env)->ExceptionOccurred(env)) return; /* bail */
 
+    if (len==0) return; /* don't even try to write anything. */
+
     while (written < len) {
-	result = write(fd, (void*)(nbuf+written), len-written);
+	result = write(fd, (void*)(buf+written), len-written);
 	if (result==0) {
 	    (*env)->ThrowNew(env, IOExcCls, "No bytes written");
 	    return;
