@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.15 1999-02-17 03:27:03 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.16 1999-02-17 10:58:00 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes +$$
@@ -23,14 +23,19 @@ CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 
+MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup
+MACHINE_GEN := Tools/PatMat/Lexer.java Tools/PatMat/Parser.java \
+	     Tools/PatMat/Sym.java
+
 ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
-ALLSOURCE := $(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
-		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
+ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
+		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
+		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))))
 TARSOURCE := $(filter-out JavaChip%, \
-	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
+	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile $(MACHINE_SRC)
 JARPKGS := $(subst harpoon/Contrib,gnu, \
 		$(foreach pkg, $(filter-out JavaChip%, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
@@ -52,7 +57,7 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 	@$(MAKE) --no-print-directory properties
 	touch java
 
-jikes: 	
+jikes: 	$(MACHINE_GEN)
 	@if [ ! -d harpoon ]; then $(MAKE) first; fi
 	@echo -n Compiling... ""
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
@@ -77,7 +82,7 @@ first:
 		IR/Properties/Edges.java
 	-${JCC} ${JFLAGS} IR/Quads/*.java IR/Properties/*.java \
 		2> /dev/null # not perfect, but it does the base quads well.
-	#-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
+#	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	${JAR} c0f Harpoon.jar COPYING VERSIONS gnu/getopt/*.properties \
@@ -112,6 +117,18 @@ update: needs-cvs
 	cvs update -Pd $(CVS_REVISION)
 	@echo ""
 	@-$(FORTUNE)
+
+# JLex
+%.java : %.jlex
+	java JLex.Main $< && mv $<.java $@
+# CUP
+%.java : %.cup
+	cd `dirname $@` && \
+	java java_cup.Main -parser `basename $@ .java` -symbols Sym \
+	< `basename $<`
+
+Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
+Tools/PatMat/Lexer.java : Tools/PatMat/Sym.java
 
 # print graphs
 %.ps : %.vcg
@@ -177,7 +194,7 @@ wc:
 
 clean:
 	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* \
-		VERSIONS ChangeLog
+		VERSIONS ChangeLog $(MACHINE_GEN)
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
