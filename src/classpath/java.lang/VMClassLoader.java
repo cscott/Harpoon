@@ -134,14 +134,12 @@ final class VMClassLoader
   /**
    * Helper to load a resource from the bootstrap class loader.
    *
-   * XXX - Not implemented yet; this requires native help.
-   *
    * @param name the resource to find
    * @return the URL to the resource
    */
   static URL getResource(String name)
   {
-    return ClassLoader.getSystemResource(name);
+    return ClassLoader.getSystemClassLoader().findResource(name);
   }
 
   /**
