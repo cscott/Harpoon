@@ -5,6 +5,7 @@ package harpoon.Backend.Sparc;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Backend.Generic.GCInfo;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 
@@ -13,7 +14,7 @@ import harpoon.ClassFile.Linker;
  * for the Sparc Backend.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.5 2000-01-17 23:41:28 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.6 2000-01-28 02:48:00 kkz Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame
 {
@@ -23,6 +24,7 @@ public class Frame extends harpoon.Backend.Generic.Frame
     private final harpoon.Backend.Generic.Runtime runtime;
     private final TempBuilder tempBuilder;
     private final Linker linker;
+    private GCInfo gcInfo; // should really be final
 
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) {
 	super();
@@ -36,6 +38,12 @@ public class Frame extends harpoon.Backend.Generic.Frame
 	harpoon.Backend.Runtime1.AllocationStrategy as =
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg);
+    }
+
+    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, GCInfo gcInfo)
+    {
+	this(main, ch, cg);
+	this.gcInfo = gcInfo;
     }
 
     public Linker getLinker() { return linker; }
@@ -64,5 +72,11 @@ public class Frame extends harpoon.Backend.Generic.Frame
 
     public harpoon.Backend.Generic.TempBuilder getTempBuilder() {
 	return tempBuilder;
+    }
+
+    public harpoon.Backend.Generic.GCInfo getGCInfo() {
+	harpoon.Util.Util.assert(gcInfo != null, 
+				 "use new constructor for Frame");
+	return gcInfo;
     }
 }
