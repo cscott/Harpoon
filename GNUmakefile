@@ -6,7 +6,21 @@ INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
-	oopsla02
+	oopsla02 oqe
+
+all: oqe.pdf
+
+## funky stuff for martin.
+put:
+	@echo I am assuming you have checked everything in.
+	cd ~/Harpoon/oopsla ; cvs -f update
+	make -C ~/Harpoon/oopsla put
+
+get:
+	make -C ~/Harpoon/oopsla get
+	cd ~/Harpoon/oopsla ; cvs -f update
+	@echo OK, now you have to review these changes and commit them.
+### end martin's funky stuff.
 
 all: $(ALLDOCS:=.ps)
 preview: thesis-xdvi
@@ -38,8 +52,30 @@ pldi02.dvi: Figures/standardAlignment.eps Figures/byteAlignment.eps
 pldi02.dvi: Figures/bitAlignment.eps
 pldi02.dvi: Figures/spec-space.eps Figures/spaceopt.eps
 
-oopsla02.dvi:	Figures/THlat1b.tex Figures/THlat6b.tex \
-	Figures/spaceopt.eps Figures/spaceopt-bit.eps Figures/spec-space.eps
+oopsla02.dvi:	Figures/THlat1b.tex Figures/THlat6b.tex Figures/spec-space.eps\
+	Figures/oopsla-objalloc.eps Figures/oopsla-ttlalloc.eps \
+	Figures/oopsla-ttllive.eps Figures/oopsla-speed.eps \
+	Figures/oopsla-lat.tex
+
+# oqe presentation dependencies.
+oqe.dvi: PPRoqe.sty
+oqe.dvi: Figures/Kontour/structure-bbox.eps
+oqe.dvi: Figures/Kontour/strategy-bbox.eps
+oqe.dvi: Figures/Kontour/how-fieldcomp-bbox.eps
+oqe.dvi: Figures/Kontour/how-fieldelim-bbox.eps
+oqe.dvi: Figures/Kontour/how-header-bbox.eps
+oqe.dvi: Figures/Kontour/bwfieldcomp-bbox.eps
+oqe.dvi: Figures/alignment2.eps
+oqe.dvi: Figures/extmap1.eps Figures/extmap2.eps
+oqe.dvi: Figures/Kontour/hashcomp-bbox.eps
+oqe.dvi: Figures/specclaz.eps
+oqe.dvi: Figures/oopsla-ttllive-color.eps
+oqe.dvi: Figures/oopsla-ttlalloc-color.eps
+oqe.dvi: Figures/oopsla-objalloc-color.eps
+oqe.dvi: Figures/oopsla-speed-color.eps
+oqe.dvi: Figures/spec-space-2.eps
+oqe.dvi: Figures/Kontour/classcomp-bbox.eps
+oqe.dvi: Figures/THlat6b.tex
 
 # thesis figure dependencies
 export THESIS_FIGURES=\
@@ -64,7 +100,7 @@ thesis.dvi: $(patsubst %.fig,%.tex,$(THESIS_FIGURES)) \
 
 # thesis figure rules
 Figures/%: always
-	@$(MAKE) --no-print-directory -C Figures $(notdir $@)
+	@$(MAKE) --no-print-directory -C Figures $*
 always:
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
@@ -84,6 +120,8 @@ always:
 # dvi-to-postscript-to-acrobat chain.
 %.ps : %.dvi
 	dvips -t letter -e 0 -o $@ $<
+%.pdf : %.dvi
+	dvipdf -dCompatibilityLevel=1.3 -dDoThumbnails=true $< $@
 %.pdf : %.ps
 	ps2pdf $< $@
 %-xdvi : %.dvi
@@ -92,6 +130,12 @@ always:
 	else \
 		(xdvi $< &) ; \
 	fi
+
+# distill on catfish.
+%-a.pdf: %.ps
+	cat $< | ssh catfish.lcs.mit.edu \
+	"mkdir csa-foo ; cd csa-foo ; cat > $< ; distill $< ; acroexch `basename $< .ps`.pdf ; cat `basename $< .ps`.pdf ; cd .. ; /bin/rm -rf csa-foo" \
+	> $@
 
 # progress graphs.
 %.stats: %.tex
