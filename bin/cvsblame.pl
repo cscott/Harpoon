@@ -406,19 +406,20 @@ sub map_tag_to_revision {
 
 # Construct an ordered list of ancestor revisions to the given
 # revision, starting with the immediate ancestor and going back
-# to the primordial revision (1.1).
+# to either the optionally specified revision or the primordial
+# revision (1.1).
 #
 # Note: The generated path does not traverse the tree the same way
 #       that the individual revision deltas do.  In particular,
 #       the path traverses the tree "backwards" on branches.
 
 sub ancestor_revisions {
-    my ($revision) = @_;
+    my ($revision, $stop_at) = @_;
     my (@ancestors);
      
-    $revision = $prev_revision{$revision};
     while ($revision) {
         push(@ancestors, $revision);
+        last if defined $stop_at && $revision eq $stop_at;
         $revision = $prev_revision{$revision};
     }
 
@@ -519,8 +520,119 @@ sub open_cvs_file {
     return open(HANDLE, "< $atticname"); # fall back to attic.
 }
 
+sub make_cvs_rev_map {
+    # args in:  $want_rev - desired revision
+    #           $have_rev - revision I have
+    #           @have_map - revision map for the revision I have
+    # args out: @want_map - revision map for the desired revision
+    my ($want_rev, $have_rev, @have_map) = @_;
+    my $skip = 0;
+
+    die "improper arguments" unless defined $want_rev && defined $have_rev;
+
+    # Play the delta edit commands *backwards* from the supplied
+    # revision forward, but rather than applying the deltas to the text of
+    # each revision, apply the changes to an array of revision numbers.
+    # This creates a "revision map" -- an array where each element
+    # represents a line of text in the given revision but contains only
+    # the revision number in which the line was introduced rather than
+    # the line text itself.
+    #
+    # Note: These are backward deltas for revisions on the trunk and
+    # forward deltas for branch revisions.
+
+    my @ancestors = &ancestor_revisions($want_rev, $have_rev);
+    my $last_revision = pop @ancestors;             # Remove $have_rev
+    die "ancestors is invalid" unless $have_rev eq $last_revision;
+    foreach my $revision (reverse @ancestors) {
+        my $is_trunk_revision = ($revision =~ /^[0-9]+\.[0-9]+$/);
+
+        if ($is_trunk_revision) {
+            my @diffs = split(/^/, $revision_deltatext{$last_revision});
+
+            # Revisions on the trunk specify deltas that transform a
+            # revision into an earlier revision, so invert the translation
+            # of the 'diff' commands.
+            foreach my $command (@diffs) {
+                if ($skip > 0) {
+                    $skip--;
+                } else {
+                    if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
+                        my ($start_line, $count) = ($1, $2);
+
+                        $#temp = -1;
+                        while ($count--) {
+                            push(@temp, $revision);
+                        }
+                        splice(@have_map, $start_line - 1, 0, @temp);
+                    } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
+                        my ($start_line, $count) = ($1, $2);
+                        splice(@have_map, $start_line, $count);
+                        $skip = $count;
+                    } else {
+                        die "Error parsing diff commands";
+                    }
+                }
+            }
+        } else {
+            # Revisions on a branch are arranged backwards from those on
+            # the trunk.  They specify deltas that transform a revision
+            # into a later revision.
+            my $adjust = 0;
+            my @diffs = split(/^/, $revision_deltatext{$revision});
+            foreach my $command (@diffs) {
+                if ($skip > 0) {
+                    $skip--;
+                } else {
+                    if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
+                        my ($start_line, $count) = ($1, $2);
+                        splice(@have_map, $start_line + $adjust - 1, $count);
+                        $adjust -= $count;
+                    } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
+                        my ($start_line, $count) = ($1, $2);
+
+                        $skip = $count;
+                        $#temp = -1;
+                        while ($count--) {
+                            push(@temp, $revision);
+                        }
+                        splice(@have_map, $start_line + $adjust, 0, @temp);
+                        $adjust += $skip;
+                    } else {
+                        die "Error parsing diff commands";
+                    }
+                }
+            }
+        }
+        $last_revision = $revision;
+    }    
+
+    # return new have_map
+    @have_map;
+}
+
+# find a symbolic revision as it existed at a certain timestamp.
+sub find_revision {
+    my ($tag, $timestamp) = @_;
+    # get numerical revision # for symbolic tag
+    my $tagnum = $tag_revision{$tag};
+    # if it's a branch tag, we have to look up by date...
+    # branch tags have an odd number of dot-separated integers; sometimes
+    # they have a 'magic' zero in the second rightmost position.
+    if ($tagnum =~ m/^((?:\d+\.\d+\.)*)(?:0\.)?(\d+)$/) {
+        $tagnum = $1.$2; # remove 'magic' zero if it exists.
+        my $last_rev = $last_revision{$tagnum};
+        # work backwards toward branch root.
+        while ($timestamp{$last_rev} > $timestamp) {
+            $last_rev = $prev_revision{$last_rev};
+        }
+        $tagnum = $last_rev if defined $last_rev;
+    }
+    $tagnum;
+}
+
 sub parse_cvs_file {
-    my ($rcs_pathname, $checked_out_revision) = @_;
+    my ($pathname, $rcs_pathname, $checked_out_revision) = @_;
 
     # Args in:  $opt_r - requested revision
     #           $opt_m - time since modified
@@ -595,88 +707,77 @@ sub parse_cvs_file {
         }
     }
 
-    # Now, play the delta edit commands *backwards* from the primordial
-    # revision forward, but rather than applying the deltas to the text of
-    # each revision, apply the changes to an array of revision numbers.
-    # This creates a "revision map" -- an array where each element
+    # now, crawl from primordial map forward, jumping from merge to
+    # merge, creating a "revision map" -- an array where each element
     # represents a line of text in the given revision but contains only
     # the revision number in which the line was introduced rather than
     # the line text itself.
-    #
-    # Note: These are backward deltas for revisions on the trunk and
-    # forward deltas for branch revisions.
 
     # Create initial revision map for primordial version.
     while ($line_count--) {
         push(@revision_map, $primordial);
     }
 
-    @ancestors = &ancestor_revisions($revision);
-    unshift (@ancestors, $revision); # 
-    pop @ancestors;             # Remove "1.1"
-    $last_revision = $primordial;
-    foreach $revision (reverse @ancestors) {
-        $is_trunk_revision = ($revision =~ /^[0-9]+\.[0-9]+$/);
-
-        if ($is_trunk_revision) {
-            @diffs = split(/^/, $revision_deltatext{$last_revision});
-
-            # Revisions on the trunk specify deltas that transform a
-            # revision into an earlier revision, so invert the translation
-            # of the 'diff' commands.
-            foreach $command (@diffs) {
-                if ($skip > 0) {
-                    $skip--;
-                } else {
-                    if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
-                        ($start_line, $count) = ($1, $2);
-
-                        $#temp = -1;
-                        while ($count--) {
-                            push(@temp, $revision);
-                        }
-                        splice(@revision_map, $start_line - 1, 0, @temp);
-                    } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
-                        ($start_line, $count) = ($1, $2);
-                        splice(@revision_map, $start_line, $count);
-                        $skip = $count;
-                    } else {
-                        die "Error parsing diff commands";
+    # build ancestor map all the way from $revision down to primordial
+    my @ancestors = &ancestor_revisions($revision);
+    my %seen; my $last_rev = $primordial; my $last_map = @revision_map;
+    foreach my $r (reverse @ancestors) {
+        $seen{$r}=1;
+        if (!$opt_M && $revision_log{$r} =~ m/[@]MERGE:\s*([^@]+)\s*[@]/) {
+            my $from_rev = &find_revision($1, $timestamp{$r});
+            # find common point.
+            my $com=$from_rev;
+            while (!$seen{$com} ) {
+                $com = $prev_revision{$com};
+            }
+            # create map for common point.
+            my @com_map = &make_cvs_rev_map($com, $last_rev, @last_map);
+            # create maps for both sides of merge
+            my @main_map = &make_cvs_rev_map($r, $com, @com_map);
+            my @merge_map= &make_cvs_rev_map($from_rev, $com, @com_map);
+            # incrementally update @merge_map to revision $r.
+            next unless open(CVSDIFF, "cvs -flnq diff -n "
+                             . "-r $from_rev -r $r $pathname |");
+            my @diffs = <CVSDIFF>;
+            close(CVSDIFF);
+            # apply these diffs to @merge_map to make it parallel to 
+            # @main_map (stolen from &update_with_local_mods)
+            my $adjust = 0;  my $i = 0;
+            # skip header info.
+            $i++ until $i > $#diffs || $diffs[$i] =~ /^diff\s/;
+            # for each command...
+            for ($i++; $i <= $#diffs; $i++) {
+                my $command = $diffs[$i];
+                if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
+                    my ($start_line, $count) = ($1, $2);
+                    splice(@merge_map, $start_line + $adjust - 1, $count);
+                    $adjust -= $count;
+                } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
+                    my ($start_line, $count) = ($1, $2);
+                    $skip = $count; $i+=$count;
+                    my @temp; $#temp1 = -1;
+                    while ($count--) {
+                        push(@temp, $r);
                     }
+                    splice(@merge_map, $start_line + $adjust, 0, @temp);
+                    $adjust += $skip;
+                } else {
+                    die "Error parsing diff commands";
                 }
             }
-        } else {
-            # Revisions on a branch are arranged backwards from those on
-            # the trunk.  They specify deltas that transform a revision
-            # into a later revision.
-            $adjust = 0;
-            @diffs = split(/^/, $revision_deltatext{$revision});
-            foreach $command (@diffs) {
-                if ($skip > 0) {
-                    $skip--;
-                } else {
-                    if ($command =~ /^d(\d+)\s(\d+)$/) { # Delete command
-                        ($start_line, $count) = ($1, $2);
-                        splice(@revision_map, $start_line + $adjust - 1, $count);
-                        $adjust -= $count;
-                    } elsif ($command =~ /^a(\d+)\s(\d+)$/) { # Add command
-                        ($start_line, $count) = ($1, $2);
-
-                        $skip = $count;
-                        $#temp = -1;
-                        while ($count--) {
-                            push(@temp, $revision);
-                        }
-                        splice(@revision_map, $start_line + $adjust, 0, @temp);
-                        $adjust += $skip;
-                    } else {
-                        die "Error parsing diff commands";
-                    }
-                }
+            die "Inconsistent state" unless $#merge_map == $#main_map;
+            # do the merge
+            for ($i=0; $i<$#main_map; $i++) {
+                $main_map[$i] = $merge_map[$i] if $main_map[$i] eq $r;
             }
+            # assign results
+            @last_map = @main_map;
+            $last_rev = $r;
         }
-        $last_revision = $revision;
-    }    
+    }
+    # bring from last merge up to present
+    @revision_map = &make_cvs_rev_map($revision, $last_rev, @last_map);
+
     $revision;
 }
 
@@ -814,7 +915,7 @@ sub show_annotated_cvs_file {
     my (@output) = ();
 
     my ($rcs_pathname,$checked_out_rev)=&rcs_pathname_and_revision($pathname);
-    $revision = &parse_cvs_file($rcs_pathname,$checked_out_rev);
+    $revision = &parse_cvs_file($pathname,$rcs_pathname,$checked_out_rev);
 
     @text = &extract_revision($revision);
     die "$progname: Internal consistency error" if ($#text != $#revision_map);
@@ -903,13 +1004,14 @@ sub usage {
 "      -m <# days>        Only annotate lines modified within last <# days>\n",
 "      -q                 Suppress original text (just print annotation)\n",
 "      -n                 Don't show local modifications\n",
+"      -M                 Don't follow \@MERGE@ tags in logs\n",
 "      -u <base url>      Output a URL on each line for markup programs\n",
 "      -h                 Print help (this message)\n\n",
 "   (-a -v assumed, if none of -a, -v, -A, -d supplied)\n"
 ;
 }
 
-&usage if (!&getopts('r:m:Aadhlvwqnu:'));
+&usage if (!&getopts('r:m:Aadhlvwqnu:M'));
 &usage if ($opt_h);             # help option
 
 $multiple_files_on_command_line = 1 if ($#ARGV != 0);
