@@ -28,15 +28,15 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.10 2000-07-13 07:20:00 pnkfelix Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.11 2000-07-13 18:51:14 pnkfelix Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
-    final private BasicBlock.Factory bbf;
-    final private Map Temp_to_BitSetFactories = new HashMap();
-    final Map cache = new HashMap(); // maps BasicBlocks to in Sets 
-    final boolean check_typecast; // demand the special treatment of TYPECAST
-    final private UseDefer ud;
+    final protected BasicBlock.Factory bbf;
+    final protected Map Temp_to_BitSetFactories = new HashMap();
+    final protected Map cache = new HashMap(); // maps BasicBlocks to in Sets 
+    final protected boolean check_typecast; // demand the special treatment of TYPECAST
+    final protected UseDefer ud;
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> for an IR implementing
 	<code>UseDef</code> using the provided <code>CFGrapher</code>.
@@ -249,6 +249,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	Worklist worklist = new WorkSet(bbf.blockSet());
 	while(!worklist.isEmpty()) {
 	    BasicBlock b = (BasicBlock)worklist.pull();
+
 	    // get all the bitSets for this BasicBlock
 	    Map bitSets = (Map)cache.get(b);
 	    for(Iterator it=bitSets.keySet().iterator(); it.hasNext(); ) {

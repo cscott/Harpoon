@@ -78,11 +78,12 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.103 2000-07-13 14:29:55 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.104 2000-07-13 18:52:22 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
     public static final boolean DEBUG = false;
+    public static final boolean TIME = false;
 
     protected Frame frame;
     protected Code code;
@@ -327,10 +328,16 @@ public abstract class RegAlloc  {
 		
 		RegAlloc localCode, globalCode;
 
+		if (TIME) System.out.print("C");
 		localCode = new LocalCffRegAlloc(preAllocCode);
 		globalCode = localCode; // no global reg alloc yet
+
+		if (TIME) System.out.print("G");
 		globalCode.generateRegAssignment();
+		if (TIME) System.out.print("R");
 		List triple = globalCode.resolveOutstandingTemps();
+		if (TIME) System.out.print("#");
+
 		final Instr instr = (Instr) triple.get(0);
 		final RegFileInfo.TempLocator tl = 
 		    (RegFileInfo.TempLocator) triple.get(1);

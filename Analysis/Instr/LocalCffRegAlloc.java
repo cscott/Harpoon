@@ -11,7 +11,7 @@ import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.ReachingDefs;
-import harpoon.Analysis.ReachingDefsImpl;
+import harpoon.Analysis.ReachingDefsCachingImpl;
 import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.SpillLoad;
 import harpoon.Analysis.Instr.RegAlloc.SpillStore;
@@ -66,11 +66,10 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.102 2000-07-13 14:29:55 cananian Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.103 2000-07-13 18:52:22 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
-    private static boolean TIME = false;
     private static boolean VERIFY = true;
 
     private static boolean PREASSIGN_INFO = false;
@@ -130,7 +129,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	allRegisters = frame.getRegFileInfo().getAllRegistersC();
 	instrToHTempMap = new HashMap();
 	backedInstrs = new HashMap();
-	reachingDefs = new ReachingDefsImpl(code);
+
+	if (TIME) System.out.print("D");
+	reachingDefs = new ReachingDefsCachingImpl(code);
     }
 
     private Instr definition(Instr i, Temp t) {
@@ -196,15 +197,21 @@ public class LocalCffRegAlloc extends RegAlloc {
     
 
     protected void generateRegAssignment() {
+	if (TIME) System.out.print("L");
 	liveVariableAnalysis();
+	if (TIME) System.out.print("A");
 	allocationAnalysis();
-
 	// analysis complete; now update Instrs (which will break
 	// current BasicBlock analysis results...
 
+	if (TIME) System.out.print("S");
 	insertSpillCode();
+
+	if (TIME) System.out.print("M");
 	replaceInstrs();
 	if (COALESCE_MOVES) coalesceMoves();
+
+	if (TIME) System.out.print("V");
 	if (VERIFY) verifyLRA();
 
         // code.printNoAssem(new java.io.PrintWriter(System.out));
@@ -223,7 +230,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    BasicBlock b = (BasicBlock) blocks.next();
 	    Set liveOnExit = liveTemps.getLiveOnExit(b);
 	    alloc(b, liveOnExit);
-	    if (TIME) System.out.print("#");
 	}
     }
 
@@ -289,7 +295,6 @@ public class LocalCffRegAlloc extends RegAlloc {
    }
 
     private void verifyLRA() {
-	if (TIME) System.out.print("V");
 	
 	// after LRA is completed, load and store instructions may
 	// have been inserted at block beginings/endings.
@@ -330,9 +335,9 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
     
     private void alloc(BasicBlock block, Set liveOnExit) {
-	if (TIME) System.out.print("B"); 
+	if (false && TIME) System.out.print("B"); 
 	BlockAlloc la = new BlockAlloc(block, liveOnExit);
-	if (TIME) System.out.print("L");
+	if (false && TIME) System.out.print("L");
 	la.alloc();
     }
 
@@ -667,7 +672,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		instrToHTempMap.put(curr, coalescedTemps);
 		curr.accept(allocV);
 		// System.out.println(curr + " ("+allocV.iloc+")");
-		if (TIME) System.out.print(".");
+		if (false && TIME) System.out.print(".");
 	    }
 	    emptyRegFile(regfile, curr, liveOnExit, allocV.iloc);
 	}
