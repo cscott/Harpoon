@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.11 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.12 2000-10-19 19:16:03 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -29,6 +29,9 @@ public class FOOTER extends Quad {
     public int arity() { return prev.length; }
 
     /** Attach a new Quad to this <code>FOOTER</code> by replacing it.
+     * @param q the new <code>Quad</code> to attach.
+     * @param which_succ the edge leaving q to attach to the
+     *                   <code>FOOTER</code>.
      * @return the new <code>FOOTER</code>. */
     public FOOTER attach(Quad q, int which_succ) {
 	FOOTER f = resize(arity()+1);
@@ -36,7 +39,8 @@ public class FOOTER extends Quad {
 	return f;
     }
     /** Change the arity of this <code>FOOTER</code> by replacing it.
-     *  The new edges if any are left null. */
+     *  The new edges if any are the highest numbered incoming
+     *  edges and are left null. */
     public FOOTER resize(int new_arity) {
 	FOOTER f = new FOOTER(qf, this, new_arity);
 	for (int i=0; i<arity() && i<new_arity; i++)
@@ -46,6 +50,7 @@ public class FOOTER extends Quad {
 
     /** Remove an attachment from this <code>FOOTER</code> by replacing
      *  the footer.
+     * @param which_pred which incoming edge to remove.
      * @return the new <code>FOOTER</code>. */
     public FOOTER remove(int which_pred) {
 	FOOTER f = new FOOTER(qf, this, arity()-1);
