@@ -267,9 +267,6 @@ static void * thread_startup_routine(void *closure) {
   pthread_mutex_lock(&(cls->parampass_mutex));
   /* copy thread wrapper to local stack */
   thread = FNI_NewLocalRef(env, FNI_UNWRAP(cls->thread));
-  /* okay, parameter passing is done. we can unblock the creating thread now.*/
-  pthread_mutex_unlock(&(cls->parampass_mutex));
-  pthread_cond_signal(&(cls->parampass_cond));
   /* fill in the blanks in env */
   ((struct FNI_Thread_State *)env)->thread = thread;
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
@@ -277,6 +274,12 @@ static void * thread_startup_routine(void *closure) {
   /* add this to the running_threads list, unless its a daemon thread */
   if ((*env)->GetBooleanField(env, thread, daemonID) == JNI_FALSE)
     add_running_thread(pthread_self());
+  /* okay, parameter passing is done. we can unblock the creating thread now.
+   * (note that we're careful to make sure we're on the 'running threads'
+   *  list before letting the parent --- who may decide to exit -- continue.)
+   */
+  pthread_mutex_unlock(&(cls->parampass_mutex));
+  pthread_cond_signal(&(cls->parampass_cond));
   /* okay, now start run() method */
   (*env)->CallVoidMethod(env, thread, runID);
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
