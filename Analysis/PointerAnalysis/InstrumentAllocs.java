@@ -39,7 +39,7 @@ import java.util.Map;
  * the program.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.4 2002-10-04 19:53:51 salcianu Exp $ */
+ * @version $Id: InstrumentAllocs.java,v 1.5 2002-12-01 06:28:09 salcianu Exp $ */
 public class InstrumentAllocs extends MethodMutator
     implements java.io.Serializable {
 
@@ -139,7 +139,7 @@ public class InstrumentAllocs extends MethodMutator
 
     private HMethod hm_count_alloc;
     private HMethod hm_count_sync;
-    // what's this? TODO: find more appropriate name
+    // what's this? TODO: find more appropriate name [AS]
     private HMethod method3;
     private HMethod hm_call_enter;
     private HMethod hm_call_exit;

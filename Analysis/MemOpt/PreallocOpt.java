@@ -37,6 +37,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.DefaultAllocationInformation;
+import harpoon.Analysis.PointerAnalysis.AllocationStatistics;
 import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Temp.Temp;
@@ -45,7 +46,7 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.5 2002-11-30 06:29:58 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.6 2002-12-01 06:28:02 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -112,7 +113,8 @@ public abstract class PreallocOpt {
 	attached <code>PreallocAllocationStrategy</code>. */
     public static HCodeFactory preallocAnalysis
 	(Linker linker, HCodeFactory hcf,
-	 ClassHierarchy ch, HMethod mainM, Set roots) {
+	 ClassHierarchy ch, HMethod mainM, Set roots,
+	 AllocationStatistics as) {
 
 	System.out.println("preallocAnalysis: " + hcf.getCodeName());
 
@@ -131,6 +133,14 @@ public abstract class PreallocOpt {
 
 	// restore flag (the backend crashes without this ...)
 	QuadSSI.KEEP_QUAD_MAP_HACK = OLD_FLAG;
+
+	if(as != null) {
+	    IAStatistics.printStatistics
+		(ia, as,
+		 AllocationStatistics.getAllocs(ch.callableMethods(),
+						hcf_nossa));
+	    System.exit(1);
+	}
 
 	prealloc_field2classes = new HashMap();
 	addFields(linker, ia, hcf_nossa, PreallocOpt.prealloc_field2classes);

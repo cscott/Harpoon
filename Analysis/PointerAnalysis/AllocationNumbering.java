@@ -6,17 +6,25 @@ package harpoon.Analysis.PointerAnalysis;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.Code;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
+import java.io.PrintWriter;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * An <code>AllocationNumbering</code> object assigns unique numbers
@@ -25,13 +33,14 @@ import java.util.Set;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.4 2002-10-04 19:53:51 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.5 2002-12-01 06:28:09 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
-    private final CachingCodeFactory hcf;
-    public final Map alloc2int;
-    public final Map call2int;
+    private final CachingCodeFactory ccf;
+    public  final Map alloc2int;
+    public  final Map call2int;
     
     /** Creates an <code>AllocationNumbering</code> object.
+
 	@param hcf <code>CodeFactory</code> giving the code to instrument
 	@param ch  <code>ClassHierarchy</code> for the code from hcf
 	@param callSites if true, instrument the call sites too  */
@@ -39,14 +48,13 @@ public class AllocationNumbering implements java.io.Serializable {
 			       boolean callSites) {
 	this.alloc2int = new HashMap();
 	this.call2int  = callSites ? new HashMap() : null;
-        this.hcf       = new CachingCodeFactory(hcf, true);
+        this.ccf       = new CachingCodeFactory(hcf, true);
 	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); )
-	    number(this.hcf.convert((HMethod) it.next()), callSites);
+	    number(this.ccf.convert((HMethod) it.next()), callSites);
     }
 
-
     /** Return the (caching) code factory this numbering was created on. */
-    public HCodeFactory codeFactory() { return hcf; }
+    public HCodeFactory codeFactory() { return ccf; }
     
 
     /** Return an integer identifying the allocation site <code>q</code>. */
@@ -87,4 +95,50 @@ public class AllocationNumbering implements java.io.Serializable {
 
     private int alloc_count = 0;
     private int call_count  = 0;
+
+
+
+    ////////////////// MINI SERIALIZATON //////////////////////////////////
+
+    public void writeToFile(String filename) throws IOException {
+	PrintWriter pw =
+	    new PrintWriter(new BufferedWriter(new FileWriter(filename)));
+	Collection methods = get_methods();
+	pw.println(methods.size());
+	for(Iterator it = methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    writeMethodSignature(pw, hm);
+	    writeAllocs(pw, ((Code) ccf.convert(hm)).selectAllocations());
+	}
+	pw.close();
+    }
+
+    // returns a collection of all the methods with instrumented
+    // allocations in their code
+    private Collection get_methods() {
+	Set methods = new HashSet();
+	for(Iterator it = getAllocs().iterator(); it.hasNext(); ) {
+	    Quad quad = (Quad) it.next();
+	    methods.add(quad.getFactory().getMethod());
+	}
+	return methods;
+    }
+
+    private void writeMethodSignature(PrintWriter pw, HMethod hm) {
+	pw.println(hm.getDeclaringClass().getName());
+	pw.println(hm.getName());
+	HClass[] ptypes = hm.getParameterTypes();
+	pw.println(ptypes.length);
+	for(int i = 0; i < ptypes.length; i++)
+	    pw.println(ptypes[i].getName());
+    }
+
+    private void writeAllocs(PrintWriter pw, Collection allocs) {
+	pw.println(allocs.size());
+	for(Iterator it = allocs.iterator(); it.hasNext(); ) {
+	    Quad quad = (Quad) it.next();
+	    pw.println(quad.getID());
+	    pw.println(allocID(quad));
+	}
+    }
 }
