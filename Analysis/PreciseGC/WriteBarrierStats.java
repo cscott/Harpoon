@@ -31,6 +31,8 @@ import harpoon.IR.Tree.TreeVisitor;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
+import java.io.PrintStream;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -46,7 +48,7 @@ import java.util.Set;
  * <code>WriteBarrierTreePass</code> to have any effect.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierStats.java,v 1.1.2.1 2001-08-30 23:08:15 kkz Exp $
+ * @version $Id: WriteBarrierStats.java,v 1.1.2.2 2001-10-01 20:36:30 kkz Exp $
  */
 public class WriteBarrierStats {
     
@@ -54,6 +56,7 @@ public class WriteBarrierStats {
     private final HashMap m;
     private final HashMap cleared;
     private final CountBarrierVisitor tv;
+    private final PrintStream out;
 
     /** Creates a <code>WriteBarrierStats</code>, and
      *  performs conversion on all callable methods.
@@ -61,17 +64,19 @@ public class WriteBarrierStats {
     protected WriteBarrierStats(Frame f, HCodeFactory parent,
 				ClassHierarchy ch, 
 				HMethod arraySC,
-				HMethod fieldSC) {
+				HMethod fieldSC,
+				PrintStream out) {
 	this.ccf = new CachingCodeFactory(parent);
 	this.m = new HashMap();
 	this.cleared = new HashMap();
+	this.out = out;
 	NameMap nm = f.getRuntime().getNameMap();
 	this.tv = new CountBarrierVisitor(nm.label(arraySC), 
-					  nm.label(fieldSC));
+					  nm.label(fieldSC), out);
 	// push all methods through
 	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
-	    convertOne(ccf, tv, m, hm);
+	    convertOne(ccf, tv, m, hm, out);
 	}
     }
 
@@ -81,7 +86,7 @@ public class WriteBarrierStats {
 		Code c = (Code) ccf.convert(hm);
 		// push through conversion if not yet converted
 		if (m.get(hm) == null) {
-		    convertOne(ccf, tv, m, hm);
+		    convertOne(ccf, tv, m, hm, out);
 		    // if cleared, fix up count
 		    Integer val = (Integer)cleared.remove(hm);
 		    if (val != null) tv.count -= val.intValue();
@@ -105,7 +110,8 @@ public class WriteBarrierStats {
     // performs a single conversion
     private static void convertOne(CachingCodeFactory ccf, 
 				   CountBarrierVisitor tv,
-				   Map m, HMethod hm) {
+				   Map m, HMethod hm,
+				   PrintStream out) {
 	Code c = (Code)ccf.convert(hm);
 	if (c != null) {
 	    // grab the count before this method
@@ -115,72 +121,25 @@ public class WriteBarrierStats {
 		((Tree)elements[i]).accept(tv);
 	    Object o = m.put(hm, new Integer(tv.count - base)); 
 	    Util.assert(o == null);
+	    if (out != null && base != tv.count) {
+		out.println(hm.getDeclaringClass().getName()+"."+
+			    hm.getName()+hm.getDescriptor());
+	    }
 	}	
     }
-
-    /** Code factory for applying <code>WriteBarrierStats</code>
-     *  to a tree.  Clones the tree before doing transformation 
-     *  in-place. */
-    /*
-      static HCodeFactory codeFactory(final Frame f,
-				    final HCodeFactory parent, 
-				    final ClassHierarchy ch,
-				    final HMethod main,
-				    final HMethod arraySC,
-				    final HMethod fieldSC) {
-	final HCodeFactory ccf = new CachingCodeFactory(parent);
-	return new HCodeFactory() {
-	    public HCode convert(HMethod m) {
-		HCode hc = ccf.convert(m);
-		if (m.equals(main)) {
-		    Util.assert(hc != null);
-		    // first get Labels corresponding to the
-		    // HMethods in which we are interested
-		    NameMap nm = f.getRuntime().getNameMap();
-		    Label LarraySC = nm.label(arraySC);
-		    Label LfieldSC = nm.label(fieldSC);
-		    CountBarrierVisitor tv = new CountBarrierVisitor
-			(LarraySC, LfieldSC);
-		    // push all methods through
-		    for(Iterator it = ch.callableMethods().iterator(); 
-			it.hasNext(); ) {
-			Code c = (Code)ccf.convert((HMethod) it.next());
-			if (c != null) {
-			    Object[] elements = 
-				c.getGrapher().getElements(c).toArray();
-			    for(int j = 0; j < elements.length; j++)
-				((Tree)elements[j]).accept(tv);
-			}
-		    }
-		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
-		    // clone code...
-		    code = (harpoon.IR.Tree.Code) code.clone(m).hcode();
-		    DerivationGenerator dg = null;
-		    try {
-			dg = (DerivationGenerator) code.getTreeDerivation();
-		    } catch (ClassCastException ex) { }
-		    // ...do analysis and modify cloned code in-place.
-		    simplify((Stm)code.getRootElement(), dg, 
-			     HCE_RULES(tv.count));
-		    hc = code;
-		}
-		return hc;
-	    }
-	    public String getCodeName() { return parent.getCodeName(); }
-	    public void clear(HMethod m) { parent.clear(m); }
-	};
-	}
-    */
-    
+   
     // examine Trees
     private static class CountBarrierVisitor extends TreeVisitor {
-	final private Label LarraySC;
-	final private Label LfieldSC;
+	private final Label LarraySC;
+	private final Label LfieldSC;
+	private final PrintStream out;
+
 	int count = 0;
 
-	CountBarrierVisitor(Label LarraySC, Label LfieldSC) {
+	CountBarrierVisitor(Label LarraySC, Label LfieldSC, PrintStream out) {
 	    this.LarraySC = LarraySC;
 	    this.LfieldSC = LfieldSC;
+	    this.out = out;
 	}
 
 	public void visit (Tree t) { }
@@ -193,9 +152,12 @@ public class WriteBarrierStats {
 		    // get last argument
 		    ExpList arg = c.getArgs().tail.tail.tail;
 		    Util.assert(arg.tail == null);
+		    if (out != null) {
+			out.println("ID "+count+"\t"+c.getSourceFile()+
+				    "\tline "+c.getLineNumber());
+		    }
 		    c.setArgs(ExpList.replace(c.getArgs(), arg.head, new CONST
 					      (c.getFactory(), c, count++)));
-		    System.out.print('.');
 		}
 	    }
 	}

@@ -91,7 +91,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.166 2001-09-25 20:44:27 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.167 2001-10-01 20:36:40 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -163,6 +163,8 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean PRECISEGC = false;
     static boolean MULTITHREADED = false;
     static boolean WRITEBARRIERS = false;
+    static FileOutputStream wbos = null;
+    static PrintStream wbps = null;
     static WriteBarrierQuadPass writeBarrier = null;
 
     public static void main(String[] args) {
@@ -482,7 +484,10 @@ public class SAMain extends harpoon.IR.Registration {
 		codeFactory();
 	    // remove write barriers for assignment to constants
 	    hcf = writeBarrier.ceCodeFactory(frame, hcf);
-	    hcf = writeBarrier.statsCodeFactory(frame, hcf, classHierarchy);
+	    if (wbps != null)
+		wbps.println("\nWRITE BARRIER LIST FOR "+className);
+	    hcf = writeBarrier.statsCodeFactory
+		(frame, hcf, classHierarchy, wbps);
 	    //hcf = writeBarrier.treeCodeFactory(frame, hcf, classHierarchy);
 	}
 
@@ -806,7 +811,8 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw");
+	Getopt g = new Getopt("SAMain", args, 
+			      "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw::");
 	
 	int c;
 	String arg;
@@ -828,7 +834,20 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'm': // Multi-threaded (KKZ)
 		MULTITHREADED = true; break;
 	    case 'w': // Add write barriers (KKZ)
-		WRITEBARRIERS = true; break;
+		WRITEBARRIERS = true;
+		arg = g.getOptarg();
+		if (arg != null) {
+		    try {
+			wbos = new FileOutputStream(arg, true);
+			wbps = new PrintStream(wbos);
+			System.out.println
+			    ("Writing write barrier list to file "+arg);
+		    } catch (Exception e) {
+			System.err.println(e);
+			System.exit(1);
+		    }
+		}
+		break;
 	    case 't': // Realtime Java extensions (WSB)
 		linker = new Relinker(Loader.systemLinker);
 		Realtime.configure(g.getOptarg());
