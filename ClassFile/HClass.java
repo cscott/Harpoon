@@ -31,7 +31,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.28 1999-11-01 20:29:29 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29 1999-11-11 19:07:15 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -749,42 +749,39 @@ public abstract class HClass extends HPointer
    * @see "The Java Language Specification, sections 5.1.1 and 5.1.4"
    * @exception NullPointerException
    *            if the specified <code>HClass</code> parameter is null.
-   */ // XXX CHECK THIS XXX
+   */
   public boolean isAssignableFrom(HClass cls) {
     if (cls==null) throw new NullPointerException();
     // test identity conversion.
-    if (isPrimitive()) return (this==cls);
+    if (cls==this) return true;
+    // widening reference conversions...
+    if (this.isPrimitive()) return false;
+    // widening reference conversions from the null type:
+    if (cls==HClass.Void) return true;
+    if (cls.isPrimitive()) return false;
     // widening reference conversions from an array:
     if (cls.isArray()) {
       if (this == forName("java.lang.Object")) return true;
       if (this == forName("java.lang.Cloneable")) return true;
-      if (isArray() && 
+      // see http://java.sun.com/docs/books/jls/clarify.html
+      if (this == forName("java.io.Serializable")) return true;
+      if (isArray() &&
+	  !getComponentType().isPrimitive() &&
+	  !cls.getComponentType().isPrimitive() &&
 	  getComponentType().isAssignableFrom(cls.getComponentType()))
 	return true;
       return false;
     }
-    if (isArray()) return false; // because cls is not an array.
-
-    // CHEATING!
-    try {
-      return Class.forName(this.getName()).isAssignableFrom(Class.forName(cls.getName()));
-    } catch (ClassNotFoundException e) {
-      throw new NoClassDefFoundError(e.toString());
+    // widening reference conversions from an interface type.
+    if (cls.isInterface()) {
+      if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
+      if (this == forName("java.lang.Object")) return true;
+      return false;
     }
-    /*
-    // from any class type S to any class type T, 
-    // provided that S is a subclass of T.
-    for (HClass sup = cls; sup!=null; sup = sup.getSuperclass())
-      if (this==sup) return true;
-    // from any class type S to any interface type K,
-    // provided that S implements K.
-    // from any interface J to any interface K, 
-    // provided J is a subinterface of K.  XXX DO WE REALLY DO THIS?
-    HClass ins[] = cls.getInterfaces();
-    for (int i=0; i<ins.length; i++)
-      if (this==ins[i]) return true;
+    // widening reference conversions from a class type:
+    if (!this.isInterface() && this.isSuperclassOf(cls)) return true;
+    if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
     return false;
-    */
   }
 
   /**
