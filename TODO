@@ -1,3 +1,11 @@
+---- Sep-25-98
+Undo peephole optimization and replace with a rule in SCCAnalysis that
+ makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
+ Actually, since sense of result of icmpeq and boolean is different,
+ this would entail switching all CJMPs that use boolean value and
+ negative value in all other uses.  May be more complicated.
+Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
+necessary sometimes.
 ---- Sep-24-98
 figure out what to do about related variables/induction variables.
 ---- Sep-23-98, cont
@@ -19,7 +27,7 @@ Predicated interprocedural analysis.
 ---- Sep-19-98
 Remove Tnull, Tzero code from top of function.  It's increasing the
  phi/sigma count by a lot (some multiple of n, where n is the number of
- splits/joins).
+ splits/joins). Note that peephole optimizations may need to change.
 ---- Sep-18-98
 X Fix MONITOR handling.
 ---- Sep-16-98
@@ -47,12 +55,13 @@ Check try/catch processing.  I don't think we're putting in the right
 X Maybe split phi/switch stuff into separate entities:
 X  QUESTION: what do we do about optimizing ( x+1 < y )
 ---- Sep-14-98
-Peephole optimizations on QuadSSA to normalize:
- 1) instanceof -> icmp -> cjmp (or in general, boolean->icmp->cjmp)
-    all boolean functions should feed a cjmp directly.
- 2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
-    and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
-    sequence. (make sure cmpgt->cmpeq is properly translated to cmpge, too.)
+X Peephole optimizations on QuadSSA to normalize:
+X  1) instanceof -> icmp -> cjmp (or in general, boolean->icmp->cjmp)
+X     all boolean functions should feed a cjmp directly.
+X  2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
+X     and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
+X     sequence. 
+make sure cmpgt->cmpeq is properly translated to cmpge, too.
 ---- Sep-13-98
 Write tool to print 'ConstantClass'es from bytecode files, and delete
  .classes that depend on out-of-date classes. Then some other tool can
