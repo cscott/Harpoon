@@ -183,15 +183,15 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   FNI_SetStaticFloatField,
   FNI_SetStaticDoubleField,
             
-  (typeof(&FNI_NewString)) FNI_Unimplemented,
-  (typeof(&FNI_GetStringLength)) FNI_Unimplemented,
-  (typeof(&FNI_GetStringChars)) FNI_Unimplemented,
-  (typeof(&FNI_ReleaseStringChars)) FNI_Unimplemented,
+  FNI_NewString,
+  FNI_GetStringLength,
+  FNI_GetStringChars,
+  FNI_ReleaseStringChars,
             
-  (typeof(&FNI_NewStringUTF)) FNI_Unimplemented,
-  (typeof(&FNI_GetStringUTFLength)) FNI_Unimplemented,
-  (typeof(&FNI_GetStringUTFChars)) FNI_Unimplemented,
-  (typeof(&FNI_ReleaseStringUTFChars)) FNI_Unimplemented,
+  FNI_NewStringUTF,
+  FNI_GetStringUTFLength,
+  FNI_GetStringUTFChars,
+  FNI_ReleaseStringUTFChars,
             
   (typeof(&FNI_GetArrayLength)) FNI_Unimplemented,
              
