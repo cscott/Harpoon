@@ -26,10 +26,13 @@ public abstract class Code extends HCode
     implements Derivation, TypeMap {
     /** The Tree Objects composing this code view. */
     protected Tree tree;
-    /** The Frame. */
+
+    /** The Frame containing machine-specific information*/
     protected /* final */ Frame frame;
+
     /** Tree factory. */
     protected /* final */ TreeFactory tf;
+
     /** The method that this code view represents. */
     protected /* final */ HMethod parent;
 
@@ -204,6 +207,9 @@ public abstract class Code extends HCode
 
     public abstract HClass typeMap(HCode hc, Temp t);
 
+    static final int COMPUTE_EDGE_SETS = 0;
+    static final int ALLOC_EDGE_ARRAYS = 1;
+    static final int ASSIGN_EDGE_DATA  = 2;
 
     /** Only for CanoncialTreeCode and later views, a class to initialize
      *  the edges representing the CFG of this Tree form
