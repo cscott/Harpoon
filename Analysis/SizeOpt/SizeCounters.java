@@ -34,7 +34,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.1.2.6 2001-10-31 03:38:25 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.1.2.7 2001-10-31 23:34:50 cananian Exp $
  */
 public class SizeCounters extends MethodMutator {
     final Frame frame;
@@ -125,25 +125,30 @@ public class SizeCounters extends MethodMutator {
 		(qf, e, "sizecnt.bytes_by_type."+q.hclass().getName(), size);
 	    // special bitwidth-aware counters.
 	    if (bwa!=null) {
-		int bits=0;
+		int bits=0, rounded_bits=0;
 		for (HClass hc=q.hclass(); hc!=null; hc=hc.getSuperclass()) {
 		    for (Iterator it=new ArrayIterator(hc.getDeclaredFields());
 			 it.hasNext(); ) {
 			HField hf = (HField) it.next();
 			if (hf.isStatic()) continue;
+			int mybits;
 			if (hf.getType()==HClass.Float)
-			    bits += 32;
+			    mybits = 32;
 			else if (hf.getType()==HClass.Double)
-			    bits += 64;
-			else if (hf.getType().isPrimitive())
-			    bits += Math.max(bwa.plusWidthMap(hf),
-					     bwa.minusWidthMap(hf));
+			    mybits = 64;
+			else if (!hf.getType().isPrimitive())
+			    mybits = frame.pointersAreLong() ? 64 : 32;
 			else
-			    bits += frame.pointersAreLong() ? 64 : 32;
+			    mybits = Math.max(bwa.plusWidthMap(hf),
+					      bwa.minusWidthMap(hf));
+			bits += mybits;
+			rounded_bits += ((mybits+7)/8)*8;
 		    }
 		}
 		e = CounterFactory.spliceIncrement
 		    (qf, e, "sizecnt.bits_by_type."+q.hclass().getName(),bits);
+		e = CounterFactory.spliceIncrement
+		    (qf, e, "sizecnt.rounded_bits_by_type."+q.hclass().getName(),rounded_bits);
 	    }
 	}
     }
