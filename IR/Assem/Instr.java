@@ -9,6 +9,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Label;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
+import harpoon.IR.Properties.Edges;
+import harpoon.ClassFile.HCodeEdge;
 
 /**
  * <code>Instr</code> is an supperclass representation for
@@ -16,9 +18,9 @@ import harpoon.Temp.Temp;
  * the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.6 1999-03-08 09:08:07 andyb Exp $
+ * @version $Id: Instr.java,v 1.1.2.7 1999-04-05 16:22:23 pnkfelix Exp $
  */
-public class Instr implements HCodeElement, UseDef {
+public class Instr implements HCodeElement, UseDef, Edges {
     protected String assem;
     protected Temp[] dst;
     protected Temp[] src;
@@ -29,6 +31,11 @@ public class Instr implements HCodeElement, UseDef {
     protected int source_line;
     protected int id;
 
+    // FSK: below variables are needed for proper implementation of the Edges interface
+    protected HCodeEdge[] edges;
+    protected HCodeEdge[] pred;
+    protected HCodeEdge[] succ;
+    
     /** Creates an <code>Instr</code> consisting of the String 
      *  assem and the lists of destinations and sources in dst and src. */
     public Instr(InstrFactory inf, HCodeElement source, 
@@ -103,4 +110,13 @@ public class Instr implements HCodeElement, UseDef {
     public int getLineNumber() { return source_line; }
 
     public int getID() { return id; }
+
+    // FSK: following methods are necessary for Edges interface 
+
+    // XXX while these are correct methods, they are relying on an
+    // incorrect underlying construction method for Instrs; update
+    // Instr creation to properly update these three state variables.
+    public HCodeEdge[] edges() { return edges; }
+    public HCodeEdge[] pred() { return pred; }
+    public HCodeEdge[] succ() { return succ; }
 }
