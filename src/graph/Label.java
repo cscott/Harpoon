@@ -50,6 +50,7 @@ public class Label extends Node {
      */
     public Label(Node outImage, Node outImages) {
 	super(outImage, outImages);
+	//defaults assuming 320x240 images
 	init(33, 300, 33, 200, 0, 1200, 3.);
     }
 
@@ -199,6 +200,18 @@ public class Label extends Node {
      */
     //public synchronized void process(ImageData id) {
     public void process(ImageData id) {
+
+	int minWidthAdjust, maxWidthAdjust, minHeightAdjust, maxHeightAdjust, minSumAdjust, maxSumAdjust;
+	double maxRatioAdjust;
+	minWidthAdjust = (int)(minwidth * id.width/320.);
+	maxWidthAdjust = (int)(maxwidth * id.width/320.);
+	minHeightAdjust = (int)(minheight * id.width/320.);
+	maxHeightAdjust = (int)(maxheight * id.width/320.);
+	minSumAdjust = (int)(minsum * id.width/320.);
+	maxSumAdjust = (int)(maxsum * id.width/320.);
+	maxRatioAdjust = maxratio;
+
+
 	byte num=127;
 	//System.out.println("inside label");
 	for (int pos=0; pos<id.gvals.length; pos++) {
@@ -207,17 +220,23 @@ public class Label extends Node {
 		//y1, y2 range from 0 to height
 		x1 = x2 = pos%id.width;
 		y1 = y2 = pos/id.width;
+		//System.out.println("x1,x2 = "+x1+","+x2);
+		//System.out.println("y1,y2 = "+y1+","+y2);
+				
 		//label() call will change value of x1, x2, y1, y2
 		label(id, num, pos);
 		//width,height are the dimensions of the object discovered by label()
 		int width = x2-x1;
 		int height = y2-y1;
+		//System.out.println("Width: "+width);
+		//System.out.println("Height:"+height);
+		//System.out.println("");
 		//if object size exceeds given ranges for width and height
 		//then do nothing
-		if ((width<minwidth)||(width>maxwidth)||
-		    (height<minheight)||(height>maxheight)||
-		    ((width+height)<minsum)||((width+height)>maxsum)||
-		    ((width/height>maxratio)||(height/width)>maxratio)) {
+		if ((width<minWidthAdjust)||(width>maxWidthAdjust)||
+		    (height<minHeightAdjust)||(height>maxHeightAdjust)||
+		    ((width+height)<minSumAdjust)||((width+height)>maxSumAdjust)||
+		    ((width/height>maxRatioAdjust)||(height/width)>maxRatioAdjust)) {
 		    //System.out.println("Out of bounds!");
 
 		    /*
