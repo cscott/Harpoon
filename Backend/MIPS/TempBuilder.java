@@ -8,23 +8,14 @@ import harpoon.Temp.TempFactory;
 import harpoon.IR.Tree.Typed;
 
 /**
- * <code>TempBuilder</code> for StrongARM.
+ * <code>TempBuilder</code> for MIPS.
  * 
- * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: TempBuilder.java,v 1.1.2.1 2000-06-26 18:37:13 witchel Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: TempBuilder.java,v 1.1.2.2 2000-07-12 14:31:56 cananian Exp $
  */
-public class TempBuilder extends harpoon.Backend.Generic.TempBuilder {
+public class TempBuilder extends harpoon.Backend.StrongARM.TempBuilder {
     
     /** Creates a <code>TempBuilder</code>. */
-    public TempBuilder() {
-        
-    }
-    
-    public Temp makeTemp(Typed t, TempFactory tf) {
-	if (t.isDoubleWord()) {
-	    return new TwoWordTemp(tf);
-	} else {
-	    return new Temp(tf);
-	}
-    }
+    public TempBuilder() { super(); }
+
 }

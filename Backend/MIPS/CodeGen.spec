@@ -4,6 +4,7 @@
 package harpoon.Backend.MIPS;
 
 import harpoon.Backend.Maps.NameMap;
+import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
@@ -67,7 +68,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.9 2000-07-02 01:58:57 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.10 2000-07-12 14:31:55 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  

@@ -7,6 +7,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory.Location;
 import harpoon.Backend.Generic.RegFileInfo.VRegAllocator;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
+import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HData;
@@ -38,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.1 2000-06-26 18:37:13 witchel Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.2 2000-07-12 14:31:56 cananian Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 

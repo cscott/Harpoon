@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.MIPS;
 
+import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Assem.Instr;
 import harpoon.Analysis.Instr.TempInstrPair;
@@ -26,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for MIPS assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.4 2000-06-29 02:19:24 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.5 2000-07-12 14:31:55 cananian Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "mips";
@@ -40,7 +41,7 @@ class Code extends harpoon.Backend.Generic.Code {
     public Code(harpoon.IR.Tree.Code treeCode) {
         super(treeCode);
 
-	// need to cast the return type to a StrongARM.RegFileInfo
+	// need to cast the return type to a MIPS.RegFileInfo
 	regFileInfo = (RegFileInfo) this.frame.getRegFileInfo();
 	Util.assert(regFileInfo != null, "Need non-null regfileinfo");
 

@@ -14,11 +14,11 @@ import harpoon.Util.Util;
 
 /**
  * <code>Frame</code> contains the machine-dependant
- * information necessary to compile for the StrongARM processor.
+ * information necessary to compile for the MIPS processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.2 2000-06-29 02:17:17 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.3 2000-07-12 14:31:56 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -73,9 +73,9 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 
     public boolean pointersAreLong() { return false; }
 
-    /** Returns a <code>StrongARM.CodeGen</code>. 
+    /** Returns a <code>MIPS.CodeGen</code>. 
 	Since no state is maintained in the returned
-	<code>StrongARM.CodeGen</code>, the same one is returned on
+	<code>MIPS.CodeGen</code>, the same one is returned on
 	every call to this method.
      */
     public harpoon.Backend.Generic.CodeGen getCodeGen() { 

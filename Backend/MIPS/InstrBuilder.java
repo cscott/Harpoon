@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.MIPS;
 
+import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrLABEL;
@@ -15,11 +16,12 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.Arrays;
 
-/** <code>StrongARM.InstrBuilder</code> is an <code>Generic.InstrBuilder</code> for the
-    StrongARM architecture.
+/** <code>MIPS.InstrBuilder</code> is an <code>Generic.InstrBuilder</code> for the
+    MIPS architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.1 2000-06-26 18:37:13 witchel Exp $
+    @author  Emmett Witchel <witchel@mit.edu>
+    @version $Id: InstrBuilder.java,v 1.1.2.2 2000-07-12 14:31:56 cananian Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
