@@ -782,38 +782,19 @@ public class IncompatibilityAnalysis {
         }
 
 
-//         for (Iterator it = externalPointsTo.getValues(ESCAPE).iterator();
-//              it.hasNext(); ) {
+        for (Iterator it = externalPointsTo.getValues(ESCAPE).iterator();
+             it.hasNext(); ) {
 
-//             Object atom = it.next();
-//             Object inMap = globalAllocMap.get(atom);
+             Object atom = it.next();
 
-//             if (inMap == null) continue;
-
-//             NEW qNew = (NEW) inMap;
-
-//             if (exception.isSuperclassOf(qNew.hclass())) {
-//                 System.out.println("exception escaped: " + Debug.code2str(qNew) + " in " +
-//                                    method);
-
-//                 System.out.println("variables equal to this: " );
-
-//                 for (Iterator it2 = externalPointsTo.keySet().iterator();
-//                      it2.hasNext(); ) {
-//                     Object var = it2.next();
-//                     if (externalPointsTo.getValues(var).contains(atom)) {
-//                         System.out.println("  " + var + " (parameter of: " + md.param2calls.getValues(var));
-//                     }
-//                 }
-                
-                
-//                 HCode hcode = codeFactory.convert(method);
-//                 hcode.print(new java.io.PrintWriter(System.out));
-
-//                 System.exit(1);
-//             }
+             NEW def = (NEW) globalAllocMap.get(atom);
+             if (isA(atom, iterator)) {
+                 System.out.println("Iterator escaped: ");
+                 System.out.println("    Debug.code2str(def)");
+                 System.out.println("    in "+method);
+             }
             
-//         }
+        }
              
         
         return anSize != md.An.size() || aeSize != md.Ae.size()
@@ -1119,6 +1100,15 @@ public class IncompatibilityAnalysis {
                         } else {
                             assert globalAllocMap.containsKey(escaped);
                             I.addAll(escaped, allocs);
+
+                            // debugging code
+                            if (isA(escaped, iterator) &&
+                                allocs.contains(escaped)) {
+                                
+                                System.out.println("Iterator self-incompat due to escapes: ");
+                                System.out.println("   "+Debug.code2str((NEW) globalAllocMap.get(escaped)));
+                                System.out.println("   at " + Debug.code2str(q));
+                            }
                         }
                     }
                 }
@@ -1156,12 +1146,21 @@ public class IncompatibilityAnalysis {
                         assert globalAllocMap.containsKey(live);
 
                         I.addAll(live, edgeAllocs[i]);
+                        // debugging code
+                        if (isA(live, iterator) &&
+                            edgeAllocs[i].contains(live)) {
+                            
+                            
+                            System.out.println("Iterator self-incompat due to liveness: ");
+                            System.out.println("   "+Debug.code2str((NEW) globalAllocMap.get(live)));
+                            System.out.println("   at " + Debug.code2str(q));
+                        }
                     }
                 }
             }
-
+            
         }
-
+        
     }
 
 
@@ -1206,10 +1205,20 @@ public class IncompatibilityAnalysis {
                                              mdCalled.Ip.getValues(declParams[i]));
                             }
                             else {
-                                // System.out.println("Incompatibility: " + temp + " and " + mdCalled.Ip.getValues(declParams[i])+ " are incompatible on " + Debug.code2str(qCall) + " (method: " + method+")");
+
                                 
                                 I.addAll(temp,
                                          mdCalled.Ip.getValues(declParams[i]));
+                                // some debugging code
+                                if (isA(temp, iterator) &&
+                                    mdCalled.Ip.getValues(declParams[i])
+                                    .contains(temp)) {
+
+                                    System.out.println("Iterator self-incompat due to Ip: ");
+                                    System.out.println("   "+Debug.code2str((NEW) globalAllocMap.get(temp)));
+                                    System.out.println("   at " + Debug.code2str(qCall));
+                                }
+                                    
                             }
                             
                         }
@@ -1373,15 +1382,9 @@ public class IncompatibilityAnalysis {
 
     // some helper methods for debugging
     
-    private boolean isExceptionAlloc(Temp temp) {
+    private boolean isA(Object temp, HClass hclass) {
         if (globalAllocMap.containsKey(temp)) {
-            return exception.isSuperclassOf(((NEW) globalAllocMap.get(temp)).hclass());
-        } else return false;
-    }
-
-    private boolean isIteratorAlloc(Temp temp) {
-        if (globalAllocMap.containsKey(temp)) {
-            return iterator.isSuperinterfaceOf(((NEW) globalAllocMap.get(temp)).hclass());
+            return hclass.isSuperclassOf(((NEW) globalAllocMap.get(temp)).hclass());
         } else return false;
     }
 
