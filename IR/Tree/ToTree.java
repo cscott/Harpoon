@@ -64,7 +64,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.45 1999-09-13 00:31:14 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.46 1999-09-13 23:48:29 pnkfelix Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -1606,6 +1606,8 @@ class LabelingVisitor extends LowQuadWithDerivationVisitor {
     }
 
     private void toLabel(Quad q) {
+	Util.assert(q != null, "quad q should not equal null");
+
 	harpoon.IR.Quads.LABEL label;
     
 	label  = (harpoon.IR.Quads.LABEL)m_QToL.get(q);

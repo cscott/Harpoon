@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.24 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.25 1999-09-13 23:48:29 pnkfelix Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -226,6 +226,7 @@ public abstract class Quad
 	}
 	for (int i=0; i<oldQ.prev.length; i++) {
 	    Edge e = oldQ.prev[i];
+	    Util.assert(e != null, "edge e should not equal null for quad: "+oldQ);
 	    addEdge((Quad) e.from(), e.which_succ(), newQ, i);
 	    oldQ.prev[i] = null;
 	}
