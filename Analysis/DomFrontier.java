@@ -8,20 +8,20 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.Util.Util;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
-import harpoon.Util.NullEnumerator;
 import harpoon.Util.ArrayEnumerator;
+import harpoon.Util.Default;
 
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.HashSet;
 /**
  * <code>DomFrontier</code> computes the dominance frontier of a 
  * flowgraph-structured IR.  The <code>HCodeElement</code>s must implement
  * the <code>harpoon.IR.Properties.HasEdges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.5 1999-05-19 06:45:08 andyb Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.6 1999-06-17 20:57:18 cananian Exp $
  */
 
 public class DomFrontier  {
@@ -69,7 +69,7 @@ public class DomFrontier  {
 	analyze(hc);
 	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
 	if (r==null)
-	    return NullEnumerator.STATIC;
+	    return Default.nullEnumerator;
 	else
 	    return new ArrayEnumerator(r);
     }
@@ -105,7 +105,7 @@ public class DomFrontier  {
 	for (int i=0; i < yl.length; i++) {
 	    HCodeElement y = (!isPost) ? yl[i].to() : yl[i].from();
 	    if (!n.equals( dt.idom(hc, y) ))
-		S.union(y);
+		S.add(y);
 	}
 	// for each child c of n in the (post)dominator tree
 	HCodeElement[] c = dt.children(hc, n);
@@ -115,12 +115,12 @@ public class DomFrontier  {
 	    HCodeElement[] w = (HCodeElement[]) DF.get(c[i]);
 	    for (int j=0; j < w.length; j++)
 		if (!n.equals( dt.idom(hc, w[j]) ))
-		    S.union(w[j]);
+		    S.add(w[j]);
 	}
 	// DF[n] <- S
 	HCodeElement dfn[] = 
 	    (HCodeElement[]) hc.elementArrayFactory().newArray(S.size());
-	S.copyInto(dfn);
+	S.toArray(dfn);
 	DF.put(n, dfn);
     }
 }

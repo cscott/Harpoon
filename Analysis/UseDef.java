@@ -6,14 +6,16 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
-import harpoon.Util.NullEnumerator;
 import harpoon.Util.ArrayEnumerator;
+import harpoon.Util.Default;
 import harpoon.Util.Util;
 
-import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>UseDef</code> objects map <code>Temp</code>s to the 
  * <code>HCodeElement</code>s which use or define
@@ -22,16 +24,16 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.10.2.4 1999-02-03 23:10:41 pnkfelix Exp $
+ * @version $Id: UseDef.java,v 1.10.2.5 1999-06-17 20:57:18 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     /** Creates a new, empty <code>UseDef</code>. */
     public UseDef() { }
 
-    Hashtable analyzed = new Hashtable();
-    Hashtable useMap = new Hashtable();
-    Hashtable defMap = new Hashtable();
+    Map analyzed = new HashMap();
+    Map useMap = new HashMap();
+    Map defMap = new HashMap();
 
     static class allTempList {
 	Temp[] used;
@@ -43,26 +45,22 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     }
 	
     void associate(HCodeElement hce, Temp[] tl,
-		   Hashtable map, Set allTemps1, Set allTemps2) {
+		   Map map, Set allTemps1, Set allTemps2) {
 	for (int i=0; i<tl.length; i++) {
 	    Set s = (Set) map.get(tl[i]);
 	    if (s==null) { s = new HashSet(); map.put(tl[i], s); }
-	    s.union(hce);
-	    allTemps1.union(tl[i]);
-	    allTemps2.union(tl[i]);
+	    s.add(hce);
+	    allTemps1.add(tl[i]);
+	    allTemps2.add(tl[i]);
 	}
     }
 
     Temp[] set2temps(Set s) {
-	Temp[] tl = new Temp[s.size()];
-	s.copyInto(tl);
-	return tl;
+	return (Temp[]) s.toArray(new Temp[s.size()]);
     }
     HCodeElement[] set2hces(HCode hc, Set s) {
-	HCodeElement[] hcel = 
-	    (HCodeElement[]) hc.elementArrayFactory().newArray(s.size());
-	s.copyInto(hcel);
-	return hcel;
+	return (HCodeElement[])
+	    s.toArray(hc.elementArrayFactory().newArray(s.size()));
     }
 
     HCode lastHCode = null;
@@ -78,8 +76,8 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	harpoon.IR.Properties.UseDef[] udl =
 	    (harpoon.IR.Properties.UseDef[]) el;
 
-	Hashtable workUse = new Hashtable();
-	Hashtable workDef = new Hashtable();
+	Map workUse = new HashMap();
+	Map workDef = new HashMap();
 	Set defined = new HashSet();
 	Set used    = new HashSet();
 	Set all     = new HashSet();
@@ -90,12 +88,12 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	    associate(el[i], udl[i].def(), workDef, defined, all);
 	}
 	// replace UniqueVectors with HCodeElement arrays to save space.
-	for (Enumeration e = workUse.keys(); e.hasMoreElements(); ) {
-	    Temp u = (Temp) e.nextElement();
+	for (Iterator it = workUse.keySet().iterator(); it.hasNext(); ) {
+	    Temp u = (Temp) it.next();
 	    useMap.put(u, set2hces(code,  (Set)workUse.get(u)));
 	}
-	for (Enumeration e = workDef.keys(); e.hasMoreElements(); ) {
-	    Temp d = (Temp) e.nextElement();
+	for (Iterator it = workDef.keySet().iterator(); it.hasNext(); ) {
+	    Temp d = (Temp) it.next();
 	    defMap.put(d, set2hces(code, (Set)workDef.get(d)));
 	}
 	// store set of all temps & mark as analyzed.
@@ -168,7 +166,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     }
 	
     private Enumeration arrayEnumerator(Object[] ol) {
-	if (ol==null) return NullEnumerator.STATIC;
+	if (ol==null) return Default.nullEnumerator;
 	return new ArrayEnumerator(ol);
     }
 }
