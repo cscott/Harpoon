@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.2 2002-03-22 01:07:47 cananian Exp $
+% $Id: oopsla02.tex,v 1.3 2002-03-22 01:32:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.2 $ $}{$ $Revision: 1.2 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.3 $ $}{$ $Revision: 1.3 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -36,7 +36,7 @@
 \begin{abstract}
 
 {\bf\Large FIX ME! }
-This paper presents a set of Java optimizations targetted at
+This paper presents a set of Java optimizations targeted at
 memory-constrained embedded devices.  Using the FLEX compiler system,
 we aggressively transform
 programs using both source-level transformations and
@@ -194,7 +194,7 @@ public class RU \{\\
 \label{fig:jess-classes}
 \end{figure}
 
-\subsection{Small integer types in the Example}
+\subsection{Small Integer Types in the Example}
 \newcommand{\tyf}{\texttt{\_type}\xspace}
 
 Programmers often use the {\tt int} type in Java when a smaller type
@@ -211,7 +211,7 @@ in {\tt jess.RU} would reveal, the maximum value ever stored in the
 16-bit unsigned type ({\tt char} in Java) would suffice to hold this
 value, saving two bytes per instance of this class.
 
-\subsection{Unused and constant fields in the Example}
+\subsection{Unused and Constant Fields in the Example}
 The {\tt NUM\_TYPES} and {\tt FACT\_TYPES} fields were not marked
 {\tt static} by the programmer, causing them to occupy 8 bytes in every
 instance of {\tt jess.Value}.  Furthermore, the {\tt NUM\_TYPES} field
@@ -219,7 +219,9 @@ is never actually read by the program!  The original Java-to-bytecode
 compiler performed constant propagation on {\tt NUM\_TYPES} because it
 was marked final, so that the computation of {\tt FACT\_TYPES} does
 not actually read the {\tt NUM\_TYPES} field.  Thus, both fields are
-{\it constant}, and {\tt NUM\_TYPES} is, in addition, {\it unused}.
+{\it constant}, and {\tt NUM\_TYPES} is, in addition, {\it unused}.%
+\footnote{{\tt FACT\_TYPES} is used only once, in the {\tt
+    FactIDValue()} method shown.}
 Table \ref{tab:const-unused} shows that such fields are surprisingly
 common in Java code, although often unused fields are found in
 infrequently-instantiated classes.
@@ -250,9 +252,55 @@ In this case, the {\tt Value} object accounts for 23\% of the total
 allocations made by the {\tt jess} benchmark, and so eliminating these
 field has a major impact.
 
-\subsection{Mostly-zero fields in the Example}
+\subsection{Mostly-Constant Fields in the Example}
+As a tagged union, the value fields of {\tt
+  jess.Value} are unused in certain circumstances.  For example,
+when the {\tt Value} is representing an {\tt RU.EXTERNAL\_ADDRESS}
+via the constructor shown, the {\tt intval} and {\tt floatval} fields
+are zero.  We would like to take advantage of this fact to remove
+the storage occupied by {\tt intval} and {\tt floatval} when it is
+not needed.  We call {\tt intval} and {\tt floatval} {\it mostly-zero
+  fields} in this context: they are not zero in all instances of the
+class, but there is an important subset of the instances of {\tt
+  jess.Value} where they {\it are} constant and zero.  For those
+instances, we'd like to eliminate the space required by the fields.
+
+\begin{figure}
+\begin{samplecode}
+public Value(Object o, int type) \{\\
+\>if (type != RU.EXTERNAL\_ADDRESS)\\
+\>\>throw new ReteException();\\
+\>\_type = type;\\
+\>Objectval = o;\\
+\>intval = Integer.MIN\_VALUE;\\
+\>floatval=Double.NaN;\\
+\}\\
+\end{samplecode}
+\caption{An alternate constructor for {\tt jess.Value}.}
+\label{fig:alt-constructor}
+\end{figure}
+
+This concept can be generalized to {\it mostly-constant} fields,
+for any arbitrary constant.  For example, suppose the {\tt Value}
+constructor looked like figure \ref{fig:alt-constructor} instead.
+In this case {\tt Integer.MIN\_VALUE} and the {\tt NaN} double value
+are used to represent ``invalid'' fields.  We may equally well
+eliminate the {\tt intval} and {\tt floatval} fields with these
+values, since their values are fixed from the time {\tt Value} is
+instantiated.
+We will often discuss ``mostly-zero'' fields in concrete cases, but
+our analyses and transformations are valid in the general
+``mostly-constant'' case.
+
+{\bf Awkward?}
+
+We will use the more-familiar {\tt java.lang.String} class to
+illustrate how we may eliminate mostly-constant fields.
+
+\section{Another Example}
+{\bf FIX THE SECTION TITLE}
+% java.lang.String.
 % add 'suffix' function to String to motivate externalization.
-\subsection{An Optimization Example}
 % talk about MZF implementation details here.
 
 %%%% static specialization example.
