@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.16 2000-05-18 03:31:07 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.17 2000-05-18 03:48:15 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -60,7 +60,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    if("currentThread".equals(hms[i].getName()))
 		good_holes.add(hms[i]);
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println("GOOD HOLES: " + good_holes);
     }
 
@@ -155,12 +155,12 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	pig.G.flushCaches();
 
-	System.out.println("BEFORE REMOVE METHOD HOLES: " + pig);
+	//System.out.println("BEFORE REMOVE METHOD HOLES: " + pig);
 
-	System.out.println("GOOD HOLES: " + good_holes); 
+	//System.out.println("GOOD HOLES: " + good_holes); 
 	pig.G.e.removeMethodHoles(good_holes);
 
-	System.out.println("AFTER  REMOVE METHOD HOLES: " + pig);
+	//System.out.println("AFTER  REMOVE METHOD HOLES: " + pig);
 
 	if(pig == null) return;
 
