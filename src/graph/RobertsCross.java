@@ -36,13 +36,27 @@ public class RobertsCross extends Node {
 	    for (int j = 0; j<3; j++) {
 		//val contains image data for single color
 		byte[] val = vals[j];
-		out = Math.max(out,
-			       Math.abs(((val[i]|256)&255)-
-					((val[i+width+1]|256)&255))+
-			       Math.abs(((val[i+1]|256)&255)-
-					((val[i+width]|256)&255)));
+
+		//javac does not inline Math.abs or Math.max
+		//so this stuff was added for efficiency
+		int val1;
+		int val2;
+		val1 = ((val[i]|256)&255)-((val[i+width+1]|256)&255);
+		val1 = (val1 > 0)?val1:-val1;
+		val2 = ((val[i+1]|256)&255)-((val[i+width]|256)&255);
+		val2 = (val2 > 0)?val2:-val2;
+		val1 = val1+val2;
+		out = (out > val1)?out:val1;
+		//the above code is equivalent to code below
+		//out = Math.max(out,
+		//	       Math.abs(((val[i]|256)&255)-
+		//			((val[i+width+1]|256)&255))+
+		//	       Math.abs(((val[i+1]|256)&255)-
+		//			((val[i+width]|256)&255)));
 	    }
-	    outs[i] = (byte)Math.min(out*2, 255);
+	    //javac does not inline the Math.min function call
+	    outs[i] = (byte)((out*2 < 255)?out*2:255);
+	    //outs[i] = (byte)Math.min(out*2, 255);
 	}
 	id.gvals = outs;		     
 	id.bvals = id.rvals = new byte[width*height];
