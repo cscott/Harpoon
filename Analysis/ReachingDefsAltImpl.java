@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.12 2000-11-14 22:51:33 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.13 2001-01-05 21:29:05 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -41,7 +41,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
     // produces Set<Pair<Temp:t, HCodeElement:h>> where `h' is 
     // a definition point for `t' 
-    final protected SetFactory bsf;
+    final protected AugSetFactory bsf;
     
     // maps Temp:t -> Set:d where `bsf'-produced `d' contains all (t,x) 
     final protected Map tempToAllDefs;
@@ -90,10 +90,13 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	Iterator pairsets = tempToAllDefs.values().iterator();
 	Set universe = new HashSet(tempToAllDefs.values().size());
 	int totalsz = 0, numsets = 0, totsqsz = 0;
+	int maxsz=0, minsz=Integer.MAX_VALUE;
 	while(pairsets.hasNext()) {
 	    Set pairset = (Set) pairsets.next();
 	    universe.addAll(pairset);
 
+	    if (pairset.size() > maxsz) maxsz = pairset.size();
+	    if (pairset.size() < minsz) minsz = pairset.size();
 	    totalsz += pairset.size(); 
 	    totsqsz += (pairset.size()*pairset.size());
 	    numsets++;
@@ -101,122 +104,27 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	
 
 	report(" totalsz:"+totalsz +" totsqsz:"+totsqsz +
+	       " maxsz:"+maxsz+" minsz:"+minsz+
 	       " numsets:"+numsets +" mean sz:"+(totalsz/numsets));
 	report(" numblks:"+bbf.blockSet().size()+
 	       " numtmps:"+tempToAllDefs.keySet().size());
 	final int meanSize = totalsz / numsets;
 
-	universe = new harpoon.Util.Collections.LinearSet(universe);
-	final int unisize = universe.size();
-	report("constucting AugmentedSetFactory");
+	report("constucting AugmentedSetFactory (uni:"+universe.size()+")");
 
-	final BitSetFactory bitSetFact = new BitSetFactory(universe);
-	class AugSet extends java.util.AbstractSet { 
-	    boolean bitSetRep;
-	    Set bSet;
-	    
-	    // FSK:  maybe change to add HashSets for medium size
-	    // (O(size-of-set) vs O(size-of-universe)
-
-	    public AugSet(Collection c){ this(c, (c.size() > unisize/10000));}
-	    public AugSet(Collection c, boolean useBitSetRep) {
-		if (useBitSetRep) {
-		    bitSetRep = true;
-		    if (c instanceof AugSet) {
-			// System.out.print("AB_");
-			bSet = bitSetFact.makeSet( ((AugSet)c).bSet ); 
-			// System.out.print(size());
-		    } else {
-			// System.out.print("SB_");
-			bSet = bitSetFact.makeSet(c);
-			// System.out.print(size());
-		    }
-		} else {
-		    bitSetRep = false;
-		    // System.out.print("SL_");
-		    bSet = Factories.linearSetFactory.makeSet(c); 
-		    // System.out.print(size());
-		}
-	    }
-	    public boolean equals(Object o) {
-		if (o instanceof AugSet) {
-		    return bSet.equals( ((AugSet)o).bSet );
-		} else {
-		    return super.equals(o);
-		}
-	    }
-	    public int size() { return bSet.size(); }
-	    public Iterator iterator() { return bSet.iterator(); }
-	    public void clear() { bSet.clear(); }
-	    public boolean add(Object o) { return mayConvert(bSet.add(o)); }
-	    public boolean remove(Object o){return mayConvert(bSet.remove(o));}
-	    public boolean addAll(Collection c) { 
-		boolean b;
-		mayConvert(c.size() + bSet.size());
-		if (c instanceof AugSet) {
-		    // System.out.print("AU_");
-		    b = bSet.addAll( ((AugSet)c).bSet );
-		    // System.out.print(size());
-		} else {
-		    // System.out.print("SU_");
-		    b = bSet.addAll(c); 
-		    // System.out.print(size());
-		} 
-		mayConvert();
-		return b; 
-	    }
-	    public boolean removeAll(Collection c) {
-		return ((c instanceof AugSet) ?
-			bSet.removeAll(((AugSet)c).bSet):
-			bSet.removeAll(c));
-	    }
-	    public boolean retainAll(Collection c) {
-		return ((c instanceof AugSet) ?
-			bSet.retainAll(((AugSet)c).bSet):
-			bSet.retainAll(c));
-	    }
-	    
-	    // macro to prettify other code
-	    private boolean mayConvert(boolean b) {mayConvert(); return b;}
-	    private void mayConvert() { mayConvert(this.size()); }
-	    private void mayConvert(int sz) {
-		if (bitSetRep) {
-		    if (sz < unisize / 10000) {
-			// switch to tight rep
-			bitSetRep = false;
-			// System.out.print("bl_");
-			bSet = Factories.linearSetFactory.makeSet(this);
-			// System.out.print(size());
-		    } 
-
-		} else {
-		    if (sz > unisize / 1000 ) {
-			// switch to bitset rep
-			bitSetRep = true;
-			// System.out.print("lb_");
-			bSet = bitSetFact.makeSet(this);
-			// System.out.print(size());
-		    }
-		}
-	    }
-	    
-	}
-
-	bsf = new SetFactory() {
-		public Set makeSet(Collection c) {
-		    return new AugSet(c);
-		}
-	    };
+	bsf = new AugSetFactory(universe);
 
 	if (true) {
 	    report("s/HashSet/AugSet/");
 	    // replace HashSets with AugSets in tempToAllDefs.values()
-	    Iterator ts = tempToAllDefs.keySet().iterator();
-	    while(ts.hasNext()) {
-		Object t = ts.next();
-		Set pairs = (Set) tempToAllDefs.get(t);
-		tempToAllDefs.put(t, bsf.makeSet(pairs));
+	    Iterator es = tempToAllDefs.entrySet().iterator();
+	    while(es.hasNext()) {
+		Map.Entry e = (Map.Entry) es.next();
+		Set pairs = (Set) e.getValue();
+		e.setValue(bsf.makeSet(pairs));
 	    }
+	    bsf.stats();
+	
 	}
 
 	report("performing analysis");
@@ -225,7 +133,6 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
 
     }
-
 
     /** Returns the Set of <code>HCodeElement</code>s providing definitions
      *  of <code>Temp</code> <code>t</code> which reach 
@@ -307,6 +214,8 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	// build Gen and Kill sets
 	report("Entering buildGenKillSets()");
 	buildGenKillSets(Temp_To_Pairs);
+
+	bsf.stats();
 	// report("Leaving buildGenKillSets()");
 
 	// solve for fixed point
@@ -489,8 +398,125 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     }
     // debugging utility
     private static final boolean DEBUG = false;
-    private void report(String str) {
+    private static void report(String str) {
 	if (DEBUG) System.out.println(str+" "+new java.util.Date());
+    }
+
+    class AugSetFactory extends SetFactory {
+	AugSetFactory(Set universe) { 
+	    universe = new harpoon.Util.Collections.LinearSet(universe);
+	    bitSetFact = new BitSetFactory(universe);
+	    final int unisize = universe.size();
+	    linToBitThreshold = unisize / 1000;
+	    bitToLinThreshold = unisize / 10000;
+	}
+
+	final BitSetFactory bitSetFact;
+	//final SetFactory    linSetFact = Factories.linearSetFactory;
+	final SetFactory    linSetFact = 
+	    new harpoon.Util.Collections.AggregateSetFactory();
+	final int linToBitThreshold, bitToLinThreshold;
+
+	int linToBitSwitches = 0;
+	int bitToLinSwitches = 0;
+	int startedAsBit = 0;
+	int startedAsLin = 0;
+
+	public void stats() { 
+	    report("stats: "+
+		   "l2b: "+linToBitSwitches+" "+
+		   "b2l: "+bitToLinSwitches+" "+
+		   "sal: "+startedAsLin+" "+
+		   "sab: "+startedAsBit);
+	}
+	
+	class AugSet extends java.util.AbstractSet { 
+	    boolean bitSetRep;
+	    Set bSet;
+	    
+	    // FSK:  maybe change to add HashSets for medium size
+	    // (O(size-of-set) vs O(size-of-universe)
+
+	    public AugSet(Collection c){ this(c, (c.size() > linToBitThreshold));}
+	    public AugSet(Collection c, boolean useBitSetRep) {
+		if (useBitSetRep) {
+		    startedAsBit++;
+		    bitSetRep = true;
+		    if (c instanceof AugSet) {
+			bSet = bitSetFact.makeSet( ((AugSet)c).bSet ); 
+		    } else {
+			bSet = bitSetFact.makeSet(c);
+		    }
+		} else {
+		    startedAsLin++;
+		    bitSetRep = false;
+		    bSet = linSetFact.makeSet(c); 
+		}
+	    }
+	    public boolean equals(Object o) {
+		if (o instanceof AugSet) {
+		    return bSet.equals( ((AugSet)o).bSet );
+		} else {
+		    return super.equals(o);
+		}
+	    }
+	    public int size() { return bSet.size(); }
+	    public Iterator iterator() { return bSet.iterator(); }
+	    public void clear() { bSet.clear(); }
+	    public boolean add(Object o) { return mayConvert(bSet.add(o)); }
+	    public boolean remove(Object o){return mayConvert(bSet.remove(o));}
+	    public boolean addAll(Collection c) { 
+		boolean b;
+		mayConvert(c.size() + bSet.size());
+		if (c instanceof AugSet) {
+		    // System.out.print("AU_");
+		    b = bSet.addAll( ((AugSet)c).bSet );
+		    // System.out.print(size());
+		} else {
+		    // System.out.print("SU_");
+		    b = bSet.addAll(c); 
+		    // System.out.print(size());
+		} 
+		mayConvert();
+		return b; 
+	    }
+	    public boolean removeAll(Collection c) {
+		return ((c instanceof AugSet) ?
+			bSet.removeAll(((AugSet)c).bSet):
+			bSet.removeAll(c));
+	    }
+	    public boolean retainAll(Collection c) {
+		return ((c instanceof AugSet) ?
+			bSet.retainAll(((AugSet)c).bSet):
+			bSet.retainAll(c));
+	    }
+	    
+	    // macro to prettify other code
+	    private boolean mayConvert(boolean b) {mayConvert(); return b;}
+	    private void mayConvert() { mayConvert(this.size()); }
+	    private void mayConvert(int sz) {
+		if (bitSetRep) {
+		    if (sz < bitToLinThreshold) {
+			// switch to tight rep
+			bitSetRep = false;
+			bitToLinSwitches++;
+			bSet = linSetFact.makeSet(this);
+		    } 
+		} else {
+		    if (sz > linToBitThreshold ) {
+			// switch to bitset rep
+			bitSetRep = true;
+			linToBitSwitches++;
+			bSet = bitSetFact.makeSet(this);
+		    }
+		}
+	    }
+	    
+	}
+	public Set makeSet(Collection c) {
+	    return new AugSet(c);
+	}
+	
     }
 
 }

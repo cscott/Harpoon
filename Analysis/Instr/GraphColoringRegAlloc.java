@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.40 2000-12-06 15:31:15 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.41 2001-01-05 21:29:29 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -73,6 +73,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     // Code output control flags
     private static final boolean DEF_COALESCE_MOVES = true;
+    private static final boolean COALESCE_MACH_REGS = false;
 
     private boolean COALESCE_MOVES = DEF_COALESCE_MOVES;
 
@@ -424,7 +425,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	do {
 	    do {
 		buildRegAssigns();
+		if (TIME) System.out.println("ReachingDefs \t\t"+new Date());
 		rdefs = new ReachingDefsAltImpl(code);
+		if (TIME) System.out.println("LiveTemps \t\t"+new Date());
 		liveTemps = SpaceHeavyLiveTemps.make(code, rfi.liveOnExit());
 		ixtToWeb = new HashMap();
 		ixtToWebPreCombine = new HashMap();
@@ -473,9 +476,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 		if(TIME)System.out.println("Building Matrix \t"+new Date());
 
+		
 		adjMtx = buildAdjMatrix();
 		
-		
+		if(TIME)printConflictTime();
+
 		if(TIME)System.out.println("Adjacency Matrix Built \t"+new Date());
 		// System.out.println(adjMtx);
 		if (doCoalescing) {
@@ -485,6 +490,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		} else {
 		    coalesced = false;
 		}
+		if(TIME)printConflictTime();
 	    } while (coalesced);
 
 	    if(TIME)System.out.println("Building Lists \t\t"+new Date());
@@ -913,6 +919,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	// ANALYZE
 	for(Iterator is=code.getElementsI(); is.hasNext();) {
 	    Instr i = (Instr) is.next();
+
+	    // System.out.println("Instr: "+i);
+
 	    if (i instanceof harpoon.IR.Assem.InstrMOVE) {
 		Temp use = i.use()[0];
 		Temp def = i.def()[0];
@@ -931,13 +940,23 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		
 		// if (adjMtx.get(wUse.sreg(), wDef.sreg())) {
 		// if (wUse.conflictsWith(wDef)) {
-		if (remap.conflicting(wUse, wDef)) {
+		
+		long start_time = System.currentTimeMillis();
+
+		boolean remapConflicting = remap.conflicting(wDef, wUse);
+
+		if (false)System.out.println("remapConflict compute time:"+
+				   (System.currentTimeMillis() - start_time));
+
+		if (remapConflicting) {
 
 		} else {
 		    if (def.equals(use)) {
 			// (nothing special to update)
 			willRemoveNow.add(i);
 		    } else if (isRegister(def)) {
+			if (!COALESCE_MACH_REGS) continue; // FSK investigated scalability problems
+
 			//if (webPrecolor.containsKey(wUse)) continue;
 			if (remap.anyConflicting
 			    (wUse,webPrecolor.invert().getValues(def))){
@@ -946,6 +965,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			webPrecolor.put(wUse, def);
 			willRemoveLater.add(i);
 		    } else if (isRegister(use)) {
+			if (!COALESCE_MACH_REGS) continue; // FSK investigated scalability problems
+
 			// if (webPrecolor.containsKey(wUse)) continue;
 			if (remap.anyConflicting
 			    (wDef,webPrecolor.invert().getValues(use))){
@@ -954,6 +975,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			webPrecolor.put(wDef, use);
 			willRemoveLater.add(i);
 		    } else {
+			Util.assert(!wDef.equals(wUse));
 			remap.union(wDef, wUse);
 			willRemoveNow.add(i);
 		    }
@@ -1635,6 +1657,24 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
     }
 
+    static void printConflictTime() { 
+	System.out.println("conflict time -"+
+			   " tnr: "+rntwrNumChecks+
+			   " (num:"+rnrwrNumChecks+
+			   " ave:"+(rntwrNumChecks/rnrwrNumChecks)+")"+
+			   " twr: "+twrConflictTime+
+			   " (num:"+twrNumConflicts+
+			    " ave:"+(twrConflictTime/twrNumConflicts)+")"+
+			   " rwr: "+rwrConflictTime+
+			   " (num:"+rwrNumConflicts+
+			    " ave:"+(rwrConflictTime/rwrNumConflicts)+")");
+	rwrConflictTime = twrConflictTime = 1;
+	rwrNumConflicts = twrNumConflicts = 1; 
+	rnrwrNumChecks = rntwrNumChecks = 1; 
+    }
+    static long rwrConflictTime = 0; static int rwrNumConflicts = 0;
+    static long twrConflictTime = 0; static int twrNumConflicts = 0;
+    static int rntwrNumChecks = 1, rnrwrNumChecks = 1;
     abstract class WebRecord {
 	int nints, disp;
 	double spcost;
@@ -1675,38 +1715,56 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	// ( interference based on Muchnick, page 494.)
 	boolean conflictsWith(WebRecord wr) {
+	    long immed_conflict_time, reg_conflict_time=0, start_time;
+
+	    start_time = System.currentTimeMillis();	    
 	    boolean r =
 		this.conflictsWith1D(wr) ||
 		wr.conflictsWith1D(this);
+	    immed_conflict_time = System.currentTimeMillis() - start_time;
 	    if (!r &&
 		webPrecolor.containsKey(this)) {
 		WebRecord rwr = (WebRecord) 
 		    regToWeb.get(webPrecolor.get(this));
+
+		start_time = System.currentTimeMillis();
 		r = rwr.conflictsWith(wr);
+		reg_conflict_time = System.currentTimeMillis() - start_time;
 	    }
+	    if (false && reg_conflict_time > 10)
+		System.out.println("conflict compute time, imm: "+
+				   immed_conflict_time+" reg: "+
+			       reg_conflict_time);
 	    return r;
 	}
 
 	// one directional conflict check (helper function) 
 	// if this is live at a def in wr, returns true.
 	boolean conflictsWith1D(WebRecord wr) {
+	    long start_time = System.currentTimeMillis();
+	    boolean r = false;
 	    for(Iterator ins=this.defs().iterator();ins.hasNext();){
 		Instr d = (Instr) ins.next();
 		Set l= liveTemps.getLiveAfter(d);
 		if(l.contains(wr.temp())) {
 		    if (wr instanceof RegWebRecord) {
-			return true;
+			r = true;
+			break;
 		    }
 		    
 		    HashSet wDefs = new HashSet
 			(rdefs.reachingDefs(d, wr.temp()));
 		    wDefs.retainAll(wr.defs());
 		    if (!wDefs.isEmpty()) {
-			return true;
+			r = true;
+			break;
 		    }
 		}
+	    
 	    }
-	    return false;
+	    twrConflictTime += System.currentTimeMillis() - start_time;
+	    twrNumConflicts++;
+	    return r;
 	}
 
 	// returns the set of instrs that this web holds definitions
@@ -1746,24 +1804,31 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	public Temp temp() { return reg; }
 
 	boolean conflictsWith1D(WebRecord wr) {
+	    long start_time = System.currentTimeMillis();
+	    boolean r;
 	    if (wr instanceof RegWebRecord) {
-		return true;
+		r = true;
 	    } else {
-		boolean r = super.conflictsWith1D(wr);
+		r = super.conflictsWith1D(wr);
 		if (!r &&
 		    webPrecolor.invert().containsKey(reg)) {
-		    Iterator wbs =
-			webPrecolor.invert().getValues(reg).iterator();
-		    while(wbs.hasNext()) {
+		    Collection preWebsForReg = webPrecolor.invert().getValues(reg);
+		    int nms=0;
+		    Iterator wbs = preWebsForReg.iterator();
+		    while(wbs.hasNext()) { nms++;
 			WebRecord _wr = (WebRecord) wbs.next();
 			if (_wr.conflictsWith1D(wr) ||
 			    wr.conflictsWith1D(_wr)) {
-			    return true;
+			    r = true;
+			    break;
 			}
 		    }
+		    rntwrNumChecks+=nms; rnrwrNumChecks++;
 		}
-		return r;
 	    }
+	    rwrConflictTime += System.currentTimeMillis() - start_time;
+	    rwrNumConflicts++;
+	    return r;
 	}
     }
 
@@ -1917,9 +1982,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    WebRecord wrA = (WebRecord) a;
 	    WebRecord wrB = (WebRecord) b;
+	    if (UNIFY_INFO) 
+		System.out.println("unioning0 "
+		 +" ("+System.identityHashCode(super.find(wrA))+")"
+		 +" ("+System.identityHashCode(super.find(wrB))+")"
+				   );
 	    if (UNIFY_INFO)
-		System.out.println(" unioning  " + asTemps(unified(wrA)) 
-				   + " and " + asTemps(unified(wrB)));
+		System.out.println(" unioning1  " + asTemps(unified(wrA)) 
+				   + " and " + asTemps(unified(wrB))
+				   );
 
 	    Collection as = unified(wrA);
 	    Collection bs = unified(wrB);
@@ -1981,7 +2052,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	private boolean real_conflicting(WebRecord wr1, WebRecord wr2) {
 	    Collection wrs1 = unified(wr1);
 	    Collection wrs2 = unified(wr2);
-	    
 	    for(Iterator i1=wrs1.iterator(); i1.hasNext();) {
 		WebRecord wrA = (WebRecord) i1.next();
 		for(Iterator i2=wrs2.iterator(); i2.hasNext();) {
