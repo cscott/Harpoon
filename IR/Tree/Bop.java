@@ -25,7 +25,7 @@ package harpoon.IR.Tree;
  * <code>Uop.NOT</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Bop.java,v 1.1.2.4 1999-07-23 06:48:04 cananian Exp $
+ * @version $Id: Bop.java,v 1.1.2.5 1999-07-23 18:31:32 cananian Exp $
  */
 public abstract class Bop  {
     // Comparison operations
@@ -48,9 +48,8 @@ public abstract class Bop  {
     public final static int DIV=7;
     /** Remainder operation. Note that this is valid for floating-point
      *  as well as integer arithmetic; see the JVM definition of
-     *  <code>frem</code>. Basically, this is remainder after a rounding
-     *  division for floating-point, and <code>a-b*(a/b)</code> (remainder
-     *  after truncating division) for integer arithmetic. */
+     *  <code>frem</code>. Basically, this is remainder after a 
+     *  truncating division for both integer and floating-point. */
     public final static int REM=8;
     // integer arithmetic
     /** Left bit-wise shift; long/integer only. */
