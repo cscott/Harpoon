@@ -38,7 +38,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.11 2000-02-14 00:59:52 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.12 2000-02-14 13:08:12 cananian Exp $
  */
 public abstract class AlgebraicSimplification { 
     private static final boolean debug = false;
@@ -153,7 +153,7 @@ public abstract class AlgebraicSimplification {
 	// Shouldn't pass a null ptr. 
 	Util.assert(root != null); 
 
-	// Perform the simpliciation. 
+	// Perform the simplification. 
 	while (new SimplificationVisitor(root, rules).changed())
 	    /* repeat */ ;
     }
@@ -437,6 +437,7 @@ public abstract class AlgebraicSimplification {
 	Rule divToMul = new Rule() { 
 	    public String toString() { return "divToMul"; }
 	    public boolean match(Exp e) { 
+		if (e.type() != Type.INT ) return false;
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
 		    BINOP b = (BINOP)e; 
