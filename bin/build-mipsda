@@ -28,7 +28,10 @@ if [ ! -d $dir ]; then
     mkdir $dir
 fi
 
-FLEXMEM=1536M `dirname $0`/run-java harpoon.Main.SAMain $opts -Rspec.regalloc -bMIPSDA -c $cls -o $dir && \
+if [ -z $FLEXMEM ]; then
+    FLEXMEM=1536M
+fi
+. `dirname $0`/run-java harpoon.Main.SAMain $opts -Rspec.regalloc -bMIPSDA -c $cls -o $dir && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     grep -q "[-]-target=vpekoe" ${RUNTIME_DIR}/config.status ; then
     make HOST_PREFIX=/u/witchel/vpekoe_binutils/install/i386-linux/bin/vpekoe- ASFLAGS=-mips2 -C $dir && \

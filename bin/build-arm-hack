@@ -28,7 +28,7 @@ if [ ! -d $dir ]; then
 fi
 
 
-`dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain -H $opts -c $cls -o $dir && \
+. `dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain -H $opts -c $cls -o $dir && \
 if [ -x "`which arm-unknown-linuxelf-as`" ]; then
     make -C $dir HOST_PREFIX=arm-unknown-linuxelf- && \
     if grep -q arm-unknown-linuxelf ${RUNTIME_DIR}/Makefile ; then

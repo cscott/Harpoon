@@ -35,7 +35,7 @@ OPT_FLEX_SUPPORT_FILES="$OPT_FLEX_SUPPORT_FILES ${FLEX_DIR}/SupportNP/specialobj
 opts="$opts -e"
 # and the output of SAMain is redirected to $dir/pre...
 
-`dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir > $dir/pre && \
+. `dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir > $dir/pre && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
     make -C $dir CC="gcc -I${RUNTIME_DIR}/include -g -O9" && \

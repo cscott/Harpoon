@@ -24,3 +24,4 @@ fi
 if [ -z $RUNTIME_DIR ]; then
     RUNTIME_DIR="${HARPOON_DIR}/Runtime"
 fi
+export FLEX_DIR HARPOON_DIR RUNTIME_DIR
