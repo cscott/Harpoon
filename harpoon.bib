@@ -89,6 +89,21 @@
   annote =	 {Two-page overview of the Esterel system.  At least
                   it has a decent bibliography.}
 }
+@InProceedings{mitra97:async_esterel,
+  author = 	 {Raj S. Mitra and Bishnupriya Bhattacharya and
+                  Luciano Lavagno},
+  title = 	 {Asynchronous Implementation of Synchronous Esterel
+                  Specifications},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {348-353},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {In which we learn that esterel is inherently a
+                  synchronous language (surprise!).  Semantics have to
+                  change to support asynchronous implementation, this
+                  paper shows how.  Not useful to us.}
+}
 
 %%%%%%% Other synchronous languages
 
@@ -568,4 +583,128 @@
                   back in and reconnect the feedback loops.  Makes
                   sense.  We still have to find a valid combinational
                   optimization technique to plug in the middle, though.}
+}
+@InProceedings{shi97:macro,
+  author = 	 {Jianzhong Shi and Akash Randhar and Dinesh Bhatia},
+  title = 	 {Macro Block Based {FPGA} Floorplanning},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {21-26},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Interesting paper when we get to floorplanning our
+                  hardware.  Authors note that it is difficult to find
+                  hierarchically-structured designs/testcases;
+                  hopefully our compiler will change this somewhat.}
+}
+
+
+@InProceedings{chikodikar97:techmap,
+  author = 	 {Madhav Y. Chikodikar and Shridhar Laddha and Ashish Sirasao},
+  title = 	 {A Technology Mapper for {Xilinx} {FPGAs}},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {57-61},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {"This paper presents a method for area optimal
+                  technology mapping for Xilinx FPGAs."  Maps logic
+                  onto CLBs; 10% better than the Xilinx method.  If we
+                  ever need to do this, this is the method to
+                  use. [Hopefully we can use their code!]}
+}
+
+@InProceedings{ravikumar97:regfile,
+  author = 	 {C.P. Ravikumar and R. Aggarwal},
+  title = 	 {A Graph-Theoretic Approach for Register File based
+                  Synthesis},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {118-123},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {In-house know-how!  Interesting paper; replace
+                  registers with register *files*... complete
+                  algorithms.  Meant for datapath
+                  synthesis. "[A]ssumes as input a scheduled data flow
+                  graph."}
+}
+
+@InProceedings{emerson97:async_design,
+  author = 	 {Kimberly D. Emerson},
+  title = 	 {Asynchronous Design---an Interesting Alternative},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {318-320},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Good overview of asynch. design and the rationale
+                  behind it.  Briefly: clock skew, power consumption,
+                  handling of metastability, and elimination of
+                  critical path delay.  Circuits run in 'average
+                  case' time instead of 'worst case' time.}
+}
+
+@InProceedings{cheng97:diclasp,
+  author = 	 {Fu-Chiung Cheng and Stephen H. Unger and Michael
+                  Theobald and Wen-Chung Cho},
+  title = 	 {Delay-Insensitive Carry-Lookahead Adders},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {322-328},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Pretty typical example of async design, using
+                  dual-rail signalling.  Proposes DICLASP adder,
+                  compares to DIRCA adder.  O(n) logic complexity,
+                  O(log log n) average case time complexity.  About
+                  twice as transistor-expensive as the standard O(n) * O(n)
+                  synchronous ripple-carry adder.}
+}
+@InProceedings{nanda97:universal,
+  author = 	 {K. Nanda and S. K. Desai and S. K. Roy},
+  title = 	 {A New Methodology for the Design of Asynchronous
+                  Digital Circuits},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {342-347},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Proposes a way-out revamp of logic design for async
+                  systems.  Replaces the conventional dual-rail system
+                  with a "non-return-to-zero event driven" scheme, and
+                  invents a "universal gate" which acts as and/or/not
+                  for this system.  Completely delay-insensitive;
+                  *however* very area expensive.  Might be useful for
+                  automated async design, though.}
+}
+
+%%%%%% DECISION DIAGRAMS
+
+@InProceedings{becker97:decision_diagrams,
+  author = 	 {Bernd Becker and Rolf Drechsler},
+  title = 	 {Decision Diagrams in Synthesis: Algorithms,
+                  Applications, and Extensions},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {46-50},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Excellent overview of BDDs and its related cousins.
+                  Lengthy bibliography.  Also overview the extensions
+                  to BDDs to handle (for example) multipliers.}
+}
+@InProceedings{drechsler97:psdkro,
+  author = 	 {Rolf Drechsler},
+  title = 	 {Pseudo Kronecker Expressions for Symmetric Functions},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {511-513},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {An optimizer based of PSDKROs for symmetric
+                  functions is described; seems to work pretty well on
+                  non-symmetric functions, too.  Tenth-of-a-second
+                  execution times; 1000x faster than comparable
+                  methods.  Go Go Go!}
 }
