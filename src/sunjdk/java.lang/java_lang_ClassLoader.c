@@ -97,8 +97,6 @@ static const char *find_system_resource(JNIEnv *env, jstring j_resname) {
     start = end+strlen(c_pathsep);
   }
 
- bail4:
-  (*env)->ReleaseStringUTFChars(env, j_filesep, c_filesep);
  bail3:
   (*env)->ReleaseStringUTFChars(env, j_pathsep, c_pathsep);
  bail2:
@@ -143,7 +141,6 @@ JNIEXPORT jstring JNICALL Java_java_lang_ClassLoader_getSystemResourceAsName0
     /* XXX: hack: prepend 'file:' and hope that's good enough. */
     /* would obviously fail if resource is in .zip/.jar file or whatnot */
     char buf[strlen(filename)+strlen("file:")+1];
-    jstring result;
     strcpy(buf, "file:");
     strcat(buf, filename);
     /* make buf into a java string */
