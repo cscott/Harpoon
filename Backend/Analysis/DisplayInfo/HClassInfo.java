@@ -29,13 +29,14 @@ public class HClassInfo
   private static OffsetMap   offset_map;
   private static InlineMap   inline_map;
 
-  private HClass    m_hClass;
-  private int       m_depth;
-  private Hashtable m_classObjects;
+  private HClass             m_hClass;
+  private HClassInfo         m_scInfo;
+  private int                m_depth;
+  private Hashtable          m_classObjects;
  
-  private int       m_currentMethodOffset       = 0;
-  private int       m_currentFieldOffset        = 0;
-  private int       m_currentStaticFieldOffset  = 0;
+  private int                m_currentMethodOffset       = 0;
+  private int                m_currentFieldOffset        = 0;
+  private int                m_currentStaticFieldOffset  = 0;
 
   /**
    * @return an <code>HClassInfo</code> object representing
@@ -46,10 +47,10 @@ public class HClassInfo
       Object hClassInfo;
       HClass hc;
 
-      hClassInfo = cached_classes.get(name);
+      hc = HClass.forName(name);
+      hClassInfo = cached_classes.get(hc);
       if (hClassInfo == null)
 	{
-	  hc         = HClass.forName(name);  
 	  hClassInfo = HClassInfo.getClassInfo(hc);
 	}
       return (HClassInfo)hClassInfo;
@@ -65,7 +66,7 @@ public class HClassInfo
       HClass      superclass;
       HClassInfo  superclassInfo;
 
-      hClassInfo = cached_classes.get(hc.getName());
+      hClassInfo = cached_classes.get(hc);
       if (hClassInfo == null)
 	{
 	  superclass = hc.getSuperclass();
@@ -75,9 +76,9 @@ public class HClassInfo
 	    }
 	  else
 	    {
-	      hClassInfo = getClassInfo(superclass);
-	      ((HClassInfo)hClassInfo).extend(hc);
+	      hClassInfo = new HClassInfo(getClassInfo(superclass), hc);
 	    }
+	  cached_classes.put(hc, hClassInfo);
 	}
       return (HClassInfo)hClassInfo;
     }
@@ -126,11 +127,21 @@ public class HClassInfo
    */
   public HField[] getFields()
     {
-      HField[]  fields;
+      HField[] fields;
       Vector    v;
 
       v = new Vector();
-      for (Enumeration e = m_classObjects.elements(); e.hasMoreElements();)
+
+      if (m_scInfo != null)
+	{
+	  fields = m_scInfo.getFields();
+	  for (int i = 0; i < fields.length; i++)
+	    {
+	      v.addElement(fields[i]);
+	    }
+	}
+
+      for (Enumeration e = m_classObjects.keys(); e.hasMoreElements();)
 	{
 	  Object next = e.nextElement();
 	  if (next instanceof HField) v.addElement(next);
@@ -147,11 +158,12 @@ public class HClassInfo
    */
   public Enumeration getFieldsE()
     {
-      Vector v = new Vector();
-      for (Enumeration e = m_classObjects.elements(); e.hasMoreElements();)
+      Vector    v       = new Vector();
+      HField[]  fields  = getFields();
+
+      for (int i = 0; i < fields.length; i++)
 	{
-	  Object next = e.nextElement();
-	  if (next instanceof HField) v.addElement(next);
+	  v.addElement(fields[i]);
 	}
 
       return v.elements();
@@ -166,14 +178,20 @@ public class HClassInfo
   public int getFieldOffset(HField hf)
     {
       Object iOffset = m_classObjects.get(hf);
-      if (hf.isStatic())
-	return (iOffset == null) ? -1 : (((Integer)iOffset).intValue() + 
-					 initial_method_offset + 
-					 m_currentMethodOffset);
+
+      if (iOffset == null)
+	{
+	  return (m_scInfo == null) ? -1 : m_scInfo.getFieldOffset(hf);
+	}
       else
-	return (iOffset == null) ? -1 : (((Integer)iOffset).intValue() + 
-					 initial_field_offset);
+	{
+	  return (((Integer)iOffset).intValue() + 
+		  ((hf.isStatic()) ?
+		   initial_method_offset + m_currentMethodOffset :
+		   initial_field_offset));
+	}
     }
+	      
 
   /**
    * @return an array of all methods in this class, in no particular order
@@ -184,7 +202,17 @@ public class HClassInfo
       Vector    v;
 
       v = new Vector();
-      for (Enumeration e = m_classObjects.elements(); e.hasMoreElements();)
+
+      if (m_scInfo != null)
+	{
+	  methods = m_scInfo.getMethods();
+	  for (int i = 0; i < methods.length; i++)
+	    {
+	      v.addElement(methods[i]);
+	    }
+	}
+
+      for (Enumeration e = m_classObjects.keys(); e.hasMoreElements();)
 	{
 	  Object next = e.nextElement();
 	  if (next instanceof HMethod) v.addElement(next);
@@ -201,12 +229,14 @@ public class HClassInfo
    */
   public Enumeration getMethodsE()
     {
-      Vector v = new Vector();
-      for (Enumeration e = m_classObjects.elements(); e.hasMoreElements();)
+      Vector    v       = new Vector();
+      HMethod[] methods = getMethods();
+
+      for (int i = 0; i < methods.length; i++)
 	{
-	  Object next = e.nextElement();
-	  if (next instanceof HMethod) v.addElement(next);
+	  v.addElement(methods[i]);
 	}
+
       return v.elements();
     }
 
@@ -216,8 +246,15 @@ public class HClassInfo
   public int getMethodOffset(HMethod hm)
     {
       Object iOffset = m_classObjects.get(hm);
-      return (iOffset == null) ? -1 : (((Integer)iOffset).intValue() + 
-				       initial_method_offset);
+
+      if (iOffset == null)
+	{
+	  return (m_scInfo == null) ? -1 : m_scInfo.getMethodOffset(hm);
+	}
+      else
+	{
+	  return ((Integer)iOffset).intValue() + initial_method_offset;
+	}
     }
 
   /**
@@ -238,11 +275,37 @@ public class HClassInfo
 
   private HClassInfo(HClass hc)
     {
+      m_depth               = 0;      
       m_hClass              = hc;
+      m_scInfo              = null;
       m_classObjects        = new Hashtable();
       extend(hc);
-      m_depth               = 0;      
     }
+
+  private HClassInfo(HClassInfo hci, HClass hc)
+    {
+      m_depth               = hci.depth() + 1;
+      m_hClass              = hc;
+      m_scInfo              = hci;
+      m_classObjects        = new Hashtable();
+      extend(hc);
+    }
+
+  private void extend(HClass hc)
+    {
+      HField[] hFields = hc.getDeclaredFields();
+      for (int i = 0; i < hFields.length; i++)
+	{
+	  addField(hFields[i]);
+	}
+
+      HMethod[] hMethods = hc.getDeclaredMethods();
+      for (int i = 0; i < hMethods.length; i++)
+	{
+	  addMethod(hMethods[i]);
+	}
+    }
+
 
   private HClassInfo(HClass hc, int depth, Hashtable classObjects)
     {
@@ -273,7 +336,7 @@ public class HClassInfo
       int    offset;
       String sig      = getSignature(hm);
 
-      if (m_classObjects.get(sig) == null)
+      if (getMethod(sig) == null)
 	{
 	  offset                 = m_currentMethodOffset;
 	  m_currentMethodOffset += size;
@@ -282,28 +345,17 @@ public class HClassInfo
 	{
 	  HMethod scMethod = (HMethod)(m_classObjects.get(sig));
 	  offset           = getMethodOffset(scMethod);
-	  m_classObjects.remove(scMethod);
 	}
 
       m_classObjects.put(sig, hm);
       m_classObjects.put(hm, new Integer(offset));
     }
 
-  private void extend(HClass hc)
+  private HMethod getMethod(String sig)
     {
-      m_depth++;
-      
-      HField[] hFields = hc.getDeclaredFields();
-      for (int i = 0; i < hFields.length; i++)
-	{
-	  addField(hFields[i]);
-	}
-
-      HMethod[] hMethods = hc.getDeclaredMethods();
-      for (int i = 0; i < hMethods.length; i++)
-	{
-	  addMethod(hMethods[i]);
-	}
+      Object hMethod = m_classObjects.get(sig);
+      if (sig == null) return (m_scInfo == null) ? null : m_scInfo.getMethod(sig);
+      else return (HMethod)hMethod;
     }
 
   private String getSignature(HMethod hm)
