@@ -18,6 +18,8 @@
 #include "dumpstructures.h"
 #include "typedata.h"
 #include "elf/dwarf2.h"
+#include "common.h"
+#include "GenericHashtable.h"
 
 #define GETTYPE 1
 #define POSTNAME 2
@@ -40,15 +42,15 @@ void daikon_preprocess_entry_array()
 }
 
 int typecount=0;
-
+int assigntype=0;
 int entry_is_type(dwarf_entry *entry) {
   if (entry->tag_name==DW_TAG_structure_type||
       entry->tag_name==DW_TAG_union_type) {
     collection_type* collection_ptr = (collection_type*)(entry->entry_ptr);
-    if (collection_ptr->name==0) {
+    /*    if (collection_ptr->name==0&&assigntype) {
       collection_ptr->name=(char*)malloc(100);
       sprintf(collection_ptr->name,"TYPE%ld",typecount++);
-    }
+      }*/
     return 1;
   }
   return 0;
@@ -68,13 +70,17 @@ int entry_is_valid_function(dwarf_entry *entry) {
   return 0;
 }
 
-// Finds the number of function entries in the dwarf_entry_array
-// and creates the DaikonFunctionInfo array to match that size
+struct valuepair {
+  int index;
+  int value;
+};
 
 void initializeTypeArray()
 {
   int i;
   dwarf_entry * cur_entry;
+  struct genhashtable * ght=genallocatehashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
+  
   for (i = 0; i < dwarf_entry_array_size; i++)
     {
       cur_entry = &dwarf_entry_array[i];
@@ -83,6 +89,48 @@ void initializeTypeArray()
 	  collection_type* collection_ptr = (collection_type*)(cur_entry->entry_ptr);
 	  int j=0;
 	  int offset=0;
+	  int value=0;
+	  for(j=0;j<collection_ptr->num_members;j++) {
+	    dwarf_entry *entry=collection_ptr->members[j];
+	    member * member_ptr=(member *)entry->entry_ptr;
+	    char *name=member_ptr->name;
+	    dwarf_entry *type=member_ptr->type_ptr;
+	    char *typestr=printname(type,GETTYPE);
+	    char *poststr=printname(type,POSTNAME);
+
+	    if (typestr!=NULL)
+	      value++;
+	  }
+	  if (collection_ptr->name!=NULL) {
+	    struct valuepair *vp=NULL;
+	    if (gencontains(ght,collection_ptr->name))
+	      vp=(struct valuepair *)gengettable(ght,collection_ptr->name);
+	    if (vp==NULL||vp->value<value) {
+	      vp=(struct valuepair*)calloc(1,sizeof(struct valuepair));
+	      vp->value=value;
+	      vp->index=i;
+	      genputtable(ght,collection_ptr->name,vp);
+	    }
+	  }
+        }
+    }
+
+  assigntype=1;
+  for (i = 0; i < dwarf_entry_array_size; i++)
+    {
+      cur_entry = &dwarf_entry_array[i];
+      if (entry_is_type(cur_entry))
+        {
+	  collection_type* collection_ptr = (collection_type*)(cur_entry->entry_ptr);
+	  int j=0;
+	  int offset=0;
+	  if (collection_ptr->name==NULL)
+	    continue;
+	  if (gencontains(ght,collection_ptr->name)) {
+	    struct valuepair *vp=(struct valuepair*)gengettable(ght,collection_ptr->name);
+	    if (vp->index!=i)
+	      continue;
+	  }
 	  printf("structure %s {\n",collection_ptr->name);
 	  
 	  for(j=0;j<collection_ptr->num_members;j++) {
@@ -157,6 +205,27 @@ char * printname(dwarf_entry * type,int op) {
     }
   }
     break;
+  case DW_TAG_const_type:
+    {
+      consttype * ctype_ptr=(consttype*)type->entry_ptr;
+      if (op==GETTYPE) {
+	char *typename=printname(ctype_ptr->target_ptr,op);
+	return typename;
+      }
+    }
+    break;
+  case DW_TAG_subroutine_type: {
+    return "void";
+  }
+  case DW_TAG_typedef: 
+    {
+      tdef * tdef_ptr=(tdef*)type->entry_ptr;
+      if (op==GETTYPE) {
+	char *typename=printname(tdef_ptr->target_ptr,op);
+	return typename;
+      }
+    }
+    break;
   case DW_TAG_base_type: {
     base_type *base=(base_type*)type->entry_ptr;
     if (op==GETTYPE)
@@ -190,9 +259,10 @@ char * printname(dwarf_entry * type,int op) {
     }
   }
     break;
+  case DW_TAG_union_type:
   case DW_TAG_structure_type: {
     collection_type *ctype=(collection_type*)type->entry_ptr;
-    if (op==GETTYPE&&ctype->name==NULL) {
+    if (op==GETTYPE&&ctype->name==NULL&&assigntype) {
       ctype->name=(char*)malloc(100);
       sprintf(ctype->name,"TYPE%ld",typecount++);
     }
@@ -201,8 +271,15 @@ char * printname(dwarf_entry * type,int op) {
   }
     break;
   default:
-    if (op==GETTYPE)
-      return "unknown";
+    if (op==GETTYPE) {
+      if (!assigntype)
+	return NULL;
+      else {
+	char * p=(char *)malloc(100);
+	sprintf(p,"0x%x",type->tag_name);
+	return p;
+      }
+    }
   }
   if (op==POSTNAME)
     return "";

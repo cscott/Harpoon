@@ -67,6 +67,18 @@ typedef struct
   dwarf_entry* target_ptr; // Type that this entry modifies (DW_AT_type)
 } array_bound;
 
+typedef struct
+{ 
+  unsigned long target_ID; // ID of the entry that contains the type that this modifies
+  dwarf_entry* target_ptr; // Type that this entry modifies (DW_AT_type)
+} tdef;
+
+typedef struct
+{ 
+  unsigned long target_ID; // ID of the entry that contains the type that this modifies
+  dwarf_entry* target_ptr; // Type that this entry modifies (DW_AT_type)
+} consttype;
+
 // collection_type = {structure_type, union_type, enumeration_type}
 typedef struct
 {
