@@ -1,12 +1,21 @@
+#
+# Determine whether we're running Cygwin or ordinary linux
+CYGWIN=$(shell grep -c 'CYGWIN' /proc/version)
+
 # put the location of the BBN UAV OEP distribution files ATRManip.idl,
 # quo.idl, and rss.idl here.
 UAVDIST=src/corba/UAV
 
 JACORB_HOME=contrib/JacORB1_3_30
-JAVAC=javac 
-JAVA=java
-IDLCC=$(JACORB_HOME)/bin/idl -I$(JACORB_HOME)/idl/omg
-JAR=jar
+JAVAC=$(shell if test $(CYGWIN) -eq 0; then echo javac; \
+	      else echo /cygdrive/c/j2*/bin/javac; \
+	      fi)
+JAVAI=$(shell if test $(CYGWIN) -eq 0; then echo java; \
+	      else echo /cygdrive/c/j2*/bin/java; \
+	      fi)
+JAR=$(shell if test $(CYGWIN) -eq 0; then echo jar; \
+	    else echo /cygdrive/c/j2*/bin/jar; \
+	    fi)
 JDOC=javadoc
 SSH=ssh
 FORTUNE=/usr/games/fortune
@@ -29,6 +38,7 @@ SCRIPTS=$(wildcard script/*)
 CONTRIB=$(shell find contrib -type f | grep -v 'CVS' | grep -v '.cvsignore')
 RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES) 
 RELEASE += $(BISOURCES) $(MANIFEST) $(SCRIPTS)
+EVENTDIRS=com TimeBase RtecBase RtecDefaultEventData RtecEventChannelAdmin RtecEventComm RtecScheduler
 JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org ipaq
 
 # figure out what the current CVS branch is, by looking at the Makefile
@@ -51,12 +61,27 @@ JDOCFLAGS += \
 	$(shell if $(JDOC) -help 2>&1 | grep -- "-group " > /dev/null ; \
 	then echo '$(JDOCGROUPS)' ; fi)
 
-CP:=$(shell if test `echo $(CLASSPATH) | fgrep -c 'contrib/jacorb.jar'` == 0; \
-            then if test "$(CLASSPATH)" == ""; \
-	         then echo contrib/jacorb.jar; \
-	         else echo contrib/jacorb.jar:$(CLASSPATH); \
-	         fi; \
-	    fi)
+JACORB_JAR=$(shell echo $(CLASSPATH) | grep -c 'contrib/jacorb.jar')
+
+CP:=$(shell if test $(CYGWIN) -eq 0; \
+	     then if test $(JACORB_JAR) -eq 0; \
+                  then if test $(CLASSPATH)z == z; \
+	               then echo `pwd`/contrib/jacorb.jar:`pwd`/contrib/lm_eventChannel.jar; \
+	               else echo `pwd`/contrib/jacorb.jar:`pwd`/contrib/lm_eventChannel.jar:$(CLASSPATH); \
+	               fi; \
+	          fi; \
+	     else echo \`cygpath -da contrib/jacorb.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da $(JACORB_HOME)/lib/idl.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\`\\\\\\\;\`cygpath -da contrib/lm_eventChannel.jar \| awk \'\{print gensub\(\/\\\\\\\/,\"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",\"G\"\)\}\'\` ; \
+	     fi)
+
+
+JAVA = $(JAVAI) -classpath $(CP)
+
+IDL_FLAGS=-I$(JACORB_HOME)/idl/omg
+
+IDLCC=$(shell if test $(CYGWIN) -eq 0; \
+	      then echo $(JACORB_HOME)/bin/idl $(IDL_FLAGS); \
+	      else echo $(JAVAI) -classpath $(CP) org.jacorb.idl.parser $(IDL_FLAGS); \
+	      fi)
 
 JDOCFLAGS += -classpath $(CP)
 
@@ -66,7 +91,7 @@ all:    clean doc imagerec.jar # imagerec.tgz
 
 clean:
 	@echo Cleaning up docs and jars.
-	@rm -rf doc $(JDIRS) META-INF
+	@rm -rf doc $(JDIRS) $(EVENTDIRS) META-INF
 	@rm -f *.jar *.jar.TIMESTAMP
 	@rm -f imagerec.tgz imagerec.tgz.TIMESTAMP
 #	@rm -f ChangeLog
@@ -158,10 +183,11 @@ ATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/lm_eventChannel.jar
 	@$(JAR) xf contrib/jacorb.jar
 	@rm -rf META-INF
-	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
-	@rm -rf $(JDIRS)
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(EVENTDIRS)
+	@rm -rf $(JDIRS) $(EVENTDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 embeddedATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
@@ -349,9 +375,6 @@ jars: clean doc
 	@echo Generating trackerStub.jar file...
 	@$(JAR) cfm trackerStub.jar src/manifest/trackerStub.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > trackerStub.jar.TIMESTAMP
-	@echo Generating ATR.jar file...
-	@$(JAR) cfm ATR.jar src/manifest/ATR.jar.MF $(JDIRS)
-	@date '+%-d-%b-%Y at %r %Z.' > ATR.jar.TIMESTAMP
 	@echo Generating embeddedATR.jar file...
 	@$(JAR) cfm embeddedATR.jar src/manifest/embeddedATR.jar.MF $(JDIRS)
 	@echo Generating embeddedManual.jar file...
@@ -397,6 +420,11 @@ jars: clean doc
 	@echo Generating buffer.jar file...
 	@$(JAR) cfm buffer.jar src/manifest/buffer.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > buffer.jar.TIMESTAMP
+	@echo Generating ATR.jar file...
+	@$(JAR) xf contrib/lm_eventChannel.jar
+	@$(JAR) cfm ATR.jar src/manifest/ATR.jar.MF $(JDIRS) $(EVENTDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > ATR.jar.TIMESTAMP
+	@rm -rf $(EVENTDIRS)
 	@echo Generating GUI.jar file...
 	@$(JAR) xf movie/tank.jar
 	@rm -rf META-INF
