@@ -33,7 +33,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.4.5 2001-06-17 22:32:02 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.4.6 2001-09-24 16:36:57 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -259,6 +259,15 @@ public class InterfaceMethodMap extends MethodMap {
     /** Produces HmNodes from HMethods, enforcing a mapping from a
 	method's name and set of argument types to one unique node,
 	regardless of which interface the method appears in.
+	<p>
+	Interface methods with the same name and descriptor always
+	map to the same slot, either due to single or multiple inheritance.
+	For example, A.foo() maps to the same slot as B.foo() if interface
+	B extends interface A; if interface B also extends interface C
+	and C has C.foo() then all three methods would always map to the
+	same slot (it is impossible to give C.foo() a different
+	implementation from A.foo() in any class which implements both A
+	and C).
     */
     private class HmNodeFactory {
 	// maps HmNode to HmNode
@@ -288,14 +297,13 @@ public class InterfaceMethodMap extends MethodMap {
 	representing a method of an interface.
     */
     private class HmNode extends SparseNode {
-	String name;
-	HClass[] paramTypes;
+	final String name, desc;
 	int hash;
 	
 	HmNode( HMethod hm ) {
 	    name = hm.getName();
-	    paramTypes = hm.getParameterTypes();
-	    hash = name.hashCode() ^ hm.getDescriptor().hashCode();
+	    desc = hm.getDescriptor();
+	    hash = name.hashCode() ^ desc.hashCode();
 	}
 	
 	public int hashCode() { return hash; }
@@ -306,11 +314,12 @@ public class InterfaceMethodMap extends MethodMap {
 	    if (this==o) return true;
 	    try { n = (HmNode) o; }
 	    catch (ClassCastException e) { return false; }
-	    return n.hash == this.hash;
+	    if (n.hash!=this.hash) return false;
+	    return n.name.equals(this.name) && n.desc.equals(this.desc);
 	}
 
 	public String toString() {
-	    return "HMethod Node [ " + name + " " + hash +" ]";
+	    return "HMethod Node [ " + name + desc + " " + hash +" ]";
 	}
     }
 
