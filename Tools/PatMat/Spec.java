@@ -10,7 +10,8 @@ import harpoon.IR.Tree.Type;
 import java.util.List;
 
 /**
- * <code>Spec</code> represents the parsed specification.  
+ * <code>Spec</code> represents the parsed specification of a set of
+ * Instruction Patterns for a target backend .  
  *
  * <BR> <B>NOTE:</B> Current documentation was written late at night
  * and therefore may be misleading; I'm worried that it isn't META
@@ -21,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.31 1999-10-12 01:56:05 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.32 1999-10-12 18:12:35 pnkfelix Exp $
  */
 public class Spec  {
 

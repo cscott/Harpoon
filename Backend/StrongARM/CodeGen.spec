@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.51 1999-09-20 16:06:25 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.52 1999-10-12 18:12:34 pnkfelix Exp $
  */
 %%
 
@@ -306,8 +306,8 @@ BINOP<f>(CMPEQ, j, k) = i %{
 		    "mov `d0, `s0\n"+
 		    "bl ___eqsf2\n"+
 		    "cmp `s2, #0\n"+
-		    "moveq `d3, #1\n"+
-		    "movne `d3, #0", 
+		    "moveq `d2, #1\n"+
+		    "movne `d2, #0", 
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -317,6 +317,12 @@ BINOP<d>(CMPEQ, j, k) = i %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
+
+    // FSK: TODO: this is wrong, need to use the %extra detail added
+    //      by Scott a while ago to request an additional register to
+    //      store some temporary work into.  This occurs in other
+    //      patterns too; basically I need to audit the SPEC file and
+    //      revise a fair number of the patterns.
     emit(new Instr(instrFactory, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -324,9 +330,9 @@ BINOP<d>(CMPEQ, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___eqdf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
-		   new Temp[]{ r0, r1, i },
+		   "moveq `d4, #1\n"+
+		   "movne `d4, #0",
+		   new Temp[]{ r0, r1, r2, r3, i },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -361,8 +367,8 @@ BINOP<f>(CMPGT, j, k) = i %{
 		   "mov `d0, `s0\n"+
 		   "bl ___gtsf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -379,8 +385,8 @@ BINOP<d>(CMPGT, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___gtdf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -417,8 +423,8 @@ BINOP<f>(CMPGE, j, k) = i %{
 		   "mov `d0, `s0\n"+
 		   "bl ___gesf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -435,8 +441,8 @@ BINOP<d>(CMPGE, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___gedf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -473,8 +479,8 @@ BINOP<f>(CMPLE, j, k) = i %{
 		   "mov `d0, `s0\n"+
 		   "bl ___lesf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -491,8 +497,8 @@ BINOP<d>(CMPLE, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___ledf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -528,8 +534,8 @@ BINOP<f>(CMPLT, j, k) = i %{
 		   "mov `d0, `s0\n"+
 		   "bl ___ltsf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
@@ -546,8 +552,8 @@ BINOP<d>(CMPLT, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___ltdf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n"+
-		   "movne `d3, #0",
+		   "moveq `d2, #1\n"+
+		   "movne `d2, #0",
 		   new Temp[]{ r0, r1, i },
 		   new Temp[]{ j, k, r0 }));
 }%
