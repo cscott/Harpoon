@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.16 1998-09-13 23:57:24 cananian Exp $
+ * @version $Id: GET.java,v 1.17 1998-09-16 06:32:48 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -48,11 +48,14 @@ public class GET extends Quad {
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
-	dst = tm.tempMap(dst);
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	if (objectref!=null)
 	    objectref = tm.tempMap(objectref);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
+	dst = tm.tempMap(dst);
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

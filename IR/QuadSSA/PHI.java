@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.15 1998-09-13 23:57:28 cananian Exp $
+ * @version $Id: PHI.java,v 1.16 1998-09-16 06:32:49 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -71,12 +71,17 @@ public class PHI extends Quad {
     /** Returns all the Temps defined by this Quad. */
     public Temp[] def() { return (Temp[]) dst.clone(); }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
-	for (int i=0; i<dst.length; i++) {
-	    dst[i] = tm.tempMap(dst[i]);
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
+	for (int i=0; i<src.length; i++) {
 	    for (int j=0; j<src[i].length; j++)
 		src[i][j] = tm.tempMap(src[i][j]);
+	}
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
+	for (int i=0; i<dst.length; i++) {
+	    dst[i] = tm.tempMap(dst[i]);
 	}
     }
 

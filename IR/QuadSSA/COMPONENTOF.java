@@ -12,7 +12,7 @@ import harpoon.Temp.TempMap;
  * array, or boolean <code>false</code> otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.5 1998-09-13 23:57:21 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.6 1998-09-16 06:32:46 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -39,11 +39,14 @@ public class COMPONENTOF extends Quad {
     /** Returns the <code>Temp</code>s defined by this quad. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
-	dst = tm.tempMap(dst);
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	arrayref = tm.tempMap(arrayref);
 	objectref = tm.tempMap(objectref);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
+	dst = tm.tempMap(dst);
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

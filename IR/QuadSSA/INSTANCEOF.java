@@ -11,7 +11,7 @@ import harpoon.Temp.TempMap;
  * class type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.6 1998-09-13 23:57:25 cananian Exp $
+ * @version $Id: INSTANCEOF.java,v 1.7 1998-09-16 06:32:48 cananian Exp $
  */
 
 public class INSTANCEOF extends Quad {
@@ -36,10 +36,13 @@ public class INSTANCEOF extends Quad {
     /** Returns the <code>Temp</code>s defined by this quad. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
-	dst = tm.tempMap(dst);
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	src = tm.tempMap(src);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
+	dst = tm.tempMap(dst);
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

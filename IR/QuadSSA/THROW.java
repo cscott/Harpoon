@@ -8,7 +8,7 @@ import harpoon.Temp.TempMap;
  * <code>THROW</code> represents a <Code>throw<code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.11 1998-09-13 23:57:30 cananian Exp $
+ * @version $Id: THROW.java,v 1.12 1998-09-16 06:32:50 cananian Exp $
  */
 
 public class THROW extends Quad {
@@ -25,9 +25,12 @@ public class THROW extends Quad {
      * @return the <code>throwable</code> field. */
     public Temp[] use() { return new Temp[] { throwable }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	throwable = tm.tempMap(throwable);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

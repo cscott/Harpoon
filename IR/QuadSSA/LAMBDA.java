@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = lambda(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LAMBDA.java,v 1.1 1998-09-14 21:48:33 cananian Exp $
+ * @version $Id: LAMBDA.java,v 1.2 1998-09-16 06:32:48 cananian Exp $
  */
 
 public abstract class LAMBDA extends Quad {
@@ -46,9 +46,13 @@ public abstract class LAMBDA extends Quad {
 	}
 	return d;
     }
-    public void rename(TempMap tm) {
+    public void renameUses(TempMap tm) {
 	for (int i=0; i<src.length; i++) {
 	    src[i] = tm.tempMap(src[i]);
+	}
+    }
+    public void renameDefs(TempMap tm) {
+	for (int i=0; i<dst.length; i++) {
 	    for (int j=0; j<dst[i].length; j++)
 		dst[i][j] = tm.tempMap(dst[i][j]);
 	}

@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.7 1998-09-13 23:57:24 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.8 1998-09-16 06:32:47 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -37,8 +37,10 @@ public class FOOTER extends Quad {
 	addEdge(q, which_succ, this, prev.length-1);
     }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) { }
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) { }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

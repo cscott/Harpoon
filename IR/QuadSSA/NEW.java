@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.12 1998-09-13 23:57:27 cananian Exp $
+ * @version $Id: NEW.java,v 1.13 1998-09-16 06:32:49 cananian Exp $
  */
 
 public class NEW extends Quad {
@@ -36,8 +36,11 @@ public class NEW extends Quad {
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }
 

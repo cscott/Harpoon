@@ -8,7 +8,7 @@ import harpoon.Temp.TempMap;
  * <code>MONITOR</code> represents a synchronization block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOR.java,v 1.10 1998-09-13 23:57:26 cananian Exp $
+ * @version $Id: MONITOR.java,v 1.11 1998-09-16 06:32:48 cananian Exp $
  */
 
 public class MONITOR extends Quad {
@@ -30,9 +30,12 @@ public class MONITOR extends Quad {
      * @return the <code>lock</code> field. */
     public Temp[] use() { return new Temp[] { lock }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	lock = tm.tempMap(lock);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>SET</code> represents field assignment-to operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.14 1998-09-13 23:57:30 cananian Exp $
+ * @version $Id: SET.java,v 1.15 1998-09-16 06:32:50 cananian Exp $
  */
 
 public class SET extends Quad {
@@ -45,11 +45,14 @@ public class SET extends Quad {
 	else return new Temp[] { objectref, src };
     }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	if (objectref!=null)
 	    objectref = tm.tempMap(objectref);
 	src = tm.tempMap(src);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
     }
     public void visit(QuadVisitor v) { v.visit(this); }
 

@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.18 1998-09-13 23:57:21 cananian Exp $
+ * @version $Id: CALL.java,v 1.19 1998-09-16 06:32:46 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -84,12 +84,15 @@ public class CALL extends Quad {
 	else return new Temp[] { retval, retex };
     }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	if (objectref!=null)
 	    objectref = tm.tempMap(objectref);
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
 	if (retval!=null)
 	    retval = tm.tempMap(retval);
 	retex  = tm.tempMap(retex);

@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * to a compiler temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.9 1998-09-13 23:57:22 cananian Exp $
+ * @version $Id: CONST.java,v 1.10 1998-09-16 06:32:47 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -32,8 +32,11 @@ public class CONST extends Quad {
      */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }
 

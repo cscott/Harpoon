@@ -9,7 +9,7 @@ import harpoon.Temp.TempMap;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.12 1998-09-13 23:57:29 cananian Exp $
+ * @version $Id: RETURN.java,v 1.13 1998-09-16 06:32:50 cananian Exp $
  */
 
 public class RETURN extends Quad {
@@ -31,10 +31,13 @@ public class RETURN extends Quad {
 	else return new Temp[] { retval }; 
     }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	if (retval!=null)
 	    retval = tm.tempMap(retval);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

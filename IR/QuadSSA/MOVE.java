@@ -10,7 +10,7 @@ import harpoon.Temp.TempMap;
  * The source of the assignment must be another temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MOVE.java,v 1.8 1998-09-13 23:57:26 cananian Exp $
+ * @version $Id: MOVE.java,v 1.9 1998-09-16 06:32:48 cananian Exp $
  */
 
 public class MOVE extends Quad {
@@ -31,9 +31,12 @@ public class MOVE extends Quad {
     /** Returns the Temps defined by this Quad. */
     public Temp[] def() { return new Temp[] { dst }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
+    }
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	src = tm.tempMap(src);
     }
 

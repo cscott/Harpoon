@@ -12,7 +12,7 @@ import harpoon.Temp.TempMap;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.15 1998-09-14 21:48:33 cananian Exp $
+ * @version $Id: CJMP.java,v 1.16 1998-09-16 06:32:46 cananian Exp $
  */
 
 public class CJMP extends LAMBDA {
@@ -54,10 +54,14 @@ public class CJMP extends LAMBDA {
 	return r;
     }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
-	super.rename(tm);
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
+	super.renameUses(tm);
 	test = tm.tempMap(test);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
+	super.renameDefs(tm);
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

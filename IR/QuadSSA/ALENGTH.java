@@ -9,7 +9,7 @@ import harpoon.Temp.TempMap;
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.7 1998-09-13 23:57:19 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.8 1998-09-16 06:32:46 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET
@@ -36,10 +36,13 @@ public class ALENGTH extends Quad {
      * @return the <code>objectref</code> field. */
     public Temp[] use() { return new Temp[] { objectref }; }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
-	dst = tm.tempMap(dst);
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
+	dst = tm.tempMap(dst);
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

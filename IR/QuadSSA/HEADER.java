@@ -8,7 +8,7 @@ import harpoon.Temp.TempMap;
  * quad graph.  They do not represent bytecode.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HEADER.java,v 1.10 1998-09-13 23:57:25 cananian Exp $
+ * @version $Id: HEADER.java,v 1.11 1998-09-16 06:32:48 cananian Exp $
  * @see FOOTER
  */
 
@@ -21,8 +21,10 @@ public class HEADER extends Quad {
 	this.footer = footer;
     }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) { }
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) { }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

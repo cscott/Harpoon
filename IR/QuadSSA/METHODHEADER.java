@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * keep track of the temporary variable names used for method parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHODHEADER.java,v 1.9 1998-09-13 23:57:26 cananian Exp $
+ * @version $Id: METHODHEADER.java,v 1.10 1998-09-16 06:32:48 cananian Exp $
  */
 
 public class METHODHEADER extends HEADER {
@@ -25,8 +25,11 @@ public class METHODHEADER extends HEADER {
     /** Returns the temps defined by this Quad. */
     public Temp[] def() { return (Temp[]) Util.copy(params); }
 
-    /** Rename all variables in a Quad according to a mapping. */
-    public void rename(TempMap tm) {
+    /** Rename all used variables in this Quad according to a mapping. */
+    public void renameUses(TempMap tm) {
+    }
+    /** Rename all defined variables in this Quad according to a mapping. */
+    public void renameDefs(TempMap tm) {
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
     }
