@@ -7,7 +7,7 @@ import java.util.Enumeration;
 /**
  * A unique vector refuses to addElement duplicates.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueVector.java,v 1.1 1998-08-01 05:09:02 cananian Exp $
+ * @version $Id: UniqueVector.java,v 1.2 1998-08-01 09:06:30 cananian Exp $
  * @see java.util.Vector
  * @see java.util.Hashtable
  */
@@ -43,6 +43,8 @@ public class UniqueVector implements Cloneable {
   /**
    * Returns a clone of this vector.
    * @return a clone of this vector.
+   * @exception CloneNotSupportedException
+   *            if the UniqueVector cannot be cloned.
    */
   public synchronized Object clone() throws CloneNotSupportedException {
     UniqueVector v = (UniqueVector)super.clone();
@@ -96,7 +98,7 @@ public class UniqueVector implements Cloneable {
   /**
    * Returns the first component of this vector.
    * @return the first component of this vector.
-   * @exception NoSuchElementException
+   * @exception java.util.NoSuchElementException
    *            if this vector has no components.
    */
   public synchronized Object firstElement() { 
@@ -160,7 +162,8 @@ public class UniqueVector implements Cloneable {
    * Returns the last component of the vector.
    * @return the last component of the vector, i.e., the component at
    *         index <code>size()-1</code>.
-   * @exception NoSuchElementException if this vector is empty.
+   * @exception java.util.NoSuchElementException
+   *            if this vector is empty.
    */
   public synchronized Object lastElement() { 
     return vect.elementAt(vect.size()-1); 
