@@ -75,7 +75,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.113 2000-11-12 19:47:40 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.114 2000-11-13 00:55:42 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -147,24 +147,7 @@ public class SAMain extends harpoon.IR.Registration {
     public static void do_it() {
 
       // Realtime Java support (WSB)
-      if (Realtime.REALTIME_JAVA) {
-        System.out.println("Hi mom!");
-        linker.forName("java.lang.Object").getMutator().addDeclaredField("memoryArea", 
-                                                                         linker.forName("realtime.MemoryArea"));
-        HClass oldThread = linker.forName("java.lang.Thread");
-        HClass newThread = linker.forName("realtime.RealtimeThread");
-        System.out.println(oldThread.getName());
-        System.out.println(newThread.getName());
-        ((Relinker)linker).relink(oldThread, newThread);
-        //newThread.getMutator().setSuperclass(oldThread);
-        System.out.println(oldThread.getName());
-        System.out.println(newThread.getName());
-        System.out.println(newThread.getSuperclass().getName());
-        Util.assert(newThread!=newThread.getSuperclass(), 
-                    "RealtimeThread should not inherit from itself."); 
-        System.out.println("Bye mom!");
-      }   
-
+      Realtime.objectSetup((Relinker)linker);
 
 	if (SAMain.startset!=null)
 	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
