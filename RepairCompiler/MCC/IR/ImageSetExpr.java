@@ -69,7 +69,7 @@ public class ImageSetExpr extends SetExpr {
 	    return ise.equals(remap,ise2.ise);
 	} else {
 	    VarDescriptor nvde=vd;
-	    if (remap.containsKey(nvde))
+	    if (remap!=null&&remap.containsKey(nvde))
 		nvde=(VarDescriptor)remap.get(nvde);
 	    if (nvde!=ise2.vd)
 		return false;

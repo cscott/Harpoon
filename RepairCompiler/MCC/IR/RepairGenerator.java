@@ -206,7 +206,7 @@ public class RepairGenerator {
 			    methodcall+=", int "+fq.getVar().getSafeSymbol();
 			}
 		    }
-		    methodcall+=", "+stleft+", "+stright+", "+stnew;
+		    methodcall+=", int "+stleft+", int "+stright+", int "+stnew;
 		    methodcall+=")";
 		    crhead.outputline(methodcall+";");
 		    craux.outputline(methodcall);
@@ -1392,14 +1392,14 @@ public class RepairGenerator {
 		    cr.outputline("if ("+mdfyptr.getSafeSymbol()+")");
 		    {
 			cr.startblock();
-			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol());
-			cr.outputline(methodcall+leftvar+", "+rightvar+", "+mdfyptr.getSafeSymbol() +");");
+			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol()+";");
+			cr.outputline(methodcall+","+leftvar+", "+rightvar+", "+mdfyptr.getSafeSymbol() +");");
 			cr.endblock();
 		    }
 		    cr.outputline("else ");
 		    {
 			cr.startblock();
-			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+tmpptr.getSafeSymbol());
+			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+tmpptr.getSafeSymbol()+";");
 			cr.outputline(methodcall+");");
 			cr.endblock();
 		    }
