@@ -9,15 +9,19 @@ import harpoon.Util.Tuple;
  * with <code>getValue()</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: StringPointer.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: StringPointer.java,v 1.1.2.2 1999-05-10 00:01:17 duncan Exp $
  */
 public class StringPointer extends Pointer {
     private StaticState ss;
-
+    private final Object value;
+    
     /** Class constructor. */
     StringPointer(StaticState ss, Label base) {
 	super(new Object[] { base });
 	this.ss = ss;
+        this.value = Method.toNonNativeFormat
+	    (ss.makeStringIntern
+	     ((String)ss.map.decodeLabel((Label)getBase())));
     }
 
     /** Throws an error, as <code>StringPointer</code>s are constant. */
@@ -51,9 +55,7 @@ public class StringPointer extends Pointer {
      *  <code>StringPointer</code>.  This value is in non-native format.
      */
     public Object getValue() { 
-        return Method.toNonNativeFormat
-	    (ss.makeString
-	     ((String)ss.map.decodeLabel((Label)getBase())));
+	return this.value;
     }
 
     /** Always returns true. */
@@ -66,5 +68,13 @@ public class StringPointer extends Pointer {
     public void updateValue(Object value) { 
 	throw new Error("Can't update String pointer");
     }
+  
+    public String toString() { 
+	return "StringPointer --> < " + value.toString() + " >";
+    }
     
 }
+
+
+
+

@@ -7,9 +7,9 @@ import harpoon.ClassFile.HMethod;
  * <code>StackFrame</code> implements the interpreted stack frame.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StackFrame.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: StackFrame.java,v 1.1.2.2 1999-05-10 00:01:16 duncan Exp $
  */
-abstract class StackFrame  {
+abstract class StackFrame extends HCLibrary {
     abstract HMethod getMethod();
     abstract String  getSourceFile();
     abstract int     getLineNumber();

@@ -10,7 +10,7 @@ import harpoon.Util.Tuple;
  * modified with <code>updateValue()</code>.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ArrayPointer.java,v 1.1.2.1 1999-03-27 22:05:07 duncan Exp $
+ * @version $Id: ArrayPointer.java,v 1.1.2.2 1999-05-10 00:01:13 duncan Exp $
  */
 class ArrayPointer extends Pointer {
     private boolean isDerived;
@@ -76,7 +76,7 @@ class ArrayPointer extends Pointer {
     public boolean isConst()         { return false; }
 
     /** Returns true if this ArrayPointer is derived */
-    public boolean isDerived()       { return isDerived; }
+  public boolean isDerived()       { return isDerived; }
 
     /** Returns a human-readable representation of this 
      *  <code>ArrayPointer</code>
@@ -87,7 +87,7 @@ class ArrayPointer extends Pointer {
 	sb.append(" , ");
 	sb.append(getOffset());
 	sb.append(" > ---> ");
-	sb.append(getValue());
+	//sb.append(getValue());
 	return sb.toString();
     }
 

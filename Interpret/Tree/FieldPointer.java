@@ -1,5 +1,6 @@
 package harpoon.Interpret.Tree;
 
+import harpoon.ClassFile.HClass;
 import harpoon.Util.Tuple;
 
 /**
@@ -9,7 +10,7 @@ import harpoon.Util.Tuple;
  * modified with <code>updateValue()</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: FieldPointer.java,v 1.1.2.1 1999-03-27 22:05:07 duncan Exp $
+ * @version $Id: FieldPointer.java,v 1.1.2.2 1999-05-10 00:01:14 duncan Exp $
  */
 class FieldPointer extends Pointer {
     private boolean isDerived;
@@ -59,7 +60,8 @@ class FieldPointer extends Pointer {
      *  <code>FieldPointer</code>.  This value is in non-native format.
      */
     Object getValue() {
-	return Method.toNonNativeFormat(((ObjectRef)getBase()).get(this));
+	//return Method.toNonNativeFormat(((ObjectRef)getBase()).get(this));
+	return Method.toNonNativeFormat(ObjectRef.get(this));
     }
     
     /** Sets the value at the memory location specified by this 
@@ -68,7 +70,10 @@ class FieldPointer extends Pointer {
      */
     void updateValue(Object value) {
 	ObjectRef objref = (ObjectRef)getBase();
-	objref.update(this, Method.toNativeFormat(value, objref.type));
+	HClass type = objref.ss.getField(this).getType();
+	System.out.println("Calling FieldValue.update: " + 
+			   value + ", " + type);
+	ObjectRef.update(this, Method.toNativeFormat(value, type));
     }
 
     /** Always returns false. */
@@ -81,11 +86,17 @@ class FieldPointer extends Pointer {
      *  <code>ArrayPointer</code>
      */
     public String toString() { 
-	StringBuffer sb = new StringBuffer("FieldPtr: < ");
-	sb.append(((ObjectRef)getBase()));
+	StringBuffer sb = new StringBuffer("FieldPtr --> < ");
+	sb.append(((ObjectRef)getBase()).toString());
 	sb.append(" , ");
 	sb.append(getOffset());
 	sb.append(" >");
 	return sb.toString();
     }
 }
+
+
+
+
+
+

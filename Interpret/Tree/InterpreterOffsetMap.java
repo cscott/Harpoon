@@ -21,7 +21,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.2 1999-05-10 00:01:16 duncan Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -158,7 +158,7 @@ public class InterpreterOffsetMap extends OffsetMap {
 
     /** Returns the offset of the class pointer */
     public int classOffset(HClass hc)   { 
-	Util.assert(!hc.isPrimitive());
+	Util.assert(!hc.isPrimitive(), "" + hc);
 	return -1;
     }
 

@@ -15,6 +15,7 @@ import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
+import harpoon.IR.Tree.Edge;
 import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.Exp;
@@ -33,7 +34,7 @@ import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.THROW;
 import harpoon.IR.Tree.Tree;
-import harpoon.IR.Tree.TreeCode;
+import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.UNOP;
@@ -55,10 +56,10 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.2 1999-05-10 00:01:16 duncan Exp $
  */
 public final class Method extends HCLibrary {
-
+    static PrintWriter out = new java.io.PrintWriter(System.out);
     static final Integer TREE_NULL = new Integer(0);
     
     /** invoke a static main method with no static state. */
@@ -66,14 +67,14 @@ public final class Method extends HCLibrary {
 				 HCodeFactory hcf,
 				 HClass cls, String[] args) {
 	HMethod method; OffsetMap map; StaticState ss;
-	harpoon.IR.Tree.Code tc;
+	CanonicalTreeCode tc;
 
 	method=cls.getMethod("main", new HClass[]{ HCstringA });
 	
 	Util.assert(method.isStatic());
-	Util.assert(hcf.getCodeName().equals("tree"));
+	Util.assert(hcf.getCodeName().equals("canonical-tree"));
 	
-	tc = (harpoon.IR.Tree.Code)hcf.convert(method);
+	tc = (CanonicalTreeCode)hcf.convert(method);
 	map=((Tree)tc.getRootElement()).getFactory().getFrame().getOffsetMap();
 	ss = new StaticState(hcf, prof, (InterpreterOffsetMap)map);
 	try {
@@ -102,7 +103,7 @@ public final class Method extends HCLibrary {
 	    StaticState.printStackTrace(err, (String[]) it.ex.getClosure());
 	} finally {
 	    // try to force finalization of object classes
-	    System.out.println("Try to force finalization...");
+	    if (Method.DEBUG) System.out.println("Try to force finalization...");
 	    ss=null;
 	    System.gc();
 	    System.runFinalization();
@@ -139,8 +140,10 @@ public final class Method extends HCLibrary {
 	    return new Boolean(((Integer)obj).intValue()!=0);
 	else if ((!type.isPrimitive()) &&
 		 (obj instanceof Integer) &&
-		 (((Integer)obj).intValue()==0))
+		 (((Integer)obj).intValue()==0)) { 
+	    System.out.println("Converted to null");
 	    return null;
+	}
 	else 
 	    return obj;
     }
@@ -173,7 +176,9 @@ public final class Method extends HCLibrary {
     static final Object invoke(StaticState ss, HMethod method, Object[] params)
 	throws InterpretedThrowable {
         Util.assert(params.length == numParams(method));
-	
+
+	if (DEBUG) db("Invoking method: " + method);
+
 	if (!ss.isLoaded(method.getDeclaringClass())) {
 	    // Do a dummy push in case an error occurs when loading the class
 	    ss.pushStack(new NativeStackFrame(method)); 
@@ -192,10 +197,11 @@ public final class Method extends HCLibrary {
 		ss.pushStack(new NativeStackFrame(method));
 		//ss.incrementInstructionCount(); //native methods take 0 time
 		Object rval = nm.invoke(ss, params);
+		if (DEBUG) db("Returning: " + rval);
 		return rval;
 	    }
 	    // non-native, interpret.
-	    TreeCode c = (TreeCode)ss.hcf.convert(method);
+	    CanonicalTreeCode c = (CanonicalTreeCode)ss.hcf.convert(method);
 	    Frame f = ((Tree)c.getRootElement()).getFactory().getFrame();
 
 	    // failed to translate method into tree code
@@ -205,6 +211,7 @@ public final class Method extends HCLibrary {
 						 "No definition for "+method);
 		throw new InterpretedThrowable(obj, ss);
 	    }
+	    if (Method.DEBUG) c.print(out);
 
 	    // push new stack frame
 	    TreeStackFrame sf = new TreeStackFrame((Stm)c.getRootElement());
@@ -216,6 +223,7 @@ public final class Method extends HCLibrary {
 	    }
 
 	    Interpreter i = new TreeInterpreter(ss, sf);
+	    
 	    
 	    // Run interpreter on the generated tree code
 	    while (!i.done) { sf.pc.visit(i); }
@@ -229,15 +237,19 @@ public final class Method extends HCLibrary {
 		throw new InterpretedThrowable((ObjectRef)i.Texc, ss);
 	    }
 	    
-	    if (method.getReturnType()==HClass.Void) return null;
+	    if (method.getReturnType()==HClass.Void) {
+	        if (DEBUG) db("Returning from VOID func");
+		return null;
+	    }
 	    else {
+	      if (Method.DEBUG)System.out.println("Returning: " + i.Tret);
 		// Convert to native format, and return
 	        return toNativeFormat(i.Tret, method.getReturnType());
 	    }
 	}
 	finally { 
 	    // pop stack & profile *always.*
-	    //System.out.println("Finished: " + method.getName());
+	    //if (DEBUG) db("Finished: " + method.getName());
 	    ss.popStack();
 	    long end_count = ss.getInstructionCount();
 	    ss.profile(method, start_count, end_count);
@@ -253,80 +265,22 @@ public final class Method extends HCLibrary {
     static private abstract class Interpreter extends TreeVisitor {
 	final StaticState ss;
 	final TreeStackFrame sf;
-	static Object END = new Object();
 	Object Tret = TREE_NULL;
 	Object Texc = TREE_NULL;
 	boolean done = false;
-	Hashtable labels2nodes = new Hashtable();
-        private Stack nodesToVisit = new Stack();
         private Derivation derivation;
         private TypeMap typeMap;
-	
+
 	Interpreter(StaticState ss, TreeStackFrame sf) {
 	    this.ss = ss; this.sf = sf; 
+	    while (sf.pc instanceof SEQ)
+	        sf.pc = ((SEQ)sf.pc).left;
 	}
 
-	// map labels to nodes in the TreeCode just once.  
-	// recalculating these would get really expensive for large pieces
-	// of code
-	void mapLabels() {
-	    for (Enumeration e = sf.pc.getFactory().getParent().getElementsE();
-		 e.hasMoreElements();) {
-	        Object next = e.nextElement();
-		if (next instanceof SEQ) { 
-		    SEQ seq = (SEQ)next;
-		    if (seq.left instanceof LABEL) {
-			Label l = ((LABEL)seq.left).label;
-			labels2nodes.put(l, seq.right);
-		    }
-		    if (seq.right instanceof LABEL) {
-			Label l = ((LABEL)seq.right).label;
-			labels2nodes.put(l, END);
-		    }
-		}
-	    }
-	}
-	
-	// advance the pc to the instruction following the specified label
-        void advance(Label label) { 
-	    // We should always be able to find the label
-	    Util.assert(labels2nodes.containsKey(label));
-
+	void advance(int which_succ) {
+	    Edge e = sf.pc.nextEdge(which_succ);
+	    sf.pc = (Stm)e.to();
 	    ss.incrementInstructionCount();
-	    Object stm = labels2nodes.get(label);
-
-	    if (stm==END) done = true;
-	    else {
-		sf.pc = (Stm)stm;
-		nodesToVisit.removeAllElements();
-	    }
-	}
-      
-        void advance() {
-	    // No more nodes, we're done
-	    if (nodesToVisit.isEmpty()) { done = true; }
-	    else {
-		sf.pc = (Stm)nodesToVisit.pop();
-		ss.incrementInstructionCount();
-	    }
-	}
-
-        void advance(Stm stm) {
-	    if (stm==null) { advance(); }
-	    else {
-		sf.pc = stm;
-		ss.incrementInstructionCount();
-	    }
-	}
-  
-        void advance(Stm left, Stm right) { 
-	    if (left==null) { advance(right); }
-	    else if (right==null) { advance(left); }
-	    else {
-		sf.pc = left;
-		nodesToVisit.push(right);
-		ss.incrementInstructionCount();
-	    }
 	}
     }
 
@@ -334,14 +288,6 @@ public final class Method extends HCLibrary {
     static private class TreeInterpreter extends Interpreter {
 	TreeInterpreter(StaticState ss, TreeStackFrame sf) {
   	    super(ss, sf);
-	    mapLabels();
-	}
-
-	// Used to avoid recalculating labels when evaluating ESEQs
-	private TreeInterpreter(StaticState ss, TreeStackFrame sf, 
-				Hashtable labels) {
-	    super(ss, sf);
-	    labels2nodes = labels;
 	}
 
 	public void visit(Tree q) {
@@ -349,6 +295,8 @@ public final class Method extends HCLibrary {
 	}
 	
 	public void visit(BINOP e) { 
+	    if (DEBUG) db("Visiting: " + e);
+
 	    e.left.visit(this);
 	    e.right.visit(this);
 	    
@@ -397,6 +345,9 @@ public final class Method extends HCLibrary {
 			sf.update(e, ptr.add((long)((Integer)offset).intValue()));
 		}
 		else {
+		    if (DEBUG) db("*** ILLEGAL BINOP: " + 
+				       e + ", " + left + ", " + right + 
+				       " IN METHOD " + sf.getMethod());
 		    throw new Error
 			("Illegal opcode for Pointer object: " + e.op);
 		}
@@ -404,51 +355,29 @@ public final class Method extends HCLibrary {
 	}
 	
 	public void visit(CJUMP e) {
+	    if (DEBUG) db("Visiting: " + e);
 	    e.test.visit(this);
-	    boolean b = (((Integer)sf.get(e.test)).intValue()==1)?true:false;
-	    if (b) 
-		advance(e.iftrue);
-	    else
-		advance(e.iffalse);
+	    boolean b = (((Integer)sf.get(e.test)).intValue()!=0)?true:false;
+	    if (b) advance(0);
+	    else advance(1);
 	}
 	
 	public void visit(CONST e) { 
+	    if (DEBUG) db("Visiting: " + e);
 	    sf.update(e, e.value);
 	}
 	
-	public void visit(ESEQ e) { 
-	    // Create an interpreter to evaluate this eseq
-	    TreeInterpreter i = new TreeInterpreter(ss, sf, labels2nodes);
-
-	    sf.pc = e.stm; // set PC to be the stm of this ESEQ
-
-	    while (!i.done) { sf.pc.visit(i); }
-
-	    // Return or throw.
-	    if (i.Texc!=TREE_NULL) {
-		Texc = i.Texc;
-		done = true;
-	    }
-	    else if (i.Tret!=TREE_NULL) {
-		Tret = i.Tret;
-		done = true;
-	    }
-	    else {
-		// Now evaluate the expression of the ESEQ
-	        e.exp.visit(this);
-		sf.update(e, sf.get(e.exp));
-	    }
-	}
-
 	public void visit(EXP e)  { 
+	    if (DEBUG) db("Visiting: " + e);
 	    // Execute e for side effects
 	    e.exp.visit(this);
-	    advance();
+	    advance(0);
 	}
 
 	/* Let Method.invoke() distinguish between native and
 	 * non-native methods */
 	public void visit(INVOCATION s) { 
+	    if (DEBUG) db("Visiting: " + s);
 	    if (isAllocation(s)) {
 		// Can't resolve ptr type yet
 		UndefinedPointer ptr = 
@@ -514,40 +443,55 @@ public final class Method extends HCLibrary {
 		}
 	    }
 	    // Advance the PC
-	    advance();  
+	    advance(0);  
 	}
 
 	public void visit(JUMP e) { 
+	    if (DEBUG) db("Visiting: " + e);
 	    Util.assert(e.exp instanceof NAME);
-	    advance(((NAME)e.exp).label);
+	    advance(0);
 	}
 	  
 	public void visit(LABEL s) { 
+	    if (DEBUG) db("Visiting LABEL: " + s);
 	    /* Nothing to do here, just advance the PC */ 
-	    advance();
+	    advance(0);
 	}
 
 	public void visit(MEM e) { 
+	    if (DEBUG) db("Visiting: " + e);
 	    e.exp.visit(this);
-	    
-	    // Can only dereference Pointer types
-	    Pointer ptr = (Pointer)sf.get(e.exp);
+	    Pointer ptr;
+
+	    try { 
+	      if (DEBUG) db("Trying to derefence: " + e.exp);
+	      // Can only dereference Pointer types
+	      ptr = (Pointer)sf.get(e.exp);
+	    }
+	    catch (ClassCastException ex) { 
+	      if (DEBUG) db("*** EXC should have been thrown: " + ex + 
+				 ", "  + e.exp);
+	      throw ex;
+	    }
+
 	    sf.update(e, ptr.getValue());
 	}
 
-        public void visit(MOVE q) {
-	    q.src.visit(this);
-	    Object srcValue = sf.get(q.src);
+        public void visit(MOVE s) {
+	    if (DEBUG) db("Visiting: " + s);
+	    s.src.visit(this);
+	    Object srcValue = sf.get(s.src);
 
-	    if (q.dst instanceof MEM) { 
-	        MEM location = (MEM)q.dst;
+	    if (s.dst instanceof MEM) { 
+	        MEM location = (MEM)s.dst;
 		location.exp.visit(this);
 		Pointer ptr = (Pointer)sf.get(location.exp);
 
 		try {
-		    ptr.updateValue(sf.get(q.src));
+		    ptr.updateValue(sf.get(s.src));
 		}
 		catch (PointerTypeChangedException e) {
+		  System.out.println("PTR resolved: " + ptr + " --> " + e.ptr);
 		    // The type of ptr has been resolved.  Update the
 		    // stack frame accordingly. 
 		    ptr = ptr.add(-ptr.getOffset());
@@ -558,18 +502,19 @@ public final class Method extends HCLibrary {
 			sf.replace(ptr.add(-3), e.ptr.add(-3));
 		}
 	    }
-	    else if (q.dst instanceof TEMP) { 
-		TEMP dst = (TEMP)q.dst;
-		sf.update(dst.temp, sf.get(q.src));
-		sf.update(dst, sf.get(q.src));  // maybe not necessary
+	    else if (s.dst instanceof TEMP) { 
+		TEMP dst = (TEMP)s.dst;
+		sf.update(dst.temp, sf.get(s.src));
+		sf.update(dst, sf.get(s.src));  // maybe not necessary
 	    }
 	    else
-		throw new Error("Bad type for destination in: " + q);
+		throw new Error("Bad type for destination in: " + s);
 
-	    advance();
+	    advance(0);
 	}
 
 	public void visit(NAME e) { 
+	    if (DEBUG) db("Visiting: " + e);
 	    if (e.label.toString().startsWith("STRING_CONST")) {
 		sf.update(e, new StringPointer(ss, e.label));
 	    }
@@ -579,23 +524,26 @@ public final class Method extends HCLibrary {
 	}
 
         public void visit(RETURN q) {
+	    if (DEBUG) db("Visiting: " + q);
 	    q.retval.visit(this);
 	    Tret = sf.get(q.retval);
 	    done = true;
 	}
 
         public void visit(SEQ e) { 
-	    advance(e.left, e.right);
+	    throw new Error("Should not be visiting SEQ nodes");
 	}
 
 
         public void visit(TEMP e) {
+	    if (DEBUG) db("Visiting: " + e);
 	    Object tmpValue = sf.get(e.temp);
 	    if (tmpValue != null) 
 		sf.update(e, tmpValue);
 	}
 	    
         public void visit(THROW e) { 
+	    if (DEBUG) db("Visiting: " + e);
 	    HClass type;
 	    Pointer exc = (Pointer)sf.get(e.retex);
 	    
@@ -616,6 +564,7 @@ public final class Method extends HCLibrary {
 	}        
 	
 	public void visit(UNOP e) { 
+	    if (DEBUG) db("Visiting: " + e);
 	    e.operand.visit(this);
 
 	    Object operand  = sf.get(e.operand);
@@ -626,6 +575,7 @@ public final class Method extends HCLibrary {
 		sf.update(e, e);
 	      }
 	      else {
+		System.err.println("WARNING: dangerous pointer op!");
 		sf.update(e, UNOP.evalValue(e.getFactory(), 
 					    e.op, e.optype, 
 					    ((Pointer)operand).getValue()));
@@ -649,3 +599,4 @@ public final class Method extends HCLibrary {
 	}
     }
 }
+

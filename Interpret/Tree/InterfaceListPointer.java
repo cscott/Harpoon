@@ -8,7 +8,7 @@ import harpoon.Util.Tuple;
  * the blocks of class data allocated by the class loader.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterfaceListPointer.java,v 1.1.2.1 1999-03-27 22:05:08 duncan Exp $
+ * @version $Id: InterfaceListPointer.java,v 1.1.2.2 1999-05-10 00:01:15 duncan Exp $
  */
 public class InterfaceListPointer extends Pointer {
   
@@ -82,3 +82,4 @@ public class InterfaceListPointer extends Pointer {
     }
 }
     
+

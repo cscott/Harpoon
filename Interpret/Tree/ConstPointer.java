@@ -12,7 +12,7 @@ import harpoon.Temp.Label;
  * is simply a <code>Label</code> object.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ConstPointer.java,v 1.1.2.1 1999-03-27 22:05:07 duncan Exp $
+ * @version $Id: ConstPointer.java,v 1.1.2.2 1999-05-10 00:01:14 duncan Exp $
  */
 class ConstPointer extends Pointer {
     private final StaticState ss;
@@ -93,3 +93,6 @@ class ConstPointer extends Pointer {
     }
 
 }
+
+
+

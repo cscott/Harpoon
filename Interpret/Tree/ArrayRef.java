@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.2 1999-04-23 06:21:48 pnkfelix Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.3 1999-05-10 00:01:14 duncan Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */
@@ -107,7 +107,7 @@ final class ArrayRef extends Ref {
     
     /** Returns a human-readable representation of this <code>ArrayRef</code>
      */
-    public String toString() {
+  /*    public String toString() {
 	StringBuffer sb = new StringBuffer();
 	sb.append("ArrayRef: <");
 	sb.append(HClassUtil.baseClass(type));
@@ -116,7 +116,7 @@ final class ArrayRef extends Ref {
 	    sb.append("[]");
 	sb.append('>');
 	return sb.toString();
-    }
+	} */
 
 
     /** Returns the value obtained by dereferencing the specified

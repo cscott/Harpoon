@@ -8,10 +8,13 @@ import harpoon.ClassFile.HClass;
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.1 1999-03-27 22:05:07 duncan Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.2 1999-05-10 00:01:14 duncan Exp $
  */
 class HCLibrary  {
+    void db(String str) { System.out.println(str); } 
+    static boolean DEBUG = false;
     static final HClass 
+        HCbyteA = HClass.forDescriptor("[B"),
 	HCcharA = HClass.forDescriptor("[C"),
 	HCclass = HClass.forName("java.lang.Class"),
 	HCclassA = HClass.forDescriptor("[Ljava/lang/Class;"),
@@ -48,3 +51,7 @@ class HCLibrary  {
 	HCnosuchmethodErr = HClass.forName("java.lang.NoSuchMethodError"),
 	HCunsatisfiedlinkErr=HClass.forName("java.lang.UnsatisfiedLinkError");
 }
+
+
+
+

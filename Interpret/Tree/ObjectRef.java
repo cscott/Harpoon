@@ -1,4 +1,3 @@
-// ObjectRef.java, created Mon Dec 28 00:29:30 1998 by cananian
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -11,7 +10,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.2 1999-05-10 00:01:16 duncan Exp $
  */
 class ObjectRef extends Ref {
 
@@ -40,8 +39,8 @@ class ObjectRef extends Ref {
 	this.closure = null;
 	this.hashCode = hashCode==null?new Integer(this.hashCode()):hashCode;  
 	this.classPtr = classPtr==null?
-	  new ClazPointer(ss.map.label(type), ss, 0):
-	  classPtr;
+	    new ClazPointer(ss.map.label(type), ss, 0):
+	    classPtr;
 
 	// Initialize our fields.
 	for (HClass sc=type; sc!=null; sc=sc.getSuperclass()) {
@@ -62,8 +61,8 @@ class ObjectRef extends Ref {
 
     /** Clones this <code>ObjectRef</code> */
     public Object clone() {
-       Util.assert(closure==null, "can't clone objects with closure info.");
-       return new ObjectRef(ss, type, FieldValueList.clone(fields));
+	Util.assert(closure==null, "can't clone objects with closure info.");
+	return new ObjectRef(ss, type, FieldValueList.clone(fields));
     }
    
     /** Calls the <code>finalize()</code> method of the specified 
@@ -85,6 +84,7 @@ class ObjectRef extends Ref {
     /** Returns the value of the specified field of this <code>ObjectRef</code>
      */
     Object get(HField f) {
+	if (DEBUG) db("Accessing field: " + f + " in " + this);
 	return FieldValueList.get(this.fields, f);
     }
  
@@ -97,17 +97,8 @@ class ObjectRef extends Ref {
     /** Updates the specified field of this <code>ObjectRef</code> to have
      *  the specified value */
     void update(HField f, Object value) {
+	if (DEBUG) db("Updating field " + f + " in " + this + " to " + value);
 	this.fields = FieldValueList.update(this.fields, f, value);
-    }
-  
-    /** Returns a human-readable representation of this <code>ObjectRef</code>
-    public String toString() {
-	String fString;
-        if (fields==null) fString=null;
-	else fString = fields.toString();
-
-        return "ObjectRef: " + type + ", " + fString;
-
     }
 
     /** Dereferences the specified <code>FieldPointer</code> and returns
@@ -149,6 +140,19 @@ class ObjectRef extends Ref {
 	    ref.update(ref.ss.getField(ptr), value);
 	}	
     }
+
+    /** Returns a human-readable representation of this <code>ObjectRef</code>
+     */
+    /*    
+	  public String toString() {
+	  String fString;
+	  if (fields==null) fString=null;
+	  else fString = fields.toString();
+	
+	  return "ObjectRef < " + type + ", " + fString;
+	  
+	  }
+    */
 }
 
 

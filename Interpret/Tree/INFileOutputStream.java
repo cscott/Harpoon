@@ -13,7 +13,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileOutputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileOutputStream.java,v 1.1.2.1 1999-03-27 22:05:08 duncan Exp $
+ * @version $Id: INFileOutputStream.java,v 1.1.2.2 1999-05-10 00:01:15 duncan Exp $
  */
 final class INFileOutputStream extends HCLibrary {
     static final void register(StaticState ss) {
@@ -59,9 +59,19 @@ final class INFileOutputStream extends HCLibrary {
 		int fd = ((Integer)fd_obj.get(hf)).intValue();
 		switch (fd) {
 		case 2: // System.out
-		    obj.putClosure(System.out); break;
+		    obj.putClosure(System.out); 
+		    System.out.println("PUT CLOSURE SYSOUT, testing: ");
+		    System.out.println("Test1: " + (System.out==(OutputStream)obj.getClosure()));
+		    System.out.println("Test2: ");
+		    new java.io.PrintWriter((OutputStream)obj.getClosure()).write("success!!!\n");
+		    break;
 		case 3: // System.err
-		    obj.putClosure(System.err); break;
+		    obj.putClosure(System.err); 
+		    System.out.println("PUT CLOSURE SYSERR, testing: ");
+		    System.out.println("Test1: " + (System.err==(OutputStream)obj.getClosure()));
+		    System.out.println("Test2: ");
+		    new java.io.PrintWriter((OutputStream)obj.getClosure()).write("success!!!\n"); 
+		    break;
 		default: // throw error
 		    {
 		    ObjectRef ex_obj =
@@ -180,13 +190,26 @@ final class INFileOutputStream extends HCLibrary {
 		ArrayRef ba = (ArrayRef) params[1];
 		int off = ((Integer) params[2]).intValue();
 		int len = ((Integer) params[3]).intValue();
+
+		System.out.println("Writing bytes, params: " + 
+				   params[0] + "\n" + params[1] + 
+				   "\n" + params[2] + "\n" + 
+				   params[3] + "\nEnd params");
+
 		// repackage byte array.
 		byte[] b = new byte[len];
-		for (int i=0; i<b.length; i++)
+		for (int i=0; i<b.length; i++) { 
+		    System.out.println("CHAR" + i + ": " + ba.get(off+i));
 		    b[i] = ((Byte) ba.get(off+i)).byteValue();
+		}
+		
 
 		OutputStream os = (OutputStream) obj.getClosure();
+		System.out.println("WBTest: " + (os==System.out));
 		try {
+		  // test:
+		  new java.io.PrintWriter(System.out).write("TESTINGSysOut");
+		  new java.io.PrintWriter(os).write("TESTING!!!!");
 		    os.write(b, 0, len);
 		    return null;
 		} catch (IOException e) {

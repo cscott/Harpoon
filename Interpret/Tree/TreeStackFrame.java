@@ -3,6 +3,7 @@ package harpoon.Interpret.Tree;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.TEMP;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
@@ -13,7 +14,7 @@ import java.util.Hashtable;
  * <code>TreeStackFrame</code> is a stack frame for an interpreted method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeStackFrame.java,v 1.1.2.1 1999-03-27 22:05:10 duncan Exp $
+ * @version $Id: TreeStackFrame.java,v 1.1.2.2 1999-05-10 00:01:17 duncan Exp $
  */
 final class TreeStackFrame extends StackFrame {
     /** current location in the method */
@@ -42,10 +43,12 @@ final class TreeStackFrame extends StackFrame {
     }
 
     void update(Temp t, Object value) {
+	if (DEBUG) db("Updating: " + t + " --> " + value);
 	state.put(t, (value==null)?Onull:value);
     }
      
     void update(Exp exp, Object value) {
+	if (DEBUG) db("Updating: " + exp + " --> " + value);
 	state.put(exp, (value==null)?Onull:value);
     }
 
@@ -60,14 +63,19 @@ final class TreeStackFrame extends StackFrame {
     }
 
     Object get(Exp e) {
-        Object o = state.get(e);
-	if (o==null) {
-	    throw new Error("Don't yet know the value of "+ e + " at "+ 
-			    getMethod() + "("+getSourceFile() + ":"+
-			    getLineNumber() + ")" + "::" + pc + "\n" + 
-			    state.toString());
+	if (e instanceof TEMP) { 
+	    return get(((TEMP)e).temp);
 	}
-	return (o==Onull)?Method.TREE_NULL:o;
+	else { 
+	    Object o = state.get(e);
+	    if (o==null) {
+		throw new Error("Don't yet know the value of "+ e + " at "+ 
+				getMethod() + "("+getSourceFile() + ":"+
+				getLineNumber() + ")" + "::" + pc + "\n" + 
+				state.toString());
+	    }
+	    return (o==Onull)?Method.TREE_NULL:o;
+	}
     }
 			  
     boolean isDefined(Exp e) {

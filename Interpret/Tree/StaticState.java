@@ -19,7 +19,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.2 1999-04-23 06:21:48 pnkfelix Exp $
+ * @version $Id: StaticState.java,v 1.1.2.3 1999-05-10 00:01:17 duncan Exp $
  */
 final class StaticState extends HCLibrary {
 
@@ -33,15 +33,16 @@ final class StaticState extends HCLibrary {
     /*final*/ InterpreterOffsetMap map; 
     
 
+    // Class constructor 
     StaticState(HCodeFactory hcf, InterpreterOffsetMap map) { 
-      this(hcf, null, map); 
+	this(hcf, null, map); 
     }
 
     //prof is null for no profiling.
 
     StaticState(HCodeFactory hcf, PrintWriter prof, InterpreterOffsetMap map) {
 	// Only translate TreeCodes
-	Util.assert(hcf.getCodeName().equals("tree"));
+	Util.assert(hcf.getCodeName().equals("canonical-tree"));
 	this.hcf = hcf; this.prof = prof; this.map = map;
 	Support.registerNative(this);
     }
@@ -54,14 +55,23 @@ final class StaticState extends HCLibrary {
 	((ClassHeader)classInfo.get(cls)).fvl = fvl;
     }
 
-    // PUBLIC:
+
+    /************************************************************
+     *                                                          *
+     *                     CLASS LOADING                        *
+     *                                                          *
+     ***********************************************************/
+
     boolean isLoaded(HClass cls) { return classInfo.get(cls)!=null; }
-    
+
     void load(HClass cls) throws InterpretedThrowable {
 	Util.assert(!isLoaded(cls));
 	HClass sc = cls.getSuperclass();
 	if (sc!=null && !isLoaded(sc)) load(sc); // load superclasses first.
 	System.err.println("LOADING "+cls);
+
+	// Map [HClass --> FieldValueList]
+	//
 	classInfo.put(cls, new ClassHeader());
 	
 	// Map [class pointer --> HClass]
@@ -92,12 +102,12 @@ final class StaticState extends HCLibrary {
     }
 
     private void loadDisplay(Label clsLabel, HClass current) {
-         HClass sc = current.getSuperclass();
+	HClass sc = current.getSuperclass();
 
-	 if (sc!=null) loadDisplay(clsLabel, sc);
+	if (sc!=null) loadDisplay(clsLabel, sc);
 
-	 map(new ClazPointer(clsLabel, this, map.displayOffset(current)),
-	     new ConstPointer(map.label(current), this));
+	map(new ClazPointer(clsLabel, this, map.displayOffset(current)),
+	    new ConstPointer(map.label(current), this));
     }
 
     private void loadInterfaces(Label clsLabel, HClass cls) {
@@ -159,8 +169,13 @@ final class StaticState extends HCLibrary {
 	}
     }
 
-    //--------------------------------------
-    /** Static data access methods */
+    /************************************************************
+     *                                                          *
+     *             STATIC DATA ACCESS METHODS                   *
+     * (Methods to access an _interpreted_ class's static data) *
+     *                                                          *
+     ***********************************************************/
+
 
     HField getField(ConstPointer ptr) {
 	return (HField)classInfo.get(ptr.getBase());
@@ -213,7 +228,7 @@ final class StaticState extends HCLibrary {
 	    return get((HField)classInfo.get(ptr.getBase())); 
 	}
 	else {
-	  return classInfo.get(ptr.getBase());
+	    return classInfo.get(ptr.getBase());
 	}
     }
 
@@ -222,8 +237,15 @@ final class StaticState extends HCLibrary {
 	update((HField)classInfo.get(ptr.getBase()), value);
     }
 
-    /** Utility methods to aid in static data access */
-    
+
+    /************************************************************
+     *                                                          *
+     *      UTILITY METHODS TO AID IN STATIC DATA ACCESS        *
+     *                                                          *
+     ***********************************************************/
+
+    // Returns the value of the static field "sf"
+    // Throws an error if "sf" is not static
     private Object get(HField sf) {
 	Util.assert(sf.isStatic());
 	HClass cls = sf.getDeclaringClass();
@@ -231,10 +253,14 @@ final class StaticState extends HCLibrary {
 	return FieldValueList.get(get(cls), sf);
     }
 
+    // Returns the FieldValueList associated with "cls"
     private FieldValueList get(HClass cls) {
+	Util.assert(isLoaded(cls));
 	return ((ClassHeader)classInfo.get(cls)).fvl;
     }
 
+    // Updates the value of the static field "sf" to be "value".
+    // Throws an error if "sf" is not static
     void update(HField sf, Object value) {
 	Util.assert(sf.isStatic());
 	HClass cls = sf.getDeclaringClass();
@@ -242,9 +268,12 @@ final class StaticState extends HCLibrary {
 	put(cls, FieldValueList.update(get(cls), sf, value));
     }
 
-    //--------------------------------------
+    /************************************************************
+     *                                                          *
+     *                      CALL STACK                          *
+     *                                                          *
+     ***********************************************************/
 
-    /** Call Stack: */
     final private Stack callStack = new Stack();
 
     private StackFrame stack(int i) {
@@ -278,8 +307,13 @@ final class StaticState extends HCLibrary {
 	for (int i=0; i<st.length; i++)
 	    pw.println("-   at " + st[i]);
     }
-    // -------------------------
-    // intern() table for strings.
+
+    /************************************************************
+     *                                                          *
+     *                        STRINGS                           *
+     *                                                          *
+     ***********************************************************/
+
     final private Hashtable internTable = new Hashtable();
 
     final ObjectRef intern(ObjectRef src) {
@@ -293,7 +327,7 @@ final class StaticState extends HCLibrary {
 	HField HFvalue = HCstring.getField("value");
 	HField HFoffset= HCstring.getField("offset");
 	HField HFcount = HCstring.getField("count");
-
+	
 	ArrayRef value = (ArrayRef)str.get(HFvalue);
 	int offset = ((Integer)str.get(HFoffset)).intValue();
 	int count = ((Integer)str.get(HFcount)).intValue();
@@ -307,14 +341,14 @@ final class StaticState extends HCLibrary {
     final ObjectRef makeString(String s)
 	throws InterpretedThrowable {
         
-      ObjectRef obj = new ObjectRef(this, HCstring);
-      ArrayRef ca=new ArrayRef(this, HCcharA, new int[]{s.length()});
-      for (int i=0; i<s.length(); i++)
-	ca.update(i, new Character(s.charAt(i)));
-      HMethod hm = HCstring.getConstructor(new HClass[] { HCcharA });
-      Method.invoke(this, hm, new Object[] { obj, ca });
+	ObjectRef obj = new ObjectRef(this, HCstring);
+	ArrayRef ca=new ArrayRef(this, HCcharA, new int[]{s.length()});
+	for (int i=0; i<s.length(); i++)
+	    ca.update(i, new Character(s.charAt(i)));
+	HMethod hm = HCstring.getConstructor(new HClass[] { HCcharA });
+	Method.invoke(this, hm, new Object[] { obj, ca });
 
-      return obj;
+	return obj;
     }
 
     final ObjectRef makeStringIntern(String s) 
@@ -341,8 +375,13 @@ final class StaticState extends HCLibrary {
 		      new Object[] { obj, makeString(msg) } );
 	return obj;
     }
-    // --------------------------------------------------------
-    // NATIVE METHOD SUPPORT:
+
+    /************************************************************
+     *                                                          *
+     *                    NATIVE METHODS                        *
+     *                                                          *
+     ***********************************************************/
+
     private final Hashtable nativeRegistry = new Hashtable();
     private final Hashtable nativeClosure = new Hashtable();
     final void register(NativeMethod nm) {
@@ -361,8 +400,13 @@ final class StaticState extends HCLibrary {
     final void putNativeClosure(HClass hc, Object cl) {
 	nativeClosure.put(hc, cl);
     }
-    // --------------------------------------------------------
-    // PROFILING SUPPORT.
+
+    /************************************************************
+     *                                                          *
+     *                   PROFILING SUPPORT                      *
+     *                                                          *
+     ***********************************************************/
+
     public /*final*/ PrintWriter prof;
     private long count; // instruction count.
     final synchronized void incrementInstructionCount() { 
@@ -405,6 +449,8 @@ final class StaticState extends HCLibrary {
     private void map(ClazPointer ptr, Object object) {
 	classInfo.put(ptr, object);
     }
+    
+    
 }
 
 
