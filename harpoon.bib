@@ -3,6 +3,8 @@
 @string{CACM = {Communications of the ACM}}
 @string{ACM =  {ACM}}
 @string{IEEE = {IEEE}}
+@string{ICCAD  = "Proceedings of the {IEEE}/{ACM} International Conference on
+                  Computer Aided Design ({ICCAD})"}
 @string{PLDI93 = "Proceedings of the {ACM} {SIGPLAN} '93 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI94 = "Proceedings of the {ACM} {SIGPLAN} '94 Conference on
@@ -183,6 +185,101 @@
   annote =	 {Very theoretical==not terribly useful.}
 }
 
+% HARDWARE SECTION
+
+@InProceedings{aggarwal97:netpart,
+  author = 	 {Rajat Aggarwal and Rajeev Murgai and Masahiro Fujita},
+  title = 	 {Speeding Up Technology-Independent Timing
+                  Optimization by Network Partitioning},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {83--90},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p83-aggarwal/},
+  annote =	 {Useful, but presupposes a basic optimizer.  Some
+                  good references to basic optimizers, which may prove
+                  useful.}
+}
+
+@InProceedings{bertacco97:disjunct,
+  author = 	 {Valeria Bertacco and Maurizio Damiani},
+  title = 	 {The Disjunctive Decomposition of Logic Functions},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {78--82},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p78-bertacco/},
+  annote =	 {Computationally very expensive. Enables creation of
+                  a compact, canonical multi-level circuit directly
+                  from a BDD representation, which is a Good
+                  Thing. "We found the final netlist to be often close
+                  to the output of more complex dedicated optimization
+                  tools."  Probably worth implementing, or at least
+                  researching further.}
+}
+
+@InProceedings{kukimoto97:xbd0,
+  author = 	 {Yuji Kukimoto and Wilsin Gosti and Alexander
+                  Saldanha and Robert K. Brayton},
+  title = 	 {Approximate Timing Analysis of Combinational
+                  Circuits under the {XBD0} Model},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {176--181},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p176-kukimoto/},
+  annote =	 {Good overview of timing analysis. Uses a SAT solver
+                  to compute approximate timing. May be useful.}
+}
+
+@InProceedings{sarrafzadeh97:nrg,
+  author = 	 {Majid Sarrafzadeh and Maogang Wang},
+  title = 	 {{NRG}: Global and Detailed Placement},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {532--537},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p532-sarrafzadeh/},
+  annote =	 {Not enough detail given to be useful.}
+}
+
+@InProceedings{arikati97:signature,
+  author = 	 {Srinivasa R. Arikati and Ravi Varadarajan},
+  title = 	 {A Signature Based Approach to Regularity Extraction},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {542--545},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p542-arikati/},
+  annote =	 {The signature idea is a good one.  Not enough info
+                  for an implementation, though.  And our regularity
+                  information should come from a much higher
+                  level. Might be worthwhile referencing to prove that
+                  logic synthesis folk spend a lot of effort
+                  reconstructing the high-level patterns thrown away
+                  by the compiler.}
+}
+
+@InProceedings{enos97:reppart,
+  author = 	 {Morgan Enos and Scott Hauck and Majid Sarrafzadeh},
+  title = 	 {Replication for Logic Bipartitioning},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {342--349},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p342-enos/},
+  annote =	 {We can create a better logic partition if we are
+                  allowed to duplicate some logic.  Good idea and good
+                  overview of partitioning methods.  VERY USEFUL if we
+                  need to partition.}
+}
+
 % papers to read.
 
 @InProceedings{knobe98:arrayssa,
@@ -261,6 +358,18 @@
   annote =	 {Haven't read.}
 }
 
+@Unpublished{briggs97:ssa,
+  author = 	 {Preston Briggs and Keith D. Cooper and Timothy
+                  J. Harvey and L. Taylor Simpson},
+  title = 	 {Practical Improvements to the Construction and
+                  Destruction of Static Single Assignment Form},
+  note = 	 {Submitted for publication.},
+  year =	 1997,
+  month =	 may,
+  url =		 {http://www.cs.rice.edu/~harv/ssa.ps},
+  annote =	 {haven't read yet.}
+}
+
 @InProceedings{chow96:hssa,
   author = 	 {F. Chow and S. Chan and S. Liu and R. Lo and M Streich},
   title = 	 {Effective Representation of Aliases and Indirect
@@ -271,5 +380,17 @@
   month =	 apr,
   pages =	 {253--267},
   annote =	 {Haven't fetched from library yet.}
+}
+
+@InProceedings{scholl97:bddsim,
+  author = 	 {Christoph Scholl and Rolf Dreschsler and Bernd Becker},
+  title = 	 {Functional Simulation Using Binary Decision Diagrams},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {8--12},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p8-scholl/},
+  annote =	 {Haven't read yet. Looks promising.}
 }
 
