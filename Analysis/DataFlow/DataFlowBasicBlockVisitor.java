@@ -4,18 +4,22 @@
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlockInterf;
 import java.util.Enumeration;
 import harpoon.Util.Worklist;
+
+import harpoon.Util.Util;
+
 /**
  * <code>DataFlowBasicBlockVisitor</code> is a specialized
  * <code>BasicBlockVisitor</code> for performing data flow analysis on
  * a set of <code>BasicBlock</code>.
  *
  * @author John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: DataFlowBasicBlockVisitor.java,v 1.1.2.13 2001-06-17 23:06:45 cananian Exp $
+ * @version $Id: DataFlowBasicBlockVisitor.java,v 1.1.2.14 2001-12-16 05:12:50 salcianu Exp $
  */
 
-public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBlockVisitor {
+public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBlockInterfVisitor {
 
     private static boolean DEBUG = false;
     public static void db(String s) { System.out.println(s); }
@@ -46,5 +50,9 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
 	dataflow analysis to terminate.
     */
     public abstract void visit(BasicBlock b);
+
+    public void visit(BasicBlockInterf b) {
+	Util.assert(false, "Unexpected BasicBlockInterf subclass");
+    }
 }
 
