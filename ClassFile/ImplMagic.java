@@ -18,7 +18,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.3 1999-01-17 04:36:11 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.4 1999-01-17 04:38:03 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -171,7 +171,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	}
 	// optimize hashcode.
 	private int hashcode=0;
-	public int hashCode() {
+	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
@@ -186,7 +186,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	}
 	// optimize hashcode.
 	private int hashcode=0;
-	public int hashCode() {
+	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
@@ -201,7 +201,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	}
 	// optimize hashcode.
 	private int hashcode=0;
-	public int hashCode() {
+	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
