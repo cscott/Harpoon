@@ -7,12 +7,13 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 
+import harpoon.Temp.Label;
 /**
  * <code>NameMap</code> gives a translation from methods, classes,
  * and fields to unique string labels legal in assembly code.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NameMap.java,v 1.1.2.4 1999-08-11 03:51:48 cananian Exp $
+ * @version $Id: NameMap.java,v 1.1.2.5 1999-09-11 20:06:39 cananian Exp $
  */
 public abstract class NameMap {
     /** Mangle a method name. */
@@ -65,4 +66,19 @@ public abstract class NameMap {
      *  <code>mangle(string_constant)</code> (with no specified
      *  suffix). */
     public abstract String mangle(String string_constant, String suffix);
+
+    // CONVENIENCE CLASSES FOR COMMON CASES:
+    /** Maps an <code>HClass</code> to a <code>Label</code> representing the 
+     *  location of its class pointer  */
+    public Label label(HClass hc) { return new Label(mangle(hc)); }
+    /** Maps a static <code>HField</code> to a <code>Label</code>. */
+    public Label label(HField hf) { return new Label(mangle(hf)); }
+    /** Maps an <code>HMethod</code> to a <code>Label</code>. Note that
+     *  the method does not have to be static or final; in many cases we
+     *  can determine the identity of a virtual function exactly using 
+     *  type information, and <code>label()</code> should return a
+     *  <code>Label</code> we can use to take advantage of this information. */
+    public Label label(HMethod hm) { return new Label(mangle(hm)); }
+    /** Maps a <code>String</code> constant to a <code>Label</code>. */
+    public Label label(String stringConstant) { return new Label(mangle(stringConstant)); }
 }

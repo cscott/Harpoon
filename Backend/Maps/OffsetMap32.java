@@ -72,7 +72,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.26 1999-09-09 00:36:29 cananian Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.27 1999-09-11 20:06:39 cananian Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -83,14 +83,11 @@ public class OffsetMap32 extends OffsetMap
     private HClassInfo          hci;
     private InterfaceMethodMap  imm; 
     private MethodMap           cmm;
-    private NameMap             nm;
 
     private Map fields  = new HashMap();
-    private Map labels  = new HashMap();
-    private Map strings = new HashMap();
 
     /** Class constructor */
-    public OffsetMap32(ClassHierarchy ch, NameMap nm) {
+    public OffsetMap32(ClassHierarchy ch) {
 	Util.assert(ch!=null, "Class hierarchy must be non-null");
 	
 	this.hci = new HClassInfo();
@@ -115,54 +112,7 @@ public class OffsetMap32 extends OffsetMap
 	this.cmm = new MethodMap() {
 	    public int methodOrder(HMethod hm){return hci.getMethodOffset(hm);}
 	};
-	this.nm  = nm;
     }
-    
-    /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-     *                                                           *
-     *            Implementation of label mappings               *
-     *                                                           *
-     *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
-    public Label jlClass(HClass hc) { 
-	return new Label(nm.mangle(hc, "jlc"));
-    }
-
-    /** Returns the label corresponding to the specified HClass */
-    public Label label(HClass hc) { 
-	if (!labels.containsKey(hc)) {
-	    labels.put(hc, new Label(nm.mangle(hc)));
-	}
-	return (Label)labels.get(hc);
-    }
-	    
-    /** Returns the label corresponding to the specified static field */
-    public Label label(HField hf) { 
-	Util.assert(hf.isStatic());
-	if (!labels.containsKey(hf)) {
-	    labels.put(hf, new Label(nm.mangle(hf)));
-	}
-	return (Label)labels.get(hf);
-    }
-
-    /** Returns the label corrensponding to the specified method.  This
-     *  method is not necessarily static */
-    public Label label(HMethod hm) { 
-	if (!labels.containsKey(hm)) {
-	    labels.put(hm, new Label(nm.mangle(hm))); 
-	}
-	return (Label)labels.get(hm);
-    }
-
-    /** Returns the label corresponding to the specified String constant */
-    public Label label(String stringConstant) { 
-	if (!strings.containsKey(stringConstant)) {
-	    strings.put(stringConstant, new Label(nm.mangle(stringConstant)));
-	}
-	return (Label)strings.get(stringConstant);
-    }
-
-    public Set stringConstants() { return strings.keySet(); }
     
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      *                                                           *

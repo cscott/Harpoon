@@ -9,7 +9,6 @@ import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.DefaultFrame;
 import harpoon.Backend.Maps.OffsetMap32;
-import harpoon.Backend.Maps.DefaultNameMap;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -30,7 +29,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.13 1999-09-09 21:12:19 cananian Exp $
+ * @version $Id: TestRun.java,v 1.1.2.14 1999-09-11 20:06:42 cananian Exp $
  */
 public abstract class TestRun extends HCLibrary {
     public static void main(String args[]) {
@@ -54,7 +53,7 @@ public abstract class TestRun extends HCLibrary {
 	//	Frame frame = new DefaultFrame(new InterpreterOffsetMap(ch),
 	//		       new InterpreterAllocationStrategy());
 	
-	Frame frame = new  DefaultFrame(new OffsetMap32(ch, new DefaultNameMap()),
+	Frame frame = new  DefaultFrame(new OffsetMap32(ch),
 					new InterpreterAllocationStrategy());
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	hcf = harpoon.IR.LowQuad.LowQuadNoSSA.codeFactory(hcf);

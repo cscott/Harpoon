@@ -16,7 +16,7 @@ import java.util.Set;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.17 1999-09-06 18:45:10 duncan Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.18 1999-09-11 20:06:39 cananian Exp $
  */
 public abstract class OffsetMap { // use an abstract class, if we can.
 
@@ -54,25 +54,6 @@ public abstract class OffsetMap { // use an abstract class, if we can.
      */
     public abstract int interfaceListOffset(HClass hc);
 
-    public abstract Label jlClass(HClass hc);
-
-    /** Maps an <code>HClass</code> to a <code>Label</code> representing the 
-     *  location of its class pointer  */
-    public abstract Label label(HClass hc);
-
-    /** Maps a static <code>HField</code> to a <code>Label</code>. */
-    public abstract Label label(HField hf);
-
-    /** Maps an <code>HMethod</code> to a <code>Label</code>. Note that
-     *  the method does not have to be static or final; in many cases we
-     *  can determine the identity of a virtual function exactly using 
-     *  type information, and <code>label()</code> should return a
-     *  <code>Label</code> we can use to take advantage of this information. */
-    public abstract Label label(HMethod hf);
-
-    /** Maps a <code>String</code> constant to a <code>Label</code>. */
-    public abstract Label label(String stringConstant);
-
     /** Maps an <code>HClass</code> to an offset (in bytes).  
      *  If <code>hc</code> is an array type, returns the offset from 
      *  an object reference of the array's length field. */
@@ -99,10 +80,6 @@ public abstract class OffsetMap { // use an abstract class, if we can.
 
     /** Maps an <code>HClass</code> to a size (in bytes). */
     public abstract int size(HClass hc);
-
-    /** Returns an <code>Iterator</code> of all string constants which this
-     *  offset map knows about.  */
-    public abstract Set stringConstants();
 
     /** Returns the size (in bytes) of a word in the architecture represented
      *  by this <code>OffsetMap</code>. */

@@ -1,6 +1,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Maps.NameMap;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
@@ -20,7 +21,7 @@ import java.util.Map;
  * ease the task of statically creating Java objects in the tree form. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.2.3 1999-09-08 01:45:02 pnkfelix Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.2.4 1999-09-11 20:06:41 cananian Exp $
  *
  */
 public abstract class ObjectBuilder { 
@@ -82,6 +83,7 @@ public abstract class ObjectBuilder {
 
   
 	OffsetMap offm    = frame.getOffsetMap();
+	NameMap   nm      = frame.getRuntime().nameMap;
 	int       ws      = offm.wordsize();
 	Label     clsRef  = new Label();
 	ArrayList d       = new ArrayList();
@@ -93,7 +95,7 @@ public abstract class ObjectBuilder {
 	    _D(new CONST(tf, null,hashcode)),u,d);
 	// Assign the Class object a class ptr
 	addS(offm.clazzPtrOffset(hclass)/ws,
-	    _D(new NAME(tf,null,offm.label(hclass))),u,d);
+	    _D(new NAME(tf,null,nm.label(hclass))),u,d);
 	for (int i=0; i<fields.length; i++) { 
 	    Util.assert(fields[i].getDeclaringClass()==hclass);
 	    addS(offm.offset(fields[i])/ws,_D(fieldValues[i]),u,d);
@@ -130,6 +132,7 @@ public abstract class ObjectBuilder {
 	Util.assert(hclass.isArray());
 
 	OffsetMap offm    = frame.getOffsetMap();
+	NameMap   nm      = frame.getRuntime().nameMap;
 	int       ws      = offm.wordsize();
 	Label     clsRef  = new Label();
 	ArrayList u       = new ArrayList();
@@ -144,7 +147,7 @@ public abstract class ObjectBuilder {
 	    _D(new CONST(tf, null,hclass.hashCode())),u,d);
 	// Assign the Class object a class ptr
 	addS(offm.clazzPtrOffset(hclass)/ws,
-	    _D(new NAME(tf,null,offm.label(hclass))),u,d);
+	    _D(new NAME(tf,null,nm.label(hclass))),u,d);
 	for (int i=0; i<elements.length; i++) { 
 	    addS((offm.elementsOffset(hclass)/ws)+i, _D(elements[i]),u,d);
 	}
@@ -186,6 +189,7 @@ public abstract class ObjectBuilder {
     public static ESEQ buildClass(TreeFactory tf, Frame frame, HClass hclass) {
 	DEBUGln("buildClass() called for " + hclass);
 	OffsetMap offm   = frame.getOffsetMap();
+	NameMap   nm      = frame.getRuntime().nameMap;
 	int       ws     = offm.wordsize();
 	Label     clsRef = new Label();
 
@@ -287,13 +291,13 @@ public abstract class ObjectBuilder {
 	    _D(new CONST(tf, null,HCClass.hashCode())),u,d);
 	// Assign the Class object a class ptr
 	addS(offm.clazzPtrOffset(HCClass)/ws,
-	    _D(new NAME(tf,null,offm.label(HCClass))),u,d);
+	    _D(new NAME(tf,null,nm.label(HCClass))),u,d);
 	// Assign the Class object a name field
 	addS(offm.fieldsOffset(HCClass)/ws, _D(stringData.exp), u,d);
 	// Assign the Class object a pointer to the class descriptor it 
 	// of the class it represents
 	addS((offm.fieldsOffset(HCClass)/ws)+1, 
-	     _D(new NAME(tf,null,offm.label(hclass))),u,d);
+	     _D(new NAME(tf,null,nm.label(hclass))),u,d);
 	// Assign the Class object a pointer to an array of Method objects
 	addS((offm.fieldsOffset(HCClass)/ws)+2,_D(methodArray.exp),u,d);
 	// Assign the Class object a pointer to an array of Field objects
@@ -311,6 +315,7 @@ public abstract class ObjectBuilder {
     private static ESEQ buildPrimitiveClass(TreeFactory tf, Frame frame,
 					   HClass hclass) { 
 	OffsetMap offm     = frame.getOffsetMap();
+	NameMap   nm      = frame.getRuntime().nameMap;
 	int       ws       = offm.wordsize();
 	Label     clsRef   = new Label();
 	ArrayList u        = new ArrayList();
@@ -343,13 +348,13 @@ public abstract class ObjectBuilder {
 	    _D(new CONST(tf, null,hclass.hashCode())),u,d);
 	// Assign the Class object a class ptr
 	addS(offm.clazzPtrOffset(HCClass)/ws,
-	    _D(new NAME(tf,null,offm.label(HCClass))),u,d);
+	    _D(new NAME(tf,null,nm.label(HCClass))),u,d);
 	// Assign the Class object a name field
 	addS(offm.fieldsOffset(HCClass)/ws, _D(stringData.exp), u,d);
 	// Assign the Class object a pointer to the class descriptor it 
 	// of the class it represents
 	addS((offm.fieldsOffset(HCClass)/ws)+1, 
-	     _D(new NAME(tf,null,offm.label(hclass))),u,d);
+	     _D(new NAME(tf,null,nm.label(hclass))),u,d);
 
 	Collections.reverse(u);
 	stms.addAll(u);
@@ -377,6 +382,7 @@ public abstract class ObjectBuilder {
      */
     public static ESEQ buildField(TreeFactory tf,Frame frame,HField field) { 
 	OffsetMap offm        = frame.getOffsetMap();
+	NameMap   nm      = frame.getRuntime().nameMap;
 	int       ws          = offm.wordsize();
 	Label     clsRef = new Label();
 
@@ -413,7 +419,7 @@ public abstract class ObjectBuilder {
 	    stringData.exp,   // The "name" field
 	    typeData.exp,     // The "type" field
 	    new NAME          // The "clazz" field
-	    (tf,null,offm.label(HCfield))
+	    (tf,null,nm.label(HCfield))
 	};
 
 	u.clear(); d.clear();
@@ -423,7 +429,7 @@ public abstract class ObjectBuilder {
 	    _D(new CONST(tf,null,field.hashCode())),u,d);
 	// Assign the Field object a class ptr
 	addS(offm.clazzPtrOffset(HCfield)/ws,
-	    _D(new NAME(tf,null,offm.label(HCfield))),u,d);
+	    _D(new NAME(tf,null,nm.label(HCfield))),u,d);
 	// Assign the field values of the Method object
 	for (int i=0; i<HCFfields.length; i++) { 
 	    addS(offm.fieldsOffset(HCfield)/ws + offm.offset(HCFfields[i])/ws,
@@ -460,6 +466,7 @@ public abstract class ObjectBuilder {
 	HClass[] parameterTypes, exceptionTypes;
 
 	OffsetMap offm = frame.getOffsetMap();
+	NameMap   nm      = frame.getRuntime().nameMap;
 	int       ws   = offm.wordsize();
 	Label     clsRef = new Label();
 
@@ -528,7 +535,7 @@ public abstract class ObjectBuilder {
 	    ptData.exp,       // the "parameterTypes" field
 	    etData.exp,       // the "exceptionTypes" field
 	    new NAME	      // the "clazz" field
-	    (tf,null,offm.label(method.getDeclaringClass()))
+	    (tf,null,nm.label(method.getDeclaringClass()))
 	};
 
 	u.clear(); d.clear();
@@ -537,7 +544,7 @@ public abstract class ObjectBuilder {
 	    _D(new CONST(tf,null,method.hashCode())),u,d);
 	// Assign the Method object a class ptr
 	addS(offm.clazzPtrOffset(HCmethod)/ws,
-	    _D(new NAME(tf,null,offm.label(HCmethod))),u,d);
+	    _D(new NAME(tf,null,nm.label(HCmethod))),u,d);
 	// Assign the field values of the Method object
 	for (int i=0; i<HCMfields.length; i++) { 
 	    addS(offm.offset(HCMfields[i])/ws,_D(HCMfieldValues[i]),u,d);
@@ -569,6 +576,7 @@ public abstract class ObjectBuilder {
      * */
     public static ESEQ buildString(TreeFactory tf, Frame frame, String str) { 
 	OffsetMap offm      = frame.getOffsetMap();
+	NameMap   nm      = frame.getRuntime().nameMap;
 	int       ws   = offm.wordsize();
 	Label clsRef  = new Label();
 
@@ -602,7 +610,7 @@ public abstract class ObjectBuilder {
 	    _D(new CONST(tf, null,str.hashCode())),u,d);
 	// Assign the Class object a class ptr
 	addS(offm.clazzPtrOffset(HCstring)/ws,
-	    _D(new NAME(tf,null,offm.label(HCstring))),u,d);
+	    _D(new NAME(tf,null,nm.label(HCstring))),u,d);
 	addS(offm.offset(HCstring.getField("count"))/ws,
 	    _D(new CONST(tf,null,str.length())),u,d);
 	addS(offm.offset(HCstring.getField("offset"))/ws,

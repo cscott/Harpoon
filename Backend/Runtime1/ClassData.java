@@ -27,7 +27,7 @@ import java.util.Map;
  * <code>ClassData</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassData.java,v 1.1.2.2 1999-09-09 05:49:18 cananian Exp $
+ * @version $Id: ClassData.java,v 1.1.2.3 1999-09-11 20:06:39 cananian Exp $
  */
 public class ClassData extends Data {
     /** Creates a <code>ClassData</code>. */
@@ -51,7 +51,7 @@ public class ClassData extends Data {
 	List      spList  = new ArrayList(); // static primitives
 	List      rList   = new ArrayList(); // tables for reflection
 
-	harpoon.Backend.Maps.NameMap nm = frame.getRuntime().nameMap();
+	harpoon.Backend.Maps.NameMap nm = frame.getRuntime().nameMap;
 
 	// OffsetMap uses. 
 	OffsetMap offm   = frame.getOffsetMap();
@@ -64,7 +64,7 @@ public class ClassData extends Data {
 	// Add component type 
 	add(offm.componentTypeOffset(this.hc)/ws, 
 	    this.hc.isArray() ? 
-	    _DATA(offm.label(this.hc.getComponentType())) :
+	    _DATA(nm.label(this.hc.getComponentType())) :
 	    _DATA(new CONST(tf, null, 0)),
 	    up, 
 	    down);
@@ -82,7 +82,7 @@ public class ClassData extends Data {
 	    for (int i=0; i<interfaces.length; i++) { 
 		HClass    iFace    = interfaces[i];
 		HMethod[] iMethods = iFace.getMethods();
-		iList.add(_DATA(offm.label(iFace)));  // Add to interface list
+		iList.add(_DATA(nm.label(iFace)));  // Add to interface list
 		for (int j=0; j<iMethods.length; j++) { 
 		    DATA data;
 		    HMethod ihm = iMethods[j];
@@ -91,7 +91,7 @@ public class ClassData extends Data {
 		    if (ch.callableMethods().contains(chm) &&
 			!Modifier.isAbstract(chm.getModifiers())) {
 			// Point to class method
-			data = _DATA(offm.label(chm));
+			data = _DATA(nm.label(chm));
 		    } else {
 			data = _DATA(new CONST(tf, null, 0));
 		    }
@@ -108,10 +108,10 @@ public class ClassData extends Data {
 	// CSA: interfaces don't have a display list
 	if (this.hc.isInterface())
 	    add(offm.offset(HClass.forName("java.lang.Object"))/ws,
-		_DATA(offm.label(HClass.forName("java.lang.Object"))),
+		_DATA(nm.label(HClass.forName("java.lang.Object"))),
 		up, down);
 	else for (HClass sCls=this.hc; sCls!=null; sCls=sCls.getSuperclass()) 
-	    add(offm.offset(sCls)/ws,_DATA(offm.label(sCls)),up,down);
+	    add(offm.offset(sCls)/ws,_DATA(nm.label(sCls)),up,down);
 	
 	DEBUGln("reached static method loop");
 
@@ -125,7 +125,7 @@ public class ClassData extends Data {
 		if (ch.callableMethods().contains(hm) &&
 		    !Modifier.isAbstract(hm.getModifiers())) {
 		    // Point to class method
-		    data = _DATA(offm.label(hm));
+		    data = _DATA(nm.label(hm));
 		} else {
 		    // null (never used, so don't create reference)
 		    data = _DATA(new CONST(tf, null, 0));
@@ -136,7 +136,7 @@ public class ClassData extends Data {
 
 	// Reverse the upward list
 	Collections.reverse(up);
-	down.add(0, new LABEL(tf,null,offm.label(this.hc), true));
+	down.add(0, new LABEL(tf,null,nm.label(this.hc), true));
 
 	DEBUGln("reached fields loop");
 
@@ -146,11 +146,11 @@ public class ClassData extends Data {
 		HField hfield = hfields[i];
 		if (hfield.isStatic()) { 
 		    if (hfield.getType().isPrimitive()) {
-			spList.add(new LABEL(tf, null, offm.label(hfield), true));
+			spList.add(new LABEL(tf, null, nm.label(hfield), true));
 			spList.add(_DATA(new CONST(tf, null, 0)));
 		    }
 		    else { 
-			soList.add(new LABEL(tf, null, offm.label(hfield), true));
+			soList.add(new LABEL(tf, null, nm.label(hfield), true));
 			soList.add(_DATA(new CONST(tf, null, 0)));
 		    }
 		}

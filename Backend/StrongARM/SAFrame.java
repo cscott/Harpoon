@@ -53,7 +53,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.42 1999-09-11 18:25:10 cananian Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.43 1999-09-11 20:06:40 cananian Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     private AllocationStrategy mas;
@@ -68,7 +68,7 @@ public class SAFrame extends Frame implements AllocationInfo {
         mas = new DefaultAllocationStrategy(this);
 	codegen = new CodeGen(this);
 	runtime = new harpoon.Backend.Runtime1.Runtime();
-	offmap = new OffsetMap32(ch, runtime.nameMap());
+	offmap = new OffsetMap32(ch);
 	regFileInfo = new SARegFileInfo();
 	instrBuilder = new SAInstrBuilder(regFileInfo);
     }
@@ -115,15 +115,13 @@ public class SAFrame extends Frame implements AllocationInfo {
         HCodeElement src = body;
         InstrFactory inf = ((Instr)src).getFactory();
 	Instr dir1, dir2, dir3, dir4, dir5, dir6, dir7;
-
+	Label methodlabel = runtime.nameMap.label(inf.getMethod());
+	
         dir1 = new InstrDIRECTIVE(inf, src, ".text");
         dir2 = new InstrDIRECTIVE(inf, src, ".align 0");
-        dir3 = new InstrDIRECTIVE(inf, src, ".global " + 
-                        offmap.label(inf.getMethod()));
+        dir3 = new InstrDIRECTIVE(inf, src, ".global " + methodlabel.name);
         /* this should be a label */
-        dir4 = new InstrLABEL(inf, src, 
-                        offmap.label(inf.getMethod()) + ":",
-                        offmap.label(inf.getMethod()));
+        dir4 = new InstrLABEL(inf, src, methodlabel.name+":", methodlabel);
         dir5 = new Instr(inf, src, "mov ip, sp", null, null);
         dir6 = new Instr(inf, src, "stmfd sp!, {fp, ip, lr, pc}",
                               null, null);

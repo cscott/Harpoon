@@ -5,6 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Maps.NameMap;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -63,7 +64,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.43 1999-09-10 04:34:56 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.44 1999-09-11 20:06:41 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -134,14 +135,14 @@ public class ToTree implements Derivation, TypeMap {
 	// *MODIFY* the cloned (and labeled) quad graph to 
 	// a) Not explicitly check exceptional values.   
 	// b) Accept an LABEL to exception handling code as a parameter
-	NameMap nm = new NameMap();
-	dv = new CallConversionVisitor(dv, dv, nm);
+	TempRenameMap trm = new TempRenameMap();
+	dv = new CallConversionVisitor(dv, dv, trm);
 	for (Iterator i=quadGraph(lqm.get(root)); i.hasNext();)
 	    ((Quad)i.next()).accept(dv);
 	
 	// Construct a list of harpoon.IR.Tree.Stm objects
 	handlers = ((CallConversionVisitor)dv).getHandlers();
-	dv = new TranslationVisitor(tf, dv, dv, nm, ctm);
+	dv = new TranslationVisitor(tf, dv, dv, trm, ctm);
 	for (Iterator i=quadGraph(lqm.get(root),handlers,true);i.hasNext();)
 	    ((Quad)i.next()).accept(dv);
 
@@ -225,19 +226,22 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
     private CloningTempMap    m_ctm;          // Clones Temps to new tf
     private OffsetMap         m_offm;         // Machine-specific offset map
+    private NameMap           m_nm;           // Runtime-specific label naming
     private List              m_stmList;      // Holds translated statements
     private TreeFactory       m_tf;           // The new TreeFactory
-    private NameMap           m_nm;           // Temp renaming
+    private TempRenameMap     m_trm;          // Temp renaming
     private TEMP              m_handler = null; 
     private Map               m_labels  = new HashMap();
   
     public TranslationVisitor(TreeFactory tf, Derivation derivation, 
-			      TypeMap typeMap,NameMap nm,CloningTempMap ctm) {
+			      TypeMap typeMap, TempRenameMap trm,
+			      CloningTempMap ctm) {
 	super(derivation, typeMap);
 	m_ctm          = ctm;
 	m_tf           = tf; 
 	m_offm         = m_tf.getFrame().getOffsetMap();
-	m_nm           = nm;
+	m_nm           = m_tf.getFrame().getRuntime().nameMap;
+	m_trm          = trm;
 	m_stmList      = new ArrayList();
     }
 
@@ -319,7 +323,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    length    = arrayDims[i+1];
 	    arrayClass = q.hclass();
 	    for (int n=0; n<i; n++) arrayClass = arrayClass.getComponentType();
-	    classPtr  = new NAME(m_tf, q, m_offm.label(arrayClass));
+	    classPtr  = new NAME(m_tf, q, m_nm.label(arrayClass));
 	
 	    // Assign the array a hashcode
 	    //
@@ -493,7 +497,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	for (int i=0; i<params.length; i++) { 
 	    mParams[i+1] = _TEMP(params[i], q);
 	    updateDT(params[i], q, 
-		     m_ctm.tempMap(m_nm.tempMap(params[i])), mParams[i+1]);
+		     m_ctm.tempMap(m_trm.tempMap(params[i])), mParams[i+1]);
 	}
 	Util.assert(m_handler==null);
 	m_handler = mParams[0] = extra(q, Type.POINTER);
@@ -551,7 +555,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	      (m_tf, q, Type.POINTER, Bop.ADD,
 	       objectref,
 	       new CONST(m_tf, q, m_offm.clazzPtrOffset(q.hclass())))),
-	     new NAME(m_tf, q, m_offm.label(q.hclass())));
+	     new NAME(m_tf, q, m_nm.label(q.hclass())));
 	
 	updateDT(q.dst(), q, objectref.temp, objectref);
 	addStmt(Stm.toStm(Arrays.asList(new Stm[] { s0, s1, s2 })));
@@ -687,7 +691,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    new MOVE
 	    (m_tf, q, 
 	     dst,
-	     new NAME(m_tf, q, m_offm.label(q.field())));
+	     new NAME(m_tf, q, m_nm.label(q.field())));
 
 	updateDT(q.dst(), q, dst.temp, dst);
 	addStmt(s0);
@@ -721,7 +725,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     public void visit(PMCONST q) { 
 	TEMP dst = _TEMP(q.dst(), q);
 	Stm s0 = 
-	    new MOVE(m_tf, q, dst, new NAME(m_tf,q,m_offm.label(q.method())));
+	    new MOVE(m_tf, q, dst, new NAME(m_tf,q,m_nm.label(q.method())));
 	updateDT(q.dst(), q, dst.temp, dst);
 	addStmt(s0);
     }
@@ -935,7 +939,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     private TEMP _TEMP(Temp t, HCodeElement source, int type) { 
 	Util.assert(!hastype(source, t) || 
 		    isValidMapping(typeMap(source,t), type));
-	Temp nTmp = m_ctm.tempMap(m_nm.tempMap(t));
+	Temp nTmp = m_ctm.tempMap(m_trm.tempMap(t));
 	return new TEMP(m_tf, source, type, nTmp);
     }
 
@@ -1040,7 +1044,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	else if (type==HClass.forName("java.lang.String")) {
 	    constant = new MEM
 		(m_tf, src, Type.POINTER, 
-		 new NAME(m_tf, src, m_offm.label((String)value)));
+		 new NAME(m_tf, src, m_nm.label((String)value)));
 	    if (!m_strings.contains(value)) { allocString((String)value); } 
 	}
 	else 
@@ -1053,8 +1057,8 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     private void allocString(String str) { 
 	HClass    HCstring  = HClass.forName("java.lang.String");
 	HClass    HCcharA   = HClass.forDescriptor("[C");
-	Label     strClsPtr = m_offm.label(HCstring);
-	Label     caClsPtr  = m_offm.label(HCcharA);
+	Label     strClsPtr = m_nm.label(HCstring);
+	Label     caClsPtr  = m_nm.label(HCcharA);
 	HField    count     = HCstring.getField("count");
 	HField    offset    = HCstring.getField("offset");
 	HField    value     = HCstring.getField("value");
@@ -1086,7 +1090,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	     (m_tf,null,_LABEL(str+"CA",null).label)),u,d);
 	
 	Collections.reverse(u);
-	u.add(0, new LABEL(m_tf, null, m_offm.label(str), true));
+	u.add(0, new LABEL(m_tf, null, m_nm.label(str), true));
 	u.add(0, new SEGMENT(m_tf, null, SEGMENT.STRING_CONSTANTS));
 	stms.addAll(u);
 	stms.addAll(d);
@@ -1235,7 +1239,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	Util.assert(!(HClassUtil.baseClass(type).isInterface() || 
 		      HClassUtil.baseClass(type).isPrimitive()));
 
-	NAME typeLabel   = new NAME(m_tf, classPtr, m_offm.label(type));
+	NAME typeLabel   = new NAME(m_tf, classPtr, m_nm.label(type));
 	return new BINOP
 	    (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
 	     typeLabel,
@@ -1251,7 +1255,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     private Exp isImplemented(Exp classPtr, HClass type) {
 	Util.assert(HClassUtil.baseClass(type).isInterface());
 
-	NAME  typeLabel   = new NAME(m_tf, classPtr, m_offm.label(type));
+	NAME  typeLabel   = new NAME(m_tf, classPtr, m_nm.label(type));
 	TEMP  IFACEPTR1   = extra(classPtr, Type.POINTER);
 	TEMP  IFACEPTR2   = _TEMP(IFACEPTR1);
 	TEMP  IFACEPTR3   = _TEMP(IFACEPTR1);
@@ -1494,11 +1498,11 @@ class CallConversionVisitor extends LowQuadWithDerivationVisitor {
     private harpoon.IR.Quads.CONST nconst;
     private POPER                  acmpeq;
     private harpoon.IR.Quads.CJMP  cjump;
-    private NameMap                nm;
+    private TempRenameMap          trm;
  
-    public CallConversionVisitor(Derivation d, TypeMap t, NameMap nm) {
+    public CallConversionVisitor(Derivation d, TypeMap t, TempRenameMap trm) {
 	super(d, t);
-	this.nm = nm;
+	this.trm = trm;
     }
 
     public void visit(harpoon.IR.Quads.Quad quad) { 
@@ -1539,7 +1543,7 @@ class CallConversionVisitor extends LowQuadWithDerivationVisitor {
 	}
 	this.pcall = pcall;
 	this.nconst=null; this.acmpeq=null; this.cjump=null;
-	nm.map(this.pcall.retex(), this.pcall.retval());
+	trm.map(this.pcall.retex(), this.pcall.retval());
     }
 
     public void visit(POPER poper) { 
@@ -1711,7 +1715,7 @@ class LowQuadMap {
     boolean contains(Quad old)      { return h.containsKey(old); }
 }
 
-class NameMap implements TempMap {
+class TempRenameMap implements TempMap {
     Map h = new HashMap();
     public Temp tempMap(Temp t) {
 	while (h.containsKey(t)) { t = (Temp)h.get(t); }

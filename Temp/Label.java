@@ -6,11 +6,11 @@ package harpoon.Temp;
 /**
  * A <code>Label</code> represents a (symbolic) address in assembly language.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Label.java,v 1.3.2.8 1999-09-11 05:43:20 pnkfelix Exp $
+ * @version $Id: Label.java,v 1.3.2.9 1999-09-11 20:06:43 cananian Exp $
  */
 
 public class Label  {
-   private String name;
+   public final String name;
    private static int count;
 
   /**
@@ -24,8 +24,10 @@ public class Label  {
 
   /**
    * Makes a new label that prints as "name".
-   * Warning: avoid repeated calls to <tt>new Label(s)</tt> with
-   * the same name <tt>s</tt>.
+   * Repeated calls to <tt>new Label(s)</tt> with
+   * the same name <tt>s</tt> will return labels which
+   * are equal to each other according to the <code>equals()</code>
+   * method, but not reference equivalent.
    */
    public Label(String n) {
 	name=n;

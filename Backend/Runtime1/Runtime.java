@@ -15,16 +15,12 @@ import java.util.List;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.2 1999-09-11 18:47:17 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.3 1999-09-11 20:06:39 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
-    public Runtime() { }
-
-    public NameMap nameMap() { return _nm; }
-    private final static NameMap _nm =
-	new harpoon.Backend.Maps.DefaultNameMap();
+    public Runtime() { super(new harpoon.Backend.Maps.DefaultNameMap()); }
 
     public List classData(Frame f, HClass hc, ClassHierarchy ch) {
 	return Arrays.asList(new Data[] { new ClassData(f, hc, ch) });
