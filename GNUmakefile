@@ -16,7 +16,7 @@ readnote.dvi: unread_.bib
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi : %.tex
 	latex $(basename $<)
-	bibtex $(basename $<)
+	if grep -q bibliography $< ; then bibtex $(basename $<); fi
 	latex $(basename $<)
 	latex $(basename $<)
 # Make annotation-visible versions of bibtex files.
@@ -36,17 +36,18 @@ readnote.dvi: unread_.bib
 	fi
 
 # latex2html
-html: $(ALLDOCS:=.dvi)
-	$(RM) -r html ; mkdir html
-	for doc in $(ALLDOCS); do \
-		latex2html -local_icons -dir html/$$doc $$doc; \
-		date '+%-d-%b-%Y at %r %Z.' > html/$$doc/TIMESTAMP; \
-	done
 
-html-pdf: html $(ALLDOCS:=.pdf)
-	-for doc in $(ALLDOCS); do $(RM) html/$$doc/$$doc.pdf; done
-	for doc in $(ALLDOCS); do ln $$doc.pdf html/$$doc; done
-html-install: html-pdf
+html/% : %.dvi %.ps %.pdf
+	if [ ! -d html ]; then mkdir html; fi
+	-$(RM) -r $@
+	latex2html -local_icons -dir $@ $(basename $<)
+	ln $(basename $<).ps $@
+	ln $(basename $<).pdf $@
+	date '+%-d-%b-%Y at %r %Z.' > $@/TIMESTAMP
+
+html: $(foreach doc,$(ALLDOCS),html/$(doc))
+
+html-install: html
 	chmod a+r html/*/* ; chmod a+rx html/*
 	ssh $(INSTALLMACHINE) /bin/rm -rf \
 		$(foreach doc,$(ALLDOCS),$(INSTALLDIR)/$(doc))
@@ -77,6 +78,11 @@ backup: only-me # DOESN'T WORK ON NON-LOCAL MACHINES
 # some rules only makes sense if you're me.
 only-me:
 	if [ ! `whoami` = "cananian" ]; then exit 1; fi
+
+# performance:
+.PHONY: clean wipe backup only-me update install
+.PHONY: html html-pdf html-install
+.PHONY: preview all
 
 # Try to convince make to delete these sometimes.
 .INTERMEDIATE: %.aux %.log
