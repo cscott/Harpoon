@@ -76,7 +76,7 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInstance
  */
 JNIEXPORT jboolean JNICALL Java_java_lang_Class_isAssignableFrom
   (JNIEnv *env, jobject cls1, jclass cls2) {
-    return fni_class_isAssignableFrom((jclass)cls1, cls2);
+    return fni_class_isAssignableFrom(env, (jclass)cls1, cls2);
 }
 
 /*
