@@ -13,3 +13,6 @@
 # comment lines begin with '#'
 log_accum Can't check out log_accum from CVSROOT (mail cananian).
 commit_prep Can't check out commit_prep script from CVSROOT (mail cananian).
+passwd Can't check out passwd from CVSROOT (mail cananian).
+config Can't check out config from CVSROOT (mail cananian).
+readers Can't check out readers from CVSROOT (mail cananian).
