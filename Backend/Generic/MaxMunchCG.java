@@ -4,9 +4,13 @@
 package harpoon.Backend.Generic;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.Maps.Derivation;
+
+import harpoon.Util.Util;
+import harpoon.Util.Default;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -20,7 +24,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.3 2000-02-17 02:01:25 pnkfelix Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.4 2000-02-18 00:35:42 pnkfelix Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -45,7 +49,36 @@ public abstract class MaxMunchCG extends CodeGen {
 	// its correct that last==null the first time this is called
 	i.layout(last, null);
 	last = i;
+
+	java.util.Iterator defs = i.defC().iterator();
+	while(defs.hasNext()) {
+	    Temp t = (Temp) defs.next();
+	    TypeAndDerivation td = 
+		(TypeAndDerivation) TYPE_STATE.tempToType.get(t);
+	    Util.assert(td != null, 
+			"Uh oh forgot to declare "+t+" before "+i);
+	    ti2td.put(Default.pair(t, i), td);
+	}
+
 	return i;
+    }
+
+    public Derivation getDerivation() {
+	return new Derivation() {
+	    public Derivation.DList derivation(HCodeElement hce, Temp t) 
+		throws TypeNotKnownException {
+		return 
+		    ((TypeAndDerivation) 
+		     ti2td.get( Default.pair(hce, t) )).dlist;
+	    }
+	    
+	    public HClass typeMap(HCodeElement hce, Temp t) 
+		throws TypeNotKnownException {
+		return 
+		    ((TypeAndDerivation) 
+		     ti2td.get( Default.pair(hce, t) )).type;
+	    }
+	};
     }
 
     // tXi -> TypeAndDerivation

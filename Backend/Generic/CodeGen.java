@@ -16,7 +16,7 @@ import harpoon.Analysis.Maps.Derivation;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.11 2000-02-15 23:35:19 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.12 2000-02-18 00:35:42 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -30,6 +30,8 @@ public abstract class CodeGen {
     public CodeGen(Frame frame) {
         this.frame = frame;
     }
+
+    public abstract Derivation getDerivation();
 
     /** Emits <code>i</code> as the next instruction in the
         instruction stream.
@@ -55,12 +57,14 @@ public abstract class CodeGen {
     }
 
     /** Creates a <code>Instr</code> list from the
-	<code>IR.Tree.Code</code> <code>tree</code>. 
-	<BR> <B>effects:</B> Generates and returns a list of
-	     <code>Instr</code>s to execute <code>tree</code>.
+	<code>IR.Tree.Code</code> <code>tree</code>.  
+	<BR> <B>effects:</B> Generates and returns a two element list,
+	where the first element is the head of a <code>Instr</code>s
+	to execute <code>tree</code>, and the second element is the
+	<code>Derivation</code> for that list of instructions.
 	@return The head of a list of <code>Instr</code>s
     */
-    public abstract Instr genCode(harpoon.IR.Tree.Code tree,
+    public abstract java.util.List genCode(harpoon.IR.Tree.Code tree,
 			      final harpoon.IR.Assem.InstrFactory inf); 
 
     /** Creates a <code>Instr</code> list from the

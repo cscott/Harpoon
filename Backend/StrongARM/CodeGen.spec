@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.133 2000-02-17 22:41:54 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.134 2000-02-18 00:37:17 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -636,9 +636,7 @@ import java.util.Iterator;
 }%
 %end with %{
        // *** METHOD EPILOGUE *** 
-       Util.assert(first != null, "Should always generate some instrs");
 
-       return first;
 }%
     /* this comment will be eaten by the .spec processor (unlike comments above) */
 	

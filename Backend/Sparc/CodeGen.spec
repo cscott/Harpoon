@@ -55,7 +55,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.27 2000-02-16 06:23:18 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.28 2000-02-18 00:36:39 pnkfelix Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -348,8 +348,8 @@ import java.util.Set;
        // What to execute at the end of the instruction
        // selection method
 
-       Util.assert(first != null, "Should always generate some instrs");
-       return first;
+    //       Util.assert(first != null, "Should always generate some instrs");
+    //       return first;
 }%
 
 ALIGN(n) %{

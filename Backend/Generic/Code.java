@@ -6,6 +6,7 @@ package harpoon.Backend.Generic;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
+import harpoon.Analysis.Maps.Derivation;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.42 2000-02-13 02:41:09 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.43 2000-02-18 00:35:40 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
     
@@ -35,10 +36,11 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 
     protected Code(harpoon.IR.Tree.Code treeCode) {
 	super(treeCode.getMethod(), treeCode.getFrame());
-	this.instrs = this.frame.getCodeGen().genCode(treeCode, this.inf);
+	this.instrs = (Instr) this.frame.getCodeGen().
+	                       genCode(treeCode, this.inf).get(0);
 	Util.assert(instrs != null);
     }
-    
+
     public abstract String getName();
 
     /** Returns all of the Register <code>Temp</code>s that

@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.21 2000-02-15 23:35:32 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.22 2000-02-18 00:38:25 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -27,6 +27,7 @@ public abstract class CodeGeneratorGenerator {
     private static final String ASSEM_Instr = "harpoon.IR.Assem.Instr";
     private static final String ASSEM_InstrFactory = 
 	"harpoon.IR.Assem.InstrFactory";
+    private static final String UTIL_List = "java.util.List";
 
     /** The machine specification that the CodeGenerators outputted by
 	<code>this</code> will target.  
@@ -106,11 +107,14 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t    <BR> <B>effects:</B>");
 	out.println("\t         Scans <code>tree</code> to find a tiling of ");
 	out.println("\t         Instruction Patterns, calling auxillary methods");
-	out.println("\t         and data structures as defined in the .Spec file");
+	out.println("\t         and data structures as defined in the .spec file.");
+	out.println("\t         Generates an associated <code>Derivation</code>");
+	out.println("\t         object as the second element of the returned");
+	out.println("\t         <code>List</code>.");
 	out.println("\t    @param tree Set of abstract <code>Tree</code> instructions ");
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
-	out.println("\tpublic final "+ASSEM_Instr+" genCode(final " + 
+	out.println("\tpublic final "+UTIL_List+" genCode(final " + 
 		    TREE_Code +" code, final " + ASSEM_InstrFactory +
 		    " inf) {"); // method start
 
@@ -119,6 +123,8 @@ public abstract class CodeGeneratorGenerator {
 	outputSelectionMethod(out, false);
 
 	out.println(spec.method_epilogue_stms);
+
+	out.println(returnCodeStatements());
 
 	out.println("\t}"); // end Code-gen method
 
@@ -141,10 +147,26 @@ public abstract class CodeGeneratorGenerator {
 
 	out.println(spec.method_epilogue_stms);
 
+	out.println(returnDataStatements());
+
 	out.println("\t}"); // end method
 
 	out.println("}"); // end class
 	out.flush();
+    }
+
+    protected String returnCodeStatements() {
+	return 
+	    "\tUtil.assert(first != null, \""+
+	    "Should always generate some instrs\");\n"+
+	    "\treturn harpoon.Util.Default.pair(first, getDerivation());";
+    }
+
+    protected String returnDataStatements() {
+	return 
+	    "\tUtil.assert(first != null, \""+
+	    "Should always generate some instrs\");\n"+
+	    "\treturn first;";
     }
 
     /** Writes the Instruction Selection Method to <code>out</code>.

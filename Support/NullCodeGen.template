@@ -6,13 +6,16 @@ import harpoon.IR.Assem.Instr;
  * <code>NullCodeGen</code> does nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NullCodeGen.template,v 1.1.2.10 2000-02-15 23:35:30 pnkfelix Exp $ */
+ * @version $Id: NullCodeGen.template,v 1.1.2.11 2000-02-18 00:37:51 pnkfelix Exp $ */
 public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
     // a constructor here corresponding to every type of codegen
     //  constructor we have
     /*    public NullCodeGen() { super(null); } */
     public NullCodeGen(harpoon.Backend.Generic.Frame f) { super(f); }
-    public Instr genCode(harpoon.IR.Tree.Code tree, 
+    public harpoon.Analysis.Maps.Derivation getDerivation() {
+        return null;
+    }   
+    public java.util.List genCode(harpoon.IR.Tree.Code tree, 
 			 harpoon.IR.Assem.InstrFactory inf) {
 	return null;
     }
