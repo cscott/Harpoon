@@ -26,7 +26,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.11 2000-05-20 19:10:43 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.12 2000-05-21 03:00:46 cananian Exp $
  */
 abstract class Stats {
 
@@ -38,7 +38,7 @@ abstract class Stats {
 	int nb_sccs = 0;
 	int nb_passes = 0;
 	int nb_params = 0;
-    };
+    }
 
     private static MetaMethodInfo getMetaMethodInfo(MetaMethod mm){
 	MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);

@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.50 2000-05-20 19:10:45 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.51 2000-05-21 03:00:47 cananian Exp $
  */
 public abstract class PAMain {
 
@@ -157,7 +157,7 @@ public abstract class PAMain {
     private static class Method{
 	String name  = null;
 	String declClass = null;
-    };
+    }
 
     private static Method root_method = new Method();
 

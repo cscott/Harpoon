@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.16 2000-05-20 19:10:36 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.17 2000-05-21 03:00:44 cananian Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -775,7 +775,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     private class DDWrapper{
 	ExactTemp[] deps = null;
 	Temp           t = null;
-    }; 
+    }
     private DDWrapper dd_wrapper = new DDWrapper();
 
     // Visitor for the dependency detection

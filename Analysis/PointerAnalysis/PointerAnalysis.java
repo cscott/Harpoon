@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.56 2000-05-20 19:10:43 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.57 2000-05-21 03:00:46 cananian Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -950,7 +950,7 @@ public class PointerAnalysis {
 	    hash_proc_ext.put(current_intra_mmethod,shrinked_graph);
 	}
 	
-    };
+    }
     
 
     // Quad Visitor used by analayze_basic_block
