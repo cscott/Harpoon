@@ -18,7 +18,7 @@ import harpoon.Util.PredicateWrapper;
  * Analysis algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.4 2003-06-04 16:06:31 salcianu Exp $
+ * @version $Id: Relation.java,v 1.5 2003-10-26 16:34:52 salcianu Exp $
  */
 public interface Relation {
     
@@ -121,7 +121,7 @@ public interface Relation {
     /** Revert <code>this</code> relation and store the result into
 	the relation <code>result</code>. &lt;a,b&gt; appears in the
 	reverse relation iff &lt;b,a&gt; appears in <code>this</code>
-	relation.  Returns the new realtion (ie,
+	relation.  Returns the new relation (ie,
 	<code>result</code>). */
     public Relation revert(Relation result);
 

@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Iterator;
@@ -44,7 +45,7 @@ import harpoon.Util.DataStructs.RelationImpl;
  * Created: Sun May  4 20:56:57 2003
  *
  * @author Alexandru Salcianu <salcianu@mit.edu>
- * @version $Id: DiGraph.java,v 1.5 2003-05-12 15:41:47 salcianu Exp $ 
+ * @version $Id: DiGraph.java,v 1.6 2003-10-26 16:35:11 salcianu Exp $ 
  */
 public abstract class DiGraph/*<Vertex extends Object>*/ {
     
@@ -72,7 +73,6 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 	final ForwardNavigator/*<Vertex>*/ fnav = getDiGraphForwardNavigator();
 	
 	for(Iterator/*<Vertex>*/ it = allVertices().iterator();it.hasNext();) {
-
 	    Object vertex = it.next();
 	    Object next[] = fnav.next(vertex);
 	    for(int i = 0; i < next.length; i++)
@@ -155,6 +155,59 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 	return reachables;
     }
 
+
+    /** @return one shortest path of vertices from <code>source</code>
+	to <code>dest</code>, along edges indicated by
+	<code>navigator</code>; returns <code>null</code> if no such
+	path exists.  */
+    public static List/*<Vertex>*/ findPath(Object source, Object dest,
+					    ForwardNavigator navigator) {
+	Hashtable/*<Vertex,Vertex>*/ pred = new Hashtable();
+	Set/*<Vertex>*/ reachables = new HashSet/*<Vertex>*/();
+	LinkedList/*<Vertex>*/ w = new LinkedList/*<Vertex>*/();
+
+	reachables.add(source);
+	w.addLast(source);
+
+	boolean found = false;
+	while(!w.isEmpty() && !found) {
+	    Object vertex = w.removeFirst();
+	    Object succs[] = navigator.next(vertex);
+	    for(int i = 0; i < succs.length; i++) {
+		Object succ = succs[i];
+		if(!pred.containsKey(succ)) {
+		    pred.put(succ, vertex);
+		    if(succ.equals(dest)) {
+			found = true;
+			break;
+		    }
+		}
+		if(reachables.add(succ))
+		    w.addLast(succ);
+	    }
+	}
+
+	if(!found) return null;
+
+	LinkedList/*<Vertex>*/ path = new LinkedList();
+	path.addFirst(dest);
+	Object curr = dest;
+	while(true) {
+	    Object vertex = pred.get(curr);
+	    path.addFirst(vertex);
+	    curr = vertex;
+	    if(source.equals(curr))
+		break;
+	}
+	return path;
+    }
+
+    /** @return one shortest path of vertices from <code>source</code>
+	to <code>dest</code>, along edges from <code>this</code>
+	graph; returns <code>null</code> if no such path exists.  */
+    public List/*<Vertex>*/ findPath(Object source, Object dest) {
+	return findPath(source, dest, getDiGraphForwardNavigator());
+    }
 
     /** Interface for passing a method as parameter to a
      *  <code>forAllReachableVertices</code> object.
