@@ -783,6 +783,7 @@ class_body_declaration ::=
 	|	static_initializer
 	|	constructor_declaration
 	|	block
+	|	SEMICOLON /* the extra semicolon has become official JLS */
 	;
 class_member_declaration ::=
 		field_declaration
