@@ -4,4 +4,4 @@ LIBS =
 
 noinst_LTLIBRARIES = libnativeio.la
 
-libnativeio_la_SOURCES = NativeIOImp.c
+libnativeio_la_SOURCES = NativeIOImp.c NativeIO.h

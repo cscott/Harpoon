@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
+EXTRA_DIST = gc
 SUBDIRS=
 
 all:
@@ -24,3 +25,7 @@ else
 endif
 #
 endif
+
+dist-hook:
+	$(RM) -rf `find $(distdir)/gc -name CVS`
+	make -C $(distdir)/gc clean

@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
+EXTRA_DIST = README
 CFLAGS=-Darm32
 LIBS =
 
@@ -7,7 +8,7 @@ LIBS =
 # automake complains.
 noinst_LTLIBRARIES = libheader.la libfooter.la
 
-libheader_la_SOURCES = header.S
+libheader_la_SOURCES = header.S segments.h
 
 if PRECISE_GC
 libfooter_la_SOURCES = precise_malloc.S lookup.S dispatch.S footer.S

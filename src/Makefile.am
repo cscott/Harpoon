@@ -3,6 +3,7 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.net java.util java.util.zip \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR)
+EXTRA_DIST = README
 
 # for precise gc, add gc to SUBDIRS
 if PRECISE_GC

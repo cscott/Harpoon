@@ -6,7 +6,15 @@ MAINTAINERCLEANFILES = Makefile.in configure aclocal.m4 \
 		       scripts/missing scripts/mkinstalldirs
 CONFIG_STATUS_DEPENDENCIES = scripts/gen-link-script
 CLEANFILES = configure.done
-EXTRA_DIST =
+EXTRA_DIST = AUTHORS COPYING INSTALL NEWS README REQUIRED \
+	include/README include/config.h.in include/flexthread.h \
+	include/fni-stats.h include/fni-threadstate.h include/fni-wrap.h \
+	include/jni-func.h include/jni-gc.h include/jni-link.h \
+	include/jni-private.h include/jni-types.h include/jni.h \
+	include/precisec.c include/precisec.h include/sym.h \
+	scripts/config.guess scripts/config.sub scripts/gen-link-script \
+	scripts/install-sh scripts/ltconfig scripts/ltmain.sh \
+	scripts/missing scripts/mkinstalldirs
 SUBDIRS = Contrib arch src
 
 CVS_TAG=$(firstword $(shell cvs status Makefile.am | grep -v "(none)" | \

@@ -4,9 +4,9 @@ LIBS =
 
 noinst_LTLIBRARIES = libjavaio.la
 
-libjavaio_la_SOURCES = \
-	java_io_File.c \
-	java_io_FileDescriptor.c \
-	java_io_FileInputStream.c \
-	java_io_FileOutputStream.c \
-	java_io_RandomAccessFile.c
+libjavaio_la_SOURCES = javaio.h \
+	java_io_File.c java_io_File.h \
+	java_io_FileDescriptor.c java_io_FileDescriptor.h \
+	java_io_FileInputStream.c java_io_FileInputStream.h \
+	java_io_FileOutputStream.c java_io_FileOutputStream.h \
+	java_io_RandomAccessFile.c java_io_RandomAccessFile.h 

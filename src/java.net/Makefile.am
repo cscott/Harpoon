@@ -6,5 +6,8 @@ LIBS =
 noinst_LTLIBRARIES = libjavanet.la
 
 libjavanet_la_SOURCES = \
-	java_net_InetAddressImpl.c java_net_PlainSocketImpl.c \
-	java_net_SocketInputStream.c java_net_SocketOutputStream.c
+	java_net_InetAddressImpl.c java_net_InetAddressImpl.h \
+	java_net_PlainSocketImpl.c java_net_PlainSocketImpl.h \
+	java_net_SocketInputStream.c java_net_SocketInputStream.h \
+	java_net_SocketOutputStream.c java_net_SocketOutputStream.h
+
