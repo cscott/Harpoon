@@ -76,8 +76,14 @@ public class Compiler {
             
             try {
                 FileOutputStream gcode = new FileOutputStream(cli.infile + ".cc");
+
+                // do model optimizations
+                (new Optimizer(state)).optimize();
+
                 NaiveGenerator ng = new NaiveGenerator(state);
                 ng.generate(gcode);
+                //WorklistGenerator wg = new WorklistGenerator(state);
+                //wg.generate(gcode);
                 gcode.close();
             } catch (Exception e) {
                 e.printStackTrace();

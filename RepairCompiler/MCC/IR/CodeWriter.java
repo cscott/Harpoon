@@ -8,6 +8,8 @@ public interface CodeWriter extends PrettyPrinter{
     public void startblock();
     public void endblock();
 
+    public void pushSymbolTable(SymbolTable st);
+    public SymbolTable popSymbolTable();
     public SymbolTable getSymbolTable();
     
 }

@@ -21,4 +21,8 @@ public abstract class Expr {
 
     public abstract void prettyPrint(PrettyPrinter pp);
 
+    public Set getInversedRelations() {
+        throw new IRException("unsupported");
+    }
+
 }

@@ -66,6 +66,19 @@ public class Rule {
         return st;
     }
 
+    public Set getQuantifierDescriptors() {
+
+        HashSet topdescriptors = new HashSet();
+
+        for (int i = 0; i < quantifiers.size(); i++) {            
+            Quantifier q = (Quantifier) quantifiers.elementAt(i);
+            topdescriptors.addAll(q.getRequiredDescriptors());                
+        }
+        
+        return SetDescriptor.expand(topdescriptors);
+    }
+
+
     public Set getRequiredDescriptors() {
 
         HashSet topdescriptors = new HashSet();

@@ -16,6 +16,14 @@ public class OpExpr extends Expr {
         assert (right == null && opcode == Opcode.NOT) || (right != null);
     }
 
+    public Set getInversedRelations() {
+        Set set = left.getInversedRelations();
+        if (right != null) {
+            set.addAll(right.getInversedRelations());
+        }
+        return set;
+    }
+
     public Set getRequiredDescriptors() {
         Set v = left.getRequiredDescriptors();
      

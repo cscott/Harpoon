@@ -36,6 +36,10 @@ public class DotExpr extends Expr {
         return v;
     }
 
+    public Expr getExpr() {
+        return left;
+    }
+
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor leftd = VarDescriptor.makeNew("left");
 

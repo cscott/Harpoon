@@ -117,12 +117,15 @@ public class NaiveGenerator {
             GraphNode rulenode = (GraphNode) rules.next();
             Rule rule = (Rule) rulenode.getOwner();            
 
+            if (!state.vRules.contains(rule)) {
+                // this is no longer a top-level rule
+                continue;
+            }
+
             {
 
-                final SymbolTable st = rule.getSymbolTable();                
-                CodeWriter cr = new StandardCodeWriter(output) {
-                        public SymbolTable getSymbolTable() { return st; }
-                    };
+                CodeWriter cr = new StandardCodeWriter(output);
+                cr.pushSymbolTable(rule.getSymbolTable()); 
                 
                 cr.outputline("// build " + rule.getLabel());
                 cr.startblock();
@@ -187,11 +190,8 @@ public class NaiveGenerator {
 
             {
 
-                final SymbolTable st = constraint.getSymbolTable();
-                
-                CodeWriter cr = new StandardCodeWriter(output) {
-                        public SymbolTable getSymbolTable() { return st; }
-                    };
+                CodeWriter cr = new StandardCodeWriter(output);
+                cr.pushSymbolTable(constraint.getSymbolTable());
                 
                 cr.outputline("// checking " + constraint.getLabel());
                 cr.startblock();
@@ -213,14 +213,16 @@ public class NaiveGenerator {
                 cr.outputline("if (maybe)");
                 cr.startblock();
                 cr.outputline("__Success = 0;");
-                cr.outputline("printf(\"maybe fail " + (i+1) + ". \");");
+                cr.outputline("printf(\"maybe fail " + constraint.getNum() + ". \");");
+                cr.outputline("exit(1);");
                 cr.endblock();
 
                 cr.outputline("else if (!" + constraintboolean.getSafeSymbol() + ")");
                 cr.startblock();
 
                 cr.outputline("__Success = 0;");
-                cr.outputline("printf(\"fail " + (i+1) + ". \");");
+                cr.outputline("printf(\"fail " + constraint.getNum() + ". \");");
+                cr.outputline("exit(1);");
                 cr.endblock();
 
                 while (quantifiers.hasPrevious()) {
@@ -235,7 +237,7 @@ public class NaiveGenerator {
             
         }
 
-        output.println("if (__Success) { printf(\"all tests passed\"); }");
+        output.println("//if (__Success) { printf(\"all tests passed\"); }");
     }    
 
 }

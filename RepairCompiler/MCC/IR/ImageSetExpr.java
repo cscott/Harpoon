@@ -22,6 +22,22 @@ public class ImageSetExpr extends SetExpr {
         this.inverse = inverse;
     }
 
+    public VarDescriptor getVar() {
+        return vd;
+    }
+
+    public RelationDescriptor getRelation() {
+        return rd;
+    }
+
+    public Set getInversedRelations() {
+        HashSet set = new HashSet();
+        if (inverse) {
+            set.add(rd);
+        }
+        return set;
+    }
+
     public Set getRequiredDescriptors() {
         HashSet v = new HashSet();
         v.add(rd);
@@ -46,7 +62,12 @@ public class ImageSetExpr extends SetExpr {
     }
 
     public void prettyPrint(PrettyPrinter pp) {
-        throw new IRException("not supported");
+        pp.output(vd.toString());
+        pp.output(".");
+        if (inverse) {
+            pp.output("~");
+        }
+        pp.output(rd.toString());
     }
 
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {

@@ -7,11 +7,19 @@ public class SetInclusion extends Inclusion {
     Expr elementexpr;
     SetDescriptor set;
 
-    static boolean worklist = true;
+    public String generatedresult = null;
+    public String generatedaddeditem = null;
+
+    static boolean worklist = false;
+    public boolean dostore = true;
 
     public SetInclusion(Expr elementexpr, SetDescriptor set) {
         this.elementexpr = elementexpr;
         this.set = set;
+    }
+
+    public SetDescriptor getSet() {
+        return set;
     }
 
     public Set getTargetDescriptors() {
@@ -28,18 +36,29 @@ public class SetInclusion extends Inclusion {
         VarDescriptor vd = VarDescriptor.makeNew("element");
         elementexpr.generate(writer, vd);
 
-        String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
-        writer.outputline("int " + addeditem + ";");
-        
-        writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
-                          +  ", (int)" + vd.getSafeSymbol() + ");");
+        // allows access to the value of this set addition later
+        generatedresult = vd.getSafeSymbol();
 
-        if (SetInclusion.worklist) {
-            writer.outputline("if (" + addeditem + ")");
-            writer.startblock(); {                
-                WorkList.generate_dispatch(writer, set, vd.getSafeSymbol());
+        String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
+        generatedaddeditem = addeditem; // allows access to the result of the set addition later.
+
+        // we set equal to one so that if dostore == false the guard in teh 
+        // metainclusion generation for the subrules and sub quantifiers will go on        
+        writer.outputline("int " + addeditem + " = 1;");
+
+        if (dostore) {
+        
+            writer.outputline(addeditem + " = " + set.getSafeSymbol() + "_hash->add((int)" + vd.getSafeSymbol() 
+                              +  ", (int)" + vd.getSafeSymbol() + ");");
+
+            if (SetInclusion.worklist) {
+                writer.outputline("if (" + addeditem + ")");
+                writer.startblock(); {                
+                    WorkList.generate_dispatch(writer, set, vd.getSafeSymbol());
+                }
+                writer.endblock();
             }
-            writer.endblock();
+
         }
         
     }

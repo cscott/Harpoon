@@ -14,6 +14,22 @@ public class RelationExpr extends Expr {
         this.inverse = inverse;
     }
 
+    public Expr getExpr() {
+        return expr;
+    }
+    
+    public RelationDescriptor getRelation() {
+        return relation;
+    }
+
+    public Set getInversedRelations() {
+        Set set = expr.getInversedRelations();
+        if (inverse) {
+            set.add(relation);
+        }
+        return set;
+    }
+
     public Set getRequiredDescriptors() {
         Set v = expr.getRequiredDescriptors();        
         v.add(relation);

@@ -14,6 +14,10 @@ public class SetExpr extends Expr {
         this.sd = null;
     }
 
+    public Set getInversedRelations() {
+        return new HashSet();
+    }
+
     public Set getRequiredDescriptors() {
         HashSet v = new HashSet();
         v.add(sd);

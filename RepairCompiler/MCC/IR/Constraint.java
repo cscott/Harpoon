@@ -12,8 +12,15 @@ public class Constraint {
     Vector quantifiers = new Vector(); 
     LogicStatement logicstatement = null;
 
+    int num;
+
     public Constraint() {
+        num = count;
         label = new String("c" + count++);
+    }
+
+    public int getNum() {
+        return num;
     }
 
     public String getLabel() {

@@ -7,6 +7,18 @@ public class LogicStatement {
     public static final Operation AND = new Operation("AND");
     public static final Operation OR = new Operation("OR");
     public static final Operation NOT = new Operation("NOT");
+
+    public Set getInversedRelations() {
+        if (left == null) {
+            throw new IRException();
+        }
+
+        Set set = left.getInversedRelations();
+        if (right != null) {
+            set.addAll(right.getInversedRelations());
+        }
+        return set;
+    }
     
     public static class Operation {
         private final String name;

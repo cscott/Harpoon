@@ -12,8 +12,16 @@ public class VarExpr extends Expr {
         this.varname = varname; 
     }
 
+    public Set getInversedRelations() {
+        return new HashSet();
+    }
+
     public Set getRequiredDescriptors() {
         return new HashSet();
+    }
+    
+    public VarDescriptor getVar() {
+        return vd;
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {        

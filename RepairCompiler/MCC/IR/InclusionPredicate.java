@@ -31,6 +31,15 @@ public class InclusionPredicate extends Predicate {
         expr.generate(writer, var);
         setexpr.generate_inclusion(writer, dest, var);
     }
+
+    public Set getInversedRelations() {
+
+        throw new IRException("unsupported");
+
+        //Set set = setexpr.getInversedRelations();
+        //set.addAll(expr.getInversedRelations());
+        //return set;
+    }
             
 }
     

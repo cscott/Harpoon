@@ -14,6 +14,10 @@ public class SizeofExpr extends Expr {
         this.setexpr = setexpr;
     }
 
+    public SetExpr getSetExpr() {
+        return setexpr;
+    }
+
     public Set getRequiredDescriptors() {
         return setexpr.getRequiredDescriptors();
     }
@@ -33,5 +37,8 @@ public class SizeofExpr extends Expr {
         return this.td;        
     }
 
+    public Set getInversedRelations() {
+        return setexpr.getInversedRelations();
+    }
         
 }

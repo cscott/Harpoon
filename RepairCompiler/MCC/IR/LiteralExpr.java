@@ -8,4 +8,8 @@ public abstract class LiteralExpr extends Expr {
         return new HashSet();
     }
 
+    public Set getInversedRelations() {
+        return new HashSet();
+    }
+
 }
