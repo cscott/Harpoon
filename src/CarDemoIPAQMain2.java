@@ -4,15 +4,26 @@
 package imagerec;
 
 import imagerec.graph.*;
-import imagerec.corba.CORBA;
+//import imagerec.corba.CORBA;
+import imagerec.corba.Sockets;
 
 public class CarDemoIPAQMain2 {
     public static void main(String args[]) {
+	//if (args.length == 0) {
+	//    System.out.println("Usage: java -jar carDemoIPAQ2.jar");
+	//    System.out.println("       <CORBA name for Results-from-Ground Server>");
+	//    System.out.println("       <CORBA name for Send-to-Ground Client (for each analyzed object)>");
+	//    System.out.println("       [CORBA options]");
+	//    System.exit(-1);
+	//}
+
 	if (args.length == 0) {
-	    System.out.println("Usage: java -jar carDemoEmbeddedATR.jar");
-	    System.out.println("       <CORBA name for Results-from-Ground Server>");
-	    System.out.println("       <CORBA name for Send-to-Ground Client (for each analyzed object)>");
-	    System.out.println("       [CORBA options]");
+	    System.out.println("Usage: java -jar carDemoIPAQ2.jar");
+	    System.out.println("       <server port #>");
+	    System.out.println("       <client port #>");
+	    System.out.println("       <camera control server port #>");
+	    System.out.println("       <label control server port #>");
+	    System.out.println("       <car control server port #>");
 	    System.exit(-1);
 	}
 
@@ -31,6 +42,7 @@ public class CarDemoIPAQMain2 {
 	Node thresh = new Thresholding(null);
 	Node hyst = new Hysteresis(null);
 	Label label = new Label(null, null);
+	Node confirm = new LabelConfirm(label);
 	label.setObjectTracker("objectTracker");
 	Node thin = new Thinning(Thinning.BLUE, null);
 	Node range = new RangeFind(null);
@@ -51,22 +63,37 @@ public class CarDemoIPAQMain2 {
 	Node getCmd2 = new Command(Command.GET_IMAGE, null);
 	Node getCropCmd = new Command(Command.GET_CROPPED_IMAGE, null);
 	Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
+	Node goLeftCmd = new Command(Command.GO_LEFT, null);
 	Node n = new Node();
 	Node n2 = new Node();
 	Node branch = new Switch();
-
-	Server resultsFromGround = new Server(new CORBA(args), args[0], null);
-
+	Node branch2 = new Switch();
+	Strip strip = new Strip();
+	strip.copyImage(true);
+	
+	//Server resultsFromGround = new Server(new CORBA(args), args[0], null);
+	Server resultsFromGround = new Server(new Sockets(), args[0], null);
 	
 	//runs the ground results server
 	Node pipe2;
+	/*
 	pipe2 =
 	    resultsFromGround.linkL(branch.link(getLabelSmCmd.link(labelSmCache,
 								   set),
 						set));
-	Thread t = new Thread(pipe2);
-	t.start(); //calls pipe2.run();
-	
+	*/
+	pipe2 = 
+	    resultsFromGround.linkL(confirm);
+	try {
+	    Thread t = new Thread(pipe2);
+	    t.start(); //calls pipe2.run();
+	}
+	catch (Exception e) {
+	    System.out.println("Results from ground thread died");
+	    System.out.println(e.getMessage());
+	    System.out.println(e.getStackTrace());
+	    
+	}
 	Node pipe1;
 	//Display debugDisp = new Display("debug", false, false, true);
 	//debugDisp.displayColorAs(Display.BLUE, Display.GREEN);
@@ -83,38 +110,95 @@ public class CarDemoIPAQMain2 {
 	feedbackServer.linkL(set2);
 
 
-	Node embedToGroundClient = new Client(new CORBA(args), args[1]);
+	//Node embedToGroundClient = new Client(new CORBA(args), args[1]);
+	Node embedToGroundClient = new Client(new Sockets(), args[1]);
 
+	Node setOrigDims = new SetOrigDimensions();
+
+	Node async = new Async(null);
 
 	//previously in receiverstub main
 	Node heartbeat = new Regulator("heartbeat");
-	Node imageSource;
 	Node atrClient = new Node();
+	//Load imageSource;
 	//imageSource = new Load(null, "/home/benster/ImageRec/images/uav_ppm_norm/uav_ppm", 100, null);
 	//imageSource = new Load("woodgrain.jar", "tank.gz", 533, null);
+	//imageSource = new Load("movie/tank.jar", "tank.gz", 533, null);
+	Camera imageSource = new Camera(null);
+	imageSource.flip();
 
-	imageSource = new Camera(null);
+	/*
 	imageSource.linkL(heartbeat.linkL(atrClient.linkL(atr)));
-
-	atr.link(pause.link(timer1,
-			    n.link(calibCmd.linkL(labelBlue),
-				   noneCmd.linkL(cleanCache.link(robCross.linkL(thresh.linkL(hyst.linkL(label.link(null,
-														   regulate.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
-																		    noneCmd3.linkL(thin.linkL(debugDisp.linkL(range.linkL(alert.linkL(alertServer))))))))))),
-								 n2.linkL(embedToGroundClient))))),
+	atr.link(setOrigDims.linkL(pause.link(timer1,
+					      n.link(calibCmd.linkL(labelBlue),
+						     noneCmd.linkL(cleanCache.link(robCross.linkL(thresh.linkL(hyst.linkL(label.link(null,
+																     regulate.linkL(labelSmCache.link(branch2.link(getCropCmd.linkL(cleanCache),
+																						   goLeftCmd.linkL(strip.linkL(embedToGroundClient))),
+																				      noneCmd3.linkL(thin.linkL(debugDisp.linkL(range.linkL(alert.linkL(alertServer))))))))))),
+										   n2.linkL(embedToGroundClient)))))),
 		 feedbackClient.linkL(timer2.linkL(feedbackServer)));
-	
+	*/
 
-
+	imageSource.linkL(timer1.linkL(setOrigDims.linkL(cleanCache.link(robCross.linkL(thresh.linkL(hyst.linkL(label.link(null,
+													      branch2.link(async.linkL(getCropCmd.linkL(cleanCache)),
+															   thin.linkL(range.linkL(alert.linkL(alertServer)))))))),
+							    embedToGroundClient))));
 
 	//previously in trackerstub main
 	Node alertDisp = new AlertDisplay();
-	Node car = new CarController();
+	CarController car = new CarController();
 	Node servo = new Servo();
 	
 	alertServer.linkL(alertDisp.linkL(car.linkL(servo)));
+	Thread t2 = new Thread(imageSource);
+	try {
+	    t2.start(); // calls imageSource.run();
+	}
+	catch (Exception e) {
+	    System.out.println("Embedded ATR thread died");
+	    System.out.println(e.getMessage());
+	    System.out.println(e.getStackTrace());
+	}
+  
+	
+	CameraControl cc = new CameraControl(imageSource);
+	System.out.println("Starting camera control server");
+	try {
+	    Server cameraControlServer = new Server(new Sockets(), args[2], cc);
+	    Thread t3 = new Thread(cameraControlServer);
+	    t3.start();
+	}
+	catch (Exception e) {
+	    System.out.println("Camera control thread died");
+	    System.out.println(e.getMessage());
+	    System.out.println(e.getStackTrace());
+	}
 
-	imageSource.run();
-
+	LabelControl lc = new LabelControl(label);
+	System.out.println("*** Starting label control server");
+	try {
+	    Server labelControlServer = new Server(new Sockets(), args[3], lc);
+	    Thread t4 = new Thread(labelControlServer);
+	    t4.start();
+	}
+	catch (Exception e) {
+	    System.out.println("Label control thread died");
+	    System.out.println(e.getMessage());
+	    System.out.println(e.getStackTrace());
+	}
+	
+	CarControllerControl ccc = new CarControllerControl(car);
+	System.out.println("****Starting car control server");
+	try {
+	    Server carControllerControlServer = new Server(new Sockets(), args[4], ccc);
+	    Thread t5 = new Thread(carControllerControlServer);
+	    t5.start();
+	}
+	catch (Exception e) {
+	    System.out.println("Car control thread died");
+	    System.out.println(e.getMessage());
+	    System.out.println(e.getStackTrace());
+	}
+	
     }
 }
