@@ -55,7 +55,7 @@ needs-cvs:
 
 run%: %-Java.a src/libflexc0.la src/libflexc1.la all
 	@rm -f $@
-	$(LIBTOOL) --mode=link $(CC) $(STATIC_FLAG) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ -Wl,-Tinclude/asm/link-script "-Wl,-(" src/libflexc0.la $< src/libflexc1.la "-Wl,-)" @GC_LIB@ @LIBS@
+	$(LIBTOOL) --mode=link $(CC) $(STATIC_FLAG) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ -Wl,-Tinclude/asm/link-script "-Wl,-(" src/libflexc0.la $< src/libflexc1.la $(EXTRA_OBJS) "-Wl,-)" @GC_LIB@ @LIBS@
 
 ## automake version 1.4 is required.
 AUTOMAKE_OPTIONS = 1.4
