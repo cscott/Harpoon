@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.36 1998-09-03 06:04:11 cananian Exp $
+ * @version $Id: Translate.java,v 1.37 1998-09-03 06:46:20 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -535,7 +535,7 @@ class Translate  { // not public.
 
 		// make quads
 		Quad q0 = new CONST(in, Tnull, null, HClass.Void);
-		Quad q1 = new OPER(in, "acmp", Tr0, // equal is true
+		Quad q1 = new OPER(in, "acmpeq", Tr0, // equal is true
 				   new Temp[] { Tobj, Tnull } ); 
 		Quad q2 = new CJMP(in, Tr0);
 		Quad q3 = new INSTANCEOF(in, Tr1, Tobj, opd.value());
