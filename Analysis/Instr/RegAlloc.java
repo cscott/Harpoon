@@ -53,7 +53,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.45 1999-10-26 20:31:59 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.46 1999-10-26 23:18:35 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -281,6 +281,7 @@ public abstract class RegAlloc  {
 		System.out.println();
 		MakeWebsDumb.WebInfo webInfo = 
 		    (MakeWebsDumb.WebInfo) mW.bbInfoMap.get(bb);
+		/* focusing on IN/OUT info now...
 		indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] start");  
 		printEntries(webInfo.use);
 		indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] end");  
@@ -288,6 +289,7 @@ public abstract class RegAlloc  {
 		indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] start");  
 		printEntries(webInfo.def);
 		indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] end");  
+		*/
 
 		indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] start");
 		printEntries(webInfo.in);
@@ -728,13 +730,11 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	      subsequent uses in the block
     */
     class WebInfo {
-	HashMap in  = new HashMap();  // Map[Temp, Web]
-	HashMap out = new HashMap();  // Map[Temp, Web]
-	// HashMap use = new ToSetMap(); // Map[Temp, Set[Instr] ] 
-	MultiMap use = new MultiMap(new MySetFactory(), 
+	MultiMap in = new MultiMap(); // Map[Temp, [Web] ]
+	MultiMap out = new MultiMap(); // Map[Temp, [Web] ]
+	MultiMap use = new MultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
 				    harpoon.Util.Collections.Factories.hashMapFactory());
-	// HashMap def = new ToSetMap(); // Map[Temp, Set[Instr] ]
-	MultiMap def = new MultiMap(new MySetFactory(), 
+	MultiMap def = new MultiMap(new MySetFactory(), // Map[Temp, [Instr] ]
 				    harpoon.Util.Collections.Factories.hashMapFactory());
 
 	class MySetFactory extends harpoon.Util.Collections.SetFactory {
@@ -845,7 +845,8 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	}
     }
     
-    public boolean merge(BasicBlock to, BasicBlock from) {
+    public boolean merge(BasicBlock from, BasicBlock to) {
+
 	WebInfo fromInfo = (WebInfo) bbInfoMap.get(from);
 	WebInfo toInfo = (WebInfo) bbInfoMap.get(to);
 	
@@ -856,25 +857,21 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	Iterator keys = fromInfo.out.keySet().iterator();
 	while(keys.hasNext()) {
 	    Object key = keys.next();
-	    Object newVal = fromInfo.out.get(key);
-	    Object oldVal = toInfo.in.put(key, newVal);
-	    if (newVal == null && oldVal == null) {
-		// no change
-	    } else if (oldVal == null && newVal != null) {
-		changed = true;
-	    } else if (!oldVal.equals(newVal)) {
-		changed = true;
-	    }
+	    java.util.Collection newVals = fromInfo.out.getValues(key);
+	    changed = changed || toInfo.in.addAll(key, newVals);
 	}
+
+	System.out.println("\t\t\tMerging from " + from +
+			   " to " + to + ":" + 
+			   (changed?"changed":"nochange"));
 	
 	return changed;
     }
     
     public void visit(BasicBlock b) {
-	// System.out.println("\t\t\tVisiting " + b);
+	System.out.println("\t\t\tVisiting " + b);
 
 	WebInfo webInfo = (WebInfo) bbInfoMap.get(b);
-	webInfo.out = new HashMap();
 	
 	Iterator inEntries = webInfo.in.entrySet().iterator();
 	while(inEntries.hasNext()) {
@@ -882,6 +879,9 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    Temp t = (Temp) entry.getKey();
 	    Web web = (Web) entry.getValue();
 	    Iterator instrs = webInfo.use.getValues(t).iterator();
+
+	    System.out.println("\t\t\t\t IN -> OUT : [" + web + ", "+b+"]" );
+
 	    while(instrs.hasNext()) {
 		web.instrs.add(instrs.next());
 	    }

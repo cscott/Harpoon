@@ -31,13 +31,16 @@ import java.util.HashSet;
     <code>Map</code> interface to allow for the same key to map to
     multiple values. 
 
-    <BR> Note that an association (known as a (Key, Value) pair or a 
-    <code>Map.Entry</code> in the Java Collections API) is only
-    defined to exist if the collection of objects mapped to by some
-    key is non-empty. 
+    <BR> Thus, the type signature for a MultiMap is :: 
+         Map[keytype -> [valtype] ]
     
-    This has a number of implications for the behavior of
-    <code>MultiMap</code>:
+    <BR> Note that an association (known as a (Key, Value) pair or a 
+         <code>Map.Entry</code> in the Java Collections API) is only 
+	 defined to exist if the collection of objects mapped to by
+	 some key is non-empty. 
+    
+	 This has a number of implications for the behavior of
+	 <code>MultiMap</code>:
 
     <BR> Let <UL>
          <LI> <code>mm</code> be a <code>MultiMap</code>,
@@ -58,18 +61,19 @@ import java.util.HashSet;
 	 mapped to by <code>k</code>.
 
     <BR> To conform to the <code>Map</code> interface, the
-    <code>put(key, value)</code> method has a non-intuitive behavior;
-    it throws away all values previously associated with
-    <code>key</code> and creates a new mapping from <code>key</code>
-    to the singleton set containing <code>value</code>.
+         <code>put(key, value)</code> method has a non-intuitive
+	 behavior; it throws away all values previously associated
+	 with <code>key</code> and creates a new mapping from
+	 <code>key</code> to the singleton set containing
+	 <code>value</code>. 
 
     <BR> Note that the behavior of <code>MultiMap</code> is
-    indistinquishable from that of a <code>Map</code> if none of the
-    extensions of <code>MultiMap</code> are utilized.  Thus, users
-    should take care to ensure that other code relying on the
-    constraints enforced by the <code>Map</code> interface does not
-    ever attempt to use a <code>MultiMap</code> when any of its Keys
-    map to more than one value.
+         indistinquishable from that of a <code>Map</code> if none of
+	 the extensions of <code>MultiMap</code> are utilized.  Thus,
+	 users should take care to ensure that other code relying on
+	 the constraints enforced by the <code>Map</code> interface
+	 does not ever attempt to use a <code>MultiMap</code> when any
+	 of its Keys map to more than one value.
 
     <BR> Also, right now the implementation tries to preserve the
          property that if a key 'k' maps to an empty collection 'c' in
@@ -83,9 +87,19 @@ import java.util.HashSet;
 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.5 1999-10-26 20:32:00 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.6 1999-10-26 23:18:46 pnkfelix Exp $
  */
 public class MultiMap implements Map {
+
+    public static class Factory extends MapFactory {
+	public Map makeMap(Map map) {
+	    return makeMultiMap(map);
+	}
+	
+	public MultiMap makeMultiMap(Map map) {
+	    return new MultiMap(map);
+	}
+    }
     
     // internal Map[KeyType -> Collection[ ValueType ]]
     private Map internMap;
@@ -129,6 +143,15 @@ public class MultiMap implements Map {
 	this.internMap = this.mf.makeMap(mm.internMap);
     }
     
+    public MultiMap(Map m) {
+	this();
+	Iterator entries = m.entrySet().iterator();
+	while(entries.hasNext()) {
+	    Map.Entry entry= (Map.Entry) entries.next();
+	    this.put(entry.getKey(), entry.getValue());
+	}
+    }
+
     public int size() {
 	return entrySet().size();
     }
@@ -231,6 +254,12 @@ public class MultiMap implements Map {
 	internMap.clear();
     }
 
+    /** Returns a set view of the keys in this map.
+
+	NOTE: Does not properly implement Map.keySet(), since changes
+	in Map structure are not reflected in previously returned
+	keySets.  Fix this at some point for safety.
+    */
     public Set keySet() {
 	FilterIterator iter = 
 	    new FilterIterator(internMap.keySet().iterator(),
@@ -249,6 +278,10 @@ public class MultiMap implements Map {
     
     /** Returns a collection view of the values contained in this
 	map.  
+
+	NOTE: Does not properly implement Map.values(), since changes
+	in Map structure are not reflected in previously returned
+	Collections.  Fix this at some point for safety.
     */
     public Collection values() { 
 	final Iterator collIter = internMap.values().iterator();
@@ -271,7 +304,11 @@ public class MultiMap implements Map {
     }
 
     /** Returns a set view of the mappings contained in this map.
-     */
+
+	NOTE: Does not properly implement Map.keySet(), since changes
+	in Map structure are not reflected in previously returned
+	keySets.  Fix this at some point for safety.
+    */
     public Set entrySet() {
 	int size = 0;
 	Iterator k2cEntries = internMap.entrySet().iterator();
