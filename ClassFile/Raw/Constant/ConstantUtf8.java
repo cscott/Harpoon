@@ -9,7 +9,7 @@ import harpoon.ClassFile.Raw.*;
  * up to 16 bits can be represented.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantUtf8.java,v 1.9 1998-08-01 22:55:17 cananian Exp $
+ * @version $Id: ConstantUtf8.java,v 1.10 1998-08-02 03:47:35 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.7"
  * @see Constant
  */
@@ -33,5 +33,24 @@ public class ConstantUtf8 extends Constant {
   public void write(ClassDataOutputStream out) throws java.io.IOException {
     out.write_u1(CONSTANT_Utf8);
     out.writeUTF(val);
+  }
+
+  /** Create a human-readable representation of this constant. */
+  public String toString() {
+    return "CONSTANT_Utf8: \"" + escape(val) + "\"";
+  }
+  static String escape(String str) {
+    StringBuffer sb = new StringBuffer();
+    for (int i=0; i<str.length(); i++) {
+      char c = str.charAt(i);
+      if (Character.isISOControl(c)) {
+	String hexval=Integer.toHexString((int)c);
+	while(hexval.length()<4) hexval="0"+hexval;
+	sb.append('\\'); sb.append('u');
+	sb.append(hexval);
+      }
+      else sb.append(c);
+    }
+    return sb.toString();
   }
 }

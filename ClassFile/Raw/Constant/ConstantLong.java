@@ -5,7 +5,7 @@ import harpoon.ClassFile.Raw.*;
  * The <code>CONSTANT_Long_info</code> structure represents eight-byte
  * integer numeric constants.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantLong.java,v 1.10 1998-08-01 22:55:17 cananian Exp $
+ * @version $Id: ConstantLong.java,v 1.11 1998-08-02 03:47:35 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.5"
  * @see Constant
  * @see ConstantDouble
@@ -32,5 +32,11 @@ public class ConstantLong extends Constant {
     out.writeLong(val);
   }
 
+  /** Returns the value of this constant. */
   public long longValue() { return val; }
+
+  /** Create a human-readable representation of this constant. */
+  public String toString() {
+    return "CONSTANT_Long: "+longValue();
+  }
 }

@@ -6,7 +6,7 @@ import harpoon.ClassFile.Raw.*;
  * floating-point numeric constants.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantFloat.java,v 1.10 1998-08-01 22:55:17 cananian Exp $
+ * @version $Id: ConstantFloat.java,v 1.11 1998-08-02 03:47:35 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.4"
  * @see Constant
  * @see ConstantInteger
@@ -33,5 +33,11 @@ public class ConstantFloat extends Constant {
     out.writeFloat(val);
   }
   
+  /** Returns the floating-point value of this constant. */
   public float floatValue() { return val; }
+
+  /** Create a human-readable representation of this constant. */
+  public String toString() {
+    return "CONSTANT_Float: "+floatValue();
+  }
 }

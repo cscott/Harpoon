@@ -6,7 +6,7 @@ import harpoon.ClassFile.Raw.*;
  * represent a class or an interface.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantClass.java,v 1.9 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: ConstantClass.java,v 1.10 1998-08-02 03:47:34 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.1"
  * @see Constant
  */
@@ -43,4 +43,9 @@ public class ConstantClass extends Constant {
   { return (ConstantUtf8) parent.constant_pool[name_index]; }
 
   public String name() { return name_index().val; }
+
+  /** Create a human-readable representation of this constant. */
+  public String toString() {
+    return "CONSTANT_Class: " + name() + " {"+name_index+"}";
+  }
 }

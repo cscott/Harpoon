@@ -5,7 +5,7 @@ import harpoon.ClassFile.Raw.*;
  * The <code>CONSTANT_Fieldref</code> structure represents a field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantFieldref.java,v 1.9 1998-08-01 22:55:17 cananian Exp $
+ * @version $Id: ConstantFieldref.java,v 1.10 1998-08-02 03:47:35 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.2"
  * @see Constant
  * @see ConstantMethodref
@@ -58,4 +58,11 @@ public class ConstantFieldref extends Constant {
   { return (ConstantClass) parent.constant_pool[class_index]; }
   public ConstantNameAndType name_and_type_index()
   { return (ConstantNameAndType) parent.constant_pool[name_and_type_index]; }
+
+  /** Create a human-readable representation of this constant. */
+  public String toString() {
+    return "CONSTANT_Fieldref: Parent class "+
+      class_index().name() + " {" + class_index+"} / " +
+      "Name and type at {"+name_and_type_index+"}";
+  }
 }

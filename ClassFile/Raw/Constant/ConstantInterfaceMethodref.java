@@ -63,4 +63,11 @@ public class ConstantInterfaceMethodref extends Constant {
   { return (ConstantClass) parent.constant_pool[class_index]; }
   public ConstantNameAndType name_and_type_index()
   { return (ConstantNameAndType) parent.constant_pool[name_and_type_index]; }
+
+  /** Create a human-readable representation of this constant. */
+  public String toString() {
+    return "CONSTANT_InterfaceMethodref: Parent class "+
+      class_index().name() + " {" + class_index+"} / " +
+      "Name and type at {"+name_and_type_index+"}";
+  }
 }
