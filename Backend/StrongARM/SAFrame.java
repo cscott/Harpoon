@@ -42,7 +42,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.15 1999-07-28 20:09:35 duncan Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.16 1999-07-28 20:45:11 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -90,7 +90,7 @@ public class SAFrame extends Frame implements AllocationInfo {
             reg[i] = new Temp(regtf);
             if (i < 11) regGeneral[i] = reg[i];
         }
-	    
+
 	FP = reg[11];
 	IP = reg[12];
 	SP = reg[13];
@@ -103,7 +103,7 @@ public class SAFrame extends Frame implements AllocationInfo {
         regLiveOnExit[3] = SP;
         regLiveOnExit[4] = PC;
         offmap = new OffsetMap32(null);
-        nextPtr = new Temp(regtf);
+        nextPtr = reg[10];
     }
 
     public SAFrame() { 

@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.10 1999-07-07 09:47:24 duncan Exp $
+ * @version $Id: MOVE.java,v 1.1.2.11 1999-07-28 20:45:15 pnkfelix Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -36,8 +36,11 @@ public class MOVE extends Stm implements Typed {
 		Exp dst, Exp src) {
 	super(tf, source);
 	this.dst=dst; this.src=src;
-	Util.assert(dst!=null && src!=null);
-	Util.assert(dst.type()==src.type());
+	Util.assert(dst!=null && src!=null, "Dest and Source cannot be null");
+	Util.assert(dst.type()==src.type(), 
+		    "Dest (type:"+Type.toString(dst.type()) + 
+		    ") and Source (type:" + Type.toString(src.type()) + 
+		    ") must have same type");
     }
   
     protected Set defSet() { 

@@ -46,7 +46,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.11 1999-07-28 04:41:18 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.12 1999-07-28 20:45:11 pnkfelix Exp $
  */
 %%
 
@@ -672,11 +672,14 @@ MEM<d,l>(NAME(id)) = i %{
 
 
 TEMP<p,i,f>(id) = i %{
-    Temp i = makeTemp();		
+    i = ((TEMP)ROOT).temp;
 
 }%
 TEMP<l,d>(id) = i %{
-    TwoWordTemp i = makeTwoWordTemp();		
+    // Will need to modify these to do something like mapping from
+    // TEMP's Temp to the necessary TwoWordTemp
+    i = ((TEMP)ROOT).temp;
+    // TwoWordTemp i = makeTwoWordTemp();		
 
 }%
 
