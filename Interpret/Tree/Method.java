@@ -64,7 +64,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.16 2000-01-13 23:48:13 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.17 2000-01-17 12:32:50 cananian Exp $
  */
 public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -88,7 +88,7 @@ public final class Method extends Debug {
 		    "Bad factory codename: " + hcf.getCodeName());
 	
 	tc = (Code)hcf.convert(method);
-	map=((Tree)tc.getRootElement()).getFactory().getFrame().getOffsetMap();
+	map=((DefaultFrame)((Tree)tc.getRootElement()).getFactory().getFrame()).getOffsetMap();
 	ss = new StaticState(linker, hcf, prof, (InterpreterOffsetMap)map);
 	try {
 	    HMethod HMinit = ss.HCsystem.getMethod("initializeSystemClass","()V");
@@ -565,7 +565,9 @@ public final class Method extends Debug {
 
 	    // Still pretty ugly, but more reliable than before
 	    InterpreterOffsetMap map = 
-		(InterpreterOffsetMap)e.getFactory().getFrame().getOffsetMap();
+		(InterpreterOffsetMap)
+		((DefaultFrame)e.getFactory().getFrame())
+		.getOffsetMap();
 	    if (map.stringConstantMap().containsValue(e.label)) { 
 		sf.update(e, new StringPointer(ss, e.label));
 	    }
