@@ -28,9 +28,9 @@ import java.util.Map;
  * to effect the specialization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.5 2000-10-07 00:59:41 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.6 2000-10-07 01:18:34 cananian Exp $
  */
-public class MethodSplitter {
+public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
      *  version of a method. */
     public static final Token ORIGINAL = new Token(null);
