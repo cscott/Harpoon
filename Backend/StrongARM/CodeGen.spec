@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.55 1999-10-13 19:49:17 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.56 1999-10-14 00:04:36 pnkfelix Exp $
  */
 %%
 
@@ -798,6 +798,31 @@ MEM<l,d>(e) = i %{
 		     new Temp[]{ i }, new Temp[]{ e }));
 }%
 
+MEM<s:8>(e) = i %{
+    Temp i = makeTemp();
+    emit( new InstrMEM(instrFactory, ROOT,
+		       "ldrsb `d0, [`s0]",
+		       new Temp[]{ i }, new Temp[]{ e }));
+}%
+MEM<u:8>(e) = i %{
+    Temp i = makeTemp();
+    emit( new InstrMEM(instrFactory, ROOT,
+		       "ldrb `d0, [`s0]",
+		       new Temp[]{ i }, new Temp[]{ e }));
+}%
+MEM<s:16>(e) = i %{
+    Temp i = makeTemp();
+    emit( new InstrMEM(instrFactory, ROOT,
+		       "ldrsh `d0, [`s0]",
+		       new Temp[]{ i }, new Temp[]{ e }));
+}%
+MEM<u:16>(e) = i %{
+    Temp i = makeTemp();
+    emit( new InstrMEM(instrFactory, ROOT,
+		       "ldrh `d0, [`s0]",
+		       new Temp[]{ i }, new Temp[]{ e }));
+}%
+
 // can use adr for 8 bit offsets to variables close by,
 // but need to use ldr for far away symbolic variables
 NAME(id) = i %{
@@ -1120,6 +1145,17 @@ MOVE<i>(MEM(d), src) %{
     emit(new InstrMEM(instrFactory, ROOT,
 		      "str `s0, [`s1]",
 		      null, new Temp[]{ src, d }));   
+}%
+
+MOVE<s:8, u:8>(MEM(d), src) %{
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "strb `s0, [`s1]",
+		      null, new Temp[]{ src, d }));
+}%
+MOVE<s:16, u:16>(MEM(d), src) %{
+    emit(new InstrMEM(instrFactory, ROOT,
+		      "strh `s0, [`s1]",
+		      null, new Temp[]{ src, d }));
 }%
 
 RETURN(val) %{
