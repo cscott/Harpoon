@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.78 2002-07-06 00:12:50 cananian Exp $
+# $Id: GNUmakefile,v 1.79 2002-07-08 03:54:39 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -161,9 +161,9 @@ Support/gjlib.jar: $(shell grep -v ^\# gj-files ) gj-files
 	$(RM) -rf gjlib
 
 # collect the names of all source files modified since last compile
-out-of-date:	$(ALLSOURCE) FORCE .ignore
-	@for f in $(filter-out FORCE .ignore,$?) ; do echo $$f >> $@ ; done
-	@if [ x$(filter .ignore,$?) != x ]; then \
+out-of-date:	$(ALLSOURCE) FORCE
+	@for f in $(filter-out FORCE,$?) ; do echo $$f >> $@ ; done
+	@if [ -f .ignore -a .ignore -nt out-of-date ]; then \
 	  echo ".ignore has changed; clearing old 'out-of-date' entries." ; \
 	  $(RM) -f $@ ; \
 	  for f in $(ALLSOURCE); do echo $$f >> $@ ; done ; \
