@@ -54,7 +54,7 @@ import harpoon.IR.Quads.FOOTER;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.23 2000-03-05 05:30:44 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.24 2000-03-08 00:36:02 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -67,11 +67,13 @@ public class PointerAnalysis {
     public static final boolean DETAILS = true;
     public static final boolean DETAILS2 = false;
 
+    public static final boolean TOUCHED_THREAD_SUPPORT = true;
+
     /** Activates the context sensitivity. When this flag is turned on, 
 	the nodes from the graph of the callee are specialized for each
 	call site (up to <code>MAX_SPEC_DEPTH</code> times). This increases
 	the precision of the analysis but requires more time and memorty. */
-    public static final boolean CONTEXT_SENSITIVE = true;
+    public static final boolean CONTEXT_SENSITIVE = false;
 
     /** The specialization limit. This puts a limit to the otherwise
 	exponential growth of the number of nodes in the analysis. */
@@ -347,8 +349,11 @@ public class PointerAnalysis {
 		//System.out.println("Old graph: " + old_info);
 		//System.out.println("New graph: " + new_info);
 
-		//yes! The callers of hm_work should be added to
-		// the inter-procedural worklist
+		// since the original graph associated with hm_work changed,
+		// the old specializations for it are no longer actual;
+		if(CONTEXT_SENSITIVE)
+		    specs.remove(hm_work);
+
 		if(DETERMINISTIC){
 		    Object[] hms = ac.directCallers(hm_work);
 		    Arrays.sort(hms,UComp.uc);
@@ -467,6 +472,9 @@ public class PointerAnalysis {
 		/// System.out.println();
 	    }
 	}
+
+	if(CONTEXT_SENSITIVE)
+	    specs.clear();
     }
 
 
@@ -562,6 +570,8 @@ public class PointerAnalysis {
 				    active_threads);
 		}
 	    }
+
+	    if(TOUCHED_THREAD_SUPPORT) touch_threads(set_aux);
 	}
 
 
@@ -638,6 +648,8 @@ public class PointerAnalysis {
 		
 	    bbpig.G.I.addEdges(set1,f,set2);
 	    bbpig.G.propagate(set1);
+
+	    if(TOUCHED_THREAD_SUPPORT) touch_threads(set1);
 	}
 	
 
@@ -708,29 +720,40 @@ public class PointerAnalysis {
 		bbpig.ar.add_sync(node,ActionRepository.THIS_THREAD,
 				  active_threads);
 	    }
+
+	    if(TOUCHED_THREAD_SUPPORT)
+		touch_threads(bbpig.G.I.pointedNodes(l));
+	}
+
+	// Record the fact that the started thread from the set that it
+	// iterates over have been touched.
+	private void touch_threads(Set set_touched_nodes){
+	    Iterator it = set_touched_nodes.iterator();
+	    while(it.hasNext()){
+		PANode touched_node = (PANode)it.next();
+		if((touched_node.type == PANode.INSIDE) &&
+		   bbpig.tau.isStarted(touched_node))
+		    bbpig.touch_thread(touched_node);
+	    }
 	}
 
 
-	/** End of the currently analyzed method; trim the graph
-	 *  of unnecessary edges, store it in the hash tables etc. */
+	/** End of the currently analyzed method; store the graph
+	    in the hash table. */
 	public void visit(FOOTER q){
-
 	    // The full graph is stored in the hash_proc_int hashtable;
 	    hash_proc_int.put(current_intra_method,bbpig);
-
-	    // System.out.println("PIG at the end of the method:" + bbpig);
-
 	    // To obtain the external view of the method, the graph must be
 	    // shrinked to the really necessary parts: only the stuff
 	    // that is accessible from the "root" nodes (i.e. the nodes
 	    // that can be accessed by the rest of the program - e.g.
 	    // the caller).
-	    // The set of root nodes consists of the param and return nodes,
-	    // and (only for the non-"main" methods) the static node.
+	    // The set of root nodes consists of the param and return
+	    // nodes, and (for the non-"main" methods) the static nodes.
+	    // TODO: think about the static nodes vs. "main"
 	    PANode[] nodes = getParamNodes(current_intra_method);
 	    boolean is_main = current_intra_method.getName().equals("main");
-      	    ParIntGraph shrinked_graph = bbpig.keepTheEssential(nodes,is_main);
-
+	    ParIntGraph shrinked_graph = bbpig.keepTheEssential(nodes,is_main);
 	    // The external view of the graph is stored in the
 	    // hash_proc_ext hashtable;
 	    hash_proc_ext.put(current_intra_method,shrinked_graph);
@@ -863,6 +886,7 @@ public class PointerAnalysis {
 	    if(!types[i].isPrimitive()) count++;
 	
 	nodes.addParamNodes(hm,count);
+	Stats.record_method_params(hm,count);
 
 	// add all the edges of type <p,np> (i.e. parameter to 
 	// parameter node) - just for the non-primitive types (e.g. int params

@@ -17,7 +17,7 @@ import harpoon.IR.Quads.CALL;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.16 2000-03-05 05:30:44 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.17 2000-03-08 00:36:02 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -37,6 +37,14 @@ public class ParIntGraph {
 	thread. */
     public PAThreadMap tau;
     
+    /** The set of thread objects that are accessed after they are started.
+	This is not exactly part of the PA, but we need it for the thread
+	specific heaps; Martin intend to allocate even the thread object in
+	the thread heap - it is atomically collected at the end of the thread.
+	For the moment, this info is accurate only for captured nodes
+	(it is not carried over in the inter-procedural phase). */
+    public Set touched_threads;
+
     /** Maintains the actions executed by the analysed code and the parallel\
 	action relation. <code>alpha</code> and <code>pi</code> from the 
 	original paper have been merged into this single field for efficiency
@@ -55,6 +63,7 @@ public class ParIntGraph {
 	tau = new PAThreadMap();
 	ar  = new ActionRepository();
 	eo  = new EdgeOrdering();
+	touched_threads = new HashSet();
     }
     
 
@@ -65,6 +74,7 @@ public class ParIntGraph {
 	tau.join(pig2.tau);
 	ar.join(pig2.ar);
 	eo.join(pig2.eo);
+	touched_threads.addAll(pig2.touched_threads);
     }
 
 
@@ -114,17 +124,29 @@ public class ParIntGraph {
 		System.out.println("The eo's are different");
 	    return false;
 	}
+	if(!touched_threads.equals(pig2.touched_threads)){
+	    if(DEBUG2)
+		System.out.println("The touched_thread's are different");
+	    return false;
+	}
 	return true;
     }
 
     /** Private constructor for <code>clone</code> and 
 	<code>keepTheEssential</code>. */
-    private ParIntGraph(PointsToGraph G, PAThreadMap tau,
-			ActionRepository ar, EdgeOrdering eo){
+    private ParIntGraph(PointsToGraph G, PAThreadMap tau, ActionRepository ar,
+			EdgeOrdering eo, Set touched_threads){
 	this.G   = G;
 	this.tau = tau;
 	this.ar  = ar;
 	this.eo  = eo;
+	this.touched_threads = touched_threads;
+    }
+
+    /** Records the fact that the started thread nt is accessed by its 
+	direct startee. */
+    public final void touch_thread(PANode nt){
+	touched_threads.add(nt);
     }
 
     /** <code>clone</code> produces a copy of the <code>this</code>
@@ -133,7 +155,8 @@ public class ParIntGraph {
 	return new ParIntGraph((PointsToGraph)G.clone(),
 			       (PAThreadMap)tau.clone(),
 			       (ActionRepository)ar.clone(),
-			       (EdgeOrdering)eo.clone());
+			       (EdgeOrdering)eo.clone(),
+			       (HashSet)((HashSet)touched_threads).clone());
     }
 
     
@@ -155,7 +178,9 @@ public class ParIntGraph {
 	ActionRepository _ar = (ActionRepository) ar.clone();
 
 	EdgeOrdering _eo = eo.keepTheEssential(remaining_nodes);
-	return new ParIntGraph(_G,_tau,_ar,_eo);
+	// the "touched_threads" info is valid only for captured threads
+	// i.e. not for the remaining nodes (accessible from the outside).
+	return new ParIntGraph(_G,_tau,_ar,_eo,Collections.EMPTY_SET);
     }
 
     // Visits all the nodes from set_nodes.
@@ -194,7 +219,10 @@ public class ParIntGraph {
     private Set all_nodes = null;
 
     /** Returns the set of all the nodes that appear in <code>this</code>
-	parallel interaction graph. */
+	parallel interaction graph.<br>
+	<b>Warning:</b> This method should be called only on graphs that
+	are final (ie they won't be modified through something as an edge
+	addition, etc.). */
     public Set allNodes(){
 	if(all_nodes == null){
 	    final Set nodes = new HashSet();
@@ -242,6 +270,7 @@ public class ParIntGraph {
 	tau.remove(nodes);
 	ar.removeNodes(nodes);
 	eo.removeNodes(nodes);
+	touched_threads.removeAll(nodes);
     }
 
     /** Simplify <code>this</code> parallel interaction graph by removing the
@@ -284,13 +313,27 @@ public class ParIntGraph {
 	Two equal <code>ParIntGraph</code>s are guaranteed to have the same
 	string representation. */
     public String toString(){
-	return "\nParIntGraph{\n" + G + " " + tau + ar + eo + "}"; 
+	return
+	    "\nParIntGraph{\n" + G + " " + tau + 
+	    " Touched threads: " + touchedToString() + "\n" +
+	    ar + eo + "}"; 
+    }
+
+    // Produces a string representation of the
+    // captured, started but touched threads.
+    private String touchedToString(){
+	StringBuffer buffer = new StringBuffer();
+
+	Iterator it = touched_threads.iterator();
+	while(it.hasNext()){
+	    PANode nt = (PANode) it.next();
+	    if(G.captured(nt))
+		buffer.append(nt + " ");		
+	}
+	return buffer.toString();
     }
 
 }
-
-
-
 
 
 

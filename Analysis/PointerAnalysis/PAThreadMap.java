@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.11 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.12 2000-03-08 00:36:02 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -86,6 +86,11 @@ public class PAThreadMap{
 	// and ZERO) and decrease the number of keys from the map.
 	if(v==ONE) hash.remove(n);
 	if(v==TWO) hash.put(n,TWO);
+    }
+
+    /** Checks whether the thread "nt" is started or not. */
+    public boolean isStarted(PANode nt){
+	return hash.containsKey(nt);
     }
 
     /** Add a positive <code>delta</code> to the value attached to a node. */
