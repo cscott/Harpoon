@@ -19,7 +19,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.5 1998-09-16 12:37:18 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.6 1998-09-16 14:45:03 cananian Exp $
  * @see Translate
  */
 
@@ -135,7 +135,7 @@ public class FixupFunc  {
 		HCodeElement[] Xl = dt.children(c, S);
 		for (int i=0; i < Xl.length; i++) {
 		    Quad X = (Quad) Xl[i];
-		    int j = whichPred(X, S);
+		    int j = whichSucc(S, X);
 		    // if X is the jth successor of S and S is a lambda func...
 		    if (j != -1 && S instanceof LAMBDA) {
 			// for every a in L
@@ -217,6 +217,12 @@ public class FixupFunc  {
     static int whichPred(Quad Q, Quad P) {
 	for (int i=0; i < Q.prev.length; i++)
 	    if (Q.prev(i) == P)
+		return i;
+	return -1; // no predecessor found.
+    }
+    static int whichSucc(Quad Q, Quad S) {
+	for (int i=0; i < Q.next.length; i++)
+	    if (Q.next(i) == S)
 		return i;
 	return -1; // no predecessor found.
     }
