@@ -6,6 +6,8 @@
 #include "Role.h"
 /*#include <dmalloc.h>*/
 
+#define DUPTHRESHOLD 2
+
 static long int rolenumber=0;
 
 void printrole(struct role *r, char * rolename) {
@@ -27,11 +29,17 @@ void printrole(struct role *r, char * rolename) {
     struct rolefieldlist *fl=r->pointedtofl;
     struct rolearraylist *al=r->pointedtoal;
     while(fl!=NULL) {
-      printf("  Field %s from class %s.\n",fl->field, fl->class);
+      if (fl->duplicates<DUPTHRESHOLD)
+	printf("  Field %s from class %s %d times.\n",fl->field, fl->class, fl->duplicates+1);
+      else 
+	printf("  Field %s from class %s multiple times.\n",fl->field, fl->class);
       fl=fl->next;
     }
     while(al!=NULL) {
-      printf("  Array of type class %s.\n", al->class);
+      if (al->duplicates<DUPTHRESHOLD)
+	printf("  Array of type class %s %d times.\n", al->class, al->duplicates+1);
+      else
+	printf("  Array of type class %s multiple times.\n", al->class);
       al=al->next;
     }
   }
@@ -490,6 +498,8 @@ void insertrfl(struct role * role, struct rolefieldlist * rfl) {
     return;
   }
   if (fc==0) {
+    if (role->pointedtofl->duplicates<DUPTHRESHOLD)
+      role->pointedtofl->duplicates++;
     free(rfl);
     return;
   }
@@ -498,6 +508,8 @@ void insertrfl(struct role * role, struct rolefieldlist * rfl) {
     if (fc>0)
       break;
     if (fc==0) {
+      if (tmpptr->next->duplicates<DUPTHRESHOLD)
+	tmpptr->next->duplicates++;
       free(rfl);
       return;
     }
@@ -531,6 +543,8 @@ void insertral(struct role * role, struct rolearraylist * ral) {
     return;
   }
   if (rcmp==0) {
+    if (role->pointedtoal->duplicates<DUPTHRESHOLD)
+      role->pointedtoal->duplicates++;
     free(ral);
     return;
   }
@@ -539,6 +553,8 @@ void insertral(struct role * role, struct rolearraylist * ral) {
     if (rcmp>0)
       break;
     if (rcmp==0) {
+      if (tmpptr->next->duplicates<DUPTHRESHOLD)
+	tmpptr->next->duplicates++;
       free(ral);
       return;
     }

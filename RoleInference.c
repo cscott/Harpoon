@@ -90,16 +90,16 @@ void doanalysis() {
 	removelvlist(&heap, buf, heap.methodlist );
       }
       break; 
-
+      
     case 'L':
       /* Do Load */
       {
 	struct localvars * lv=(struct localvars *) calloc(1, sizeof(struct localvars));
 	long long uid, objuid;
-	char fieldname[100];
+	char fieldname[100], classname[100];
 
 
-	sscanf(line,"LF: %s %ld %s %lld %s %lld",lv->name,&lv->linenumber, lv->sourcename, &objuid, fieldname, &uid);
+	sscanf(line,"LF: %s %ld %s %lld %s %s %lld",lv->name,&lv->linenumber, lv->sourcename, &objuid, classname, fieldname, &uid);
 	lv->lvnumber=lvnumber(lv->name);
 	lv->age=pointerage++;
 	lv->m=heap.methodlist;
@@ -112,7 +112,7 @@ void doanalysis() {
 
 #ifdef EFFECTS
 	if ((uid!=-1)&&(objuid!=-1)) {
-	  addpath(&heap, uid, fieldname ,objuid);
+	  addpath(&heap, uid, classname, fieldname ,objuid);
 	}
 #endif
 	
@@ -140,12 +140,21 @@ void doanalysis() {
 	}
 	/* addtolvlist add's to K set */
 	addtolvlist(&heap, lv, heap.methodlist);
-
+	
 
 
 	if (currentparam<heap.methodlist->numobjectargs) {
-	  if (uid!=-1)
+	  if (uid!=-1) {
 	    heap.methodlist->params[currentparam]=lv->object;
+#ifdef EFFECTS
+	    if (!contains(heap.methodlist->pathtable, uid)) {
+	      struct path * pth=(struct path *) calloc(1, sizeof(struct path));
+	      pth->paramnum=currentparam;
+	      pth->prev_obj=-1;
+	      puttable(heap.methodlist->pathtable, uid ,pth);
+	    }
+#endif
+	  }
 	  currentparam++;
 	  if(currentparam==heap.methodlist->numobjectargs) {
 	    //Lets show the roles!!!!
@@ -187,12 +196,12 @@ void doanalysis() {
       {
 	struct method* newmethod=(struct method *) calloc(1,sizeof(struct method));
 	sscanf(line,"IM: %s %s %s %hd", newmethod->classname, newmethod->methodname, newmethod->signature, &newmethod->isStatic);
-#ifdef EFFECTS
-	newmethod->pathtable=allocatehashtable();
-#endif
 	calculatenumobjects(newmethod);
 	newmethod->caller=heap.methodlist;
 	heap.methodlist=newmethod;
+#ifdef EFFECTS
+	initializepaths(&heap);
+#endif
 	currentparam=0;
       }
       if (currentparam==heap.methodlist->numobjectargs) {
@@ -247,9 +256,10 @@ void doanalysis() {
 	  src=gettable(ht,suid);
 	if (duid!=-1)
 	  dst=gettable(ht,duid);
-	if (src!=NULL)
+	if (src!=NULL) {
 	  dofieldassignment(&heap, src, fieldname, dst);
-	else
+	  addeffect(&heap, suid, fieldname, duid);
+	} else
 	  doglobalassignment(&heap,classname,fieldname,dst);
       }
       break;

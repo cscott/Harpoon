@@ -40,6 +40,7 @@ struct method {
   short isStatic;
 #ifdef EFFECTS
   struct hashtable * pathtable;
+  struct effectlist *effects;
 #endif
 };
 

@@ -27,12 +27,14 @@ struct rolereferencelist {
 
 struct rolearraylist {
   char *class;
+  int duplicates;
   struct rolearraylist * next;
 };
 
 struct rolefieldlist {
   char * class;
   char * field;
+  int duplicates;
   struct rolefieldlist * next;
 };
 
