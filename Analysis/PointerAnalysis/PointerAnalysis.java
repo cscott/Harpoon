@@ -55,7 +55,7 @@ import harpoon.IR.Quads.FOOTER;
  computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.16 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.17 2000-02-17 00:56:48 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -502,8 +502,13 @@ public class PointerAnalysis {
 	    else{
 		PANode load_node = nodes.getCodeNode(q,PANode.LOAD); 
 		set_S.add(load_node);
-		bbpig.G.I.addEdges(l1,set_S);
+
 		bbpig.G.O.addEdges(set_E,f,load_node);
+
+		bbpig.eo.add(set_E,f,load_node,bbpig.G.I);
+
+		bbpig.G.I.addEdges(l1,set_S);
+
 		bbpig.G.propagate(set_E);
 
 		// update the action repository

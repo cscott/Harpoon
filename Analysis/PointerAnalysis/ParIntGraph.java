@@ -13,7 +13,7 @@ import java.util.Collections;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.10 2000-02-15 04:37:39 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.11 2000-02-17 00:56:48 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -35,13 +35,19 @@ public class ParIntGraph {
 	original paper have been merged into this single field for efficiency
 	reasons. */
     public ActionRepository ar;
-    
+
+    /** Maintains the (conservative) ordering relations between the inside
+	and the outside edges. <code>before(ei,eo)</code> is true if the
+	inside edge ei might be created before the ouside edge eo was read.<br>
+    */
+    public EdgeOrdering eo;
     
     /** Creates a <code>ParIntGraph</code>. */
     public ParIntGraph() {
 	G   = new PointsToGraph();
 	tau = new PAThreadMap();
 	ar  = new ActionRepository();
+	eo  = new EdgeOrdering();
     }
     
 
@@ -51,6 +57,7 @@ public class ParIntGraph {
 	G.join(pig2.G);
 	tau.join(pig2.tau);
 	ar.join(pig2.ar);
+	eo.join(pig2.eo);
     }
 
 
@@ -93,15 +100,22 @@ public class ParIntGraph {
 		System.out.println("The ar's are different");
 	    return false;
 	}
+	if(!eo.equals(pig2.eo)){
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("The eo's are different");
+	    return false;
+	}
 	return true;
     }
 
     /** Private constructor for <code>clone</code> and 
 	<code>keepTheEssential</code>. */
-    private ParIntGraph(PointsToGraph G,PAThreadMap tau,ActionRepository ar){
+    private ParIntGraph(PointsToGraph G, PAThreadMap tau,
+			ActionRepository ar, EdgeOrdering eo){
 	this.G   = G;
 	this.tau = tau;
 	this.ar  = ar;
+	this.eo  = eo;
     }
 
     /** <code>clone</code> produces a copy of the <code>this</code>
@@ -109,7 +123,8 @@ public class ParIntGraph {
     public Object clone(){
 	return new ParIntGraph((PointsToGraph)G.clone(),
 			       (PAThreadMap)tau.clone(),
-			       (ActionRepository)ar.clone());
+			       (ActionRepository)ar.clone(),
+			       (EdgeOrdering)eo.clone());
     }
 
     
@@ -125,8 +140,9 @@ public class ParIntGraph {
 	    G.keepTheEssential(params, remaining_nodes, is_main);
 	PAThreadMap _tau = (PAThreadMap) tau.clone(); 
 	//TODO: find something more intelligent!
-	ActionRepository _ar = (ActionRepository) ar.clone(); 
-	return new ParIntGraph(_G,_tau,_ar);
+	ActionRepository _ar = (ActionRepository) ar.clone();
+	EdgeOrdering _eo = eo.keepTheEssential(remaining_nodes);
+	return new ParIntGraph(_G,_tau,_ar,_eo);
     }
 
 
@@ -134,7 +150,7 @@ public class ParIntGraph {
 	Two equal <code>ParIntGraph</code>s are guaranteed to have the same
 	string representation. */
     public String toString(){
-	return "\nParIntGraph{\n" + G + " " + tau + ar + "}"; 
+	return "\nParIntGraph{\n" + G + " " + tau + ar + eo + "}"; 
     }
 
 }
