@@ -774,14 +774,15 @@ JNIEXPORT jint JNICALL Java_java_lang_Thread_countStackFrames
 #endif
 
 
-#if 0
 /*
  * Class:     java_lang_Thread
  * Method:    stop0
  * Signature: (Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_stop0
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *env, jobject cls, jobject throwable) {
+  assert(0);
+}
 
 /*
  * Class:     java_lang_Thread
@@ -789,7 +790,9 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_stop0
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_suspend0
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject cls) {
+  assert(0);
+}
 
 /*
  * Class:     java_lang_Thread
@@ -797,9 +800,9 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_suspend0
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_resume0
-  (JNIEnv *, jobject);
-
-#endif
+  (JNIEnv *env, jobject cls) {
+  assert(0);
+}
 
 
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
@@ -1141,7 +1144,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_resume0
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_interrupt0
   (JNIEnv *env, jobject obj) {
-    assert(0);
+  fprintf(stderr, "WARNING: Thread.interrupt() not implemented.\n");
 }
 #ifdef WITH_TRANSACTIONS
 /* transactional version of this native method */
