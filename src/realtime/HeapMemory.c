@@ -19,6 +19,10 @@ JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_initNative
 inline struct MemBlock* Heap_MemBlock_new(JNIEnv* env, jobject heapMem) {
   /* This function is called to create the initial MemBlock. */
   struct MemBlock* mb = MemBlock_new(env, heapMem);
+  jclass heapClaz = (*env)->GetObjectClass(env, heapMem);
+  jfieldID shadowID = (*env)->GetFieldID(env, heapClaz, "shadow",
+					 "Ljavax/realtime/MemoryArea;");
+  jobject shadow = (*env)->GetObjectField(env, heapMem, shadowID);
 #ifdef RTJ_DEBUG
   checkException();
   printf("HeapMemory_RThread_MemBlock_new()\n");
@@ -26,6 +30,7 @@ inline struct MemBlock* Heap_MemBlock_new(JNIEnv* env, jobject heapMem) {
   mb->alloc = Heap_MemBlock_alloc;
   MemBlock_INCREF(mb);
   mb->memoryArea = (*env)->NewGlobalRef(env, heapMem);
+  getInflatedObject(env, shadow)->memBlock = mb;
   return mb;
 }
 
