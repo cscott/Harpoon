@@ -80,7 +80,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.72 2000-07-13 14:11:59 jwhaley Exp $
+ * @version $Id: PAMain.java,v 1.1.2.73 2000-07-15 14:14:26 rinard Exp $
  */
 public abstract class PAMain {
 
@@ -235,9 +235,12 @@ public abstract class PAMain {
 	if(SHOW_DETAILS)
 	    pa.print_stats();
 
+        if (ELIM_SYNCOPS)
+            do_elim_syncops();
+
 	if(DUMP_JAVA)
 	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
-	
+
 	if(COMPILE) {
 	    SAMain.hcf = hcf;
 	    SAMain.className = params[optind];
@@ -665,16 +668,26 @@ public abstract class PAMain {
 	// The following loop has just the purpose of timing the analysis of
 	// the entire program. Doing it here, before any memory allocation
 	// optimization, allows us to time it accurately.
-	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(!analyzable(mm)) continue;
-	    if(USE_INTER_THREAD)
-		pa.threadInteraction(mm);
-	    else
-		pa.getIntParIntGraph(mm);
-	}
-	System.out.println("PRE-ANALYSIS + ANALYSIS TIME : " +
-			   (time() - g_tstart) + "ms");
+       g_tstart = System.currentTimeMillis();
+       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+            MetaMethod mm = (MetaMethod) it.next();
+            if(!analyzable(mm)) continue;
+            pa.getIntParIntGraph(mm);
+        }
+        System.out.println("Intrathread Analysis time: " +
+                           (time() - g_tstart) + "ms");
+
+        if (USE_INTER_THREAD) {
+          g_tstart = System.currentTimeMillis();
+          for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+            MetaMethod mm = (MetaMethod) it.next();
+            if(!analyzable(mm)) continue;
+            pa.threadInteraction(mm);
+          }
+          System.out.println("Tnterthread Analysis time: " +
+                           (time() - g_tstart) + "ms");
+        }
+
 
 	g_tstart = time();
 	MAInfo mainfo = new MAInfo(pa, hcf, allmms, USE_INTER_THREAD);
@@ -871,6 +884,22 @@ public abstract class PAMain {
 	    Quad q = (Quad) it.next();
 	    q.accept(sat_qv);
 	}
+    }
+
+    static void do_elim_syncops() {
+       MetaCallGraph mcg = pa.getMetaCallGraph();
+       MetaMethod mroot = new MetaMethod(hroot, true);
+       Set allmms = mcg.getAllMetaMethods();
+       SyncElimination se = new SyncElimination(pa);
+       se.calculate();
+	
+       HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
+       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+            MetaMethod mm = (MetaMethod) it.next();
+            HMethod m = mm.getHMethod();
+            System.out.println("Eliminating Sync Ops in Method "+m);
+	    HCode hcode = hcf_nosync.convert(m);
+        }
     }
 
     static void do_elim_syncops(HMethod hm) {
