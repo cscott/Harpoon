@@ -39,7 +39,7 @@ import java.util.Set;
  * the transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemHoisting.java,v 1.1.2.6 2001-06-12 22:58:52 cananian Exp $
+ * @version $Id: MemHoisting.java,v 1.1.2.7 2001-06-12 23:08:19 cananian Exp $
  */
 public abstract class MemHoisting extends Simplification {
     // hide constructor
@@ -115,8 +115,8 @@ public abstract class MemHoisting extends Simplification {
 		    if (e.getParent()!=null &&
 			e.getParent().kind() == TreeKind.MOVE) {
 			MOVE m = (MOVE) e.getParent();
-			Util.assert(m.getSrc().kind()==TreeKind.MOVE &&
-				    m.getDst().kind()==TreeKind.MOVE &&
+			Util.assert(m.getSrc().kind()==TreeKind.MEM &&
+				    m.getDst().kind()==TreeKind.MEM &&
 				    e == m.getSrc());
 		    }
 		    return true;
@@ -140,7 +140,7 @@ public abstract class MemHoisting extends Simplification {
 			}
 			dg.remove(mem);
 		    }
-		    memmap.put(nmem, memmap.get(mem)); memmap.remove(mem);
+		    memmap.put(nmem, new Integer(1)); memmap.remove(mem);
 		    return new ESEQ(tf, e,
 				    new MOVE(tf, e, T1, nmem),
 				    T2);
