@@ -4,7 +4,9 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.NoSuchClassException;
 import harpoon.Tools.Annotation.Lex.LinePos;
 import harpoon.Util.HashEnvironment;
 import harpoon.Util.HClassUtil;
@@ -108,8 +110,8 @@ action code {:
 	if (classN==null) return null;
 	String name = combineWithDot(packageN, classN);
 	if (innerN!=null) name+="$"+innerN.replace('.','$');
-	try { return HClass.forName(name); }
-	catch (NoClassDefFoundError e) { return null; }
+	try { return parser.linker.forName(name); }
+	catch (NoSuchClassException e) { return null; }
     }
     public String toString() {
       StringBuffer sb = new StringBuffer();
@@ -158,15 +160,16 @@ action code {:
       String inner=null;
       do {
 	  try {
-	      HClass.forName(cls);
+	      parser.linker.forName(cls);
 	      // OK, check that cls/inner split is correct.
-	      if (inner!=null) HClass.forName(cls+"$"+inner.replace('.','$'));
+	      if (inner!=null)
+		 parser.linker.forName(cls+"$"+inner.replace('.','$'));
 	      // cool! it all works!
 	      if (cls.indexOf('.')<0) return new QualName(null,cls,inner);
 	      else return new QualName(cls.substring(0,cls.lastIndexOf('.')),
 				       cls.substring(1+cls.lastIndexOf('.')),
 				       inner);
-	  } catch (NoClassDefFoundError e) { /* no class found */ }
+	  } catch (NoSuchClassException e) { /* no class found */ }
 	  // move an element to the inner class portion.
 	  if (cls.indexOf('.')<0) return null; // give up.
 	  inner = combineWithDot(cls.substring(1+cls.lastIndexOf('.')), inner);
@@ -215,9 +218,9 @@ action code {:
 	       this_package==null || s.length() > this_package.length();
 	       s = s.substring(0, s.lastIndexOf('.')) ) {
 	      try {
-		  return HClass.forName(s).getField(name);
+		  return parser.linker.forName(s).getField(name);
 	      } catch (NoSuchFieldError e) { // not a valid field
-	      } catch (NoClassDefFoundError e) { // not a valid class
+	      } catch (NoSuchClassException e) { // not a valid class
 	      }
 	      if (s.indexOf('.')<0) break; // deal with this_package==null.
 	  }
@@ -245,11 +248,11 @@ action code {:
 	       this_package==null || s.length() > this_package.length();
 	       s = s.substring(0, s.lastIndexOf('.')) ) {
 	      try {
-		  HMethod[] hms = HClass.forName(s).getMethods();
+		  HMethod[] hms = parser.linker.forName(s).getMethods();
 		  for (int i=0; i<hms.length; i++)
 		      if (hms[i].getName().equals(name))
 			  l.add(hms[i]);
-	      } catch (NoClassDefFoundError e) { /* not a valid class */ }
+	      } catch (NoSuchClassException e) { /* not a valid class */ }
 	      if (s.indexOf('.')<0) break; // deal with this_package==null.
 	  }
       } else { // qualified expression names
@@ -363,6 +366,8 @@ parser code  {:
   public void report_error(String message, java_cup.runtime.Symbol info) {
     lexer.errorMsg(message, info);
   }
+
+  Linker linker = Loader.systemLinker;
 :};
 
 scan with {: return lexer.nextToken(); :};
@@ -551,7 +556,7 @@ literal ::=	INTEGER_LITERAL:n
 	|	CHARACTER_LITERAL
 		{: RESULT=HClass.Char; :}
 	|	STRING_LITERAL
-		{: RESULT=HClass.forName("java.lang.String"); :}
+		{: RESULT=parser.linker.forName("java.lang.String"); :}
 	|	NULL_LITERAL
 		{: RESULT=HClass.Void; :}
 	;
@@ -1121,11 +1126,13 @@ primary_no_new_array ::=
 	|	method_invocation:e	{:RESULT=e;:}
 	|	array_access:e		{:RESULT=e;:}
 	|	primitive_type DOT CLASS
-				{:RESULT=HClass.forName("java.lang.Class");:}
-	|	VOID DOT CLASS	{:RESULT=HClass.forName("java.lang.Class");:}
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+	|	VOID DOT CLASS
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
 	|	array_type DOT CLASS
-				{:RESULT=HClass.forName("java.lang.Class");:}
-	|	name DOT CLASS	{:RESULT=HClass.forName("java.lang.Class");:}
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+	|	name DOT CLASS
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
 	|	name DOT THIS
 	;
 class_instance_creation_expression ::=
