@@ -18,12 +18,12 @@ import harpoon.Temp.Label;
 import java.util.ArrayList;
 import java.util.List;
 /**
- * <code>DataJavaMain</code> outputs a labeled constant ("javamain")
- * which tells the run time with which method to begin execution of
+ * <code>DataJavaMain</code> outputs a labeled string pointer ("FNI_javamain")
+ * which tells the runtime with which method to begin execution of
  * this java program.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataJavaMain.java,v 1.1.2.3 1999-11-04 06:39:41 cananian Exp $
+ * @version $Id: DataJavaMain.java,v 1.1.2.4 1999-11-04 21:52:28 cananian Exp $
  */
 public class DataJavaMain extends Data {
     final NameMap m_nm;
