@@ -95,4 +95,4 @@ typedef struct _Frame *Frame;
 #define get_retaddr_from_saved_registers(__saved) \
   ((void **)__saved)[13]
 
-#define NUM_REGS 10
+#define NUM_REGS 16

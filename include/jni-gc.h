@@ -1,3 +1,11 @@
+/* #define DEBUG_GC */
+
+#ifdef DEBUG_GC
+# define error_gc(fs,a) ({ printf(fs, a); fflush(stdout); })
+#else
+# define error_gc(fs,a) ({/* do nothing */})
+#endif
+
 /* structures for gc */
 
 #ifndef INCLUDED_JNI_GC_H
@@ -13,29 +21,30 @@
 /* --------- new garbage collection stuff ---------- */
 #ifdef WITH_PRECISE_C_BACKEND
 void *precise_malloc (size_t size_in_bytes);
+void *copying_malloc (size_t size_in_bytes);
 #else
 void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[]);
+void *copying_malloc (size_t size_in_bytes, void *saved_registers[]);
 #endif
 
 struct gc_table {
   jint descriptor;
 };
 
+struct base_table {
+  ptroff_t bt[0];
+};
+
 struct gc_index {
   void * retaddr;
   struct gc_table * gc_data;
+  struct base_table * bt_ptr; /* pointer to base table */
 };
 extern struct gc_index gc_index_start[], gc_index_end[];
 
 extern void *gc_start[], *gc_end[];
 
-/*
-typedef union { 
-  jobject_unwrapped unwrapped_obj; 
-} pointer;
-
-void add_to_root_set(pointer);
-*/
+void add_to_root_set(jobject_unwrapped *obj);
 
 void find_root_set();
 

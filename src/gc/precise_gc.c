@@ -11,7 +11,7 @@
 #ifdef WITH_PRECISE_GC
 
 /* Only set GC_EVERY_TIME for debugging, since this is VERY slow. */
-#define GC_EVERY_TIME            0
+// #define GC_EVERY_TIME
 
 int print_gc_index = 0;
 int check_gc_index = 1;
@@ -30,8 +30,11 @@ void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
   void *result;
   /*Frame fp; */
   struct gc_index *found;
-  /* Explicitly trigger a full, world-stop collection. */
-  /* if (GC_EVERY_TIME) GC_gcollect(); */
+#ifdef GC_EVERY_TIME /* Explicitly trigger a full, world-stop collection. */
+# ifdef WITH_PRECISE_C_BACKEND
+  collect(/* heap not expanded */0);
+# endif
+#endif
   if (print_gc_index) {
     struct gc_index *entry;
     print_gc_index = 0;
@@ -65,7 +68,11 @@ void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
   /*  printf("%d:------------------- %p\n", size_in_bytes, saved_registers);
       for(i = 0; i < 16; i++)
       printf("r%d: %p\n", i, saved_registers[i]); */
+#ifdef WITH_PRECISE_C_BACKEND
   return copying_malloc(size_in_bytes);
+#else
+  return copying_malloc(size_in_bytes, saved_registers);
+#endif
 }
 
 #endif /* WITH_PRECISE_GC */

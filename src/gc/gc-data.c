@@ -177,7 +177,7 @@ void report(char *);
 
 /*
   static jobject_unwrapped *callee_saved[NUM_REGS]; */
-static void *callee_saved[NUM_REGS];
+static jobject_unwrapped *callee_saved[NUM_REGS];
 
 /* linked list unit for representing derived pointers */
 struct dlist {
@@ -207,10 +207,65 @@ int gc_index_cmp(const void *keyval, const void *datum) {
   return (keyval < entry) ? -1 : (keyval > entry); 
 }
 
+/* specific to what is done in precise_gc.S for the given architecture */
+void fill_in_callee_saved(void *saved_registers[]) {
+  int i = 0;
+  for( ; i < 13 /* sp */; i++)
+    callee_saved[i] = (jobject_unwrapped *)(&(saved_registers[i]));
+  for( ; i < NUM_REGS; i++)
+    callee_saved[i] = (jobject_unwrapped *)(&(saved_registers[i-1]));
+  for(i = 0; i < NUM_REGS; i++)
+    printf("r%d %p %p\n", i, callee_saved[i], *(callee_saved[i]));
+}
+
+void add_register_locations(struct gc_index *index)
+{
+  int i;
+  jint *bitmap_ptr = &(index->gc_data->descriptor);
+  for(i = 0; i < NUM_REGS; i++) {
+    int x = (DESCSZ + i) / JINTSZ;
+    int y = (DESCSZ + i) % JINTSZ;
+    if(*(bitmap_ptr+x) & (1 << y)) {
+      printf("bit %d (%p) (%p) on\n", i, *(callee_saved[i]), callee_saved[i]);
+      add_to_root_set(callee_saved[i]);
+    }
+  }
+}
+
+void add_stack_locations(struct gc_index *index, Frame fp)
+{
+  int i, num_entries, offset;
+  jint *bitmap_ptr;
+  assert(index->bt_ptr != NULL); /* make sure we have a base table */
+  num_entries = index->bt_ptr->bt[0];
+  printf("\nBase Table (%d): ", num_entries);
+  for(i = 0; i < num_entries; i++)
+    printf("%d ", index->bt_ptr->bt[i+1]);
+  printf("\n");
+  bitmap_ptr = &(index->gc_data->descriptor);
+  offset = (index->gc_data->descriptor & NO_LIVE_REGISTERS) ?  
+    DESCSZ : DESCSZ + NUM_REGS;
+  for(i = 0; i < num_entries; i++) {
+    int x = (offset+i) / JINTSZ;
+    int y = (offset+i) % JINTSZ;
+    printf("x: %d y: %d offset: %d JINTSZ: %d bitmap: %p\n", 
+	   x, y, offset, JINTSZ, *bitmap_ptr);
+    if(*(bitmap_ptr+x) & (1 << y)) {
+      printf("base table entry is: %d\n", index->bt_ptr->bt[i+1]);
+      printf("fp: %p parent's fp: %p\n", fp, get_parent_fp(fp));
+      printf("bit %d on (%p at %p)\n", i, 
+	     *(((Frame)get_parent_fp(fp))-index->bt_ptr->bt[i+1]),
+	     ((Frame)get_parent_fp(fp))-index->bt_ptr->bt[i+1]);
+    }
+  }
+}
+
 void find_other_roots(void *saved_registers[]) {
   void *retaddr = get_retaddr_from_saved_registers(saved_registers);
   Frame fp = (Frame)(get_fp_from_saved_registers(saved_registers));
   Frame top = (Frame)(((struct FNI_Thread_State *)FNI_GetJNIEnv())->stack_top);
+
+  fill_in_callee_saved(saved_registers);
   
   printf("\ntop: %p\n", top); 
   do {
@@ -223,17 +278,26 @@ void find_other_roots(void *saved_registers[]) {
     if (found != NULL) {
       jint *bitmap_ptr = &(found->gc_data->descriptor);
       int offset = DESCSZ;
-      printf("gc_index: %p %p %p ", found, found->retaddr, found->gc_data);
-      if (found->gc_data->descriptor & NO_LIVE_REGISTERS)
-	printf("R: none ");
-      else if (found->gc_data->descriptor & NO_CHANGE_IN_REGISTERS)
-	printf("R: same ");
-      else printf("R: ? ");
-      if (found->gc_data->descriptor & NO_LIVE_STACK_LOCATIONS)
-	printf("S: none ");
-      else if (found->gc_data->descriptor & NO_CHANGE_IN_STACK_LOCATIONS)
-	printf("S: same ");
-      else printf("S: ? ");
+      printf("gc_index: %p %p %p %p\n", found, 
+	     found->retaddr, found->gc_data, found->bt_ptr);
+      if (!(found->gc_data->descriptor & NO_LIVE_REGISTERS)) {
+	/* live registers, may or may not be same ones as previous gc point */
+	struct gc_index *curr = found;
+	while(curr != NULL &&
+	      curr->gc_data->descriptor & NO_CHANGE_IN_REGISTERS)
+	  curr--;
+	assert(curr != NULL);
+	add_register_locations(curr);
+      }
+      if (!(found->gc_data->descriptor & NO_LIVE_STACK_LOCATIONS)) {
+	struct gc_index *curr = found;
+	while(curr != NULL &&
+	      curr->gc_data->descriptor & NO_CHANGE_IN_STACK_LOCATIONS)
+	  curr--;
+	/* same base table for all gc points in a method */
+	assert(curr != NULL && curr->bt_ptr == found->bt_ptr); 
+	add_stack_locations(curr, fp);
+      }
       if (found->gc_data->descriptor & NO_LIVE_DERIVED_POINTERS)
 	printf("D: none ");
       else if (found->gc_data->descriptor & NO_CHANGE_IN_DERIVED_POINTERS)
@@ -246,24 +310,10 @@ void find_other_roots(void *saved_registers[]) {
       else printf("C: ? ");
       printf("\n");
       
-      if (!(found->gc_data->descriptor & 
-	    (NO_LIVE_REGISTERS | NO_CHANGE_IN_REGISTERS))) {
-	int register_being_processed = 0;
-	while(register_being_processed < NUM_REGS) {
-	  if ((*bitmap_ptr) & (1 << offset))
-	    printf("%d ", register_being_processed);
-	  register_being_processed++; offset++;
-	  if (offset == JINTSZ) {
-	    offset = 0;
-	    bitmap_ptr++;
-	  }
-	}
-	printf("\n");
-      } /* if */
     }
     fp = get_parent_fp(fp);
     retaddr = get_my_retaddr(fp);
-    } while (fp < top);
+  } while (fp < top);
 }
 # endif /* HAVE_STACK_TRACE_FUNCTIONS */
 #endif /* WITH_PRECISE_C_BACKEND */
@@ -271,12 +321,12 @@ void find_other_roots(void *saved_registers[]) {
 /* effects: adds global references to root set using add_to_root_set */
 void find_global_refs() {
   struct _jobject_globalref *jobj =  FNI_globalrefs.next;
-  if (kDEBUG) printf("Finding global refs:\n");
   while(jobj != NULL) {
     assert(jobj->jobject.obj != NULL);
-    if (kDEBUG) printf("  %p (%p)\n", jobj, jobj->jobject.obj);
+    error_gc("Global reference (%p) ", jobj);
+    error_gc("at %p\n", jobj->jobject.obj);
     add_to_root_set(&(jobj->jobject.obj));
-    if (kDEBUG) printf("%p\n", jobj->jobject.obj);
+    error_gc("    New address is %p\n", jobj->jobject.obj);
     jobj = jobj->next;
   }
 }
@@ -287,12 +337,12 @@ void find_thread_local_refs() {
     (struct FNI_Thread_State *)FNI_GetJNIEnv();
   struct _jobject *top = thread_state_ptr->localrefs_next;
   struct _jobject *jobj = thread_state_ptr->localrefs_stack;
-  if (kDEBUG) printf("Finding local refs:\n");
   while(jobj < top) {
-    if (kDEBUG) printf("  %p (%p)\n", jobj, jobj->obj);
+    error_gc("Thread local reference (%p) ", jobj);
+    error_gc("at %p\n", jobj->obj);
     if (jobj->obj != NULL) {
       add_to_root_set(&(jobj->obj));
-      if (kDEBUG) printf("%p\n", jobj->obj);
+      error_gc("    New address is %p\n", jobj->obj); 
     }
     jobj++;
   }
@@ -300,33 +350,34 @@ void find_thread_local_refs() {
 
 /* effects: finds root set and adds each element using add_to_root_set */
 #ifdef WITH_PRECISE_C_BACKEND
-void find_root_set()
-#else
-void find_root_set(void *saved_registers[])
-#endif
-{
-  if (kDEBUG) printf("Entering find_root_set.\n"); fflush(0);
-#ifndef WITH_PRECISE_C_BACKEND
-  find_other_roots(saved_registers);
-#endif
+void find_root_set() {
   find_static_fields();
   find_global_refs();
   find_thread_local_refs();
 }
+#else
+void find_root_set(void *saved_registers[])
+{
+  find_other_roots(saved_registers);
+  find_static_fields();
+  find_global_refs();
+  find_thread_local_refs();
+}
+#endif
 
 /* effects: finds static fields that are objects and
             adds each to root set using find_root_set */
 void find_static_fields() {
   jobject_unwrapped *obj;
-  if (kDEBUG) printf("Finding static fields:\n");
-  /* printf("STATIC OBJECTS START: %p\n", static_objects_start);
-     printf("STATIC OBJECTS END: %p\n", static_objects_end); */
+  error_gc("Static objects from %p ", static_objects_start);
+  error_gc("to %p\n", static_objects_end);
   /* adds static objects to root set */
   for(obj = static_objects_start; obj < static_objects_end; obj++) {
-    if (kDEBUG) printf("  %p (%p)\n", obj, (*obj));
+    error_gc("Static object (%p) ", obj);
+    error_gc("at %p\n", (*obj));
     if ((*obj) != NULL) {
       add_to_root_set(obj);
-      if (kDEBUG) printf("%p\n", (*obj));
+      error_gc("    New address is %p\n", (*obj));
     }
   }
 }
