@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.13 2003-11-10 17:06:50 cananian Exp $
+% $Id: pldi04.tex,v 1.14 2003-11-10 19:43:54 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -34,6 +34,8 @@ Cambridge, MA 02139 \\
 \texttt{\{cananian,rinard\}@csail.mit.edu}
 }
 \special{papersize=8.5in,11in}
+
+\date{\today \\ $ $Revision: 1.14 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -102,20 +104,27 @@ mutual-exclusion--based synchronization methods.
 \subsecput{contrib}{Contributions}
 The contributions of this paper include:
 \begin{itemize}
-\item A concrete language design to integrate transactions into Java
-providing fault-tolerance, backtracing, synchronization, and
-optimistic concurrency.
-\item An efficient implementation of this design which extends
-  race-protection to unsynchronized code.  Also, how hardware
-  support for small transactions can improve this implementation.
-\item Empirical data to justify the implementation choices.
-\item An application of fast functional arrays to solve the ``large
-  object'' problem with Herlihy's universal non-blocking protocol.
-\item Compiler optimizations to improve the speed of software
-  transactions.
 \item A way to ``transactify'' existing Java programs, and a
   description of the transaction properties of typical Java programs
   transformed in such a way.
+\item A concrete language design to integrate transactions into Java
+  providing fault-tolerance, backtracking, and non-blocking
+  synchronization.
+\note{This is \texttt{try \{\ldots\} else \{\ldots\}} syntax.}
+\note{Omitting ``optimistic concurrency'' from this list for now.}
+\item An efficient implementation of this design which extends
+  race-protection to unsynchronized code.
+\item Empirical data to justify the implementation choices.
+\item Compiler optimizations to improve the speed of software
+  transactions.
+\item An application of fast functional arrays to solve the ``large
+  object'' problem with Herlihy's universal non-blocking protocol.
+  \note{Short section; cite my Area Exam as a Technical Report here
+  for more details.}
+\item A variation of the implementation which leverages hardware
+  support for small transactions.  This allows hardware small
+  transactions to be bootstrapped to provide efficient large
+  transactions.
 \end{itemize}
 
 \secput{example}{Example and Motivation}
@@ -138,6 +147,7 @@ backoff algorithm to preclude livelock.
 
 
 \subsecput{flow}{Network flow}
+\note{Shows how we simplify locking discipline.}
 
 Consider a serial program for computing network flow (see, for
 example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
@@ -220,7 +230,7 @@ parallel threads.
 
 
 \subsecput{stringbuffer}{The \texttt{StringBuffer} class}
-
+\note{Shows how we fix race-conditions.}
 \par {\footnotesize
 \samepage
 \begin{verbatim}
@@ -283,6 +293,12 @@ equivalently, there is no bound on transaction size without a bound on
 the size of the string~\texttt{sb}.  This means that boundless
 transactions must be supported if this method is operate on arbitrary
 inputs.
+
+\subsecput{destruct}{Destructive traversal}
+Shows fault-tolerance.
+
+\subsecput{backtrack}{Backtracking}
+Prolog-esque example?
 
 
 \secput{related}{Related work}
@@ -665,10 +681,10 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 
 \secput{efficient}{Designing Efficient Transactions}
 \subsection{Scales}
-\subsection{Allocation}
 \subsection{Object expansion}
+\subsection{Reads vs. Writes}
 \subsection{Large objects}
-\subsection{Subsumption}
+\subsection{Subsumption?}
 
 \secput{algo}{Algorithms}
 
