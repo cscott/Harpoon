@@ -1,10 +1,10 @@
 RaiseE($e$:edge) =
 \begin{algorithmic}[1]
-\STATE $E_e \gets E_e \cup { e }$
+\STATE $E_e \gets E_e \cup \{ e \}$
 \LET $n$ be the destination of edge $e$
 \IF{$n \not\in E_n$}
-\STATE $E_n \gets E_n \cup { n }$
-\STATE $W_n \gets W_n \cup { n }$
+\STATE $E_n \gets E_n \cup \{ n \}$
+\STATE $W_n \gets W_n \cup \{ n \}$
 \ENDIF
 \end{algorithmic}
 ~\\
