@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
-#include "classlist.h"
 #include "file.h"
 
 #ifdef TOOL
@@ -17,6 +16,7 @@ extern "C" {
 #include "Hashtable.h"
 #include "model.h"
 #include "element.h"
+#include "classlist.h"
 
 char *dstring="d\0";  // this constant is used by the tool; please ignore it
 #endif
@@ -39,7 +39,6 @@ int callnumber = 0;
 int main(int argc, char **argv) 
 {
   ptr=createdisk();
-
 
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
@@ -64,7 +63,7 @@ int main(int argc, char **argv)
 
   createlink(ptr, "file2", "link2");
 
-  printfile("link1", ptr);
+  printfile("file1", ptr);
 }
 
 
@@ -98,7 +97,7 @@ struct block* createdisk()
 
 
   struct InodeBitmap *ib=(struct InodeBitmap *) &ptr[3];
-  ib->inode[0]=1;
+  ib->inode[1]=0;
 
 
   struct InodeTable *itb=(struct InodeTable *) &ptr[4];
@@ -164,6 +163,7 @@ int openfile(struct block *ptr, char *filename)
       return -1;
     }
   itb->entries[inode].filesize=0;
+  itb->entries[inode].referencecount=1;
   for (int i=0;i<12;i++)
     itb->entries[inode].Blockptr[i]=0;
   

@@ -1,6 +1,8 @@
 #ifndef FILE_H
 #define FILE_H
 
+#define TOOL
+
 #define BLOCKSIZE 8192
 #define NUMBLOCK 1024
 #define LENGTH BLOCKSIZE*NUMBLOCK

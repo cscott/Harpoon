@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/mman.h>
-#include "classlist.h"
 #include "file.h"
 
 #ifdef TOOL
@@ -17,6 +16,7 @@ extern "C" {
 #include "Hashtable.h"
 #include "model.h"
 #include "element.h"
+#include "classlist.h"
 
 char *dstring="d\0";  // this constant is used by the tool; please ignore it
 #endif
