@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.1 1998-09-15 02:18:14 cananian Exp $
+ * @version $Id: Graph.java,v 1.2 1998-09-15 03:26:18 cananian Exp $
  */
 
 public final class Graph extends harpoon.IR.Registration {
@@ -47,7 +47,8 @@ public final class Graph extends harpoon.IR.Registration {
 	for (int i=0; i<el.length; i++) {
 	    out.print("node: { ");
 	    out.print("title:\""+el[i].getID()+"\" ");
-	    out.print("label:\""+escape(el[i].toString())+"\" ");
+	    out.print("label:\"#" + el[i].getID() + ": " + 
+		      escape(el[i].toString())+"\" ");
 	    out.print("shape: box");
 	    out.println("}");
 	}
