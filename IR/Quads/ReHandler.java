@@ -32,21 +32,32 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.14 1999-08-23 22:46:57 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.15 1999-08-24 22:19:03 bdemsky Exp $
  */
 final class ReHandler {
-    // entry point.
-    public static final Quad rehandler(final QuadFactory qf, final QuadSSA code) {
-	QuadSSA ncode=(QuadSSA)code.clone(code.getMethod());
-	(new ToSSA(new SSITOSSAMap(ncode))).optimize(ncode);
-	UseDef nd=new UseDef();
-	TypeInfo ti=new TypeInfo(ncode, nd);
-	analyzeTypes(ncode, ti);
+    /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
+     * <code>QuadSSA</code> and returns the first <code>Quad</code> of
+     * a <code>QuadWithTry</code> IR. */
 
+    public static final Quad rehandler(final QuadFactory qf, final QuadSSA code) {
+	//clone the original
+	QuadSSA ncode=(QuadSSA)code.clone(code.getMethod());
+	//make it SSA
+	(new ToSSA(new SSITOSSAMap(ncode))).optimize(ncode);
+
+       	UseDef nd=new UseDef();
+	TypeInfo ti=new TypeInfo(ncode, nd);
+	//add in TYPECAST as necessary to make the bytecode verifier happy
+	//does dataflow analysis, etc...
+	analyzeTypes(ncode, ti);
+	
+	//Do pattern matching to make exceptions implicit...
 	
 	WorkSet callset=new WorkSet();
 	WorkSet throwset=new WorkSet();
 	WorkSet instanceset=new WorkSet();
+
+	//Do actual pattern matching here
 	HashMapList handlermap=analyze(ncode,callset,throwset, instanceset);
 
 	final QuadMap qm = new QuadMap();
@@ -58,9 +69,11 @@ final class ReHandler {
 	final StaticState ss = new StaticState(qf, qm, ctm, al);
 	WorkSet phiset=new WorkSet();
 	WorkSet cjmpset=new WorkSet();
-	visitAll(new Visitor(ss, handlermap, phiset, instanceset, cjmpset, ncode), old_header);
-	// now qm contains mappings from old to new, we just have to link them.
 
+	//this visitor just clones and classifies the quads
+	visitAll(new Visitor(ss, handlermap, phiset, instanceset, cjmpset, ncode), old_header);
+
+	// now qm contains mappings from old to new, we just have to link them.
 	for (Iterator e = ncode.getElementsI(); e.hasNext(); ) {
 	    Quad old = (Quad) e.next();
 	    // link next.
@@ -71,18 +84,23 @@ final class ReHandler {
 	    }
 	}
 
-	//--------------------
+	//Need to iterate through the call statements
 	Iterator iteratecall=callset.iterator();
 	    
 	while (iteratecall.hasNext()) {
 	    CALL call=(CALL)iteratecall.next();
 	    boolean linkold=true;
 	    HandInfo next;
+	    //see if the call is covered by a handler
 	    if(handlermap.containsKey(call)) {
+		//iterate through the handlers covering the call
 		Iterator iterate=handlermap.get(call).iterator();
 		boolean any=false;
 		while (iterate.hasNext()) {
 		    HandInfo hi=(HandInfo)iterate.next();
+		    //see if the any case is handled
+		    //if so, we can't simply omit more specific handlers
+		    //that just rethrow the exception
 		    if (hi.anyhandler()) {
 			if (throwset.contains(hi.handler())) {
 			    Temp t=((THROW)hi.handler()).throwable();
@@ -93,16 +111,20 @@ final class ReHandler {
 			}
 		    }
 		}
+		//iterate through the handlers again
 		iterate=handlermap.get(call).iterator();
 		while(iterate.hasNext()) {
 		    ReProtection protlist=new ReProtection();
 		    protlist.insert(qm.getHead(call));
 		    List handlers=handlermap.get(call);
 		    HandInfo nexth=(HandInfo)iterate.next();
+		    //cover default exit case
 		    if (nexth.defaultexit())
 			makedefaultexit(qf, ss, qm, call, nexth, phiset);
+		    //cover any handler if it is needed
 		    if (nexth.anyhandler()&&!any)
 			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset);
+		    //cover other handlers
    		    if (nexth.specificex()) 
 			makespechandler(qf, ss, qm, call, throwset, nexth, protlist, phiset, any);
 		}
@@ -140,6 +162,7 @@ final class ReHandler {
 	    Quad.addEdge(qM, i++, (Quad)iterate.next(),0);
 
 	// Modify this new CFG by emptying PHI nodes
+	// Need to make NoSSA for QuadWithTry
 	PHVisitor v = new PHVisitor(qf);
 	for (Iterator it = phiset.iterator(); it.hasNext();)
 	    ((Quad)it.next()).visit(v);
@@ -147,6 +170,7 @@ final class ReHandler {
 	return qH;
     }
 
+    //make an exceptionless exit for the call statement
     private static void makedefaultexit(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, Set phiset) {
 	Map phimap=nexth.map();
 	Temp[] dst=new Temp[phimap.size()];
@@ -168,7 +192,7 @@ final class ReHandler {
 	Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
     }
 
-
+    //makes an exit for the anyhandler
     private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset) {
 	Quad newhandler = new HANDLER(qf, qm.getHead(call),
 				      Quad.map(ss.ctm, call.retex()),
@@ -195,7 +219,7 @@ final class ReHandler {
     }
 
 
-    
+    //makes a specific handler
     private static void makespechandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, Set throwset, HandInfo nexth, ReProtection protlist, Set phiset, boolean any) {
 	boolean needhand=true;
 	if (throwset.contains(nexth.handler())&&any) {
@@ -231,14 +255,26 @@ final class ReHandler {
 	}
     }
 
+
+    /** <code>analyzeTypes</code> implements analysis to determine
+     *  what <code>TYPECAST</code> are implicit in the Quads.
+     *  Then each outgoing edge of every quad is checked to see
+     *  if a new implicit <code>TYPECAST</code> appears across it.  If so
+     *  an explicit <code>TYPECAST</code> is added.*/
+
     static void analyzeTypes(final QuadSSA code, TypeMap ti) {
 	HCodeElement start=code.getRootElement();
 	WorkSet todo=new WorkSet();
 	todo.add(start);
+	//set up visitor for analysis
 	TypeVisitor visitor=new TypeVisitor(ti, todo);
+	//do the analysis
 	visitanalyze(todo, visitor);
+
 	Quad ql[]=(Quad[]) code.getElements();
 	Map typecast=visitor.typecast();
+	//loop through quads and their next quads
+	//looking to see if we need a TYPECAST
 	for (int i=0; i<ql.length; i++)
 	    for (int j=0;j<ql[i].nextLength(); j++) {
 		//Need to check to see if ql[i].next(j)
@@ -278,6 +314,8 @@ final class ReHandler {
 	    }
     }
 
+    //Worklist based approac
+    //Keep visiting quads until the list is empty...
     static void visitanalyze(WorkSet todo, TypeVisitor visitor) {
 	while(!todo.isEmpty()) {
 		Quad next=(Quad)todo.pop();
@@ -285,7 +323,9 @@ final class ReHandler {
 		next.visit(visitor);
 	}
     }
-   
+    
+    //This method does the pattern matching on calls
+    //to determine HANDLERS
     private static HashMapList analyze(final Code code, Set callset, Set throwset, Set instanceset) {
 	CALLVisitor cv=new CALLVisitor(callset, throwset, instanceset);
 	for (Iterator e =  code.getElementsI(); e.hasNext(); )
@@ -308,6 +348,7 @@ final class ReHandler {
 	}
     }
 
+    //This method visits all the calls to do pattern matching
     private static final void analyzevisit(AnalysingVisitor v, Set callset) {
 	Iterator iterate=callset.iterator();
 	while (iterate.hasNext()) {
@@ -354,6 +395,7 @@ final class ReHandler {
 	}
     }
 
+    //This visitor creates sets of the THROW, INSTANCEOF, and CALL quads
     private static final class CALLVisitor extends QuadVisitor {
 	Set callset;
 	Set throwset;
@@ -395,8 +437,8 @@ final class ReHandler {
 	UseDef ud;
 
 	Visitor(StaticState ss, HashMapList handlermap, Set phiset, Set instanceset, Set cjmpset, HCode hc) { 
-	    this.qf = ss.qf; 
-	    this.ss = ss; 
+	    this.qf = ss.qf;
+	    this.ss = ss;
 	    this.handlermap=handlermap;
 	    this.phiset=phiset;
 	    this.instanceset=instanceset;
@@ -442,6 +484,9 @@ final class ReHandler {
 	    ss.qm.put(q, head, nq);
 	}
     }
+
+    /** <code>AnalysingVisitor</code> implements most of pattern matching
+     *  for CALL statements.*/
 
     private static final class AnalysingVisitor extends QuadVisitor {
 	HashMapList handlermap;
@@ -731,6 +776,9 @@ class PHVisitor extends QuadVisitor
     }
 }
 
+/** <code>TypeVisitor</code> determines what implicit <code>TYPECAST</code>
+ *  exist. */
+
 class TypeVisitor extends QuadVisitor {
     TypeMap ti;
     HashMap typecast;
@@ -758,6 +806,8 @@ class TypeVisitor extends QuadVisitor {
 	}
     }
 
+    //This method handles generic quads...
+    //Equation for it is out=in.
     public void visit(Quad q) {
 	boolean changed=false;
 	if (visited.contains(q)) {
@@ -790,6 +840,9 @@ class TypeVisitor extends QuadVisitor {
 	}
     }
     
+    //This handles MOVE quads...
+    //Equation for it is out=in union gen
+    //where gen=any typecast for dst that were typecast for src in in.
     public void visit(MOVE q) {
 	boolean changed=false;
 	if (visited.contains(q)) {
@@ -831,6 +884,9 @@ class TypeVisitor extends QuadVisitor {
 	}
     }
 
+    //Method for SET
+    //out=in union gen
+    //where gen=any cast required by SET [not already in in]
     public void visit(SET q) {
 	//q.objectref() is the object to use
 	//q.src() is the temp to put in the q.field() of this object
@@ -910,7 +966,9 @@ class TypeVisitor extends QuadVisitor {
 		todo.add(q.next(i));
 	}
     }
-    
+
+    //method for GET...
+    //equations same as SET...
     public void visit(GET q) {
 	//q.objectref() is the object to use
 	//q.dst() is the temp to get from the q.field() of this object
@@ -968,6 +1026,9 @@ class TypeVisitor extends QuadVisitor {
 	}
     }
     
+
+    //method for call
+    //same basic idea
     public void visit(CALL q) {
 	boolean changed=false;
 	if (visited.contains(q)) {
@@ -1027,6 +1088,9 @@ class TypeVisitor extends QuadVisitor {
 	}
     }
     
+    //PHI method...
+    //merges TYPECAST...
+    //Does it by taking intersection of all incoming in's....
     public void visit(PHI q) {
 	WorkSet casts=new WorkSet();
 	int firstv;
