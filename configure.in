@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.96 $)dnl
+AC_REVISION($Revision: 1.97 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -227,9 +227,9 @@ yes)	AC_MSG_RESULT([full])
 esac
 
 dnl process option to select profiling
-AC_MSG_CHECKING([whether to compile for profiling])
+AC_MSG_CHECKING([whether to compile for profiling with gprof])
 AC_ARG_WITH(profiling,
-[  --with-profiling        compile for profiling],
+[  --with-profiling        compile for profiling with gprof],
 with_profiling="$withval", with_profiling="no")
 case "$with_profiling" in
 yes)	AC_MSG_RESULT([yes])
@@ -311,7 +311,6 @@ semi)
 	AC_MSG_RESULT([semi-precise gc])
 	AC_DEFINE(WITH_SEMI_PRECISE_GC, 1,
 		  [Define if you want semi-precise garbage collection])
-	GC_LIB="Contrib/gc/gc.a src/gc/libgc.la -ldl"
 	;;
 copying)
 	AC_MSG_RESULT([precise stop-and-copy gc])
@@ -325,7 +324,6 @@ marksweep)
 	;;
 conservative)
 	AC_MSG_RESULT([B-D-W conservative gc])
-	GC_LIB="Contrib/gc/gc.a -ldl"
 	;;
 none)	AC_MSG_RESULT([no garbage collection])
 	;;
@@ -337,6 +335,7 @@ if test $gc_type = semi -o $gc_type = conservative; then
     	[Define if you are using the B-D-W conservative garbage collector])
 	dnl BDW collector at some point between 5.0a4 and 6.0a1 decided to
 	dnl require you to link in the library (libdl) containing dlopen().
+	GC_LIB="Contrib/gc/gc.a -ldl"
 fi	
 if test $gc_type = copying -o $gc_type = marksweep; then
 	AC_DEFINE(WITH_PRECISE_GC, 1,
@@ -354,16 +353,18 @@ AM_CONDITIONAL(MARKSWEEP_GC, test $gc_type = marksweep)
 AM_CONDITIONAL(SEMI_PRECISE_GC, test $gc_type = semi)
 
 dnl process option for single-word aligned allocations.
-AC_MSG_CHECKING([whether to single-word align allocations])
+dnl (x86 and strongARM don't require double-word alignment of double-word
+dnl  quantities)
+AC_MSG_CHECKING([desired object allocation alignment])
 AC_ARG_WITH(single-word-align,
 [  --with-single-word-align single-word align allocations],
 with_single_word_align="$withval", with_single_word_align="no")
 case "$with_single_word_align" in
-yes)	AC_MSG_RESULT([yes])
+yes)	AC_MSG_RESULT([single-word])
 	AC_DEFINE(WITH_SINGLE_WORD_ALIGN, 1,
 	[Define if you want allocations to be single-word aligned])
 	;;
-*)	AC_MSG_RESULT([no])
+*)	AC_MSG_RESULT([double-word])
 	;;
 esac
 
@@ -452,7 +453,7 @@ dnl set #defines and AM_CONDITIONALs for various statistics.
 if test x$with_memory_statistics = xyes; then
 	with_statistics=yes # memory statistics imply regular statistics.
 	AC_DEFINE(WITH_MEMORY_STATISTICS, 1,
-    	[Define if you want to collect and print memory statistics]),
+    	[Define if you want to collect and print memory statistics])
 fi
 if test x$with_statistics = xyes; then
 	AC_DEFINE(WITH_STATISTICS, 1,
