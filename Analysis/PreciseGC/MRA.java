@@ -12,15 +12,20 @@ import java.util.Set;
  * recently allocated object at this program point?"
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRA.java,v 1.1.2.3 2001-10-15 17:55:10 kkz Exp $
+ * @version $Id: MRA.java,v 1.1.2.4 2001-10-19 20:45:13 kkz Exp $
  */
-public interface MRA {
+public abstract class MRA {
 
-    /** Returns the <code>Set</code> of <code>Temp</code>s
+    /** Returns an array of <code>Set</code>s where
+     *  the <code>Set</code> at index 0 is the
+     *  <code>Set</code> of <code>Temp</code>s
      *  that contain the address of the most recently
-     *  allocated object at the given <code>Quad</code>.
+     *  allocated object at the given <code>Quad</code>
+     *  except where the <code>Set</code> at index
+     *  1 contains the <code>HClass</code> of the
+     *  relevant <code>Temp</code>.
      */
-    public Set mra_before(Quad q);
+    public abstract Set[] mra_before(Quad q);
 
 }
 

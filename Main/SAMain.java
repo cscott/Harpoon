@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.169 2001-10-18 23:56:07 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.170 2001-10-19 20:45:35 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -164,6 +164,8 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean PRECISEGC = false;
     static boolean MULTITHREADED = false;
     static boolean WRITEBARRIERS = false;
+    static boolean WB_REMOVAL = false;
+    static boolean WB_STATISTICS = false;
     static FileOutputStream wbos = null;
     static PrintStream wbps = null;
     static WriteBarrierQuadPass writeBarrier = null;
@@ -192,7 +194,30 @@ public class SAMain extends harpoon.IR.Registration {
 	if (Realtime.REALTIME_JAVA && !alexhack) { 
 	    Realtime.setupObject(linker); 
 	}
-	
+
+	// Check for compatibility of precise gc options.
+	if (PRECISEGC)
+	    Util.assert((BACKEND==PRECISEC_BACKEND),
+			"Precise gc is only implemented for "+
+			"the precise C backend.");
+	if (MULTITHREADED) {
+	    Util.assert(PRECISEGC || Realtime.REALTIME_JAVA,
+			"Multi-threaded option is valid only "+
+			"for precise gc.");
+	    Util.assert(!WB_REMOVAL,
+			"Write barrier removal not supported "+
+			"for multi-threaded programs.");
+	}
+	if (WRITEBARRIERS)
+	    Util.assert(PRECISEGC,
+			"Write barrier option is valid only "+
+			"for precise gc.");
+	if (WB_REMOVAL)
+	    Util.assert(WRITEBARRIERS,
+			"Write barrierr removal optimization "+
+			"is only valid if write barriers are "+
+			"being inserted.");
+
 	MetaCallGraph mcg=null;
 	
 	if (SAMain.startset!=null)
@@ -454,9 +479,21 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	if (WRITEBARRIERS) {
-	    Util.assert(BACKEND == PRECISEC_BACKEND && PRECISEGC);
-	    writeBarrier = 
-		new WriteBarrierQuadPass(classHierarchy, hcf, linker, false);
+	    System.out.println
+		("Inserting write barriers for generational gc.");
+	    if (WB_REMOVAL)
+		System.out.println
+		    ("Performing write barrier removal optimization.");
+	    String rName = frame.getRuntime().resourcePath
+		("writebarrier-safe.properties");
+	    if (WB_REMOVAL) {
+		hcf = new harpoon.Analysis.PreciseGC.AllocationHoisting
+		    (hcf, classHierarchy, linker, rName).codeFactory();
+		// re-generate class hierarchy to handle modified methods
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
+	    writeBarrier = new WriteBarrierQuadPass
+		(classHierarchy, hcf, linker, rName, WB_REMOVAL);
 	    hcf = writeBarrier.codeFactory();
 	    // re-generate class hierarchy to handle added calls
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
@@ -498,11 +535,15 @@ public class SAMain extends harpoon.IR.Registration {
 		codeFactory();
 	    // remove write barriers for assignment to constants
 	    hcf = writeBarrier.ceCodeFactory(frame, hcf);
-	    if (wbps != null)
-		wbps.println("\nWRITE BARRIER LIST FOR "+className);
-	    hcf = writeBarrier.statsCodeFactory
-		(frame, hcf, classHierarchy, wbps);
-	    //hcf = writeBarrier.treeCodeFactory(frame, hcf, classHierarchy);
+	    if (WB_STATISTICS) {
+		System.out.println("Compiling for write barrier statistics.");
+		if (wbps != null)
+		    wbps.println("\nWRITE BARRIER LIST FOR "+className);
+		hcf = writeBarrier.statsCodeFactory
+		    (frame, hcf, classHierarchy, wbps);
+	    } else {
+		hcf = writeBarrier.treeCodeFactory(frame, hcf, classHierarchy);
+	    }
 	}
 
 	if(Realtime.REALTIME_JAVA && !alexhack)
@@ -520,9 +561,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 	if (MULTITHREADED) {
 	    /* pass to insert GC polling calls */
-	    Util.assert(BACKEND == PRECISEC_BACKEND && 
-			(PRECISEGC || Realtime.REALTIME_JAVA));
-	    System.out.println("Make GC thread-safe");
+	    System.out.println("Compiling with precise gc for multiple threads.");
 	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
 		codeFactory(hcf, frame);
 	}
@@ -766,7 +805,7 @@ public class SAMain extends harpoon.IR.Registration {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
 	  it=new CombineIterator(new Iterator[]
 				 { it, Default.singletonIterator(data) });
-	  if (WRITEBARRIERS) {
+	  if (WB_STATISTICS) {
 	      HData wbData = writeBarrier.getData(hclass, frame);
 	      it=new CombineIterator
 		  (new Iterator[] { it, Default.singletonIterator(wbData) });
@@ -826,7 +865,7 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void parseOpts(String[] args) {
 
 	Getopt g = new Getopt("SAMain", args, 
-			      "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw::");
+			      "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmwxy::");
 	
 	int c;
 	String arg;
@@ -848,7 +887,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'm': // Multi-threaded (KKZ)
 		MULTITHREADED = true; break;
 	    case 'w': // Add write barriers (KKZ)
-		WRITEBARRIERS = true;
+		WRITEBARRIERS = true; break;
+	    case 'x': // Remove unnecessary write barriers (KKZ)
+		WB_REMOVAL = true; break;
+	    case 'y': // Compile with write barrier statistics (KKZ)
+		WB_STATISTICS = true;
 		arg = g.getOptarg();
 		if (arg != null) {
 		    try {

@@ -48,11 +48,12 @@ import java.util.Set;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.4 2001-10-15 17:55:10 kkz Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.5 2001-10-19 20:45:13 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
 
+    private final ClassHierarchy ch;
     private final boolean optimize;
     private final MRAFactory mraf;
     private final HMethod arraySC;
@@ -67,8 +68,10 @@ public class WriteBarrierQuadPass extends
     public WriteBarrierQuadPass(ClassHierarchy ch, 
 				HCodeFactory parent, 
 				Linker linker,
+				String resourceName,
 				boolean optimize) {
 	super(parent);
+	this.ch = ch;
 	this.JLT = linker.forName("java.lang.Throwable");
 	HClass WB = linker.forName("harpoon.Runtime.PreciseGC.WriteBarrier");
 	HClass JLO = linker.forName("java.lang.Object");
@@ -78,11 +81,13 @@ public class WriteBarrierQuadPass extends
 	this.fieldSC = WB.getMethod("fsc", new HClass[] 
 				    { JLO, JLRF, JLO, HClass.Int });
 	this.optimize = optimize;
-	this.mraf = new MRAFactory(ch, parent);
+	this.mraf = optimize ? 
+	    new MRAFactory(ch, parent, linker, resourceName): null;
     }
     
     protected HCode mutateHCode(HCodeAndMaps input) {
 	Code hc = (Code)input.hcode();
+	String cls_str = hc.getMethod().getDeclaringClass().getName();
 	// we should not have to update derivation information
 	Util.assert(hc.getDerivation() == null);
 	// create a set of SETs and ASETs that can be ignored
@@ -93,12 +98,30 @@ public class WriteBarrierQuadPass extends
 	    // MRA mra = new MRA(hc, safeSet);
 	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
 		Quad q = (Quad)it.next();
+		Set[] mra_before = mra.mra_before(q);
 		if (q.kind() == QuadKind.ASET) {
-		    if (mra.mra_before(q).contains(((ASET)q).objectref()))
+		    // ASETs only know whether the component type is
+		    // an object, and not the specific type of the
+		    // array, so we can only do an ignore if the
+		    // exception set is empty, unless we want to do
+		    // more analysis to determine the type of the array.
+		    if (mra_before[0].contains(((ASET)q).objectref()) &&
+			mra_before[1].isEmpty()) {
 			ignore.add(q);
+		    }
 		} else if (q.kind() == QuadKind.SET) {
-		    if (mra.mra_before(q).contains(((SET)q).objectref()))
+		    if (mra_before[0].contains(((SET)q).objectref())) {
+			// add first, remove later if problems
 			ignore.add(q);
+			HClass type = ((SET)q).field().getType();
+			for (Iterator cls = mra_before[1].iterator();
+			     cls.hasNext(); ) {
+			    if (ch.parents((HClass)cls.next()).
+				contains(type)) {
+				break;
+			    }
+			}
+		    }
 		}
 	    }
 	}
