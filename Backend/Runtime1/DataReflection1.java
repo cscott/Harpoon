@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.1.2.2 1999-10-20 07:05:57 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.1.2.3 1999-11-04 03:25:03 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -130,17 +130,12 @@ public class DataReflection1 extends Data {
 	return Stm.toStm(stmlist);
     }
     private Stm buildStrings(List sorted) {
-	List stmlist = new ArrayList(1+2*sorted.size()/*at least*/);
+	List stmlist = new ArrayList(1+2*sorted.size());
 	// build actual c-style string data from UTF-8 encoded class name
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    stmlist.add(new LABEL(tf, null, m_nm.label(hc, "namestr"), true));
-	    byte[] bytes = toUTF8(hc.getName().replace('.','/'));
-	    for (int i=0; i<bytes.length; i++)
-		stmlist.add(_DATA(new CONST(tf, null, 8, false,
-					    ((int)bytes[i])&0xFF)));
-	    // null-terminate the string.
-	    stmlist.add(_DATA(new CONST(tf, null, 8, false, 0)));
+	    stmlist.add(emitUtf8String(hc.getName().replace('.','/')));
 	}
 	// pad out to a full word after the last byte.
 	stmlist.add(new ALIGN(tf, null, 4));
@@ -162,37 +157,5 @@ public class DataReflection1 extends Data {
 	    stmlist.add(m_ob.buildObject(tf, info, true));
 	}
 	return Stm.toStm(stmlist);
-    }
-
-    // HELPER FUNCTION
-    /** Make a java-style UTF-8 encoded byte array for a string. */
-    public static byte[] toUTF8(String str) {
-	// first count how many bytes we'll need.
-	int len=0;
-	for (int i=0; i<str.length(); i++) {
-	    int c = (int) str.charAt(i);
-	    if (c >= 0x0001 && c <= 0x007f) len+=1; // one byte format
-	    else if (c == 0 || (c >= 0x0080 && c <= 0x07FF)) len+=2; //two byte
-	    else len += 3; // three byte format.
-	}
-	// allocate byte array for result.
-	byte[] r = new byte[len];
-	// now make the UTF-8 encoding.
-	len=0;
-	for (int i=0; i<str.length(); i++) {
-	    int c = (int) str.charAt(i);
-	    if (c >= 0x0001 && c <= 0x007f) { // one byte format
-		r[len++] = (byte) c;
-	    } else if (c == 0 || (c >= 0x0080 && c <= 0x07FF)) { // two byte
-		r[len++] = (byte) (0xC0 | (c>>>6));
-		r[len++] = (byte) (0x80 | (c & 0x3F));
-	    } else { // three byte format
-		r[len++] = (byte) (0xE0 | (c>>>12));
-		r[len++] = (byte) (0x80 | ((c>>>6) & 0x3F));
-		r[len++] = (byte) (0x80 | (c & 0x3F));
-	    }
-	}
-	// okay, done.
-	return r;
     }
 }

@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.5 1999-10-28 04:02:54 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.6 1999-11-04 03:25:04 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -97,10 +97,10 @@ public class DataReflection2 extends Data {
 	    if (hm.getDeclaringClass() != hc) continue;
 	    // first name string.
 	    stmlist.add(new LABEL(tf, null, memberLabel(hm,"namestr"), false));
-	    emitString(stmlist, hm.getName());
+	    stmlist.add(emitUtf8String(hm.getName()));
 	    // then descriptor string.
 	    stmlist.add(new LABEL(tf, null, memberLabel(hm,"descstr"), false));
-	    emitString(stmlist, hm.getDescriptor());
+	    stmlist.add(emitUtf8String(hm.getDescriptor()));
 	}
 	// pad out to full word after last string bit.
 	stmlist.add(new ALIGN(tf, null, 4));
@@ -165,13 +165,6 @@ public class DataReflection2 extends Data {
 	else
 	    stmlist.add(_DATA(new CONST(tf, null, (int) nargs)));
     }
-    private void emitString(List stmlist, String str) {
-	byte[] bytes = toUTF8(str);
-	for (int i=0; i<bytes.length; i++)
-	    stmlist.add(_DATA(new CONST(tf, null, 8, false,
-					((int)bytes[i])&0xFF)));
-	stmlist.add(_DATA(new CONST(tf, null, 8, false, 0))); // null-terminate
-    }
     private List sortedMembers(HClass hc) {
 	List members = new ArrayList(Arrays.asList(hc.getFields()));
 	members.addAll(Arrays.asList(hc.getMethods()));
@@ -193,11 +186,5 @@ public class DataReflection2 extends Data {
 	    }		
 	});
 	return Collections.unmodifiableList(members);
-    }
-
-    // STUB
-    /** Make a java-style UTF-8 encoded byte array for a string. */
-    public static byte[] toUTF8(String str) {
-	return DataReflection1.toUTF8(str);
     }
 }
