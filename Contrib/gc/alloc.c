@@ -279,6 +279,8 @@ void GC_maybe_gc()
     }
 }
 
+/* keep track of cumulative gc time */
+double ttl_gc_time;
 
 /*
  * Stop the world garbage collection.  Assumes lock held, signals disabled.
@@ -290,7 +292,6 @@ GC_stop_func stop_func;
   CLOCK_TYPE start_time, end_time;
   GET_TIME(start_time);
 #define return(rv) ({\
-  extern double ttl_gc_time;\
   GET_TIME(end_time);\
   ttl_gc_time+=MS_TIME_DIFF(end_time,start_time);\
   return (rv);\
