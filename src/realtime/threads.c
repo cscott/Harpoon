@@ -37,7 +37,7 @@ long quanta = 200;
 void StartSwitching()
 {
 #ifdef RTJ_DEBUG_THREADS
-  printf("    StartSwitching()\n");
+  printf("\n    StartSwitching()");
 #endif
   do_switching = 1;
 }
@@ -47,7 +47,7 @@ int StopSwitching()
 {
   int prev = do_switching;
 #ifdef RTJ_DEBUG_THREADS
-  printf("    StopSwitching()\n");
+  printf("\n    StopSwitching()");
 #endif
   do_switching = 0;
   return prev;
@@ -57,7 +57,7 @@ int StopSwitching()
 void RestoreSwitching(int state)
 {
 #ifdef RTJ_DEBUG_THREADS
-  printf("    RestoreSwitching(%d)\n", state);
+  printf("\n    RestoreSwitching(%d)", state);
 #endif
   do_switching = state;
 }
@@ -75,7 +75,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_PriorityScheduler_restoreSwitchingInC
 JNIEXPORT void JNICALL Java_javax_realtime_PriorityScheduler_setQuantaInC
 (JNIEnv* env, jobject _this, jlong microsecs) {
 #ifdef RTJ_DEBUG_THREADS
-  printf("  PriorityScheduler.setQuantaInC(%08x, %08x, %d)\n", env, _this, microsecs);
+  printf("\n  PriorityScheduler.setQuantaInC(%08x, %08x, %d)", env, 
+	 _this, microsecs);
 #endif
   quanta = microsecs;
 }
@@ -85,7 +86,7 @@ JNIEXPORT jlong JNICALL Java_javax_realtime_RealtimeClock_getTimeInC
   struct timeval time;
   gettimeofday(&time, NULL);
 #ifdef RTJ_DEBUG_THREADS
-  printf("  (%d s,%d us) = RealtimeClock.getTimeInC(%08x, %08x)\n", 
+  printf("\n  (%d s,%d us) = RealtimeClock.getTimeInC(%08x, %08x)", 
 	 time.tv_sec, time.tv_usec, env, _this);
 #endif
   return time.tv_sec * 1000000 + time.tv_usec;
@@ -106,15 +107,15 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
   struct inflated_oobj* infObj; //thread's inflated object
   int switching_state; //save old switching state
   static struct timeval lastCheckTime = {0, 0};
-#ifdef RTJ_DEBUG_THREADS  
-  printf("CheckQuanta(%d, %d, %d)\n", notimecheck, force, actually_transfer);
-#endif
   if(!do_switching && !force) { //if thread switching is turned off
-#ifdef RTJ_DEBUG_THREADS
-    printf("  thread switching turned off\n");
+#ifdef RTJ_DEBUG_THREADS  
+    printf(".");
 #endif
     return;
   }
+#ifdef RTJ_DEBUG_THREADS  
+  printf("\nCheckQuanta(%d, %d, %d)", notimecheck, force, actually_transfer);
+#endif
   gettimeofday(&time, NULL);
 
   // If there was a previous time check
@@ -144,7 +145,7 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
       RestoreSwitching(switching_state); //restore switching
       FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef RTJ_DEBUG_THREADS
-      printf("  No scheduler: returning\n");
+      printf("\n  No scheduler: returning");
 #endif
       return;
     }
@@ -161,7 +162,11 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
     if(!force) {
       threadID = (*env)->CallLongMethod(env, scheduler, chooseThreadMethod,
 					time.tv_sec*1000000 + time.tv_usec);
-      //      printf("--- chooseThread sez %d\n", threadID);
+#ifdef RTJ_DEBUG_THREADS
+      printf("\n  %d = ChooseThread(0x%08x, 0x%08x, (%d s, %d us))", 
+	     (int)threadID, env, FNI_UNWRAP_MASKED(scheduler), 
+	     time.tv_sec, time.tv_usec);
+#endif
       if((*env)->ExceptionOccurred(env))
 	(*env)->ExceptionDescribe(env);
       assert(!((*env)->ExceptionOccurred(env)));
@@ -208,7 +213,11 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
 	threadID = (*env)->CallLongMethod(env, scheduler,
 					  chooseThreadMethod,
 					  time.tv_sec*1000000 + time.tv_usec);
-	//	printf("--- chooseThread sez %d\n", threadID);
+#ifdef RTJ_DEBUG_THREADS
+	printf("\n  %d = ChooseThread(0x%08x, 0x%08x, (%d s, %d us))", 
+	       (int)threadID, env, FNI_UNWRAP_MASKED(scheduler), 
+	       time.tv_sec, time.tv_usec);
+#endif
 	assert(!((*env)->ExceptionOccurred(env)));
 	  
 	if(threadID == 0) //if no thread was chosen
@@ -247,7 +256,10 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
     /* get the chosen thread's inflated object */
     RestoreSwitching(switching_state); //restore switching
     FNI_DeleteLocalRefsUpTo(env, ref_marker);
-    //      printf("Switching (%s, %d)...\n", actually_transfer?"yes":"no", threadID);
+#ifdef RTJ_DEBUG_THREADS
+    printf("\n  %s to %d", actually_transfer?"Switching":"Not switching", 
+	   threadID);
+#endif
     // if(threadq->mthread->start_argument == NULL)
     //   printf("!!!!mthread (%d) is NULL in CheckQuanta!!!!\n", threadID);
 
@@ -264,12 +276,12 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
 void print_queue(struct thread_queue_struct* q, char* message) {
 #ifdef RTJ_DEBUG_THREADS
   struct thread_queue_struct* t = q;
-  printf("  %s: (", message);
+  printf("\n  %s: (", message);
   while (t) {
     printf("%d,", t->threadID);
     t = t->next;
   }
-  printf(")\n");
+  printf(")");
 #endif
 }
 
@@ -317,7 +329,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_PriorityScheduler_addThreadInC
 
 #ifdef RTJ_DEBUG_THREADS
   if(open_spot->mthread->start_argument == NULL) {
-    printf("!!!!mthread (%d) is null in ADD!!!!\n", threadID);
+    printf("\n!!!!mthread (%d) is null in ADD!!!!", threadID);
   }
 #endif
 
@@ -415,7 +427,7 @@ void DisableThread(struct thread_queue_struct* queue)
   int switching_state; //prev switching state
 
 #ifdef RTJ_DEBUG_THREADS
-  printf("DisableThread %d\n", queue->threadID);
+  printf("\nDisableThread %d", queue->threadID);
 #endif
 
   print_queue(thread_queue, "BEG disableThread queue");
@@ -469,7 +481,7 @@ void EnableThread(struct thread_queue_struct* queue)
   int switching_state; //prev switching state
 
 #ifdef RTJ_DEBUG_THREADS
-  printf("EnableThread %d\n", queue->threadID);
+  printf("\nEnableThread %d", queue->threadID);
 #endif
 
   print_queue(thread_queue, "BEG enableThread queue");
@@ -485,12 +497,12 @@ void EnableThread(struct thread_queue_struct* queue)
   rttClass = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
   assert(!((*env)->ExceptionOccurred(env)));
       
-  getSchedMethod = (*env)->GetStaticMethodID(env, rttClass,
-					     "getScheduler",
-					     "()Ljavax/realtime/Scheduler;");
+  getSchedMethod = (*env)->GetMethodID(env, rttClass,
+				       "getScheduler",
+				       "()Ljavax/realtime/Scheduler;");
   assert(!((*env)->ExceptionOccurred(env)));
   
-  scheduler = (*env)->CallStaticObjectMethod(env, rttClass, getSchedMethod);
+  scheduler = (*env)->CallObjectMethod(env, queue->jthread, getSchedMethod);
   assert(!((*env)->ExceptionOccurred(env)));
   
   if(scheduler == NULL) {
@@ -628,6 +640,11 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
   int nest=0;
   jboolean check;
 
+#ifdef RTJ_DEBUG_THREADS
+  printf("\nstart_realtime_threads(0x%08x, 0x%08x, 0x%08x, 0x%08x)", env, 
+	 FNI_UNWRAP_MASKED(mainthread), args, thrCls);
+#endif
+
   // Initialize the scheduler
   setScheduler(env, mainthread);
 
@@ -660,8 +677,17 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
   
   setjmp(main_return_jump); //set a jump point here so we can return when done
   // by cata: A dirty hack so we don't run CheckQuanta the second time through
-  if (++nest == 1)
+  if (++nest == 1) {
+#ifdef RTJ_DEBUG_THREADS
+    printf("\n  Running main thread...");
+#endif
     CheckQuanta(1, 1, 1); //check the threads to start the program
+  }
+#ifdef RTJ_DEBUG_THREADS
+  if (nest == 1) {
+    printf("\n  ...back from main thread!");
+  }
+#endif
   /* And we're back - the main Java thread has exited */
   StopSwitching(); //stop Thread switching
   cleanupThreadQueue(env); //get rid of the threadQueue
