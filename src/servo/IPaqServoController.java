@@ -10,13 +10,15 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 
+package servo;
+
 /**
  * @author Wes Beebee <<a href="mailto:wbeebee@alum.mit.edu">wbeebee@alum.mit.edu</a>>
  */
 
 /** Class <code>IPaqServoController</code> provides IO capability with the IPaq serial port at
  *  speeds that the Jameco SV203 serial servo controller can respond to.  This class supports the entire 
- *  Jameco SV203 servo controller command set.  It can be run as either a server or a client.
+ *  Jameco SV203 servo controller command set.  It can be run as a server, a client, or locally.
  *  Running IPaqServoController will create the server.
  */
 
@@ -29,6 +31,13 @@ public class IPaqServoController {
     private OutputStream out;
     private String host;
     
+    public IPaqServoController() {
+	setup();
+	clientSocket = null;
+	out = null;
+	host = null;
+    }
+
     public IPaqServoController(String host) {
 	connect(this.host = host);
     }
@@ -57,6 +66,16 @@ public class IPaqServoController {
 	    throw new RuntimeException("Can't write output! "+e);
 	}
     }
+
+    public void moveLocal(int servo, int position) {
+	if ((servo>8)||(servo<1)) {
+	    throw new RuntimeException("Servo is out of range.");
+	}
+	if ((position>255)||(position<1)) {
+	    throw new RuntimeException("Position is out of range.");
+	}
+	sendSerial("BD0SV"+servo+"M"+position);
+    }
     
     public void move(int servo, int position) {
 	if ((servo>8)||(servo<1)) {
@@ -66,6 +85,16 @@ public class IPaqServoController {
 	    throw new RuntimeException("Position is out of range.");
 	}
 	send("BD0SV"+servo+"M"+position);
+    }
+
+    public void moveRelativeLocal(int servo, int increment) {
+	if ((servo>8)||(servo<1)) {
+	    throw new RuntimeException("Servo is out of range.");
+	}
+	if ((increment>127)||(increment<-128)) {
+	    throw new RuntimeException("Increment is out of range.");
+	}
+	sendSerial("BD0SV"+servo+"I"+increment);
     }
 
     public void moveRelative(int servo, int increment) {
@@ -78,6 +107,13 @@ public class IPaqServoController {
 	send("BD0SV"+servo+"I"+increment);
     }
     
+    public void delayLocal(long millis) {
+	if ((millis<1)||(millis>65535)) {
+	    throw new RuntimeException("Delay out of range.");
+	}
+	sendSerial("BD0D"+millis);
+    }
+
     public void delay(long millis) {
 	if ((millis<1)||(millis>65535)) {
 	    throw new RuntimeException("Delay out of range.");
@@ -89,6 +125,12 @@ public class IPaqServoController {
     
     private static native final void sendSerial(byte b);
     private static native final byte readSerial();
+
+    private static final synchronized void sendSerial(String s) {
+	for(int i=0; i<s.length; i++) {
+	    sendSerial((byte)s[i]);
+	}
+    }
 
     public static void main(String args[]) {
 	ServerSocket listenSocket  = null;
