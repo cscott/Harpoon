@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.64 1999-10-14 08:38:39 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.65 1999-10-14 09:24:33 cananian Exp $
  */
 %%
 
@@ -710,6 +710,41 @@ CONST<p>(c) = i %{
 		    "mov `d0, #0 @ null", new Temp[]{ i }, null));
 }%
 
+// these next three rules just duplicate the above three with MOVE at the root.
+// they should probably be deleted once move collation is working in the
+// register allocator.
+
+MOVE(TEMP(dst), CONST<l,d>(c)) %{
+    Temp i = makeTwoWordTemp(dst);
+    CONST cROOT = (CONST) ROOT.src;
+    long val = (cROOT.type()==Type.LONG) ? cROOT.value.longValue()
+	: Double.doubleToLongBits(cROOT.value.doubleValue());
+    emit(new Instr( instrFactory, ROOT,
+		    loadConst32("`d0l", (int)val, "lo("+cROOT.value+")"),
+		    new Temp[]{ i }, null));
+    val>>>=32;
+    emit(new Instr( instrFactory, ROOT,
+		    loadConst32("`d0h", (int)val, "hi("+cROOT.value+")"),
+		    new Temp[]{ i }, null));
+}% 
+
+MOVE(TEMP(dst), CONST<f,i>(c)) %{
+    Temp i = makeTemp(dst);	
+    CONST cROOT = (CONST) ROOT.src;
+    int val = (cROOT.type()==Type.INT) ? cROOT.value.intValue()
+	: Float.floatToIntBits(cROOT.value.floatValue());
+    emit(new Instr( instrFactory, ROOT,
+		    loadConst32("`d0", val, cROOT.value.toString()),
+		    new Temp[]{ i }, null));
+}%
+
+MOVE(TEMP(dst), CONST<p>(c)) %{
+    // the only CONST of type Pointer we should see is NULL
+    Temp i = makeTemp(dst);
+    emit(new Instr( instrFactory, ROOT, 
+		    "mov `d0, #0 @ null", new Temp[]{ i }, null));
+}%
+
 BINOP<p,i>(MUL, j, k) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
@@ -1183,33 +1218,6 @@ MOVE<d,l>(TEMP(dst), src) %{
     emit( ROOT, "mov `d0l, `s0l\n"+
 		    "mov `d0h, `s0h", dst, src );
 }%
-
-MOVE<i>(TEMP(dst), CONST<i>(s)) %{
-    // TODO: this needs to be fixed, because StrongARM can't load more
-    // than a byte of information at a time...
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d0, #"+((CONST)ROOT.src).value.intValue(),
-		   new Temp[] { dst }, null));
-}%
-
-MOVE<p>(TEMP(dst), CONST<p>(s)) %{ 
-    // we should only see CONST of type pointer when the value is NULL
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d0, #0",
-		   new Temp[] { dst }, null));
-}%
-
-/* // FSK: I don't want to code these now (will probably need some for
-   // MOVE<d,f,l>(MEM(d), s) as well...)
-
-MOVE<f>(TEMP(dst), CONST(s)) %{
-
-}%
-
-MOVE<d,l>(TEMP(dst), CONST(s)) %{
-
-}%
-*/
 
 MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
     String suffix="";
