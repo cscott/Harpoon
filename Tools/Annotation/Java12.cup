@@ -726,7 +726,6 @@ non terminal foreach_statement, foreach_statement_no_short_if;
 non terminal for_statement, for_statement_no_short_if;
 non terminal for_init_opt, for_init;
 non terminal for_update_opt, for_update;
-non terminal for_pushenv, for_popenv;
 non terminal statement_expression_list;
 non terminal identifier_opt;
 non terminal break_statement, continue_statement;
@@ -798,7 +797,13 @@ non terminal HClass conditional_expression_nn;
 non terminal HClass assignment_expression_nn;
 non terminal HClass expression_nn;
 
+// new productions to avoid action rule duplication for pushenv()/popenv()
+non terminal pushenv, popenv;
+
 start with goal;
+
+pushenv ::= {: pushenv(); :} ;
+popenv  ::= {: popenv();  :} ;
 
 // 19.2) The Syntactic Grammar
 goal ::=	compilation_unit
@@ -1073,7 +1078,8 @@ class_declaration ::=
 	{: doDeclareClassTypeVariables(id, tpl); :}
 	  super_opt interfaces_opt
         {: doClassDeclaration(kw, idleft, idright, id); :}
-        class_body {: popenv(); :}
+        class_body
+	popenv
 	;
 super ::=	EXTENDS class_type
 	;
@@ -1089,7 +1095,7 @@ interface_type_list ::=
 		interface_type
 	|	interface_type_list COMMA interface_type
 	;
-class_body ::=	LBRACE {:pushenv();:} class_body_declarations_opt {:popenv();:} RBRACE 
+class_body ::=	LBRACE pushenv class_body_declarations_opt popenv RBRACE 
 	;
 class_body_declarations_opt ::= 
 	|	class_body_declarations ;
@@ -1111,7 +1117,8 @@ class_member_declaration ::=
 		{: doDeclareClassTypeVariables(id, tpl); :}
 	  	super_opt interfaces_opt
                 {: doClassDeclaration(kw, idleft, idright, id); :}
-                class_body {: popenv(); :}
+                class_body
+		popenv
 	|	enum_declaration
 	|	interface_declaration
 	|	SEMICOLON /* the extra semicolon has become official JLS */
@@ -1123,7 +1130,7 @@ enum_declaration ::=
 		modifiers_opt ENUM IDENTIFIER interfaces_opt enum_body
 	;
 enum_body ::=
-		LBRACE enum_constants_opt enum_body_declarations_opt RBRACE
+		LBRACE pushenv enum_constants_opt enum_body_declarations_opt popenv RBRACE
 	;
 enum_constants_opt ::=
 	|	enum_constants
@@ -1178,7 +1185,7 @@ variable_initializer ::=
 
 // 19.8.3) Method Declarations
 method_declaration ::=
-		method_header method_body {:popenv();:}
+		method_header method_body popenv
 	;
 method_header ::=
 	// have to expand type_parameters_opt here so that we don't
@@ -1192,7 +1199,7 @@ method_header ::=
 	|	modifiers_opt LT type_parameter_list_1 VOID method_declarator throws_opt
 	;
 method_declarator ::=
-		IDENTIFIER:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
+		IDENTIFIER:id LPAREN pushenv formal_parameter_list_opt:f RPAREN
 		{: env.put("#in_method","yes");
 		   annotateANCHOR(idleft,idright,methodString(id, f)); :}
 	|	method_declarator LBRACK RBRACK // deprecated
@@ -1257,12 +1264,12 @@ static_initializer ::=
 // 19.8.5) Constructor Declarations
 constructor_declaration ::=
 		modifiers_opt constructor_declarator throws_opt 
-			constructor_body {: popenv(); :}
+			constructor_body popenv
 	|	modifiers_opt LT type_parameter_list_1 constructor_declarator
-			throws_opt constructor_body {: popenv(); :}
+			throws_opt constructor_body popenv
 	;
 constructor_declarator ::=
-		simple_name:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
+		simple_name:id LPAREN pushenv formal_parameter_list_opt:f RPAREN
 		{: env.put("#in_method","yes");
 		   annotateANCHOR(idleft,idright,methodString(id, f)); :}
 	;
@@ -1294,7 +1301,7 @@ interface_declaration ::=
 		{: doDeclareClassTypeVariables(id, tpl); :}
 		extends_interfaces_opt
                 {: doClassDeclaration(kw, idleft, idright, id); :}
-                interface_body {: popenv(); :}
+                interface_body popenv
 	;
 extends_interfaces_opt ::=
 	|	extends_interfaces
@@ -1328,7 +1335,7 @@ constant_declaration ::=
 	// disallowed.
 	;
 abstract_method_declaration ::=
-		method_header SEMICOLON {:popenv();:}
+		method_header SEMICOLON popenv
 	;
 
 // 19.10) Arrays
@@ -1344,7 +1351,7 @@ variable_initializers ::=
 	;
 
 // 19.11) Blocks and Statements
-block ::=	LBRACE {:pushenv();:} block_statements_opt {:popenv();:} RBRACE
+block ::=	LBRACE pushenv block_statements_opt popenv RBRACE
 	;
 block_statements_opt ::=
 	|	block_statements
@@ -1450,7 +1457,7 @@ if_then_else_statement_no_short_if ::=
 			ELSE statement_no_short_if
 	;
 switch_statement ::=
-		SWITCH LPAREN expression RPAREN {:pushenv();:} switch_block {:popenv();:}
+		SWITCH LPAREN expression RPAREN pushenv switch_block popenv
 	;
 switch_block ::=
 		LBRACE switch_block_statement_groups switch_labels RBRACE
@@ -1484,32 +1491,30 @@ do_statement ::=
 		DO statement WHILE LPAREN expression RPAREN SEMICOLON
 	;
 foreach_statement ::=
-		FOR LPAREN for_pushenv type variable_declarator_id COLON expression RPAREN
-			statement for_popenv
+		FOR LPAREN pushenv type variable_declarator_id COLON expression RPAREN
+			statement popenv
 	// must check that first IDENTIFIER is 'each' and second IDENTIFIER
 	//  is 'in'
-	|	FOR IDENTIFIER LPAREN for_pushenv type variable_declarator_id IDENTIFIER
-			expression RPAREN statement for_popenv
+	|	FOR IDENTIFIER LPAREN pushenv type variable_declarator_id IDENTIFIER
+			expression RPAREN statement popenv
 	;
 
 foreach_statement_no_short_if ::=
-		FOR LPAREN for_pushenv type variable_declarator_id COLON expression RPAREN
-			statement_no_short_if for_popenv
+		FOR LPAREN pushenv type variable_declarator_id COLON expression RPAREN
+			statement_no_short_if popenv
 	// must check that first IDENTIFIER is 'each' and second IDENTIFIER
 	//  is 'in'
-	|	FOR IDENTIFIER LPAREN for_pushenv type variable_declarator_id IDENTIFIER
-			expression RPAREN statement_no_short_if for_popenv
+	|	FOR IDENTIFIER LPAREN pushenv type variable_declarator_id IDENTIFIER
+			expression RPAREN statement_no_short_if popenv
 	;
 for_statement ::=
-		FOR LPAREN for_pushenv for_init_opt SEMICOLON expression_opt SEMICOLON
-			for_update_opt RPAREN statement for_popenv
+		FOR LPAREN pushenv for_init_opt SEMICOLON expression_opt SEMICOLON
+			for_update_opt RPAREN statement popenv
 	;
 for_statement_no_short_if ::=
-		FOR LPAREN for_pushenv for_init_opt SEMICOLON expression_opt SEMICOLON
-			for_update_opt RPAREN statement_no_short_if for_popenv
+		FOR LPAREN pushenv for_init_opt SEMICOLON expression_opt SEMICOLON
+			for_update_opt RPAREN statement_no_short_if popenv
 	;
-for_pushenv ::= {:pushenv();:} ;
-for_popenv ::= {:popenv();:} ;
 for_init_opt ::=
 	|	for_init
 	;
@@ -1557,7 +1562,7 @@ catches ::=	catch_clause
 	|	catches catch_clause
 	;
 catch_clause ::=
-		CATCH LPAREN {:pushenv();:} formal_parameter RPAREN block {:popenv();:}
+		CATCH LPAREN pushenv formal_parameter RPAREN block popenv
 	;
 finally ::=	FINALLY block
 	;
@@ -1608,26 +1613,26 @@ class_instance_creation_expression ::=
 	|	NEW class_or_interface_type LPAREN argument_list_opt RPAREN {:
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
-		:} class_body {: popenv(); :}
+		:} class_body popenv
 	|	NEW type_arguments class_or_interface_type LPAREN argument_list_opt RPAREN
 	|	NEW type_arguments class_or_interface_type LPAREN argument_list_opt RPAREN {:
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
-		:} class_body {: popenv(); :}
+		:} class_body popenv
 	|	primary DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN
 	|	primary DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN {:
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
-		:} class_body {: popenv(); :}
+		:} class_body popenv
 	|	name DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN
 	|	name DOT NEW type_arguments_opt IDENTIFIER type_arguments_opt
 			LPAREN argument_list_opt RPAREN {:
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
-		:} class_body {: popenv(); :}
+		:} class_body popenv
 	;
 argument_list_opt ::=
     		{: RESULT=Collections.EMPTY_LIST; :}
