@@ -1,4 +1,4 @@
----- Jan-23-98
+---- Jan-23-99
 FLEX native backend TODO:
 - implement OffsetMap:
   - for reuseability, implement an abstract class on top of OffsetMap that
@@ -57,6 +57,7 @@ X write Quad-to-LowQuad translator [done]
 - (option) write Interpret/Tree methods to simulate Tree form for verification
 - write Tree-to-Instr pass (instruction selection)
   should be in harpoon.Backend.<architecture>.InSel?
+  [Andy is doing this for StrongARM]
   Scott will write an abstract superclass for this eventually.
 - do register allocation on Instrs (allocation, then construct stack frames,
   then assignment)
