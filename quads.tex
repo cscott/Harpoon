@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.3 1998-09-08 14:32:44 cananian Exp $
+% $Id: quads.tex,v 1.4 1998-09-08 14:33:05 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.3 $ $}
+\date{\today \\ $ $Revision: 1.4 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -242,21 +242,51 @@ temporary variables at the start of method code.
 \label{fig:quads}
 \end{figure*}
 
-\newcommand{\cls}[1]{\textrm{\textbf{#1}}}
-\newcommand{\expn}[1]{\textrm{\textit{#1}}}
+\newcommand{\cls}[1]{\item[\normalfont #1]}
+\newcommand{\expn}[1]{{\normalfont\it #1}}
 \begin{figure*}
-\texttt{
-package harpoon.IR.QuadSSA; \\
-\\
-\expn{Quadruple statements} \\
-abstract class Quad implements harpoon.ClassFile.HCodeElement \\
-\cls{AGET}(HCodeElement from, Temp dst, Temp objectref, Temp index) \\
-\cls{ALENGTH}(HCodeElement from, Temp dst, Temp objectref) \\
-\cls{ANEW}(HCodeElement from, Temp dst, HClass hclass, Temp dims[]) \\
-\cls{ASET}(HCodeElement from, Temp objectref, Temp index, Temp src) \\
+\texttt{%
+\begin{description}
+\setlength{\parskip}{0em}
+\setlength{\itemsep}{0em}
+\setlength{\labelsep}{0em}
+\item[] package harpoon.IR.QuadSSA;
+\item[] import harpoon.ClassFile.*;
+\item[]
+\item[] \expn{Quadruple statements}
+\item[] abstract class Quad implements HCodeElement
+\cls{AGET}(HCodeElement from, Temp dst, Temp objectref, Temp index)
+\cls{ALENGTH}(HCodeElement from, Temp dst, Temp objectref)
+\cls{ANEW}(HCodeElement from, Temp dst, HClass hclass, Temp dims[])
+\cls{ASET}(HCodeElement from, Temp objectref, Temp index, Temp src)
 \cls{CALL}(HCodeElement from, HMethod method, Temp objectref, Temp
-params[], Temp retex) \\
+params[], Temp retval, Temp retex) \expn{// objectref, retval may be null}
+\cls{CJMP}(HCodeElement from, Temp test)
+\cls{CONST}(HCodeElement from, Temp dst, Object value, HClass type)
+\cls{GET}(HCodeElement from, Temp dst, HField field, \\ Temp objectref)
+         \expn{// objectref may be null}
+\cls{HEADER}(HCodeElement from, FOOTER footer)
+\cls{INSTANCEOF}(HCodeElement from, Temp dst, Temp src, HClass hclass)
+\cls{JMP}(HCodeElement from)
+\cls{METHODHEADER}(HCodeElement from, FOOTER footer, Temp params[])
+\cls{MOVE}(HCodeElement from, Temp dst, Temp src)
+\cls{NEW}(HCodeElement from, Temp dst, HClass hclass)
+\cls{NOP}(HCodeElement from)
+\cls{OPER}(HCodeElement from, String opcode, Temp dst, Temp operands[])
+\cls{PHI}(HCodeElement from, Temp dst[], int arity)
+\cls{PHI}(HCodeElement from, Temp dst[], Temp src[][], int arity)
+\cls{RETURN}(HCodeElement from, Temp retval) \expn{// retval may be null}
+\cls{SET}(HCodeElement from, HField field, Temp objectref, \\ Temp src)
+      \expn{// objectref may be null}
+\cls{SWITCH}(HCodeElement from, Temp index, int keys[])
+\cls{THROW}(HCodeElement from, Temp throwable)
+\item[]
+\item[] \expn{String constants for} opcode \expn{field of} OPER
+\item[] \{  \}
+\end{description}
 }
+Only the constructors are shown; the object field variables correspond
+exactly to the names of the constructor arguments.
 \caption{caption}
 \label{fig:classes}
 \end{figure*}
