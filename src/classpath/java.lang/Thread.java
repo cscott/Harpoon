@@ -271,7 +271,8 @@ public class Thread implements Runnable
     daemon = current.daemon;
     nativeInit(size);
 
-    group.addThread(this);
+    if (group != null)
+	group.addThread(this);
     InheritableThreadLocal.newChildThread(this);
   }
 
@@ -421,7 +422,8 @@ public class Thread implements Runnable
         if (this != currentThread())
           sm.checkPermission(new RuntimePermission("stopThread"));
       }
-    group.removeThread(this);
+    if (group != null)
+	group.removeThread(this);
     nativeStop(t);
   }
 
@@ -602,7 +604,8 @@ public class Thread implements Runnable
    */
   public static int activeCount()
   {
-    return currentThread().group.activeCount();
+    ThreadGroup tg = currentThread().group;
+    return (tg==null)?0:tg.activeCount();
   }
 
   /**
@@ -621,7 +624,8 @@ public class Thread implements Runnable
    */
   public static int enumerate(Thread[] array)
   {
-    return currentThread().group.enumerate(array);
+    ThreadGroup tg = currentThread().group;
+    return (tg==null)?0:tg.enumerate(array);
   }
 
   /**

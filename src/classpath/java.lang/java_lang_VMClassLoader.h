@@ -7,6 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* Inaccessible static: class_00024java_00024lang_00024ClassLoader */
 /*
  * Class:     java_lang_VMClassLoader
  * Method:    defineClass

@@ -23,6 +23,46 @@ JNIEXPORT void JNICALL Java_java_lang_VMSystem_arraycopy
 JNIEXPORT jint JNICALL Java_java_lang_VMSystem_identityHashCode
   (JNIEnv *, jclass, jobject);
 
+/*
+ * Class:     java_lang_VMSystem
+ * Method:    isWordsBigEndian
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_java_lang_VMSystem_isWordsBigEndian
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     java_lang_VMSystem
+ * Method:    setIn
+ * Signature: (Ljava/io/InputStream;)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_VMSystem_setIn
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     java_lang_VMSystem
+ * Method:    setOut
+ * Signature: (Ljava/io/PrintStream;)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_VMSystem_setOut
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     java_lang_VMSystem
+ * Method:    setErr
+ * Signature: (Ljava/io/PrintStream;)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_VMSystem_setErr
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     java_lang_VMSystem
+ * Method:    currentTimeMillis
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_java_lang_VMSystem_currentTimeMillis
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
