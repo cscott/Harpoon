@@ -232,7 +232,7 @@ class FileOutputStream extends OutputStream
 	} else if ((off < 0) || (off > b.length) || (len < 0) ||
 		   ((off + len) > b.length) || ((off + len) < 0)) {
 	    throw new IndexOutOfBoundsException();
-	} else if (len == 0) return null;
+	} else if (len == 0) return new VoidContinuationOpt();
 	
 	//offset by 1 for jdk1.1
 	int r= NativeIO.writeJNI(fd.fd-1, b, off, len);
@@ -242,7 +242,7 @@ class FileOutputStream extends OutputStream
 	    {
 		return new WriteAsync2C(b, off+r, len-r);
 	    }
-	return null;
+	return new VoidContinuationOpt();
     }
     
     class WriteAsync2C extends VoidContinuation implements IOContinuation {
