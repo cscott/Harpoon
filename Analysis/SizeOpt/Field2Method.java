@@ -32,6 +32,7 @@ import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,15 +44,26 @@ import java.util.Set;
  * to accessor getter/setter methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Field2Method.java,v 1.1.2.1 2001-11-12 01:52:14 cananian Exp $
+ * @version $Id: Field2Method.java,v 1.1.2.2 2001-11-12 22:48:02 cananian Exp $
  */
 public class Field2Method {
     // xxx declarations below *should* be 'invertibleMap' but the
     //     definitions aren't consistent yet.
-    /** maps 'getter' methods to the field they get. */
-    final InvertibleMultiMap getters = new GenericInvertibleMultiMap();
-    /** maps 'setter' methods to the field they set. */
-    final InvertibleMultiMap setters = new GenericInvertibleMultiMap();
+    /** maps 'getter' methods to the field they get. MUTABLE. */
+    private final InvertibleMultiMap _getters= new GenericInvertibleMultiMap();
+    /** maps 'setter' methods to the field they set. MUTABLE. */
+    private final InvertibleMultiMap _setters= new GenericInvertibleMultiMap();
+    // these are public-visible unmodifiable versions of these.
+    /** This maps 'getter' methods to the field they get. */
+    public final Map getter2field = Collections.unmodifiableMap(_getters);
+    /** This maps 'setter' methods to the field they set. */
+    public final Map setter2field = Collections.unmodifiableMap(_setters);
+    /** This maps fields to 'getter' methods. */
+    public final Map field2getter = Collections.unmodifiableMap
+	(_getters.invert());
+    /** This maps fields to 'setter' methods. */
+    public final Map field2setter = Collections.unmodifiableMap
+	(_setters.invert());
     
     /** Creates a <code>Field2Method</code> code factory which converts
      *  all <code>GET</code> and <code>SET</code> operations on the
@@ -77,15 +89,15 @@ public class Field2Method {
 		(name+"$set", "("+hf.getType().getDescriptor()+")V");
 	    setter.getMutator().addModifiers(Modifier.PUBLIC);
 	    // add these to the appropriate maps.
-	    getters.put(getter, hf);
-	    setters.put(setter, hf);
+	    _getters.put(getter, hf);
+	    _setters.put(setter, hf);
 	}
 	// Make an HCodeFactory that defines these getters and setters
 	HCodeFactory expanded = new HCodeFactory() {
 		public HCode convert(HMethod hm) {
-		    if (getters.containsKey(hm))
+		    if (getter2field.containsKey(hm))
 			return makeGetter(hm, getCodeName());
-		    if (setters.containsKey(hm))
+		    if (setter2field.containsKey(hm))
 			return makeSetter(hm, getCodeName());
 		    return hcf.convert(hm);
 		}
@@ -102,11 +114,6 @@ public class Field2Method {
     /** This mutator class turns GETs and SETs into calls to accessor methods.
      */
     class Mutator extends MethodMutator {
-	/** map from fields to the appropriate getter method */
-	final Map field2getter = getters.invert();
-	/** map from fields to the appropriate setter method */
-	final Map field2setter = setters.invert();
-	
 	Mutator(HCodeFactory hcf) { super(hcf); }
 	protected String mutateCodeName(String codeName) {
 	    /** XXX: do we need to turn SSI into RSSx form?
@@ -117,8 +124,8 @@ public class Field2Method {
 	protected HCode mutateHCode(HCodeAndMaps input) {
 	    HCode hc = input.hcode();
 	    // only mutate if this is not itself a setter/getter!
-	    if (getters.containsKey(hc.getMethod()) ||
-		setters.containsKey(hc.getMethod())) return hc; // bail!
+	    if (getter2field.containsKey(hc.getMethod()) ||
+		setter2field.containsKey(hc.getMethod())) return hc; // bail!
 	    // List of THROWs which need to be added to the FOOTER.
 	    final List fixup = new ArrayList();
 	    // visitor class to effect the transformation.
@@ -181,7 +188,7 @@ public class Field2Method {
     }
     /** Make a getter method. */
     HCode makeGetter(HMethod hm, String codename) {
-	HField hf = (HField) getters.get(hm);
+	HField hf = (HField) getter2field.get(hm);
 	MyCode hc = new MyCode(hm, codename);
 	// make quads.
 	QuadFactory qf = hc.getQF();
@@ -203,7 +210,7 @@ public class Field2Method {
     }
     /** Make a setter method. */
     HCode makeSetter(HMethod hm, String codename) {
-	HField hf = (HField) setters.get(hm);
+	HField hf = (HField) setter2field.get(hm);
 	MyCode hc = new MyCode(hm, codename);
 	// make quads.
 	QuadFactory qf = hc.getQF();
