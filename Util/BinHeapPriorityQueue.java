@@ -20,7 +20,7 @@ import java.util.Iterator;
  * speed becomes an issue. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.2 1999-06-14 23:53:45 pnkfelix Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.3 1999-06-15 04:35:22 pnkfelix Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
@@ -42,9 +42,9 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	priorities = new Vector();
     }
     
-    private int _parent(int i) { return i/2; }
-    private int _left(int i) { return 2*i; }
-    private int _right(int i) { return 2*i + 1; }
+    private int _parent(int i) { return (i+1)/2 - 1; }
+    private int _left(int i) { return 2*(i+1) - 1; }
+    private int _right(int i) { return 2*(i+1) ; }
 
     private void _add(Object item, Integer priority) {
 	heap.add(item);
@@ -62,23 +62,25 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	priorities.set(index2, p1);
     }
 
-    private void _set(int index, Object item, Integer priority) {
+    private void _set(int index, Object item, Object priority) {
 	heap.set(index, item);
 	priorities.set(index, priority);
     }
 
     private void _heapify(int i) {
+	Util.assert(i < heap.size(),
+		    "heapify param out of bounds");
 	int l = _left(i);
 	int r = _right(i);
 	int largest;
-	if (l <= heap.size() && 
+	if (l < priorities.size() && 
 	    ((Integer)priorities.get(l)).intValue() >
 	    ((Integer)priorities.get(i)).intValue()) {
 	    largest = l;
 	} else {
 	    largest = i;
 	}
-	if (r <= heap.size() && 
+	if (r < priorities.size() && 
 	    ((Integer)priorities.get(r)).intValue() >
 	    ((Integer)priorities.get(largest)).intValue()) {
 	    largest = r;
@@ -90,20 +92,13 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     }
 
     public void insert(Object item, int priority) {
-	Integer p = new Integer(priority);
-	int nodeIndex = heap.size();
-	_add(item, p);
-	while ( nodeIndex > 0 ) {
-	    int parentIndex = (nodeIndex+1) / 2 - 1;
-	    Integer parPri = (Integer) priorities.get(parentIndex);
-	    Object parObj = heap.get(parentIndex);
-	    if (p.intValue() > parPri.intValue()) {
-		_swap(nodeIndex, parentIndex);
-		nodeIndex = parentIndex;
-	    } else {
-		break;
-	    }
+	heap.add(null); priorities.add(null);
+	int i = heap.size()-1;
+	while(i > 0 && ((Integer)priorities.get(_parent(i))).intValue() < priority) {
+	    _set(i, heap.get(_parent(i)), priorities.get(_parent(i)));
+	    i = _parent(i);
 	}
+	_set(i, item, new Integer(priority));
     }
 
     public Object peekMax() {
@@ -112,15 +107,19 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 
     public Object deleteMax() {
 	Util.assert(heap.size() > 0, "Heap Underflow");
-	int moveIndex = 0;
-	Object rtrn = heap.get(moveIndex);
+	Object rtrn = heap.get(0);
 
 	Object mov = heap.remove(heap.size() - 1);
 	Integer pri = (Integer) priorities.remove(priorities.size() - 1);
-	_set(moveIndex, mov, pri);
-
-	_heapify(0);
-
+	
+	if (heap.size() == 0) {
+	    // we just deleted last element
+	} else {
+	    Util.assert(heap.size() == priorities.size(),
+			"Why are the two Vectors' sizes in the BinHeap unequal?");
+	    _set(0, mov, pri);
+	    _heapify(0);
+	}
 	return rtrn;
     }
 
@@ -205,5 +204,4 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     public int size() {
 	return heap.size();
     }
-
 }

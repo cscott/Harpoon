@@ -6,6 +6,7 @@ package harpoon.Backend.StrongARM;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrLABEL;
@@ -48,7 +49,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.15 1999-06-14 23:53:44 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.16 1999-06-15 04:35:21 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -66,7 +67,7 @@ final class CodeGen {
     public static final Instr codegen(TreeCode tree, SACode code) {
                                       
         InstrFactory inf = code.getInstrFactory();
-        Frame f = code.getFrame();
+        SAFrame f = (SAFrame) code.getFrame();
         Vector instrList = new Vector();
         Vector dataList = new Vector();
 	Hashtable blMap = new Hashtable();
@@ -118,7 +119,7 @@ final class CodeGen {
     }
 
     static final class Visitor extends TreeVisitor {
-        final Frame f;
+        final SAFrame f;
 	final TempFactory tf;
         final InstrFactory inf; 
        	ExpValue visitRet;
@@ -134,7 +135,7 @@ final class CodeGen {
 	Hashtable liMap;
 
         Visitor(InstrFactory inf, Vector instrList, Vector dataList,
-                Frame f, Hashtable blMap, Hashtable liMap) {
+                SAFrame f, Hashtable blMap, Hashtable liMap) {
             this.f = f;
             this.inf = inf; 
             this.instrList = instrList;
@@ -244,38 +245,46 @@ final class CodeGen {
 		// prepare a store; note that strong arm makes the
 		// store-target the second argument
 		((MEM)s.dst).exp.visit(this);
-		movStr = "str `s0, `d0";
+		ExpValue dest = visitRet;
+
+		s.src.visit(this);
+ 		ExpValue source = visitRet; 
+		movStr = "str `s0, `s1";
+		emit(new Instr(inf, s, "str `s0, [`s1]",
+			       null, new Temp[]{ source.temp(),
+						     dest.temp() }));
 	    } else {
 		s.dst.visit(this);
 		Util.assert(visitRet != null, 
 			    "visitRet should not be null after visiting " + 
 			    s.dst);
 		movStr = "mov `d0, `s0";
-	    }
-            ExpValue dest = visitRet;
-            if (s.src instanceof CONST) {
-                emitMoveConst(s, dest.temp(), ((CONST)s.src).value);
-            } else {
-		s.src.visit(this);
-		Util.assert(visitRet != null, 
-			    "visitRet should not be null after visiting " + 
-			    s.src);
-		ExpValue source = visitRet;
-		if (dest.isDouble()) {
-		    emit(new Instr(inf, s, movStr + "  \t; " + s,
-				   new Temp[] { dest.low() },
-				   new Temp[] { source.low() }));
-		    emit(new Instr(inf, s, movStr,
-				   new Temp[] { dest.high() },
-				   new Temp[] { source.high() }));
+
+		ExpValue dest = visitRet;
+		if (s.src instanceof CONST) {
+		    emitMoveConst(s, dest.temp(), ((CONST)s.src).value);
 		} else {
-		    emit(new Instr(inf, s, movStr + "  \t\t; " + s,
-				   new Temp[] { dest.temp() },
-				   new Temp[] { source.temp() }));
+		    s.src.visit(this);
+		    Util.assert(visitRet != null, 
+				"visitRet should not be null after visiting " + 
+				s.src);
+		    ExpValue source = visitRet;
+		    if (dest.isDouble()) {
+			emit(new Instr(inf, s, movStr + "  \t; " + s,
+				       new Temp[] { dest.low() },
+				       new Temp[] { source.low() }));
+			emit(new Instr(inf, s, movStr,
+				       new Temp[] { dest.high() },
+				       new Temp[] { source.high() }));
+		    } else {
+			emit(new Instr(inf, s, movStr + "  \t\t; " + s,
+				       new Temp[] { dest.temp() },
+				       new Temp[] { source.temp() }));
+		    }
 		}
-            }
-            visitRet = null;
-        }
+		visitRet = null;
+	    }
+	}
 	
         public void visit(RETURN s) {
                 s.retval.visit(this);
@@ -288,7 +297,9 @@ final class CodeGen {
                 emit(new Instr(inf, s, "mov `d0, #0  \t\t; " + s, new Temp[] {f.getAllRegisters()[1]}, null));
                 emit(new Instr(inf, s, "mov `d0, `s0",
 			       new Temp[] { f.getAllRegisters()[0] }, new Temp[] { retval.temp() }));
-                emit(new Instr(inf, s, "ldmea fp, {fp, sp, pc}", null, null));
+                emit(new InstrMEM(inf, s, "ldmea `s0, {`d0, `d1, `d2}",
+				  new Temp[]{ SAFrame.FP, SAFrame.SP, SAFrame.PC }, 
+				  new Temp[]{ SAFrame.FP } ));
                 visitRet = null;
         }
 
@@ -305,7 +316,9 @@ final class CodeGen {
                            new Temp[] { f.getAllRegisters()[1] },
 			   new Temp[] { retval.temp() }));
             emit(new Instr(inf, s, "mov `d0, #0", new Temp[]{ f.getAllRegisters()[0] }, null));
-            emit(new Instr(inf, s, "ldmea fp, {fp, sp, pc}", null, null));
+            emit(new InstrMEM(inf, s, "ldmea `s0, {`d0, `d1, `d2}", 
+			      new Temp[]{ SAFrame.FP, SAFrame.SP, SAFrame.PC },
+			      new Temp[]{ SAFrame.FP }));
             visitRet = null;
         }
        
@@ -336,17 +349,19 @@ final class CodeGen {
 		visitRet = retval;
 		break;
             case Bop.CMPEQ:
+		// Three lines of Assem in ONE Instr!  Crazy, but
+		// necessary for proper analysis
                 e.left.visit(this);
                 left = visitRet;
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
-                               new Temp[] { retval.temp() }, null));
-                emit(new Instr(inf, e, "cmp `s0, `s1",
-                               null,new Temp[] { left.temp(), right.temp() }));
-                emit(new Instr(inf, e, "moveq `d0, #1",
-                               new Temp[] { retval.temp() },null));
+                emit(new Instr(inf, e, 
+			       "mov `d0, #0  \t\t; " + e + "\n\t"+
+			       "cmp `s0, `s1 \n\t"+
+			       "moveq `d0, #1", 
+			       new Temp[] { retval.temp() },
+                               new Temp[] { left.temp(), right.temp() }));
                 visitRet = retval;
                 break;
 	    case Bop.CMPGT: // FSK added, not andyb
@@ -355,12 +370,12 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
-                               new Temp[] { retval.temp() },null));
-                emit(new Instr(inf, e, "cmp `s0, `s1",
-                               null,new Temp[] { left.temp(), right.temp() }));
-                emit(new Instr(inf, e, "movgt `d0, #1",
-			       new Temp[] { retval.temp() }, null));
+                emit(new Instr(inf, e, 
+			       "mov `d0, #0  \t\t; " + e + "\n\t"+
+			       "cmp `s0, `s1 \n\t"+
+			       "moveq `d0, #1", 
+			       new Temp[] { retval.temp() },
+                               new Temp[] { left.temp(), right.temp() }));
                 visitRet = retval;
 		break;
 	    case Bop.CMPLE: // FSK added, not andyb
@@ -369,12 +384,12 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
-                               new Temp[] { retval.temp() }, null));
-                emit(new Instr(inf, e, "cmp `s0, `s1",
-                               null,new Temp[] { left.temp(), right.temp() }));
-                emit(new Instr(inf, e, "movle `d0, #1",
-                               new Temp[] { retval.temp() },null));
+                emit(new Instr(inf, e, 
+			       "mov `d0, #0  \t\t; " + e + "\n\t"+
+			       "cmp `s0, `s1 \n\t"+
+			       "movle `d0, #1", 
+			       new Temp[] { retval.temp() },
+                               new Temp[] { left.temp(), right.temp() }));
                 visitRet = retval;
 		break;
 	    case Bop.CMPLT: // FSK added, not andyb
@@ -383,12 +398,12 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
-                               new Temp[] { retval.temp() },null));
-                emit(new Instr(inf, e, "cmp `s0, `s1",
-                               null,new Temp[] { left.temp(), right.temp() }));
-                emit(new Instr(inf, e, "movlt `d0, #1",
-                               new Temp[] { retval.temp() },null));
+                emit(new Instr(inf, e, 
+			       "mov `d0, #0  \t\t; " + e + "\n"+
+			       "cmp `s0, `s1 \n"+
+			       "movlt `d0, #1", 
+			       new Temp[] { retval.temp() },
+                               new Temp[] { left.temp(), right.temp() }));
                 visitRet = retval;
 		break;
 	    case Bop.DIV: // FSK added, not andyb
@@ -460,6 +475,7 @@ final class CodeGen {
             }
         }
 
+	// The argument passing in this routine looks flawed.  Check it.
         public void visit(CALL e) {
             ExpValue retval, retex, arg, func;
             ExpList args = e.args;
@@ -474,18 +490,18 @@ final class CodeGen {
                 args.head.visit(this); 
                 arg = visitRet;
                 emit(new Instr(inf, e, "mov `d0, `s0",
-                               new Temp[] { arg.temp() },
-                               new Temp[] { (f.getAllRegisters())[i] }));
+                               new Temp[] { (f.getAllRegisters())[i] },
+                               new Temp[] { arg.temp() }));
                 args = args.tail;
                 i++;
             }
             emit(new Instr(inf, e, "mov `d0, `s0  \t\t; " + e,
-                                    new Temp[] { (f.getAllRegisters())[15] },
-                                    new Temp[] { (f.getAllRegisters())[14] }));
+                                    new Temp[] { f.PC },
+                                    new Temp[] { f.LR }));
             /* need someway to get label for branch target info */
             emit(new Instr(inf, e, "mov `d0, `s0",
-                                    new Temp[] { func.temp() },
-                                    new Temp[] { (f.getAllRegisters())[15] }));
+                                    new Temp[] { f.PC },
+                                    new Temp[] { func.temp() }));
             emit(new Instr(inf, e, "mov `d0, `s0",
                                    new Temp[] { (f.getAllRegisters())[0] },
                                    new Temp[] { retval.temp() }));
@@ -526,11 +542,15 @@ final class CodeGen {
 	    e.exp.visit(this);
 	    ExpValue addr = visitRet;
 	    visitRet = new ExpValue(new Temp(tf));
-	    emit(new Instr(inf, e, "ldr `d0, `s0  \t\t; " + e, 
+	    emit(new InstrMEM(inf, e, "ldr `d0, `s0  \t\t; " + e, 
 			   new Temp[] { visitRet.temp() },
 			   new Temp[] { addr.temp() }));
 	}
 	
+	// I don't think the below code is handled correctly; should
+	// this be an InstrMEM or not?  Its *definitely* a load, but
+	// the register allocator as currently implemented thinks that
+	// its a store because the dest isn't a register
         public void visit(NAME e) {
             ExpValue retval = new ExpValue(new Temp(tf));
             emitLabelRef(((NAME)e).label, e);

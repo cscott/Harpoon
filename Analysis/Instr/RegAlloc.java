@@ -39,7 +39,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.7 1999-06-14 23:53:42 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.8 1999-06-15 04:35:17 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -155,6 +155,7 @@ public abstract class RegAlloc  {
 		       tempsToOffsets.get(m.use()[i])==null){
 			tempsToOffsets.put
 			    (m.use()[i], new Integer(nextOffset));
+			nextOffset++;
 		    }
 		}
 	    } 
@@ -171,7 +172,11 @@ public abstract class RegAlloc  {
 	    InstrReplacer(HashMap t2o) {
 		tempsToOffsets = t2o; 
 	    }
+ 	    
 	    
+	    // Make this SMARTER: get rid of requirement that Loads
+	    // and Stores have only one references to memory (to
+	    // allow for StrongARMs ldm* instructions
 	    public void visit(InstrMEM m) {
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
@@ -192,8 +197,6 @@ public abstract class RegAlloc  {
 		    Instr.replaceInstrList(m, instrs);
 		    return;
 		}
-		
-		Util.assert(false, "Should have replaced SOMETHING in " + m);
 	    }
 	 
 	    public void visit(Instr i) {
@@ -209,6 +212,8 @@ public abstract class RegAlloc  {
 	}
 	// now tf should have a full map of Temps to needed Stack
 	// Offsets.
+
+	// System.out.println("TempsToOffsets Mapping: " + tf.tempsToOffsets);
 
 	InstrReplacer ir = new InstrReplacer(tf.tempsToOffsets);
 	instrs = in.getElementsI();

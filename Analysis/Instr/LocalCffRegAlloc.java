@@ -42,11 +42,12 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.17 1999-06-14 23:53:42 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.18 1999-06-15 04:35:17 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static final boolean DEBUG = false;
+    private static final boolean DEBUG_REF = false;
     
     /** Creates a <code>LocalRegAlloc</code>. 
 	
@@ -222,28 +223,31 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    while (references.hasNext()) {
 		Temp l = (Temp) references.next();
 		if (!isTempRegister(l)) { // just pseudo-regs in nextRef
+		    if (DEBUG_REF) System.out.println(j + " \trefs: " + l);
 		    CloneableIterator search = 
-			(CloneableIterator) instrs.clone();
-		    while (search.hasNext()) {
+			(CloneableIterator) jnstrs.clone();
+		
+		    int savedStep = step;
+		    
+		    boolean hasRef = false;
+		    while (!hasRef && search.hasNext()) {
 			Instr jprime = (Instr) search.next();
-			// hasRef: jprime has a reference to l
-			boolean hasRef=false;
+			step++;
+
 			Iterator jPRefs = getReferences(jprime);
 			while (jPRefs.hasNext()) {
 			    if (l.equals(jPRefs.next())) {
 				hasRef = true; break;
 			    }
 			}
-			if (hasRef) { 
-			    nextRef.put(new TempInstrPair(l, j), 
-					new Integer(2*step));
-			    break;
-			}
 		    }
+		    nextRef.put(new TempInstrPair(l,j),
+				new Integer(2*step));
+		    
+		    step = savedStep; // reset counter to original value
 		}
 	    }
 	}
-	
 
 	// for j = 1 to r do
 	jnstrs = (CloneableIterator) instrs.clone();
@@ -261,7 +265,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 	    int f = refsV.size();
-	    if (DEBUG) System.out.print("Initial f : " + f + " ");
 
 	    for (int i=0; i<refsV.size(); i++) {
 		if (regFile.containsValue( (Temp) refsV.elementAt(i) ) ) {
@@ -269,20 +272,19 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 	    }
 
-	    if (DEBUG) System.out.print("Middle f : " + f + " ");
-	    
-	    // f := f - (the number of empty registers) 
-	    // (we get around subtracting the number of registers
-	    // taken by dead pseudo-registers by making the distance
-	    // in next-ref for dead values effectively infinite.)
+	    // f := f - (the number of free registers) 
 	    f = f - regFile.numEmptyRegisters(); 
-	    
-	    if (DEBUG) System.out.println( "Final f : " + f);
 
 	    // for l = 1 to f do
 	    //     evict the pseudo-register DEL-MAX()
 	    // done
+	    
+	    Util.assert(f <= pregPriQueue.size(), 
+			"Can't delete more variables than the size of"+
+			" the current pseudo-register priority queue");
+
 	    for (int l = 0; l<f; l++) {
+		
 		
 		Temp preg = (Temp) pregPriQueue.deleteMax();
 		boolean dirty = regFile.isDirty(preg);
@@ -300,24 +302,17 @@ public class LocalCffRegAlloc extends RegAlloc {
 		if (DEBUG) System.out.println("EVICT: Instr " + j + " " + regFile);
 	    }
 	    
-
-	    // for l = 1 to the number of pseudo-registers read
-	    //                  at step j do
-	    
 	    for (int l=0; l<j.use().length; l++) {
-		// i := l'th pseudo-registers requested at step j
 		Temp i = j.use()[l];
 
-		// check that 'i' is a pseudo register (not a REAL register)
 		if (isTempRegister(i)) continue;
 
-		// if i is not in a register then load i else DELETE(i) 
 		if (regFile.values().contains(i)) {
 		    // we need to DELETE(i) from the priority queue so
 		    // we can INSERT it again later with an updated
 		    // distance to its next use.
 		    pregPriQueue.remove(i);
-		} else {
+		} else { // regFile does NOT contain 'i'
 		    Temp reg = regFile.getEmptyRegister();
 		    Util.assert(reg != null, 
 				"There should be an empty register in " + 
@@ -331,66 +326,103 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		    memInstrs.getPrior(j).push(load);
 
-		    // TODO: replace the following FOR-loops with some
-		    // sort of cloning Temp Map in the instruction
-		    // perhaps? 
 		    for (int ji = 0; ji < j.dst.length; ji++) {
-			if (j.dst[ji] == i) {
-			    j.dst[ji] = reg;
+			// FSK: Following two lines were ignoring
+			// invariant that Temps have only one def
+			//if (j.dst[ji] == i) { j.dst[ji] = reg; }
+			//regFile.writeTo(j.dst[ji]); // set DIRTY bit
+			if (j.dst[ji] == i) { 
+			    Util.assert(false, "Why is Temp " + i + 
+					" being used in its own definition: " + j + " ?");
 			}
-			regFile.writeTo(j.dst[ji]); // set DIRTY bit
 		    }
 		    for (int ji = 0; ji < j.src.length; ji++) {
-			if (j.src[ji] == i) {
-			    j.src[ji] = reg;
-			}
+			if (j.src[ji] == i) { j.src[ji] = reg; }
 		    }
 
 		    // visit all the remaining instructions,
 		    // replacing 'i' with 'reg'
-		    CloneableIterator remainInstrs =
-			(CloneableIterator) jnstrs.clone();
+		    CloneableIterator remainInstrs = (CloneableIterator) jnstrs.clone();
 		    while (remainInstrs.hasNext()) {
 			Instr instr = (Instr) remainInstrs.next();
-			// by above def of pseudo-Register, we only
-			// have to replace USEs in subsequent
-			// instructions with the Register value; DEFs
-			// are guaranteed to have new Temps associated
-			// with them
 			for (int ind=0; ind<instr.src.length; ind++) {
-			    if (instr.src[ind].equals(i)) {
+			    if (instr.src[ind].equals(i)) { 
 				instr.src[ind] = reg;
 			    }
 			}
-		    }
-		    
+			for (int ind=0; ind<instr.dst.length; ind++) {
+			    if (instr.dst[ind].equals(i)) {
+				Util.assert(false, "Why is Temp " + i
+					    + " being redefined in " +
+					    instr);
+			    }
+			}
+		    } // done updating remaining instructions
 
-		    if (DEBUG) System.out.println("PUT: Instr " + j + " " + regFile);
+		    if (DEBUG) 
+			System.out.println("PUT: Instr " + j + " " + regFile);
 		}
 
 		// x := next-ref(j, l)
 		Integer intgr = (Integer) nextRef.get(new TempInstrPair(j, i));
 
 		Util.assert(intgr != null, "At any USE of temp i in instr j, "+
-			    "there should be an entry in next-bref");
+			    "there should be an entry in next-ref");
 		
-		// below check is old and should be unnecessary.  But WTF
-		int x = (intgr==null)?Integer.MAX_VALUE-1:intgr.intValue();
-		
-		// if i is dirty then x := x + 1/2 end if
+		int x= intgr.intValue();
 
-		// if (regFile.isDirty(i)) {
+		// if i is dirty then x := x + 1/2 end if
 		if (isDirty(i, j, bb)) { 
-		    // add 1 instead of 1/2 (all values in
-		    // nextRef are doubled, see note above.
-		    x = x + 1; 
+		    x = x + 1; // add 1 instead of 1/2
 		}
 		
-		// INSERT(i, x)
-		pregPriQueue.insert(i, x);
+		pregPriQueue.insert(i, x); // INSERT(i, x)
+
+	    } //done with uses
+	    
+	    for(int l=0; l<j.def().length; l++) {
+		Temp i = j.def()[l];
+		if (isTempRegister(i)) continue;
+
+		Util.assert(!regFile.values().contains(i),
+			    "Temp " + i + 
+			    " should have only one definition point;"+
+			    " why is one already in regFile " +
+			    regFile + " ?");
+
+		Temp reg = regFile.getEmptyRegister();
+		Util.assert(reg != null, "There should be an empty register in " + regFile);
+		regFile.put(reg, i);
 		
-	    }//done
-	}//done
+		CloneableIterator remainInstrs = (CloneableIterator) jnstrs.clone();
+		while(remainInstrs.hasNext()) {
+		    Instr instr = (Instr) remainInstrs.next();
+		    for (int ind=0; ind<instr.src.length; ind++) {
+			if (instr.src[ind].equals(i)) { 
+			    instr.src[ind]= reg;
+			}
+		    }
+		    for (int ind=0; ind<instr.dst.length; ind++) {
+			if (instr.dst[ind].equals(i)) {
+			    Util.assert(false, "Why is Temp " + i + " being redefined in " + instr);
+			}
+		    }
+		} // done updating remaining instructions
+		
+		Integer intgr = (Integer) 
+		    nextRef.get(new TempInstrPair(j, i));
+		
+		Util.assert(intgr != null, "At any DEF of temp i in instr j, "+
+			    "there should be an entry in next-ref");
+
+		//DEF --> can skip isDirty check
+		int x = intgr.intValue() + 1; 
+		
+		pregPriQueue.insert(i, x); // INSERT(i, x)
+		    
+	     
+	    } //done with defs
+	} //done with instrs
 	
 	// Now need to append a series of STOREs to the BasicBlock (so
 	// that Temp locations in memory are updated

@@ -39,10 +39,10 @@ import java.util.Arrays;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.10 1999-06-14 23:53:44 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.11 1999-06-15 04:35:21 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
-    private static Temp[] reg = new Temp[16];
+     static Temp[] reg = new Temp[16];
     private static Temp[] regLiveOnExit = new Temp[5];
     private static Temp[] regGeneral = new Temp[11];
     private static TempFactory regtf;
@@ -51,11 +51,11 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static OffsetMap offmap;
     private static int nextPtr;
 
-    private static int FP = 11;
-    private static int IP = 12;
-    private static int SP = 13;
-    private static int LR = 14;
-    private static int PC = 15;
+    static final Temp FP;
+    static final Temp IP;
+    static final Temp SP;
+    static final Temp LR;
+    static final Temp PC;
 
     static {
         regtf = new TempFactory() {
@@ -85,13 +85,23 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
             reg[i] = new Temp(regtf);
             if (i < 11) regGeneral[i] = reg[i];
         }
+	    
+	FP = reg[11];
+	IP = reg[12];
+	SP = reg[13];
+	LR = reg[14];
+	PC = reg[15];
+
         regLiveOnExit[0] = reg[0];  // return value
-        regLiveOnExit[1] = reg[11]; // fp
-        regLiveOnExit[2] = reg[13]; // sp
-        regLiveOnExit[3] = reg[15]; // pc
-        regLiveOnExit[4] = reg[1]; // return exceptional value
+        regLiveOnExit[1] = reg[1]; // return exceptional value
+        regLiveOnExit[2] = FP;
+        regLiveOnExit[3] = SP;
+        regLiveOnExit[4] = PC;
         offmap = new OffsetMap32(null);
         nextPtr = 0x0fff0000; // arbitrary value
+
+
+
     }
 
     public SAFrame() { 
@@ -210,7 +220,7 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 	    new InstrMEM(template.getFactory(), template,
 			 "ldr `d0, [`s0, #" +(-4*offset) + "] \t; " + template,
 			 new Temp[]{ r },
-			 new Temp[]{ reg[ SP ] });
+			 new Temp[]{ SP  });
 	return Arrays.asList(new Object[] { load });
 				     
     }
@@ -221,7 +231,7 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 	    new InstrMEM(template.getFactory(), template,
 			 "str `s0, [`s1, #" +(-4*offset) + "] \t; " + template,
 			 new Temp[]{ },
-			 new Temp[]{ r , reg[SP] });
+			 new Temp[]{ r , SP });
 	return Arrays.asList(new Object[] { store });
     }
 
