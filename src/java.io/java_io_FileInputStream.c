@@ -169,6 +169,32 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
     /* Java language spec requires -1 at EOF, not 0 */ 
     return (jint)(result ? result : -1);
 }
+#ifdef WITH_TRANSACTIONS
+#include "../transact/java_lang_Object.h" /* version fetch methods */
+#include "../java.lang/java_lang_Class.h" /* Class.getComponentType() */
+/* transactional version of readBytes -- problematic!  how do we
+ * undo bytes read from a file descriptor? punting on the problem
+ * for now & just reading the bytes. */
+JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes_00024_00024withtrans
+(JNIEnv * env, jobject obj, jobject commitrec, jbyteArray ba, jint start, jint len) { 
+  jbyteArray _ba;
+  jsize length = (*env)->GetArrayLength(env, ba);
+  jclass byteclass;
+  int i;
+  /* get writable version. */
+  _ba = (jbyteArray)
+    Java_java_lang_Object_getReadWritableVersion(env, ba, commitrec);
+  /* now tag all elements as written. */
+  byteclass =
+    Java_java_lang_Class_getComponentType(env, (*env)->GetObjectClass(env,ba));
+  for (i=0; i<length; i++)
+    Java_java_lang_Object_writeArrayElementFlag(env, ba, i, byteclass);
+  /* okay, now we can do the readBytes. */
+  /* XXX: if GetByteArrayRegion is fixed, this won't work so well. */
+  return Java_java_io_FileInputStream_readBytes(env, obj, _ba, start, len);
+  /* XXX: tags all elements in array, even if not all are written. */
+}
+#endif /* WITH_TRANSACTIONS */
 
 /*
  * Class:     java_io_FileInputStream
