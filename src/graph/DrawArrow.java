@@ -85,20 +85,31 @@ public class DrawArrow extends Node {
     /** Process an image either by storing the appropriate information in a work list,then querying
 	a {@link Cache} node, or by drawing arrows on the object using stored information. 
      */
-    public synchronized void process(ImageData id) {
+    //public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
+	//System.out.println("Draw Arrow: processing image #"+id.id);
+	//System.out.println("Draw Arrow:     c1: "+id.c1);
+	//System.out.println("Draw Arrow:     c2: "+id.c2);
+	//System.out.println("Draw Arrow:     c3: "+id.c3);
 	switch (Command.read(id)) {
 	case Command.RETRIEVED_IMAGE: {
+	    //System.out.println("Draw Arrow: RETRIEVED IMAGE, so drawing arrow");
+
 	    WorkList last = workList;
 	    for (WorkList w = workList; w != null; w = (last = w).next) {
+		//System.out.println("Draw Arrow: items contained in the worklist");
 		if (w.id == id.id) {
+		    //System.out.println("Draw Arrow: work list id == this id");
 		    ImageDataManip.drawArrow(id, w.x, w.y, w.width, w.height, w.angle);
 		    if (w == workList) {
 			workList = workList.next;
 		    } else {
 			last.next = workList.next;
 		    }
-		    if (getLeft() != null)
+		    if (getLeft() != null) {
+			//System.out.println("Draw Arrow: going left");
 			getLeft().process(id);
+		    }
 		    break;
 		}
 	    }
@@ -106,6 +117,7 @@ public class DrawArrow extends Node {
 	}
 	    //treat any other Commands by building up the work list.
 	default: {
+	    //System.out.println("Draw Arrow: NO TAG, so storing worklist");
 	    //add node to front of WorkList linked list
 	    workList = new WorkList(id, workList);
 	    getRight().process(id);
