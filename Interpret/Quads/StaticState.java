@@ -9,13 +9,14 @@ import harpoon.IR.Quads.Quad;
 import harpoon.Util.Util;
 
 import java.io.PrintWriter;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 /**
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.5 1999-02-07 21:20:31 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.6 1999-06-22 23:11:34 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     /** which code representation to use. */
@@ -28,7 +29,7 @@ final class StaticState extends HCLibrary {
     }
     // ----------------------------
     /** mapping of classes to their static fields. */
-    final private Hashtable classInfo = new Hashtable();// no unloading.
+    final private Map classInfo = new HashMap();// no unloading.
     private static class ClassHeader {
 	FieldValueList fvl=null;
     }
@@ -100,7 +101,7 @@ final class StaticState extends HCLibrary {
     }
     // -------------------------
     // intern() table for strings.
-    final private Hashtable internTable = new Hashtable();
+    final private Map internTable = new HashMap();
     final ObjectRef intern(ObjectRef src) {
 	String s = ref2str(src);
 	ObjectRef obj = (ObjectRef) internTable.get(s);
@@ -155,8 +156,8 @@ final class StaticState extends HCLibrary {
     }
     // --------------------------------------------------------
     // NATIVE METHOD SUPPORT:
-    private final Hashtable nativeRegistry = new Hashtable();
-    private final Hashtable nativeClosure = new Hashtable();
+    private final Map nativeRegistry = new HashMap();
+    private final Map nativeClosure = new HashMap();
     final void register(NativeMethod nm) {
 	nativeRegistry.put(nm.getMethod(), nm);
     }
