@@ -192,6 +192,9 @@ void Repair::outputgraph(WorkSet *removededges, WorkRelation *wr, char *filename
   fprintf(dotfile,"ratio=auto\n");
   for(int i=0;i<globalmodel->getnumconstraints();i++) {
     NormalForm *nf=globalmodel->getnormalform(i);
+    fprintf(dotfile, "%lu[label=\"",nf);
+    nf->fprint(dotfile);
+    fprintf(dotfile,"\"];\n");
     for(int j=0;j<nf->getnumsentences();j++) {
       CoerceSentence *cs=nf->getsentence(j);
       for(int i=0;i<cs->getnumpredicates();i++) {

@@ -141,17 +141,19 @@ NormalForm::NormalForm(Constraint *c) {
   SentenceArray *sa=computesentences(c->getstatement(),true);
   this->length=sa->length;
   this->sentences=sa->sentences;
+  this->c=c;
   delete(sa);
 }
 
 void NormalForm::fprint(FILE *f) {
-  if (c!=NULL)
+  if (c!=NULL) 
     c->fprint(f);
 }
 
 NormalForm::NormalForm(Rule *r) {
   int count=-1;
   char *label, *triggerset;
+  c=NULL;
   for(int i=0;i<r->numquants();i++) {
     AQuantifier *aq=r->getquant(i);
     switch(aq->gettype()) {

@@ -956,5 +956,4 @@ void Constraint::fprint(FILE *f) {
   if (statement!=NULL) {
     statement->fprint(f);
   }
-  fprintf(f,"\n");
 }
