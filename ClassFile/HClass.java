@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.26 1998-08-20 22:47:07 cananian Exp $
+ * @version $Id: HClass.java,v 1.27 1998-09-10 05:04:35 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -129,6 +129,24 @@ public class HClass {
    *            if the classfile could not be found.
    */
   public static HClass forClass(Class cls) {
+    // if cls is an array...
+    if (cls.isArray())
+      return forDescriptor("[" +
+			   forClass(cls.getComponentType()).getDescriptor());
+    // or else if it's a primitive type...
+    if (cls.isPrimitive()) {
+      if (cls == java.lang.Boolean.TYPE) return HClass.Boolean;
+      if (cls == java.lang.Character.TYPE) return HClass.Char;
+      if (cls == java.lang.Byte.TYPE) return HClass.Byte;
+      if (cls == java.lang.Short.TYPE) return HClass.Short;
+      if (cls == java.lang.Integer.TYPE) return HClass.Int;
+      if (cls == java.lang.Long.TYPE) return HClass.Long;
+      if (cls == java.lang.Float.TYPE) return HClass.Float;
+      if (cls == java.lang.Double.TYPE) return HClass.Double;
+      if (cls == java.lang.Void.TYPE) return HClass.Void;
+      throw new Error("Unknown class primitive.");
+    }
+    // otherwise...
     return forName(cls.getName());
   }
 
