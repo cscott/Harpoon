@@ -7,6 +7,45 @@
 ##	link time and run time support for the flex compiler system on
 ##	IRIX/MIPS.
 
+sub print_double_long_conversion {
+print <<'LDCONVERTDONE';
+.text    
+.align 2    
+.globl __l2d
+.ent __l2d
+__l2d:
+    .set noreorder
+    .cpload $25
+    .set reorder
+    .frame sp, 0, $31
+    sw   a0, 0(sp)
+    sw   a1, 4(sp)
+    ldc1 $f2, 0(sp)
+    mov.d $f0, $f2
+    sdc1 $f0, 0(sp)
+    lw   v0, 0(sp)
+    lw   v1, 4(sp)
+    j    ra
+.end __l2d
+
+.globl __d2l
+.ent __d2l
+__d2l:
+    .set noreorder
+    .cpload $25
+    .set reorder
+    .frame sp, 0, $31
+    sw   a0, 0(sp)
+    sw   a1, 4(sp)
+    ldc1 $f0, 0(sp)
+    sdc1 $f0, 0(sp)
+    lw   v0, 0(sp)
+    lw   v1, 4(sp)
+    j    ra
+.end __d2l
+LDCONVERTDONE
+}
+
 sub print_ll_shifts {
 print <<'LLSHIFTSDONE';
 .text    
@@ -260,4 +299,4 @@ Print_Asm_Jacket("__i2d", "wordToDouble", [f,od], 0);
 Print_Asm_Jacket("__d2i", "doubleToWord", [d,of], 0);
 Print_Asm_Jacket("__f2d", "singleToDouble", [f,od], 0);
 Print_Asm_Jacket("__d2f", "doubleToSingle", [d,of], 0);
-
+print_double_long_conversion();
