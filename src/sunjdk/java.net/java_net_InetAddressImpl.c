@@ -95,7 +95,6 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_InetAddressImpl_lookupAllHostAddr_0
 /* addr is address, in local byte order. */
 JNIEXPORT jstring JNICALL Java_java_net_InetAddressImpl_getHostByAddr
   (JNIEnv *env, jobject _this, jint address) {
-  jstring result;
   char addr[] = { (address >> 24) & 0xFF,
 		  (address >> 16) & 0xFF,
 		  (address >>  8) & 0xFF,
