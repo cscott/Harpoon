@@ -84,7 +84,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.122 2000-12-05 20:48:50 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.123 2000-12-06 18:15:57 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -190,6 +190,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    Set roots = new java.util.HashSet
 		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    // and our main method is a root, too...
+	    if (EVENTDRIVEN) {
+		roots.add(linker.forName("harpoon.Analysis.ContBuilder.Scheduler").getMethod("loop",new HClass[0]));
+	    }
 	    roots.add(mainM);
 	    if (rootSetFilename!=null) try {
 		addToRootSet(roots, rootSetFilename);
