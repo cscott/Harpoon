@@ -10,6 +10,7 @@ import harpoon.ClassFile.HMethodSyn;
 import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
@@ -20,7 +21,7 @@ import java.util.Iterator;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.1 1999-11-17 21:57:14 kkz Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.2 1999-11-19 03:58:41 bdemsky Exp $
  */
 public class EventDriven {
     protected final UpdateCodeFactory ucf;
@@ -70,13 +71,17 @@ public class EventDriven {
 						"newmain is null");
 
 	Temp[] params = null;
-	for(Iterator i=this.hc.getElementsI(); i.hasNext(); ) {
-	    Quad q = (Quad)i.next();
-	    if (q instanceof METHOD) {
-		params = ((METHOD)q).params();
-		break;
-	    }
-	}
+	HEADER header=(HEADER) (this.hc.getRootElement());
+	METHOD method=(METHOD) (header.next(1));
+	params=method.params();
+
+	//for(Iterator i=this.hc.getElementsI(); i.hasNext(); ) {
+	//    Quad q = (Quad)i.next();
+	//    if (q instanceof METHOD) {
+	//	params = ((METHOD)q).params();
+	//	break;
+	//    }
+	//}
 
 	this.ucf.update(hms, new EventDrivenCode(hms, newmain, params));
 	return hms;
