@@ -30,7 +30,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.24 2000-05-15 22:49:34 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.25 2000-05-18 21:01:55 salcianu Exp $
  */
 public abstract class InterThreadPA {
     
@@ -57,6 +57,8 @@ public abstract class InterThreadPA {
 	// reanalyzed. 
 	final Set analyzed_threads = new HashSet();
 
+	System.out.println("Inter-thread analysis started ...");
+
 	long begin_time = 0;
 	if(TIMING) begin_time = System.currentTimeMillis();
 
@@ -68,7 +70,7 @@ public abstract class InterThreadPA {
 	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
 	    if(nt == null) break;
 
-	    if(DEBUG)
+	    //if(DEBUG)
 		System.out.println(nt + " was chosen");
 
 	    MetaMethod[] ops = get_run_mmethods(nt,pa);
@@ -185,7 +187,7 @@ public abstract class InterThreadPA {
 	ParIntGraph new_pig = null; /* it will point to the resulting pig */
 	boolean only_once = (pig.tau.getValue(nt)==1);
 
-	if(DEBUG)
+	//if(DEBUG)
 	    System.out.println("interaction_nt: " + nt + 
 			       (only_once?" only once":" many times"));
 
@@ -273,7 +275,7 @@ public abstract class InterThreadPA {
 	ParIntGraph pig[] = new ParIntGraph[2];
 	pig[0] = pig_starter;
 
-	if(DEBUG)
+	//if(DEBUG)
 	    System.out.println("interact_once_op; op = " + op.getHMethod());
 
 	// some thread specialization if necessary
