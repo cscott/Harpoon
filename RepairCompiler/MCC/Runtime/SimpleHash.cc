@@ -366,8 +366,14 @@ RepairHash::RepairHash(int size) {
     this->numelements = 0;
 }
 
+#define REPAIRSIZE 100
 RepairHash::RepairHash() {
-  RepairHash(100);
+    this->size = REPAIRSIZE;
+    this->bucket = new RepairHashNode* [REPAIRSIZE];
+    for (int i=0;i<REPAIRSIZE;i++)
+      bucket[i]=0;
+    this->nodelist=0;
+    this->numelements = 0;
 }
 
 RepairHash::~RepairHash() {
