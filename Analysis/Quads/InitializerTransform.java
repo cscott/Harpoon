@@ -56,7 +56,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.11 2000-10-22 08:10:54 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.12 2000-10-22 08:46:18 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -249,10 +249,10 @@ public class InitializerTransform
 		seenSet.clear();
 	    }
 	    public void visit(ANEW q) {
-		addCheckBefore(q, q.hclass(), seenSet);
+		addCheckBeforeAll(q, q.hclass(), seenSet);
 	    }
 	    public void visit(CALL q) {
-		if (q.isStatic() || q.method() instanceof HConstructor)
+		if (q.isStatic())
 		    addCheckBefore(q, q.method().getDeclaringClass(), seenSet);
 		if ( (!isVirtual(q)) && isSafe(q.method()))
 		    return;
@@ -270,7 +270,7 @@ public class InitializerTransform
 		    addCheckBefore(q, q.field().getDeclaringClass(), seenSet);
 	    }
 	    public void visit(NEW q) {
-		addCheckBefore(q, q.hclass(), seenSet);
+		addCheckBeforeAll(q, q.hclass(), seenSet);
 	    }
 	    public void visit(SET q) {
 		if (q.isStatic())
@@ -279,6 +279,23 @@ public class InitializerTransform
 	};
 	return hc;
     }
+    /** Recursive method to add checks for hc *and* all its superclasses
+     *  and interfaces. */
+    private static void addCheckBeforeAll(Quad q, HClass hc, Environment seen){
+	// first add check for superclass (and all its superclasses)
+	HClass su = hc.getSuperclass();
+	if (su!=null) addCheckBeforeAll(q, su, seen);
+	// then add checks for all interfaces (and all their interfaces)
+	HClass[] in = hc.getInterfaces();
+	for (int i=0; i<in.length; i++)
+	    addCheckBeforeAll(q, in[i], seen);
+	// now finally, add check for this.
+	// (this order is important so that superclass initializers
+	//  get executed first)
+	addCheckBefore(q, hc, seen);
+    }
+    /** Add a call to this class initializer, if it exists and has not
+     *  already been invoked on all execution paths leading to q. */
     private static void addCheckBefore(Quad q, HClass class2check,
 				       Environment seenSet) {
 	QuadFactory qf = q.getFactory();
