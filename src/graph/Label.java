@@ -359,10 +359,10 @@ public class Label extends Node {
 		    info.addDataPoint(croppedImageData);
 		}
 		else {
-		    System.out.println("   Object not determined to be close enough");
-		    System.out.println("      ImageData #: "+croppedImageData.id);
-		    System.out.println("      xLoc-curXLoc: "+Math.abs(xLoc-curXLoc));
-		    System.out.println("      yLoc-curYLoc: "+Math.abs(yLoc-curYLoc));
+		    //System.out.println("   Object not determined to be close enough");
+		    //System.out.println("      ImageData #: "+croppedImageData.id);
+		    //System.out.println("      xLoc-curXLoc: "+Math.abs(xLoc-curXLoc));
+		    //System.out.println("      yLoc-curYLoc: "+Math.abs(yLoc-curYLoc));
 		    ObjectInfo newInfo = new ObjectInfo();
 		    newInfo.addDataPoint(croppedImageData);
 		    croppedImageData.trackedObjectUniqueID =
