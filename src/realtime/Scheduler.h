@@ -79,6 +79,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_sleep
 
 /*
  * Class:     javax_realtime_Scheduler
+ * Method:    clock
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_javax_realtime_Scheduler_clock
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     javax_realtime_Scheduler
  * Method:    addThreadInC
  * Signature: (Ljavax/realtime/Schedulable;J)V
  */
