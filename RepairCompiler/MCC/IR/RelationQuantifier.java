@@ -33,11 +33,12 @@ public class RelationQuantifier extends Quantifier {
     }
 
     public void generate_open(CodeWriter writer) {
-        writer.outputline("for (SimpleIterator* " + x.getSafeSymbol() + "_iterator = " + relation.getSafeSymbol() + "_hash->iterator(); " + x.getSafeSymbol() + "_iterator->hasNext(); )");
+	writer.outputline("SimpleIterator "+x.getSafeSymbol()+"_iterator;");
+        writer.outputline("for ("+relation.getSafeSymbol() + "_hash->iterator(&"+x.getSafeSymbol()+"_iterator); " + x.getSafeSymbol() + "_iterator.hasNext(); )");
         writer.startblock();
-        writer.outputline(y.getType().getGenerateType() + " " + y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator->next();");        
+        writer.outputline(y.getType().getGenerateType() + " " + y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator.next();");        
         // #ATTN#: key is called second because next() forwards ptr and key does not! 
-        writer.outputline(x.getType().getGenerateType() + " " + x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator->key();");
+        writer.outputline(x.getType().getGenerateType() + " " + x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator.key();");
     }
 
     public void generate_open(CodeWriter writer, String type,int number, String left,String right) {

@@ -89,6 +89,7 @@ public:
     void addParent(SimpleHash* parent);
     int firstkey();
     SimpleIterator* iterator();
+    void iterator(SimpleIterator & it);
     inline int count() {
         return numelements;
     }
@@ -116,13 +117,12 @@ struct ArraySimple {
 
 
 class SimpleIterator {
-
-private:
+ public:
 
   struct ArraySimple *cur;
   int index;
   SimpleHash * table;
-public:
+  inline SimpleIterator() {}
 
   inline SimpleIterator(struct ArraySimple *start, SimpleHash *t) {
     cur = start;

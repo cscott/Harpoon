@@ -138,6 +138,12 @@ SimpleIterator* SimpleHash::iterator() {
   return new SimpleIterator(listhead,this);
 }
 
+void SimpleHash::iterator(SimpleIterator & it) {
+  it.table=this;
+  it.cur=listhead;
+  it.index=0;
+}
+
 SimpleHash::SimpleHash(int size) {
     if (size <= 0) {
         throw SimpleHashException();
