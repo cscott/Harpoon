@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.15 2000-03-30 22:16:39 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.16 2000-05-20 18:54:19 bdemsky Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -247,12 +247,12 @@ public class DataClaz extends Data {
 	Set interfaces = new HashSet();
 	for (HClass hcp=hc; hcp!=null; hcp=hcp.getSuperclass())
 	    interfaces.addAll(Arrays.asList(hcp.getInterfaces()));
-	interfaces.retainAll(ch.classes());
+	//interfaces.retainAll(ch.classes());
 	// all methods included in these interfaces.
 	Set methods = new HashSet();
 	for (Iterator it=interfaces.iterator(); it.hasNext(); )
 	    methods.addAll(Arrays.asList(((HClass)it.next()).getMethods()));
-	methods.retainAll(ch.callableMethods());
+	//methods.retainAll(ch.callableMethods());
 	// double-check that these are all interface methods
 	// (also discard class initializers from the list)
 	for (Iterator it=methods.iterator(); it.hasNext(); ) {
