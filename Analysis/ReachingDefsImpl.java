@@ -9,6 +9,7 @@ import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
 
@@ -25,7 +26,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.4 2000-02-16 22:37:52 cananian Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.5 2000-02-25 00:20:33 cananian Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -71,6 +72,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	    if (((UseDef)curr).defC().contains(t)) 
 		results = bsf.makeSet(Collections.singleton(curr));
 	}
+	Util.assert(false);
 	return null; // should never happen
     }
     // do analysis

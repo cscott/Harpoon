@@ -51,7 +51,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.23 2000-02-16 22:37:52 cananian Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.24 2000-02-25 00:20:32 cananian Exp $
 */
 public class BasicBlock {
     
@@ -217,6 +217,7 @@ public class BasicBlock {
     public void accept(BasicBlockVisitor v) { v.visit(this); }
     
     protected BasicBlock(HCodeElement h, Factory f) {
+	Util.assert(h!=null);
 	first = h; 
 	last = null; // note that this MUST be updated by 'f'
 	pred_bb = new HashSet(); succ_bb = new HashSet();
