@@ -127,66 +127,6 @@ public class Command extends Node {
      */
     public static final int GO_BOTH = 122;
     
-    /**
-     * Move car to the left
-     * @see Servo
-     */
-    public static final int SERVO_LEFT = 201;
-    
-    /**
-     * Move car to the right
-     * @see Servo
-     */
-    public static final int SERVO_RIGHT = 202;
-    
-    /**
-     * Move car forward
-     * @see Servo
-     */
-    public static final int SERVO_FORWARD = 203;
-    
-    /**
-     * Move car backward
-     * @see Servo
-     */
-    public static final int SERVO_BACKWARD = 204;
-
-    /**
-     * Move car left and continue moving left.
-     * @see Servo
-     */
-    public static final int SERVO_LEFT_CONTINUE = 205;
-    
-    /**
-     * Move car right and continue moving right.
-     * @see Servo
-     */
-    public static final int SERVO_RIGHT_CONTINUE = 206;
-    
-    /**
-     * Move car forward and continue moving forward.
-     * @see Servo
-     */
-    public static final int SERVO_FORWARD_CONTINUE = 207;
-    
-    /**
-     * Move car backward and continue moving backward.
-     * @see Servo
-     */
-    public static final int SERVO_BACKWARD_CONTINUE = 208;
-    
-    /**
-     * Stop the car from turning.
-     * @see Servo
-     */
-    public static final int SERVO_STOP_TURN = 209;
-    
-    /**
-     * Stop the car from moving.
-     * @see Servo
-     */
-    public static final int SERVO_STOP_MOVING = 210;
-
     public static final int CONTRAST_UP = 300;
     public static final int CONTRAST_DOWN = 301;
     public static final int GAIN_DOWN = 302;
