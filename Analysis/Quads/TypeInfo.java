@@ -43,11 +43,12 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.3 1999-09-19 16:17:24 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.4 1999-11-05 06:15:25 bdemsky Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     UseDefMap usedef;
+    boolean verifierBehavior;
 
     Hashtable map = new Hashtable();
 
@@ -56,6 +57,16 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
      */
     public TypeInfo(harpoon.IR.Quads.QuadSSI hc, UseDefMap usedef) { 
 	this.usedef = usedef; 
+	this.verifierBehavior=false;
+	analyze(hc);
+    }
+
+    /** Creates a <code>TypeInfo</code> analyzer for the specified
+     *  <code>HCode</code>.
+     */
+    public TypeInfo(harpoon.IR.Quads.QuadSSI hc, UseDefMap usedef, boolean vBehavior) { 
+	this.usedef = usedef; 
+	this.verifierBehavior=vBehavior;
 	analyze(hc);
     }
 
@@ -78,12 +89,13 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	// hack to handle typecasting:
 	//  keep track of booleans defined by instanceof's and acmpeq's.
 	Hashtable checkcast = new Hashtable();
-	for (int i=0; i<ql.length; i++)
-	    if (ql[i] instanceof INSTANCEOF ||
-		ql[i] instanceof OPER)
-		checkcast.put(ql[i].def()[0], ql[i]);
+	if (!verifierBehavior)
+	    for (int i=0; i<ql.length; i++)
+		if (ql[i] instanceof INSTANCEOF ||
+		    ql[i] instanceof OPER)
+		    checkcast.put(ql[i].def()[0], ql[i]);
 	
-	TypeInfoVisitor tiv = new TypeInfoVisitor(hc, checkcast);
+	TypeInfoVisitor tiv = new TypeInfoVisitor(hc, checkcast, verifierBehavior);
 	while(!worklist.isEmpty()) {
 	    Quad q = (Quad) worklist.pull();
 	    tiv.modified = false;
@@ -104,16 +116,34 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	harpoon.IR.Quads.QuadSSI hc;
 	boolean modified = false;
 	Hashtable checkcast;
-	TypeInfoVisitor(harpoon.IR.Quads.QuadSSI hc, Hashtable checkcast) 
-	{ this.hc = hc; this.checkcast = checkcast; }
+	HClass hclassObj;
+	boolean verifierBehavior;
+
+	TypeInfoVisitor(harpoon.IR.Quads.QuadSSI hc, Hashtable checkcast, boolean verifierBehavior) { 
+	    this.hc = hc; this.checkcast = checkcast;
+	    this.verifierBehavior=verifierBehavior;
+	    if (verifierBehavior)
+		try {
+		    this.hclassObj=HClass.forClass(Class.forName("java.lang.Object"));
+		} catch (ClassNotFoundException e) {
+		    System.out.println(e);
+		}
+	}
 
 	public void visit(Quad q) { modified = false; }
 
 	public void visit(AGET q) {
 	    HClass ty = typeMap(q, q.objectref());
 	    if (ty==null) {modified=false; return; }
-	    Util.assert(ty.isArray());
-	    modified = merge(q, q.dst(), toInternal(ty.getComponentType()));
+	    if (!verifierBehavior) {
+		Util.assert(ty.isArray());
+		modified = merge(q, q.dst(), toInternal(ty.getComponentType()));
+	    }
+	    else
+		if (ty.isArray())
+		    modified = merge(q, q.dst(), toInternal(ty.getComponentType()));
+		else
+		    modified = merge(q, q.dst(), toInternal(hclassObj));
 	    return;
 	}
 	public void visit(ALENGTH q) {
@@ -272,3 +302,5 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	return true;
     }
 }
+
+
