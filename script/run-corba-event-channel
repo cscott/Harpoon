@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export NAME_SERVICE=corbaloc::tracker.lmdistributed.pces.emulab.net:50010/NameService
+export NAME_SERVICE=corbaloc::TaoServices.lmdistributed.pces.emulab.net:50010/NameService
 
 cd ..
 
