@@ -1,0 +1,40 @@
+http://www.dina.kvl.dk/~jsr/java-jls-errors.html#All interfaces extend Object
+
+In particular:
+   class Test {
+         interface Person {
+         }
+
+         void doSomeThingsTo (Person p) {
+             p.toString(); // invoke Object method
+         }
+     }
+is legal.
+
+Interfaces may also have <clinit> methods (and possibly others?)
+(see http://www.dina.kvl.dk/~jsr/jvm-errors.html#sec4-1)
+In particular:
+   public interface itest {
+       long ifield = System.currentTimeMillis(); 
+   }
+is legal and produces an <clinit> method.
+I would wager that our interpreter does the wrong thing here.
+This means also that we must instantiate all superinterfaces of a class
+before we can call that class Loaded.
+
+Also, with regard to interfaces:
+(see http://www.dina.kvl.dk/~jsr/jvm-errors.html#sec4-7)
+4.7.3
+
+       It is specified that a field with a ConstantValue attribute is 
+
+              ... assigned the value referenced by its ConstantValue attribute
+              as part of its initialization ...
+
+       However, it is not described when and how the field is assigned the
+       value referenced by its ConstantValue attribute, e.g. if this is
+       supposed to take place in the <clinit> method of the class/interface. 
+
+       Presumably, a field with a ConstantValue attribute is assigned the value
+       referenced by the attribute as its initial default value, i.e., before
+       the <clinit> method of the class file is executed. 

@@ -1,0 +1,346 @@
+// Parser.cup, created Wed Feb 17 05:21:16 1999 by cananian
+// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Tools.PatMat;
+
+import harpoon.Tools.PatMat.Spec.Detail;
+import harpoon.Tools.PatMat.Spec.DetailExtra;
+import harpoon.Tools.PatMat.Spec.DetailList;
+import harpoon.Tools.PatMat.Spec.DetailPredicate;
+import harpoon.Tools.PatMat.Spec.DetailWeight;
+import harpoon.Tools.PatMat.Spec.Exp;
+import harpoon.Tools.PatMat.Spec.ExpId;
+import harpoon.Tools.PatMat.Spec.ExpBinop;
+import harpoon.Tools.PatMat.Spec.ExpConst;
+import harpoon.Tools.PatMat.Spec.ExpMem;
+import harpoon.Tools.PatMat.Spec.ExpName;
+import harpoon.Tools.PatMat.Spec.ExpTemp;
+import harpoon.Tools.PatMat.Spec.ExpUnop;
+import harpoon.Tools.PatMat.Spec.Leaf;
+import harpoon.Tools.PatMat.Spec.LeafId;
+import harpoon.Tools.PatMat.Spec.LeafOp;
+import harpoon.Tools.PatMat.Spec.LeafNull;
+import harpoon.Tools.PatMat.Spec.LeafNumber;
+import harpoon.Tools.PatMat.Spec.LeafSegType;
+import harpoon.Tools.PatMat.Spec.IdList;
+import harpoon.Tools.PatMat.Spec.Rule;
+import harpoon.Tools.PatMat.Spec.RuleExp;
+import harpoon.Tools.PatMat.Spec.RuleList;
+import harpoon.Tools.PatMat.Spec.RuleStm;
+import harpoon.Tools.PatMat.Spec.Stm;
+import harpoon.Tools.PatMat.Spec.StmAlign;
+import harpoon.Tools.PatMat.Spec.StmCall;
+import harpoon.Tools.PatMat.Spec.StmCjump;
+import harpoon.Tools.PatMat.Spec.StmData;
+import harpoon.Tools.PatMat.Spec.StmExp;
+import harpoon.Tools.PatMat.Spec.StmJump;
+import harpoon.Tools.PatMat.Spec.StmLabel;
+import harpoon.Tools.PatMat.Spec.StmMethod;
+import harpoon.Tools.PatMat.Spec.StmMove;
+import harpoon.Tools.PatMat.Spec.StmNativeCall;
+import harpoon.Tools.PatMat.Spec.StmReturn;
+import harpoon.Tools.PatMat.Spec.StmSegment;
+import harpoon.Tools.PatMat.Spec.StmSeq;
+import harpoon.Tools.PatMat.Spec.StmThrow;
+import harpoon.Tools.PatMat.Spec.TypeSet;
+
+import java_cup.runtime.Symbol;
+import java_cup.runtime.lr_parser;
+
+/** Input file parser for the instruction selection tool.
+ *
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Parser.cup,v 1.2 2002-02-25 21:08:30 cananian Exp $
+ */
+
+action code {:
+	void error(String message, int pos) {
+ 		parser.errorMsg.error(pos, "Parsing: "+message);
+	}
+:};
+
+parser code {:
+	Lexer lexer = null;
+	ErrorMsg errorMsg;
+
+	public void syntax_error(java_cup.runtime.Symbol current) {
+	  report_error("Syntax error (" + current.sym + ")", current);
+	}
+
+	public void report_error(String message, 
+			         java_cup.runtime.Symbol info) {
+		errorMsg.error(info.left, "Parsing: "+message);
+	}
+
+	public Parser(Lexer l, ErrorMsg err) {
+	  this();
+	  lexer = l;
+	  errorMsg=err;
+	}
+:};
+
+scan with {: return lexer.nextToken(); :};
+
+terminal String ID, GLOBAL_STATEMENTS, CLASS_STATEMENTS, BRACED, PARENED;
+terminal Integer INTEGER;
+terminal Long LONG;
+terminal Float FLOAT;
+terminal Double DOUBLE;
+// %keys
+terminal KEY_EXTRA, KEY_WEIGHT, KEY_PRED;
+// start with, end with
+terminal START_WITH, END_WITH;
+// tree nodes
+terminal BINOP, CALL, CJUMP, CONST, EXPR, JUMP, LABEL;
+terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
+terminal UNOP;
+terminal ALIGN, DATUM, METHOD, SEGMENT;
+// punctuation & brackets
+terminal LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LANGLE, RANGLE;
+terminal COLON, COMMA, EQUALS;
+// binops
+terminal ADD, AND, CMPEQ, CMPNE, CMPGE, CMPGT, CMPLE, CMPLT;
+terminal DIV, MUL, OR, REM, SHL, SHR, USHR, XOR;
+// unops
+terminal I2B, I2C, _2D, _2F, _2I, _2L, I2S, NEG, NOT;
+// null constant
+terminal NULL;
+
+non terminal Spec	program;
+non terminal Rule	rule;
+non terminal RuleList	ruleSeq;
+non terminal Detail	detail;
+non terminal DetailList detailSeq;
+non terminal IdList	idList, opt_idList;
+non terminal Exp	exp;
+non terminal Stm	stm;
+non terminal Integer    simpletype;
+non terminal TypeSet	type, typeList, opt_types;
+non terminal Integer	binops, unops;
+non terminal Leaf	sym_binops, sym_unops, sym_number, sym_segtype;
+non terminal Number	number;
+non terminal String     opt_start_with, opt_end_with;
+
+start with program;
+
+program	::=	GLOBAL_STATEMENTS:g CLASS_STATEMENTS:c 
+		opt_start_with:sw opt_end_with:ew ruleSeq:rl
+		{: RESULT=new Spec(g, c, sw, ew, rl); :}
+	|	/* error recovery.  Sync on valid ruleSeq. */
+		error ruleSeq:rl
+		{: RESULT=new Spec("","", null, null, rl); :}
+	;
+
+opt_start_with ::= /* empty */
+		{: RESULT=null; :}
+	|	START_WITH BRACED:sw
+		{: RESULT=sw; :}
+	;
+opt_end_with ::= /* empty */
+		{: RESULT=null; :}
+	|	END_WITH BRACED:ew
+		{: RESULT=ew; :}
+	;
+
+ruleSeq	::=	/* empty */
+		{: RESULT=null; :}
+	|	rule:r ruleSeq:rl
+		{: RESULT=(r==null)?rl:new RuleList(r, rl); :}
+	|	/* error recovery. Sync on valid rule. */
+		error ruleSeq:rl
+		{: RESULT=rl; :}
+	;
+
+rule	::=	exp:e EQUALS ID:id detailSeq:dl BRACED:rs
+		{: RESULT=new RuleExp(e, id, dl, rs); :}
+	|	stm:s detailSeq:dl BRACED:rs
+		{: RESULT=new RuleStm(s, dl, rs); :}
+	|	/* error recovery: sync on BRACED */
+		error BRACED
+		{: RESULT=null; :}
+	;
+
+detailSeq ::=	/* empty */
+		{: RESULT=null; :}
+	|	detail:d detailSeq:dl
+		{: RESULT=new DetailList(d, dl); :}
+	|	error detailSeq:dl
+		{: RESULT=dl; :}
+	;
+
+detail	::=	KEY_EXTRA LANGLE simpletype:ty RANGLE
+                          LBRACE opt_idList:il RBRACE
+		{: RESULT=new DetailExtra(ty.intValue(), il); :}
+	|	KEY_PRED PARENED:ps
+		{: RESULT=new DetailPredicate(ps); :}
+	|	KEY_WEIGHT LANGLE ID:id COMMA number:num RANGLE
+		{: RESULT=new DetailWeight(id, num.doubleValue()); :}
+	;
+
+opt_idList ::=	/* empty */
+		{: RESULT=null; :}
+	|	idList:il
+		{: RESULT=il; :}
+	;
+
+idList	::=	ID:i
+		{: RESULT=new IdList(i, null); :}
+	|	ID:i COMMA idList:il
+		{: RESULT=new IdList(i, il); :}
+	;
+
+
+exp	::=	ID:id
+		{: RESULT = new ExpId(id); :}
+	|	BINOP opt_types:t
+		      LPAREN sym_binops:b COMMA exp:l COMMA exp:r RPAREN
+		{: RESULT = new ExpBinop(t, b, l, r); :}
+	|	CONST opt_types:t LPAREN sym_number:n RPAREN
+		{: RESULT = new ExpConst(t, n); :}
+	|	MEM opt_types:t LPAREN exp:e RPAREN
+		{: RESULT = new ExpMem(t, e); :}
+	|	NAME LPAREN ID:id RPAREN
+		{: RESULT = new ExpName(id); :}
+	|	TEMP opt_types:t LPAREN ID:id RPAREN
+		{: RESULT = new ExpTemp(t, id); :}
+	|	UNOP opt_types:t LPAREN sym_unops:u COMMA exp:e RPAREN
+		{: RESULT = new ExpUnop(t, u, e); :}
+	;
+
+stm	::=	ALIGN LPAREN sym_number:n RPAREN
+		{: RESULT = new StmAlign(n); :}
+	|	CALL LPAREN ID:rv COMMA ID:re COMMA exp:fu COMMA 
+		            ID:al COMMA ID:ha RPAREN
+		{: RESULT = new StmCall(rv, re, fu, al, ha); :}
+	|	CJUMP LPAREN exp:e COMMA ID:t COMMA ID:f RPAREN
+		{: RESULT = new StmCjump(e, t, f); :}
+	|	DATUM LPAREN exp:e RPAREN
+		{: RESULT = new StmData(e); :}
+	|	EXPR LPAREN exp:e RPAREN
+		{: RESULT = new StmExp(e); :}
+	|	JUMP LPAREN exp:e RPAREN
+		{: RESULT = new StmJump(e); :}
+	|	LABEL LPAREN ID:id RPAREN
+		{: RESULT = new StmLabel(id); :}
+	|	METHOD LPAREN ID:id RPAREN
+		{: RESULT = new StmMethod(id); :}
+	|	MOVE opt_types:t LPAREN exp:dst COMMA exp:src RPAREN
+		{: RESULT = new StmMove(t, dst, src); :}
+	|	NATIVECALL LPAREN ID:e1 COMMA exp:e2 COMMA ID:id RPAREN
+		{: RESULT = new StmNativeCall(e1, e2, id); :}
+	|	RETURN opt_types:t LPAREN exp:e RPAREN
+		{: RESULT = new StmReturn(t, e); :}
+	|	SEGMENT LPAREN sym_segtype:n RPAREN
+		{: RESULT = new StmSegment(n); :}
+	|	SEQ LPAREN stm:s1 COMMA stm:s2 RPAREN
+		{: RESULT = new StmSeq(s1, s2); :}
+	|	THROW LPAREN exp:e1 COMMA exp:e2 RPAREN
+		{: RESULT = new StmThrow(e1, e2); :}
+	;
+
+opt_types ::=	/* no type info; rule valid for all types */
+		{: TypeSet ts = new TypeSet(); ts.setAll(); RESULT=ts; :}
+	|	LANGLE typeList:tl RANGLE
+		{: RESULT=tl; :}
+	;
+
+typeList ::=	type:t
+		{: RESULT=t; :}
+	|	type:t COMMA typeList:tl
+		{: t.addAll(tl); RESULT=t; :}
+	;
+
+simpletype ::=	ID:id
+		{: int ty=harpoon.IR.Tree.Type.POINTER;//used if error.
+		   id = id.intern();
+		   if (id == "i") ty=harpoon.IR.Tree.Type.INT;
+		   else if (id == "l") ty=harpoon.IR.Tree.Type.LONG;
+		   else if (id == "f") ty=harpoon.IR.Tree.Type.FLOAT;
+		   else if (id == "d") ty=harpoon.IR.Tree.Type.DOUBLE;
+		   else if (id == "a" || id == "p")
+		     ty=harpoon.IR.Tree.Type.POINTER;
+		   else error("Bad type modifier: "+id, idleft);
+		   RESULT=new Integer(ty);
+		:}
+	;
+type ::=	simpletype:ty
+		{: TypeSet ts = new TypeSet();
+		   ts.set(ty.intValue());
+		   RESULT=ts;
+		:}
+	|	ID:id COLON INTEGER:w
+		{: TypeSet ts = new TypeSet();
+		   id = id.intern();
+		   if ((w.intValue() <= 32) &&
+		       (w.intValue() >= 1 ) &&
+		       ( (id == "s") || (id == "u"))) {
+		      if (id == "s") {
+		         ts.setSignedPrecise(w.intValue());
+		      } else if (id == "u") {
+			 ts.setUnsignedPrecise(w.intValue());
+		      }
+		   } else error("Bad sized type modifier: "+id+":"+w, idleft);
+		   RESULT=ts;
+		:}
+	;
+
+number ::=	INTEGER:i 	{: RESULT=i; :}
+	|	FLOAT:f		{: RESULT=f; :}
+	|	LONG:l		{: RESULT=l; :}
+	|	DOUBLE:d	{: RESULT=d; :}
+	;
+
+sym_number ::=	ID:id
+		{: RESULT=new LeafId(id); :}
+	|	NULL
+		{: RESULT=new LeafNull(); :}
+	|	number:num
+		{: RESULT=new LeafNumber(num); :}
+	;
+sym_binops ::=	ID:id
+		{: RESULT=new LeafId(id); :}
+	|	binops:num
+		{: RESULT=new LeafOp(num.intValue()); :}
+
+	;
+sym_unops ::=	ID:id
+		{: RESULT=new LeafId(id); :}
+	|	unops:num
+		{: RESULT=new LeafOp(num.intValue()); :}
+	;
+
+binops	::=	ADD	{: RESULT=new Integer(harpoon.IR.Tree.Bop.ADD); :}
+	|	AND	{: RESULT=new Integer(harpoon.IR.Tree.Bop.AND); :}
+	|	CMPEQ	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPEQ); :}
+	|	CMPNE	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPNE); :}
+	|	CMPGE	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPGE); :}
+	|	CMPGT	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPGT); :}
+	|	CMPLE	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPLE); :}
+	|	CMPLT	{: RESULT=new Integer(harpoon.IR.Tree.Bop.CMPLT); :}
+	|	DIV	{: RESULT=new Integer(harpoon.IR.Tree.Bop.DIV); :}
+	|	MUL	{: RESULT=new Integer(harpoon.IR.Tree.Bop.MUL); :}
+	|	OR	{: RESULT=new Integer(harpoon.IR.Tree.Bop.OR); :}
+	|	REM	{: RESULT=new Integer(harpoon.IR.Tree.Bop.REM); :}
+	|	SHL	{: RESULT=new Integer(harpoon.IR.Tree.Bop.SHL); :}
+	|	SHR	{: RESULT=new Integer(harpoon.IR.Tree.Bop.SHR); :}
+	|	USHR	{: RESULT=new Integer(harpoon.IR.Tree.Bop.USHR); :}
+	|	XOR	{: RESULT=new Integer(harpoon.IR.Tree.Bop.XOR); :}
+	;
+
+unops	::=	I2B	{: RESULT=new Integer(harpoon.IR.Tree.Uop.I2B); :}
+	|	I2C	{: RESULT=new Integer(harpoon.IR.Tree.Uop.I2C); :}
+	|	_2D	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2D); :}
+	|	_2F	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2F); :}
+	|	_2I	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2I); :}
+	|	_2L	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2L); :}
+	|	I2S	{: RESULT=new Integer(harpoon.IR.Tree.Uop.I2S); :}
+	|	NEG	{: RESULT=new Integer(harpoon.IR.Tree.Uop.NEG); :}
+	|	NOT	{: RESULT=new Integer(harpoon.IR.Tree.Uop.NOT); :}
+	;
+
+sym_segtype ::=	ID:id
+		{: int segtype = harpoon.IR.Tree.SEGMENT.encode(id);
+		   if (segtype<0) RESULT=new LeafId(id);
+		   else RESULT=new LeafSegType(segtype);
+		:}
+	;

@@ -8,6 +8,8 @@ package harpoon.IR.AIRE;
  * An enumerated type must be provided, called <code>IR_SourceLanguage</code>,
  * which specifies the original source language in which an 
  * AIRE/CE fragment originated.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IR_SourceLanguage.java,v 1.5 2002-02-25 21:03:59 cananian Exp $
  */
 public class IR_SourceLanguage {
     public final static IR_SourceLanguage IR_VHDL87_SOURCE = _(0);

@@ -1,4 +1,4 @@
-// InSwitch.java, created by cananian
+// InSwitch.java, created Sun Sep 13 22:49:21 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
@@ -15,11 +15,11 @@ import harpoon.Util.Util;
  * <code>key</code> method.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InSwitch.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: InSwitch.java,v 1.3 2002-02-25 21:04:17 cananian Exp $
  * @see Instr
  */
 public class InSwitch extends InCti {
-  int keys[];
+  final int keys[];
 
   /** Constructor.  Creates an <code>InSwitch</code> from a chunk of
    *  bytecode starting at the given pc.

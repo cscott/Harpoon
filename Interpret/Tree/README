@@ -1,0 +1,74 @@
++++++++++++++++++++++++++++
++ Running the Interpreter +
++++++++++++++++++++++++++++
+
+I've provided a test class called TestRun to test the Tree interpreter.
+Execute it like so:
+
+java -mx32m harpoon.Interpret.Tree.TestRun <class>
+
+The interpreter requires >16M of memory because the tree form for some
+of the system classes is really big.  Therefore, the max heap size 
+must be set explicitly as shown.
+
+Once the interpreter is working properly, I'll add the ability to run it
+from harpoon.Main.Run.
+
+++++++++++++++
++ Known Bugs +
+++++++++++++++
+
+1)  It is known that the interpreter crashes on java.lang.Character.<clinit>.
+This seems to be due to an assertion failure in the TypeInfo class.  I'm 
+going to dish this bug off to Scott :)
+
+2)  The interpreter currently doesn't do instanceofs for interfaces correctly.
+This is not a big problem, as it just requires adding a few lines to the
+classloader.  
+
++++++++++
++ Files +
++++++++++
+
+The files for the Tree Interpreter fall into 3 categories:
+
+1)  Classes which were not present in the quad interpreter.  These files exist
+primarily to provide an implementation of pointers.  These files include:
+
+ArrayPointer.java           // Pointer to array reference
+ClazPointer.java            // Pointer to static class data
+ConstPointer.java           // Points to method or static field
+FieldPointer.java           // Points to non-static field
+InterfaceListPointer.java   // Points to interface list in static class data
+Pointer.java                // Abstract Pointer class
+StringPointer.java          // Pointer to String constant
+UndefinedPointer.java       // Pointer to data for which the type is not known
+
+PointerTypeChangedException.java  // Thrown when one Pointer is converted
+                                  // to another Pointer class
+
+Additionally, a specialized OffsetMap and AllocationStrategy were added:
+
+InterpreterAllocationStrategy.java  // Strategy specific to Tree Interpreter
+InterpreterOffsetMap.java           // OffsetMap specific to Tree Interpreter
+
+
+2)  Classes which were modified from the quad interpreter.  These include
+ObjectRef and ArrayRef, which were modified to allow access to their data
+through the Pointer classes.  However, I tried to keep changes to these classes
+to a minimum to preserve their compatibility with the native method classes.
+Substantial changes of course were made to the Method class, which is the 
+bulk of the Tree Interpreter.  Changes were made to the class loader in 
+StaticState to make it possible to access static data through the Pointer
+classes.  Finally, TreeStackFrame is a direct knock-off of QuadStackFrame,
+except that it uses the Tree classes.
+
+
+3)  Classes which are unchanged from the Quad interpreter (everything else).
+
+
+
+
+
+
+

@@ -1,11 +1,17 @@
-// Instr.java, created by cananian
+// Instr.java, created Sun Sep 13 22:49:21 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGEdge; 
+import harpoon.IR.Properties.CFGraphable;
+import harpoon.Util.ArrayFactory;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 /**
  * <code>Bytecode.Instr</code> is the base type for the specific
  * bytecode instruction classes.  It provides standard methods
@@ -16,7 +22,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: Instr.java,v 1.4 2002-02-25 21:04:17 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -24,14 +30,18 @@ import java.util.Vector;
  * @see Code
  */
 public abstract class Instr 
-  implements HCodeElement, harpoon.IR.Properties.Edges {
-  String sourcefile;
-  int linenumber;
-  int id;
+  implements HCodeElement, harpoon.IR.Properties.CFGraphable, Comparable {
+  /*final*/ String sourcefile;
+  /*final*/ int linenumber;
+  /*final*/ int id;
   /** Constructor. */
   protected Instr(String sourcefile, int linenumber) {
     this.sourcefile = sourcefile;
     this.linenumber = linenumber;
+    /* it would be nice if this were unique for a particular Instr in a
+     * method, instead of depending on the translation order of different
+     * methods, but we'll settle for the total ordering Comparable implies.
+     */
     synchronized(lock) {
       this.id = next_id++;
     }
@@ -49,63 +59,90 @@ public abstract class Instr
   public int getID() { return id; }
   /** Returns the java bytecode of this instruction. */
   public abstract byte getOpcode();
+  /** Natural ordering on <code>Instr</code>s. */
+  public int compareTo(Object o) {
+    /* ordering is by id. */
+    return ((Instr)o).id - this.id;
+  }
+  public boolean equals(Object o) { // exploit global uniqueness of id.
+    if (this==o) return true;
+    if (o==null) return false;
+    try { return ((Instr) o).id == this.id; }
+    catch (ClassCastException e) { return false; }
+  }
+  public int hashCode() { return id; } // exploit global uniqueness of id.
+
+  /** Array Factory: makes <code>Instr[]</code>s. */
+  public static final ArrayFactory arrayFactory =
+    new ArrayFactory() {
+      public Object[] newArray(int len) { return new Instr[len]; }
+    };
 
   /** Return a list of all the <code>Instr</code>s that can precede
    *  this one. */
   public Instr[] prev() {
-    Instr[] p = new Instr[prev.size()]; prev.copyInto(p); return p;
+    return (Instr[]) prev.toArray(new Instr[prev.size()]);
   }
   /** Return a list of all the possible <code>Instr</code>s that may
    *  succeed this one. */
   public Instr[] next() {
-    Instr[] n = new Instr[next.size()]; next.copyInto(n); return n;
+    return (Instr[]) next.toArray(new Instr[next.size()]);
   }
+  /** Return the specified successor of this <code>Instr</code>. */
+  public Instr next(int i) { return (Instr) next.get(i); }
+  /** Return the specified predecessor of this <code>Instr</code>. */
+  public Instr prev(int i) { return (Instr) prev.get(i); }
 
   /** Add a predecessor to this <code>Instr</code>. */
-  void addPrev(Instr prev) { this.prev.addElement(prev); }
+  void addPrev(Instr prev) { this.prev.add(prev); }
   /** Add a successor to this <code>Instr</code>. */
-  void addNext(Instr next) { this.next.addElement(next); }
+  void addNext(Instr next) { this.next.add(next); }
   /** Remove a predecessor from this <code>Instr</code>. */
-  void removePrev(Instr prev) { this.prev.removeElement(prev); }
+  void removePrev(Instr prev) { this.prev.remove(prev); }
   /** Remove a successor from this <code>Instr</code>. */
-  void removeNext(Instr next) { this.next.removeElement(next); }
+  void removeNext(Instr next) { this.next.remove(next); }
 
   /** Internal predecessor list. */
-  Vector prev = new Vector(2);
+  final List prev = new ArrayList(2);
   /** Internal successor list. */
-  Vector next = new Vector(2);
+  final List next = new ArrayList(2);
 
-  // Edges interface:
-  public HCodeEdge newEdge(final Instr from, final Instr to) {
-    return new HCodeEdge() {
-      public HCodeElement from() { return from; }
-      public HCodeElement to() { return to; }
-      public boolean equals(Object o) { 
-	return (o instanceof HCodeEdge &&
-		((HCodeEdge)o).from() == from &&
-		((HCodeEdge)o).to() == to);
+  // CFGraphable interface:
+  public CFGEdge newEdge(final Instr from, final Instr to) {
+    return new CFGEdge() {
+      public CFGraphable fromCFG() { return from; }
+      public CFGraphable toCFG() { return to; }
+      public boolean equals(Object o) {
+	CFGEdge hce;
+	if (this==o) return true;
+	if (o==null) return false;
+	try { hce=(CFGEdge)o; } catch (ClassCastException e) {return false; }
+	return hce.from() == from && hce.to() == to;
       }
       public int hashCode() { return from.hashCode() ^ to.hashCode(); }
     };
   }
-  public HCodeEdge[] succ() {
-    HCodeEdge[] r = new HCodeEdge[next.size()];
+  public CFGEdge[] succ() {
+    CFGEdge[] r = new CFGEdge[next.size()];
     for (int i=0; i<r.length; i++)
-      r[i] = newEdge(this, (Instr) next.elementAt(i));
+      r[i] = newEdge(this, (Instr) next.get(i));
     return r;
   }
-  public HCodeEdge[] pred() {
-    HCodeEdge[] r = new HCodeEdge[prev.size()];
+  public CFGEdge[] pred() {
+    CFGEdge[] r = new CFGEdge[prev.size()];
     for (int i=0; i<r.length; i++)
-      r[i] = newEdge((Instr)prev.elementAt(i), this);
+      r[i] = newEdge((Instr)prev.get(i), this);
     return r;
   }
-  public HCodeEdge[] edges() {
-    HCodeEdge[] n = succ();
-    HCodeEdge[] p = pred();
-    HCodeEdge[] r = new HCodeEdge[n.length + p.length];
+  public CFGEdge[] edges() {
+    CFGEdge[] n = succ();
+    CFGEdge[] p = pred();
+    CFGEdge[] r = new CFGEdge[n.length + p.length];
     System.arraycopy(n, 0, r, 0, n.length);
     System.arraycopy(p, 0, r, n.length, p.length);
     return r;
   }
+  public Collection edgeC() { return Arrays.asList(edges()); }
+  public Collection predC() { return Arrays.asList(pred()); }
+  public Collection succC() { return Arrays.asList(succ()); }
 }

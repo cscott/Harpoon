@@ -1,0 +1,68 @@
+---- Jan-23-99
+FLEX native backend TODO:
+- implement OffsetMap:
+  - for reuseability, implement an abstract class on top of OffsetMap that
+    only implements the two label() functions, which are likely to be
+    portable even when field offsets may vary.  Use the Java Native Interface
+    standard for class/field mangling to come up with Label names:  see
+      http://www.javasoft.com/products/jdk/1.2/docs/guide/jni/
+    Specification section 2, "Resolving Native Method Names"
+  - The class_method_map MethodMap, which will order non-interface methods.
+    [I think Duncan is doing this?]
+  - The interface_method_map MethodMap, which orders interface methods.
+    [Felix is doing this]
+  - The ClassDepthMap, which I've all but written for y'all in
+    DefaultClassDepthMap.  Please use a Hashtable to cache the depth to
+    bring performance back to linear in the depth of the class hierarchy.
+    (DefaultClassDepthMap as written takes time proportional to the square
+     of the depth of the class hierarchy)
+  - The class_field_map FieldMap, which will be very similar to the
+    class_method_map MethodMap.
+  - Write OffsetMap to map all these orderings into byte offsets.  For
+    simplicity, you should have your field map take care of allocating two
+    entries for longs and doubles, so that offsetmap doesn't have to
+    figure out storage allocation itself.  You can also ignore the InlineMap
+    at this point, although you get bonus points if you write an OffsetMap
+    that takes the InlineMap into account (not that hard).
+- write garbage-collector in C.  Don't forget finalization and weak references.
+  Use the semi-depth-first copying algorithm from appel.
+  - write native method interface for garbage collector, so we can write
+    a more-or-less portable runtime library.  Use HANDLEs for pointers to
+    java objects, where HANDLE is defined as:
+      typedef struct handle_struct {
+         void *base_pointer;
+         struct handle_struct *next;
+      } *HANDLE;
+    HANDLEs are allocated either in an vector or (as in the above example)
+    a linked list.  The garbage collector holds the header node for the
+    HANDLE linked list and so can add HANDLEs to the live list and update
+    the pointers after gc correctly.  The C code is guaranteed that its
+    HANDLEs will remain valid, but any derived pointer based on the handle
+    must be recomputed from the base HANDLE after a potential gc-point.
+X write Quad-to-LowQuad translator [done]
+- extend LowQuad translator to return a valid TypeMap for LowQuad form.
+  Basically the same as the given type-map, with the temp-mappings taken into
+  account.  At your discretion you can either throw an exception or return
+  null if the TypeMap is given a Temp corresponding to a derived pointer
+  (which doesn't have a concrete type).  Any Temp handled in such a way should
+  have a valid Derivation (DList structure), however.
+- write Quad-with-explicit-initialization analysis/optimization.
+  the translation from Quad to LowQuad will create a corresponding
+  LowQuad-with-explicit-initialization form.
+- write encapsulated *SSA to *NoSSA translator.  If written properly will work
+  for both Quad and LowQuad form.
+- (highly optional) extend Interpret.Quads.Method to work with LowQuads.
+- write LowQuad-to-Tree translator.  Remember to preserve Derivation.
+  (see harpoon.IR.Properties.Deriviation)
+- (option) write Interpret/Tree methods to simulate Tree form for verification
+- write Tree-to-Instr pass (instruction selection)
+  should be in harpoon.Backend.<architecture>.InSel?
+  [Andy is doing this for StrongARM]
+  Scott will write an abstract superclass for this eventually.
+- do register allocation on Instrs (allocation, then construct stack frames,
+  then assignment)
+- tie everything together (write minimal native code libraries)
+
+---- Oct-04-98
+Target AIRE for backend.
+

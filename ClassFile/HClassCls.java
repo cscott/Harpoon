@@ -1,30 +1,30 @@
-// HClassCls.java, created by cananian
+// HClassCls.java, created Fri Oct 16  2:21:02 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import gnu.bytecode.*;
+import harpoon.Util.Util;
+
 import java.lang.reflect.Modifier;
 
 /**
  * Instances of the class <code>HClassCls</code> represent modifiable
  * classes and interfaces of a java program.  Arrays and primitive types
  * are not modifiable, and thus are not represented by 
- * <code>HClassCls</code>.  <code>HClassCls</code> objects are assigned
- * unique names automagically on creation.
+ * <code>HClassCls</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1 1998-10-16 06:21:02 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.2 2002-02-25 21:03:03 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
-abstract class HClassCls extends HClass {
+abstract class HClassCls extends HClassImpl {
   /** Fully qualified name of the class represented by this 
    *  <code>HClassCls</code> object. */
   String name;
   /** Superclass of this <code>HClassCls</code>. */
-  HClass superclass;
+  HPointer superclass;
   /** Interfaces of this <code>HClassCls</code>. */
-  HClass interfaces[];
+  HPointer interfaces[];
   /** Access flags for this class. */
   int modifiers;
   /** List of fields in this <code>HClassCls</code> object. */
@@ -33,9 +33,13 @@ abstract class HClassCls extends HClass {
   HMethod[] declaredMethods;
   /** Name of the source file for this class. */
   String sourcefile;
-  
+  // CACHES: (reset to null to recompute)
+  transient HConstructor[] constructors = null;
+  transient HField[] fields = null;
+  transient HMethod[] methods = null;
+
   /** Implementations must provide their own constructor to initialize. */
-  protected HClassCls() { /* no implementation */ }
+  protected HClassCls(Linker l) { super(l); }
 
   /** 
    * Returns the fully-qualified name of the class
@@ -83,7 +87,7 @@ abstract class HClassCls extends HClass {
    * @see HField
    */
   public HField[] getDeclaredFields() {
-    return HField.copy(declaredFields);
+    return (HField[]) Util.safeCopy(HField.arrayFactory, declaredFields);
   }
 
   /**
@@ -113,7 +117,12 @@ abstract class HClassCls extends HClass {
 	}
       }
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(name);
+    StringBuffer msg = new StringBuffer(getName());
+    msg.append('.'); msg.append(name); msg.append('(');
+    for (int i=0; i<parameterTypes.length; i++)
+      msg.append(parameterTypes[i].getDescriptor());
+    msg.append(')');
+    throw new NoSuchMethodError(msg.toString());
   }
   /**
    * Returns a <code>HMethod</code> object that reflects the specified 
@@ -134,7 +143,7 @@ abstract class HClassCls extends HClass {
 	  declaredMethods[i].getDescriptor().equals(descriptor))
 	return declaredMethods[i];
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError(getName()+"."+name+descriptor);
   }
   /**
    * Returns an array of <code>HMethod</code> objects reflecting all the
@@ -150,7 +159,7 @@ abstract class HClassCls extends HClass {
    * @see HMethod
    */
   public HMethod[] getDeclaredMethods() {
-    return HMethod.copy(declaredMethods);
+    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, declaredMethods);
   }
 
   /**
@@ -172,7 +181,15 @@ abstract class HClassCls extends HClass {
    * <code>null</code> is returned.
    * @return the superclass of the class represented by this object.
    */
-  public HClass getSuperclass() { return superclass; }
+  public HClass getSuperclass() {
+    try {
+      return (HClass) superclass; // works if superclass is null, too.
+    } catch (ClassCastException e) { // superclass was ClassPointer.
+      HClass sc = superclass.actual(); // loads HClass from ClassPointer.
+      superclass = sc;
+      return sc;
+    }
+  }
 
   /**
    * Determines the interfaces implemented by the class or interface 
@@ -191,7 +208,18 @@ abstract class HClassCls extends HClass {
    * returns an array of length 0.
    * @return an array of interfaces implemented by this class.
    */
-  public HClass[] getInterfaces() { return interfaces; }
+  public HClass[] getInterfaces() { // should really safeCopy?
+    HClass[] in;
+    try {
+      in = (HClass[]) interfaces;
+    } catch (ClassCastException e) { // interfaces was HPointer.
+      in = new HClass[interfaces.length];
+      for (int i=0; i<in.length; i++)
+	in[i] = interfaces[i].actual();
+      interfaces = in;
+    }
+    return (HClass[]) Util.safeCopy(HClass.arrayFactory, in);
+  }
 
   /**
    * Return the name of the source file for this class, or a
@@ -209,18 +237,23 @@ abstract class HClassCls extends HClass {
     return Modifier.isInterface(getModifiers()); 
   }
 
-  /**
-   * Converts the object to a string.  The string representation is the
-   * string <code>"class"</code> or <code>"interface"</code> followed by
-   * a space and then the fully qualified name of the class.  If this
-   * <code>HClass</code> object represents a primitive type,
-   * returns the name of the primitive type.
-   * @return a string representation of this class object.
-   */
-  public String toString() { 
-    return ((isInterface())?"interface ":"class ")+getName();
+  // CACHING CODE:
+  public HConstructor[] getConstructors() {
+    if (constructors==null)
+      constructors = super.getConstructors();
+    return (HConstructor[]) Util.safeCopy(HConstructor.arrayFactory, 
+					  constructors);
   }
-
+  public HField[] getFields() {
+    if (fields==null)
+      fields = super.getFields();
+    return  (HField[]) Util.safeCopy(HField.arrayFactory, fields);
+  }
+  public HMethod[] getMethods() {
+    if (methods==null)
+      methods = super.getMethods();
+    return (HMethod[]) Util.safeCopy(HMethod.arrayFactory, methods);
+  }
 }
 // set emacs indentation style.
 // Local Variables:

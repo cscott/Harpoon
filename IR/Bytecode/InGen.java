@@ -1,9 +1,9 @@
-// InGen.java, created by cananian
+// InGen.java, created Sun Sep 13 22:49:20 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 import harpoon.Util.Util;
 
 /**
@@ -21,12 +21,12 @@ import harpoon.Util.Util;
  * signature) nor for the dummy placeholder value which trails the
  * opcode in the raw bytecode array.
  *
- * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.3 1998-10-11 23:36:49 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: InGen.java,v 1.4 2002-02-25 21:04:17 cananian Exp $
  */
 public class InGen extends Instr {
-  byte opcode;
-  Operand operands[];
+  final byte opcode;
+  final Operand operands[];
 
   /** Create an <code>InGen</code> from a chunk of bytecode starting at
    *  offset <code>pc</code>. <code>parent</code> is used to lookup
@@ -34,7 +34,7 @@ public class InGen extends Instr {
   public InGen(String sourcefile, int linenumber, 
 	       byte[] code, int pc, Code parent) {
     super(sourcefile, linenumber);
-    this.opcode = code[pc];
+    this.opcode = (code[pc]==Op.WIDE)?code[pc+1]:code[pc];
     // Make operands, if necessary.
     switch(code[pc]) {
       // Constant local variable index 0:
@@ -198,13 +198,13 @@ public class InGen extends Instr {
       };
       break;
     case Op.WIDE: // this is evil.
-      this.opcode = code[pc+1];
-      operands = new Operand[] { new OpLocalVariable(u2(code, pc+2)) };
       if (code[pc+1]==Op.IINC) // very evil.
 	operands = new Operand[] { 
-	  operands[0], 
-	  new OpConstant(new Integer(u2(code,pc+4)), HClass.Int) 
+	  new OpLocalVariable(u2(code, pc+2)),
+	  new OpConstant(new Integer(s2(code,pc+4)), HClass.Int) 
 	};
+      else
+	  operands = new Operand[] { new OpLocalVariable(u2(code, pc+2)) };
       break;
       // Takes an operand, but don't belong:
     case Op.GOTO:
@@ -244,6 +244,11 @@ public class InGen extends Instr {
   static int u2(byte[] code, int pc) {
     return (u1(code,pc) << 8) | u1(code,pc+1);
   }
+  /** Create an integer from a signed two-byte quantity (big-endian). */
+  static int s2(byte[] code, int pc) {
+    int s = u2(code, pc);
+    return (s&0x8000)==0 ? s : (s | ~0xFFFF);
+  }
 
   /** Return the bytecode opcode of this instruction.
    *  @see Op */
@@ -251,7 +256,9 @@ public class InGen extends Instr {
   /** Return a specific operand of this instruction. */
   public Operand getOperand(int i) { return operands[i]; }
   /** Get all the operands of this instruction. */
-  public Operand[] getOperands() { return (Operand[]) Util.copy(operands); }
+  public Operand[] getOperands() { 
+    return (Operand[]) Util.safeCopy(Operand.arrayFactory, operands);
+  }
 
   // provide run-time checks on arity.
   /** @see Instr#addPrev */

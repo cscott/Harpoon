@@ -9,11 +9,12 @@ import java.util.NoSuchElementException;
  * <code>SingletonEnumerator</code> enumerates a single value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SingletonEnumerator.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: SingletonEnumerator.java,v 1.3 2002-02-25 21:08:55 cananian Exp $
+ * @deprecated Use harpoon.Util.Default.singletonIterator instead.
  */
 
 public class SingletonEnumerator implements Enumeration {
-    Object o;
+    final Object o;
     boolean done=false;
     /** Creates a <code>SingletonEnumerator</code> which enumerates the
      *  single value <code>o</code>. */

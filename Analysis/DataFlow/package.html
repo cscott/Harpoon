@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<!-- $Id: package.html,v 1.2 2002-02-25 20:56:43 cananian Exp $ -->
+<body bgcolor="white">
+Provides the classes for performing Data-Flow Analysis on a number of
+Intermediate Representations.
+
+<blockquote>The purpose of data-flow analysis is to provide global information
+about how a procedure (or a larger segment of a program) manipulates
+its data.  For example, constant-propagation analysis seeks to
+determine whether all asssignments to a particular variable that may
+provide the value of that variable at some particular point
+necessarily give it the same constant value.  If so, a use of the
+variable at that point can be replaced by the constant. 
+<P align="right">Muchnick, Steven S., 
+<U>Advanced Compiler Design & Implementation</U>, pg. 217 </P>  </blockquote>     
+
+<P>
+The design of the DataFlow package implements data-flow analysis
+passes in terms of three parts: a flowgraph of nodes, a node-visitor
+to calculate flow functions defined according to a lattice, and a
+solver to find a maximum fixed point of the lattice.
+
+<P>
+Generally the nodes of an analysis will be BasicBlock objects, and the
+corresponding visitor will be an subclass of BasicBlockVisitor.
+
+<h2>Related Documentation</h2>
+
+For further information, see:
+<ul>
+  <li>Muchnick, Steven S., <U>Advanced Compiler Design & Implementation</U>,
+  Chapter 8: "Data-Flow Analysis" 
+  <li>Appel, Andrew W., <U>Modern Compiler Implementation in Java</U>,
+  Chapter 17: "Dataflow Analysis"
+</ul>
+
+@author John Whaley
+@author Felix Klock (pnkfelix@mit.edu)
+</body>
+</html>

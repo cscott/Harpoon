@@ -1,24 +1,33 @@
-#!/bin/sh
-# concatanate files to stdout in a form that we can unmunge them from.
+#!/usr/bin/perl
+# Concatenate files to stdout in a form that we can unmunge them from.
 # Basically, a text-file-only form of tar.
-for dir in $@; do
-  # filter out CVS directorys, backup files, and some obvious binary formats.
-  files=`find $dir -name CVS -prune -o ! -name "*~" ! -name "*.class" ! -name "*.gif" -print`
-  for f in $files; do
-    if [ -f $f ]; then
-	# pipeline safe: don't output anything until we're done reading it all.
-	doctmp=`mktemp -q /var/tmp/doc-tmp.$$.XXXXXX`
-	if [ $? -ne 0 ]; then
-	    echo "$0: Can't create temp file, aborting."
-	    exit 1
-	fi
-	echo "---- CUT HERE ----" >> $doctmp
-        echo $f >> $doctmp
-	# old way: sed -e "s/^-/- /" < $f
-	# new way makes sure every line ends in a newline.
-	perl -ne 'chomp;s/^-/- /;print $_ . "\n";' < $f >> $doctmp
-	# NOW output.
-	cat $doctmp ; rm -f $doctmp
-    fi
-  done
-done
+
+# PIPELINE SAFE: we don't output anything until we're done reading it all,
+# so if you munge and unmunge in a pipeline you're guaranteed your output
+# doesn't start overwriting your input.
+
+
+$NL=$/;
+undef $/; # always read whole file at once.
+
+# munge all directories on the command-line.
+foreach $dir (@ARGV) {
+    #filter out CVS directories, backup files, and some obvious binary formats.
+    @files=split(/(?:\r\n?|\n)+/,`find $dir -name CVS -prune -o ! -name "*~" ! -name "*.class" ! -name "*.gif" ! -name "*.jar" -print`);
+    foreach $f (@files) {
+	if (`file $f` =~ /text/) { # only plain-text files, not directories.
+	    # snarf up all contents.
+	    open(FH, "< $f") or die "Can't open $f.\n";
+	    $_ = <FH>;
+	    close FH;
+	    # do the dash substitution
+	    s/^-/- /gmo;
+            # make sure we end in a newline.
+	    s/(\r\n?|\n)?$/$NL/eso;
+	    # now we can output & still be pipeline safe
+	    print "---- CUT HERE ----$NL";
+	    print "$f$NL";
+	    print $_;
+	}
+    }
+}

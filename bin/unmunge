@@ -1,80 +1,36 @@
 #!/usr/bin/perl
-eval 'exec /usr/bin/perl -S $0 ${1+"$@"}'
-    if $running_under_some_shell;
-			# this emulates #! processing on NIH machines.
-			# (remove #! line above if indigestible)
-
-#eval '$'.$1.'$2;' while $ARGV[0] =~ /^([A-Za-z_0-9]+=)(.*)/ && shift;
-#			# process any FOO=bar switches
-
 # unmunge.  Expects to find munged files on standard input.
 # Pipeline safe.  Don't write output file until everything's read.
-$, = ' ';		# set output field separator
-$\ = "\n";		# set output record separator
+use File::Basename;
+use IO::Handle;
 
-line: while (<>) {
-    chop;	# strip record separator
+sub dumpstored {
+    ($outfile, $contents)=@_;
+    $dirname = dirname($outfile);
+    system('mkdir -p ' . $dirname) unless -d $dirname;
+    open(FH, "> $outfile") or die "Can't open $outfile for writing.\n";
+    print FH $contents;
+    close FH;
+}
 
+$longest=0;
+STDOUT->autoflush(1);
+
+undef $outfile;
+$contents="";
+LINE: while (<>) {
     if (/^---- CUT HERE ----/) {
-	&mvdoctmp();
-	&mkdoctmp();
-	$outf = &Getline1();
-
-	print $outf;
-
-	# make sure that the right directory exists.
-	$outd = `dirname $outf`;
-	system('mkdir -p ' . $outd);
-	# this line does not go into the output file.
-	next line;
+	dumpstored $outfile, $contents if defined($outfile);
+	$outfile = <>; # read next line.
+	chomp $outfile;
+	printf "% *s\r", -$longest, $outfile; # some pretty status printing
+	$longest=length $outfile if $longest < length $outfile;
+	$contents="";
+	next LINE;
     }
-    # dump rest of the lines to the right file.
     s/^- /-/g;
-    &Pick('>>', $doctmp) &&
-	(print $fh $_);
+    $contents .= $_;
 }
-
-&mvdoctmp();
-
-exit $ExitValue;
-
-sub mkdoctmp {
-    $doctmp = `mktemp /var/tmp/unmunge.XXXXXX`;
-    chomp $doctmp;
-    if (length($doctmp) == 0) {
-	&Pick('>', '/dev/stderr') &&
-	    (print $fh "unmunge: Can't create temp file, aborting.");
-	$ExitValue = 1; last line;
-    }
-}
-
-sub mvdoctmp {
-    if (length($doctmp) != 0) {
-#	&fflush($doctmp);
-	delete $opened{$doctmp} && close($doctmp);
-	system('mv -f ' . $doctmp . ' ' . $outf);
-    }
-}
-
-sub Getline1 {
-    local($_);
-    if ($getline_ok = (($_ = <>) ne '')) {
-	chop;	# strip record separator
-    }
-    $_;
-}
-
-sub Getline3 {
-    &Pick('',@_);
-    local($_);
-    if ($getline_ok = (($_ = <$fh>) ne '')) {
-	chop;	# strip record separator
-    }
-    $_;
-}
-
-sub Pick {
-    local($mode,$name,$pipe) = @_;
-    $fh = $name;
-    open($name,$mode.$name.$pipe) unless $opened{$name}++;
-}
+dumpstored $outfile, $contents if defined($outfile);
+# erase pretty status line.
+printf "% *s\r", $longest, " ";

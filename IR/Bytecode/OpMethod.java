@@ -1,10 +1,15 @@
-// OpMethod.java, created by cananian
+// OpMethod.java, created Sun Sep 13 22:49:23 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.RawClass.Constant;
+import harpoon.IR.RawClass.ConstantClass;
+import harpoon.IR.RawClass.ConstantNameAndType;
+import harpoon.IR.RawClass.ConstantMethodref;
+import harpoon.IR.RawClass.ConstantInterfaceMethodref;
 
 /**
  * <code>OpMethod</code> represents a method reference operand of a
@@ -13,13 +18,13 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpMethod.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
- * @see harpoon.ClassFile.Raw.Constant.ConstantMethodref
- * @see harpoon.ClassFile.Raw.Constant.ConstantInterfaceMethodref
+ * @version $Id: OpMethod.java,v 1.3 2002-02-25 21:04:17 cananian Exp $
+ * @see harpoon.IR.RawClass.ConstantMethodref
+ * @see harpoon.IR.RawClass.ConstantInterfaceMethodref
  */
-public class OpMethod extends Operand {
-  boolean isInterfaceMethod;
-  HMethod hmethod;
+public final class OpMethod extends Operand {
+  final boolean isInterfaceMethod;
+  final HMethod hmethod;
   /** Create an <code>OpMethod</code> from the <code>CONSTANT_Methodref</code>
    *  or <code>CONSTANT_InterfaceMethodref</code> at the given index in
    *  the constant pool. */
@@ -40,7 +45,7 @@ public class OpMethod extends Operand {
     } else 
       throw new Error("OpMethod not given Methodref or InterfaceMethodref");
 
-    HClass cls = HClass.forName(cc.name().replace('/','.'));
+    HClass cls = parent.linker.forName(cc.name().replace('/','.'));
     this.hmethod = cls.getMethod(cnt.name(), cnt.descriptor());
   }
   /** Return the method referenced by this operand. */

@@ -1,3 +1,7 @@
+// WeightedGraph.java, created Mon Nov 16 23:33:21 1998 by mfoltz
+// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+
 // -*-Mode: Java-*- 
 // WeightedGraph.java -- 
 // Author: Mark Foltz <mfoltz@ai.mit.edu> 
@@ -15,7 +19,7 @@ import java.util.Hashtable;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version 
+ * @version $Id: WeightedGraph.java,v 1.4 2002-02-25 20:58:28 cananian Exp $
  */
 
 public class WeightedGraph {

@@ -1,0 +1,2 @@
+The harpoon.IR.Assem representation is an opaque representation of
+machine-dependent instruction strings, used for register allocation.

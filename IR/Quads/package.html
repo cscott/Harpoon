@@ -1,0 +1,39 @@
+<HTML>
+<!-- $Id: package.html,v 1.2 2002-02-25 21:05:13 cananian Exp $ -->
+<BODY>
+A flat, typed, high-level quadruple-based IR.
+<p>
+Quad form is used for most analysis and transformation in the
+compiler.  It maintains strong typing, and tries to be minimal.
+There are three main variants, and an additional variant which is
+occasionally useful as an intermediate:<UL>
+
+<LI><code>QuadWithTry</code>, which contains <code>HANDLER</code>
+quads to handle thrown exceptions, and does implicit safety-checking.
+
+<LI><code>QuadNoSSA</code> which handles all exceptions explicitly.
+
+<LI><code>QuadSSI</code> which is the same as the above, except it is
+in <A HREF="http://flexc.lcs.mit.edu/Harpoon/thesis.pdf">SSI form</a>.
+
+<LI><code>QuadRSSx</code> is a relaxed version of
+<code>QuadSSA</code>/<code>QuadSSI</code>; during program
+transformations it is sometimes easier to break the phi/sigma
+constraints of SSA/SSI form without doing a full translation to/from
+<code>QuadNoSSA</code>.  Relaxed-SSx (RSSx) form is what we call this
+"SSA/SSI form with broken constraints".
+</UL>
+<p>
+For lower-level transformations involving explicit pointer arithmetic,
+<code>LowQuad</code> form must be used.
+
+<h2>Related Documentation</h2>
+For further information, see:
+<ul>
+ <li><A HREF="http://www.flex-compiler.lcs.mit.edu/Harpoon/quads/"
+     >Tutorial on FLEX compiler intermediate representation</A>
+</ul>
+
+@author C. Scott Ananian <cananian@alumni.princeton.edu>
+</BODY>
+</HTML>

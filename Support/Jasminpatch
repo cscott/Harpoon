@@ -1,0 +1,28 @@
+--- /root/src/jasmin/ClassFile.java	Fri Apr 11 15:04:08 1997
++++ ClassFile.java	Thu Nov 11 02:56:22 1999
+@@ -146,16 +146,15 @@
+ 
+             // create a constant pool entry for the initial value
+             CP cp = null;
+-
+-            if (value instanceof Integer) {
+-                cp = new IntegerCP(((Integer)value).intValue());
+-            } else if (value instanceof Float) {
+-                cp = new FloatCP(((Float)value).floatValue());
+-            } else if (value instanceof Double) {
+-                cp = new DoubleCP(((Double)value).doubleValue());
+-            } else if (value instanceof Long) {
+-                cp = new LongCP(((Long)value).longValue());
+-            } else if (value instanceof String) {
++	    if (sig.equals("I")||sig.equals("Z")||sig.equals("C")||sig.equals("B")||sig.equals("S")) {
++                cp = new IntegerCP(((Number)value).intValue());
++            } else if (sig.equals("F")) {
++                cp = new FloatCP(((Number)value).floatValue());
++            } else if (sig.equals("D")) {
++                cp = new DoubleCP(((Number)value).doubleValue());
++            } else if (sig.equals("J")) {
++                cp = new LongCP(((Number)value).longValue());
++            } else if (sig.equals("Ljava/lang/String;")) {
+                 cp = new StringCP((String)value);
+             }
+ 

@@ -3,33 +3,39 @@
 (defun harpoon-subdir-name (basename-fragment)
   "Returns the subdirectory of the current buffer, after stripping everything up to and including the basename-fragment."
   (let ((directory (file-name-directory buffer-file-name)))
-    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)/$") 
+    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)/$")
 		  directory)
     (substring directory (match-end 1) (match-end 2))))
-;;;; extract the work directory name from the buffer-file-name
-(defun harpoon-basepath-name (basename-fragment)
-  "Returns the subdirectory of the current buffer, after stripping everything after (but not including) the basename-fragment."
-  (let ((directory (file-name-directory buffer-file-name)))
-    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)/$") 
-		  directory)
-    (substring directory (match-beginning 1) (match-end 1))))
-;;;; extract a dot-delimited package name from the path to the current buffer.
+;;;; extract a dot-delimited package name from the path to the current buffer
 (defun harpoon-package-name (basename-fragment)
-  "Returns the package name of the current buffer, after stripping the directory up to and including basename-fragment"
+  "Returns the package name of the current buffer, after stripping the directory up to and including the basename-fragment"
   (let ((pkgname (harpoon-subdir-name basename-fragment)))
     (while (string-match "\\(.*\\)/\\(.*\\)" pkgname)
       (setq pkgname (concat 
 		     (substring pkgname (match-beginning 1) (match-end 1)) "."
 		     (substring pkgname (match-beginning 2) (match-end 2)))))
     pkgname))
-;;;; extract the root project dir.
+;;;; extract the work directory name from the buffer-file-name
+(defun harpoon-basepath-name (basename-fragment)
+  "Returns the subdirectory of the current buffer, after stripping everything after (but not including) the basename-fragment."
+  (let ((directory (file-name-directory buffer-file-name)))
+    (string-match (concat "\\(.*" basename-fragment "\\)*\\(.*\\)$")
+		  directory)
+    (substring directory (match-beginning 1) (match-end 1))))
+;;;; extract the root project dir
 (defun user-specific-project-dir ()
   "Returns the pathname to the root project directory."
-  (harpoon-basepath-name "Harpoon/Code/"))
-;;;; template for generating visitor classes.
+  (harpoon-basepath-name "/Code/"))
+;;;; changed class-buffer template so that extra space is not generated
+(defun harpoon-gen-get-super-class ()
+  "Concatenates a space to the result of jde-gen-get-super-class if it is not empty."
+  (let ((super-class (jde-gen-get-super-class)))
+    (if (not (eq super-class ()))
+      (concat " " super-class))))
+;;;; template for generating visitor classes
 (defun harpoon-list-of-quads ()
-  "Returns list of all quadruple type files defined in IR/QuadSSA."
-  (directory-files (concat (user-specific-project-dir) "IR/QuadSSA/") nil "^[A-Z]+.java"))
+  "Returns list of all quadruple type files defined in IR/Quads."
+  (directory-files (concat (user-specific-project-dir) "IR/Quads/") nil "^[A-Z]+.java"))
 (defun harpoon-list-of-visit-quads (file-names)
   "Returns string which lists empty methods for visiting quad types in file-names."
   (let ((r '(l))
@@ -49,7 +55,7 @@
  nil 
  "Insert a class which extends QuadVisitor class.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; jde properties & settings.
+;;; jde properties & settings
 (jde-set-project-name "harpoon")
 (jde-set-variables 
  '(jde-run-option-properties nil)
@@ -102,7 +108,31 @@
  '(jde-make-program "make")
  '(jde-use-font-lock t)
  '(jde-db-option-garbage-collection (quote (t t)))
- '(jde-gen-class-buffer-template (quote ("\"// \" (file-name-nondirectory buffer-file-name)" "\", created \" (current-time-string)" "\" by \" (user-login-name) 'n" "(funcall jde-gen-boilerplate-function)" "\"package harpoon.\" (harpoon-package-name \"Harpoon/Code/\") \";\" 'n" "'n" "\"import harpoon.ClassFile.*;\" 'n" "\"/**\" 'n" "\" * <code>\"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>\" 'n" "\" * \" 'n" "\" * @author  \" (user-full-name)" "\" <\" user-mail-address \">\" 'n" "\" * @version $I\" \"d$\" 'n" "\" */\" 'n>" "'n>" "\"public class \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\" \" (jde-gen-get-super-class) \" {\" 'n> 'n>" "\"/** Creates a <code>\" " "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>. */\" 'n" "\"public \"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"() {\" 'n>" "\"    \" 'p 'n>" "\"}\" 'n>" "'n>" "\"}\"")) t)
+ '(jde-gen-class-buffer-template (quote 
+    ("\"// \" (file-name-nondirectory buffer-file-name)"
+     "\", created \" (current-time-string)" "\" by \" (user-login-name) 'n"
+     "(funcall jde-gen-boilerplate-function)"
+     "\"// Copyright (C) 2000 \" (user-full-name) \" <\" user-mail-address \">\" 'n" 
+     "\"// Licensed under the terms of the GNU GPL; see COPYING for details.\" 'n" 
+     "\"package harpoon\" (harpoon-package-name \"/Code\") \";\" 'n 'n" 
+     "\"/**\" 'n" 
+     "\" * <code>\"" "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" "\"</code>\" 'n" 
+     "\" * \" 'n" 
+     "\" * @author  \" (user-full-name)" "\" <\" user-mail-address \">\" 'n" 
+     "\" * @version $I\" \"d$\" 'n" 
+     "\" */\" 'n>" 
+     "\"public class \"" 
+     "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" 
+     "(harpoon-gen-get-super-class) \" {\" 'n> 'n>"
+     "\"/** Creates a <code>\" " 
+     "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" 
+     "\"</code>. */\" 'n" 
+     "\"public \"" 
+     "(file-name-sans-extension (file-name-nondirectory buffer-file-name))" 
+     "\"() {\" 'n>" 
+     "\"    \" 'p 'n>" 
+     "\"}\" 'n>" 
+     "'n>" "\"}\"")) t)
  '(jde-compiler "javac")
  '(jde-jdk-doc-url "http://www.javasoft.com/products/jdk/1.1/docs/api/index.html")
  '(jde-db-debugger (quote ("jdb" . "Executable")))

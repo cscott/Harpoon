@@ -1,3 +1,112 @@
+---- Jan-23-98
+FLEX native backend TODO:
+- implement OffsetMap:
+  - for reuseability, implement an abstract class on top of OffsetMap that
+    only implements the two label() functions, which are likely to be
+    portable even when field offsets may vary.  Use the Java Native Interface
+    standard for class/field mangling to come up with Label names:  see
+      http://www.javasoft.com/products/jdk/1.2/docs/guide/jni/
+    Specification section 2, "Resolving Native Method Names"
+  - The class_method_map MethodMap, which will order non-interface methods.
+    [I think Duncan is doing this?]
+  - The interface_method_map MethodMap, which orders interface methods.
+    [Felix is doing this]
+  - The ClassDepthMap, which I've all but written for y'all in
+    DefaultClassDepthMap.  Please use a Hashtable to cache the depth to
+    bring performance back to linear in the depth of the class hierarchy.
+    (DefaultClassDepthMap as written takes time proportional to the square
+     of the depth of the class hierarchy)
+  - The class_field_map FieldMap, which will be very similar to the
+    class_method_map MethodMap.
+  - Write OffsetMap to map all these orderings into byte offsets.  For
+    simplicity, you should have your field map take care of allocating two
+    entries for longs and doubles, so that offsetmap doesn't have to
+    figure out storage allocation itself.  You can also ignore the InlineMap
+    at this point, although you get bonus points if you write an OffsetMap
+    that takes the InlineMap into account (not that hard).
+- write garbage-collector in C.  Don't forget finalization and weak references.
+  Use the semi-depth-first copying algorithm from appel.
+  - write native method interface for garbage collector, so we can write
+    a more-or-less portable runtime library.  Use HANDLEs for pointers to
+    java objects, where HANDLE is defined as:
+      typedef struct handle_struct {
+         void *base_pointer;
+         struct handle_struct *next;
+      } *HANDLE;
+    HANDLEs are allocated either in an vector or (as in the above example)
+    a linked list.  The garbage collector holds the header node for the
+    HANDLE linked list and so can add HANDLEs to the live list and update
+    the pointers after gc correctly.  The C code is guaranteed that its
+    HANDLEs will remain valid, but any derived pointer based on the handle
+    must be recomputed from the base HANDLE after a potential gc-point.
+X write Quad-to-LowQuad translator [done]
+- extend LowQuad translator to return a valid TypeMap for LowQuad form.
+  Basically the same as the given type-map, with the temp-mappings taken into
+  account.  At your discretion you can either throw an exception or return
+  null if the TypeMap is given a Temp corresponding to a derived pointer
+  (which doesn't have a concrete type).  Any Temp handled in such a way should
+  have a valid Derivation (DList structure), however.
+- write Quad-with-explicit-initialization analysis/optimization.
+  the translation from Quad to LowQuad will create a corresponding
+  LowQuad-with-explicit-initialization form.
+- write encapsulated *SSA to *NoSSA translator.  If written properly will work
+  for both Quad and LowQuad form.
+- (highly optional) extend Interpret.Quads.Method to work with LowQuads.
+- write LowQuad-to-Tree translator.  Remember to preserve Derivation.
+  (see harpoon.IR.Properties.Deriviation)
+- (option) write Interpret/Tree methods to simulate Tree form for verification
+- write Tree-to-Instr pass (instruction selection)
+  should be in harpoon.Backend.<architecture>.InSel?
+  Scott will write an abstract superclass for this eventually.
+- do register allocation on Instrs (allocation, then construct stack frames,
+  then assignment)
+- tie everything together (write minimal native code libraries)
+---- Dec-31-98
+X Make TempMap in QuadNoSSA/QuadSSA consistent with QuadFactory.tempFactory();
+Reclaim INSTANCEOF optimization opportunities by adding NULL check ahead of it.
+X Implement method & memory profiling:
+X   M classname method descriptor start_count end_count
+X   N classname start_life end_life
+X Separate 'profile stream' pointer in static state. Hook into invoke() and
+X  ObjectRef.finalize() to output prof info.  Add System.gc()
+---- Dec-30-98
+X Fix INSTANCEOF implementation in harpoon.Interpret.Quads.Method.
+X Add CHECKCAST quad?
+---- Dec-20-98
+X MOVE collation for quad-with-try, within basic blocks.
+---- Dec-19-98
+X Fix ARRAYINIT constructor to behave properly with try blocks.
+X Implement translation of JSR/RET.
+X Optimize LCMP/DCMP/FCMP instructions.
+---- Dec-10-98
+Make Util.Set abstract and move the current implementation to Util.HashSet.
+ Add methods to abstract set to handle set union/intersection.
+ Write Util.*Set implementing other types.  ListSet, for example.
+Make HClassPtr, HMethodPtr and HFieldPtr types and change everything to use
+ them.  HMethodPtr and HFieldPtrs are generated by HClassPtr.
+ This allows operation of the compiler if full classes are not available.
+Move mutable methods to HClass.  Create HClassReadOnly and HClassReadWrite
+ hierarchy.  Everything else splits from that.  HClassPtr and friends
+ are read-only.
+X Rename interface: Quad rename(TempMap) returns a new Quad exactly like the
+X  receiver, only with all temps renamed according to TempMap.
+Check that harpoon.ClassFile package is not == comparing two HPointers.
+---- Dec-01-98
+Bring back the equals() method of HClass.  Needed for caching.
+X Write script to read javadoc and automagically insert links to
+X   classes mentioned inside <code></code> blocks.
+X Make LABEL superclass of PHI.
+X Add kind() method to Quad; new class QuadKind enumerates.
+---- Nov-30-98
+Add HInitializerSyn superclass of HInitializer.
+---- Nov-26-98
+X Fix unlimited-temp-during-phi-stack-merge problem.  (See today's ChangeLog
+X  messages).
+---- Nov-25-98
+X Make HClass demand-driven again: special 'caching' HClass that stores
+X  string reference to class and waits to load it until an accessor method
+X  is called.  Think hard about this.
+X Insert proper labels in quadSSA print() method to make it readable.
 ---- Nov-20-98
 javac allows circular interface dependencies that could result in infinite
  loops in our class reader code.  jikes disallows this.  think through
@@ -6,11 +115,11 @@ javac allows circular interface dependencies that could result in infinite
 Write QuadSSA checker: verify edge links, no unreachable code, correct
  format, correct args to each Quad, in SSA form, header and footer correct,
  etc.
-Audit code to ensure deterministic generation of quad-ssa form.
- In particular, quads and temp numbering should not depend on how many and
- which methods have been loading previously.  Need to make a TempFactory and
- a QuadFactory to generate numbers. (how do we handle insertion of new 
- quads/temps without breaking the numbering?)
+X Audit code to ensure deterministic generation of quad-ssa form.
+X  In particular, quads and temp numbering should not depend on how many and
+X  which methods have been loading previously.  Need to make a TempFactory and
+X  a QuadFactory to generate numbers. (how do we handle insertion of new 
+X  quads/temps without breaking the numbering?)
 ---- Oct-21-98
 X Implement clone() method for IR.Bytecode.Code so that we don't die if we
 X clone a method before doing getCode("quad-ssa") on it.
@@ -27,13 +136,13 @@ X Write copy-quadssa method. [called clone]
 Target AIRE for backend.
 Write 'UndoRecursion' analysis/optimization pass.
 ---- Sep-25-98
-Undo peephole optimization and replace with a rule in SCCAnalysis that
- makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
- Actually, since sense of result of icmpeq and boolean is different,
- this would entail switching all CJMPs that use boolean value and
- negative value in all other uses.  May be more complicated.
-Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
-necessary at times.
+O Undo peephole optimization and replace with a rule in SCCAnalysis that
+O  makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
+O  Actually, since sense of result of icmpeq and boolean is different,
+O  this would entail switching all CJMPs that use boolean value and
+O  negative value in all other uses.  May be more complicated.
+O Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
+O  necessary at times.
 ---- Sep-24-98
 Xfigure out what to do about related variables/induction variables in bitwidth.
 find induction variables and use this info in bitwidth.
@@ -49,39 +158,39 @@ Finish bitwidth analysis in SCC.
 X Write move/const collation pass to remove unnecesssary quads and collate 
   MOVEs. [const collation not done; MOVE collation in DeadCode now.]
 Figure out what to do about OutOfMemoryError. (explicit?)
-VERIFY that, if Tnull is on Stack, phis are handled correctly.
-Check merges of try: only constrain state to be equivalent.  Possibly
-  we can more aggressively merge catch blocks?
+O VERIFY that, if Tnull is on Stack, phis are handled correctly.
+O Check merges of try: only constrain state to be equivalent.  Possibly
+O   we can more aggressively merge catch blocks?
 ---- Sep-20-98
 Predicated interprocedural analysis.
 ---- Sep-19-98
-Remove Tnull, Tzero code from top of function.  It's increasing the
- phi/sigma count by a lot (some multiple of n, where n is the number of
- splits/joins). Note that peephole optimizations may need to change.
+X Remove Tnull, Tzero code from top of function.  It's increasing the
+X  phi/sigma count by a lot (some multiple of n, where n is the number of
+X  splits/joins). Note that peephole optimizations may need to change.
 ---- Sep-18-98
 X Fix MONITOR handling.
 ---- Sep-16-98
-[cananian@lesser-magoo Code]$ time java -mx128m harpoon.Main.Main harpoon.IR.QuadSSA.Translate
-java.lang.OutOfMemoryError: 
-        at java.util.Hashtable.<init>(Hashtable.java)
-        at java.util.Hashtable.<init>(Hashtable.java)
-        at harpoon.Util.Set.<init>(Set.java:17)
-        at harpoon.IR.QuadSSA.CleanUp$UsedTable.addDef(CleanUp.java:61)
-        at harpoon.IR.QuadSSA.CleanUp.cleanupUnused(CleanUp.java:88)
-        at harpoon.IR.QuadSSA.CleanUp.cleanup2(CleanUp.java:35)
-        at harpoon.IR.QuadSSA.Code.<init>(Code.java:40)
-        at harpoon.IR.QuadSSA.Code$1.convert(Code.java:57)
-        at harpoon.ClassFile.HMethod.getCode(HMethod.java:83)
-        at harpoon.Main.Main.main(Main.java:30)
-354.490u 2.850s 9:55.96 59.9%   0+0k 0+0io 20466pf+5635w
+O [cananian@lesser-magoo Code]$ time java -mx128m harpoon.Main.Main harpoon.IR.QuadSSA.Translate
+O java.lang.OutOfMemoryError: 
+O         at java.util.Hashtable.<init>(Hashtable.java)
+O         at java.util.Hashtable.<init>(Hashtable.java)
+O         at harpoon.Util.Set.<init>(Set.java:17)
+O         at harpoon.IR.QuadSSA.CleanUp$UsedTable.addDef(CleanUp.java:61)
+O         at harpoon.IR.QuadSSA.CleanUp.cleanupUnused(CleanUp.java:88)
+O         at harpoon.IR.QuadSSA.CleanUp.cleanup2(CleanUp.java:35)
+O         at harpoon.IR.QuadSSA.Code.<init>(Code.java:40)
+O         at harpoon.IR.QuadSSA.Code$1.convert(Code.java:57)
+O         at harpoon.ClassFile.HMethod.getCode(HMethod.java:83)
+O         at harpoon.Main.Main.main(Main.java:30)
+O 354.490u 2.850s 9:55.96 59.9%   0+0k 0+0io 20466pf+5635w
 ---- Sep-15-98
 X Phi-placement analysis works, it just needs 'dead-code elimination'.
 X  Remove any phi function that defines a variable that is never used.
 ---- Sep-14-98
 X Make sure Test/zeroopt.java is properly optimized.
 X SWITCH processing is still broken.
-Check try/catch processing.  I don't think we're putting in the right
-  PHI functions.
+X Check try/catch processing.  I don't think we're putting in the right
+X   PHI functions.
 X Maybe split phi/switch stuff into separate entities:
 X  QUESTION: what do we do about optimizing ( x+1 < y )
 ---- Sep-14-98
@@ -91,7 +200,7 @@ X     all boolean functions should feed a cjmp directly.
 X  2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
 X     and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
 X     sequence. 
-make sure cmpgt->cmpeq is properly translated to cmpge, too.
+O make sure cmpgt->cmpeq is properly translated to cmpge, too.
 ---- Sep-13-98
 Write tool to print 'ConstantClass'es from bytecode files, and delete
  .classes that depend on out-of-date classes. Then some other tool can
@@ -192,16 +301,16 @@ X      synchronized(new Object()) {
 X      }
 X    }
 X  }
-Test:
- method() {
-  try {
-   try {
-    ;
-   } catch (x) {
-   }
-  } catch (y) {
-  }
- }
+O Test:
+O  method() {
+O   try {
+O    try {
+O     ;
+O    } catch (x) {
+O    }
+O   } catch (y) {
+O   }
+O  }
 
 ---- Aug-21-98
 X Implement INSTANCEOF in the IR (special method? special Quad? subclass OPER?)

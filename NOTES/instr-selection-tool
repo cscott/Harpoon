@@ -1,0 +1,30 @@
+//global scope
+//package declarations.
+//import statements.
+%% --> public class
+// inside the class
+%%
+MOVE(MEM(CONST(c)), e) %pred %( is13bits(c) )% %weight <speed, 1>
+%{ 
+emit(new Instr("st `s0, ["+c+"]", new Temp[] { e }, new Temp[0]););
+}%
+MOVE(MEM(CONST(c)), MOVE(c)) %{ }%
+MOVE(
+
+// further work:
+1) is this powerful enough?  will it handle the tricky ARM cases?
+2) is this compact enough?  do we need to write a lot of repeated code/elements
+3) is this clear?
+4) is this complete: are there Tree forms that don't work easily.
+think also about typing:
+  MEM
+  MEM32
+  MEM64
+  MEMI
+  MEMF
+  MEM32I
+  MEM32F
+  MEM64I
+  MEM64F
+
+MOVE(m1=MEM(CONST(c)), e) %pred %( m1 instanceof MEMA )% // nah.

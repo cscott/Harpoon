@@ -1,0 +1,4 @@
+#!/bin/bash
+echo $PATH
+echo $CLASSPATH
+java -mx190M -oss10M -Dharpoon.class.path=./Support/EventDriven.jar:./Support/thunk2.jar:$CLASSPATH:./ harpoon.Main.EventDriven JhttpServer

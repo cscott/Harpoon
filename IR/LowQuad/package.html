@@ -1,0 +1,38 @@
+<HTML>
+<!-- $Id: package.html,v 1.2 2002-02-25 21:04:40 cananian Exp $ -->
+<BODY>
+A low-level quadruple-based IR with explicit pointers.
+<p>
+Low-quad form allows pointer-based optimizations that are impossible
+to perform in hi-quad form.  As an example, low-quad form allows the
+optimization of:
+<XMP>
+void foo(int arr[]) {
+  for (int i=0; i<arr.length; i++)
+    arr[i] = 42;
+}
+</XMP>
+which is implemented as something like:
+<XMP>
+void foo(int arr[]) {
+  for (int i=0; i<arr.length; i++)
+    *(arr+i) = 42;
+}
+</XMP>
+to the more efficient:
+<XMP>
+void foo(int arr[]) {
+  for (int *i=arr; i<arr+arr.length; i++)
+    *i = 42;
+}
+</XMP>
+Note that there is also pointer-scaling going on here which it is
+difficult to write in C.
+<p>
+Note that a <code>harpoon.Analysis.Maps.Derivation</code> must be
+maintained in low-quad form to allow compiler-supported garbage
+collection in the back-end.
+
+@author C. Scott Ananian <cananian@alumni.princeton.edu>
+</BODY>
+</HTML>

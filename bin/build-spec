@@ -1,0 +1,67 @@
+#!/bin/sh
+# Usage: build-spec <backend> <start> <end>
+# where 'start' and 'end' are numbers between 1 and 10 specifying
+# a range of spec benchmarks to build.
+# 1: _200_check
+# 2: _201_compress
+# 3: _202_jess
+# 4: _205_raytrace
+# 5: _209_db
+# 6: _213_javac
+# 7: _222_mpegaudio
+# 8: _227_mtrt
+# 9: _228_jack
+#10: _999_checkit
+#
+# backend can be precisec, arm-hack, arm-pnk, mipsda, or mipsvp.
+#
+# The environment variable SPECPATH specifies the path to the
+# jvm98 directory of your Spec installation.
+#
+SPECPATH=${SPECPATH:-${HOME}/Spec/jvm98}
+export FLEXPATH=SupportNP/specthunk.jar:$SPECPATH
+backend=${1:="precisec"}
+while [ -n "$4" ]; do
+   SPECBUILDOPTS="$SPECBUILDOPTS $2"
+   shift
+done
+start=${2:-"1"}
+end=${3:-"10"}
+errors=
+tmprootset=tmp-root-set
+
+case $backend in
+    precisec) suf=sa ; buildscript=bin/build-precisec ;;
+    arm-hack) suf=arm; buildscript=bin/build-arm-hack ;;
+    arm-pnk)  suf=pnk; buildscript=bin/build-arm-pnk  ;;
+    mipsda)   suf=da ; buildscript=bin/build-mipsda   ;;
+    mipsvp)   suf=vp ; buildscript=bin/build-mipsvp   ;;
+    *) echo Unknown backend $backend ; exit 1 ;;
+esac
+
+for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
+    rm -f $tmprootset
+    echo "include Support/locale-root-set" > $tmprootset
+    echo "spec.benchmarks.$s.Main.<init>()V" >> $tmprootset
+    rootset=Support/${s}-root-set
+    if [ -f $rootset ]; then
+      echo "include $rootset" >> $tmprootset
+    fi
+    base=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`
+    dir=$base$suf$SPECSUFFIX
+    otheropts="-r $tmprootset"
+    if [ -f profile.$base ]; then
+	otheropts="$otheropts -Dmzf.profile=profile.$base"
+    fi
+    echo $dir $rootset
+    rm -rf as$dir as$dir.err as$dir.out
+    $buildscript $SPECBUILDOPTS $otheropts SpecApplication $dir \
+	2> as$dir.err | tee as$dir.out
+    if [ $? -ne 0 ]; then
+	errors="$errors$dir "
+    fi
+done
+if [ "$errors" != "" ]; then
+    echo FAILED: $errors
+    exit 1
+fi

@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<!-- $Id: package.html,v 1.2 2002-02-25 21:02:50 cananian Exp $ -->
+<body bgcolor="white">
+Provides the classes for generating assembly code targetting the
+StrongARM platform.
+
+<P>
+The main parts of the StrongARM backend are the classses
+<code>RegFileInfo</code>, <code>InstrBuilder</code>,
+<code>Frame</code>, and the spec-file <code>CodeGen.spec</code>.  Also
+of note is the <code>TwoWordTemp</code>, which is a extension of the
+standard <code>Temp</code> that represents a value that is spread
+across two words (which is needed for double and long variables on the
+StrongARM). 
+
+<h2>Related Documentation</h2>
+
+For further information, see:
+<ul>
+  <li> Jaggar, <U>ARM Architecture Reference Manual</U>
+</ul>
+
+@author Andrew Berkheimer (andyb@mit.edu)
+@author Felix Klock (pnkfelix@mit.edu)
+@author C. Scott Ananian (cananian@alumni.princeton.edu)
+</body>
+</html>

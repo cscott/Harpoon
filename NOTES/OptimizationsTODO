@@ -1,0 +1,64 @@
+---- Feb-01-99
+- Induction Variable Elimination
+
+- Explicit Initialization
+
+- Copy all possible hacks from source for gcc (make Flex have decent benchmarks)
+
+---- Dec-31-98
+Reclaim INSTANCEOF optimization opportunities by adding NULL check ahead of it.
+
+---- Oct-04-98
+Write 'UndoRecursion' analysis/optimization pass.
+
+---- Sep-25-98
+O Undo peephole optimization and replace with a rule in SCCAnalysis that
+O  makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
+O  Actually, since sense of result of icmpeq and boolean is different,
+O  this would entail switching all CJMPs that use boolean value and
+O  negative value in all other uses.  May be more complicated.
+O Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
+O  necessary at times.
+
+---- Sep-24-98
+Xfigure out what to do about related variables/induction variables in bitwidth.
+find induction variables and use this info in bitwidth.
+
+---- Sep-21-98
+Finish bitwidth analysis in SCC.
+O Check merges of try: only constrain state to be equivalent.  Possibly
+O   we can more aggressively merge catch blocks?
+
+---- Sep-20-98
+Predicated interprocedural analysis.
+
+---- Sep-15-98
+X Phi-placement analysis works, it just needs 'dead-code elimination'.
+X  Remove any phi function that defines a variable that is never used.
+
+---- Sep-14-98
+X Make sure Test/zeroopt.java is properly optimized.
+X SWITCH processing is still broken.
+X Check try/catch processing.  I don't think we're putting in the right
+X   PHI functions.
+X Maybe split phi/switch stuff into separate entities:
+X  QUESTION: what do we do about optimizing ( x+1 < y )
+
+---- Sep-14-98
+X Peephole optimizations on QuadSSA to normalize:
+X  1) instanceof -> icmp -> cjmp (or in general, boolean->icmp->cjmp)
+X     all boolean functions should feed a cjmp directly.
+X  2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
+X     and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
+X     sequence. 
+O make sure cmpgt->cmpeq is properly translated to cmpge, too.
+
+---- Sep-11-98
+write analysis to remove unnecessary control dependencies.  PARALLEL quad?
+X Optimize INSTANCEOF and COMPONENTOF in SCC.
+X Write optimization pass based on SCC analysis.
+X Rewrite SCC to use *edges* instead of *blocks* for executable analysis.
+X   ql is then set of all edge *targets*.  Doesn't have to be unique, but
+X   it'd be nice.
+X Rewrite SCC to use Visitor pattern.
+O Rewrite SCC to use *sets* of classes?

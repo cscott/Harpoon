@@ -1,11 +1,18 @@
-// CallGraph.java, created by cananian
+// CallGraph.java, created Mon Oct 12  6:11:27 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
-import harpoon.ClassFile.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
+import harpoon.Util.Collections.UniqueVector;
 
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -13,13 +20,14 @@ import java.util.Vector;
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2 1998-10-12 11:22:08 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.3 2002-02-25 21:06:05 cananian Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {
 
     public static final void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	Linker linker = Loader.systemLinker;
 	HMethod m = null;
 
 	if (args.length < 2) {
@@ -28,7 +36,7 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 	}
 
 	{
-	    HClass cls = HClass.forName(args[0]);
+	    HClass cls = linker.forName(args[0]);
 	    HMethod hm[] = cls.getDeclaredMethods();
 	    for (int i=0; i<hm.length; i++)
 		if (hm[i].getName().equals(args[1])) {
@@ -37,10 +45,13 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 		}
 	}
 
-	harpoon.Analysis.QuadSSA.ClassHierarchy ch = 
-	    new harpoon.Analysis.QuadSSA.ClassHierarchy(m);
-	harpoon.Analysis.QuadSSA.CallGraph cg =
-	    new harpoon.Analysis.QuadSSA.CallGraph(ch);
+	HCodeFactory hcf =
+	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
+	harpoon.Analysis.ClassHierarchy ch = 
+	    new harpoon.Analysis.Quads.QuadClassHierarchy
+	    (linker, Collections.singleton(m), hcf);
+	harpoon.Analysis.Quads.CallGraph cg =
+	    new harpoon.Analysis.Quads.CallGraphImpl(ch, hcf);
 
 	out.println("graph: {");
 	out.println("title: \"Call graph rooted at "+m.getName()+"\"");

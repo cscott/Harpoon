@@ -3,34 +3,75 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 /**
  * A <code>Tuple</code> is an ordered list of objects that works
- * properly in Hashtables & etc.
+ * properly in Hashtables & etc.  Tuples may have <code>null</code> elements.
+ * <code>Tuple</code>s are <code>Comparable</code> iff the objects in
+ * the elements array are <code>Comparable</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: Tuple.java,v 1.3 2002-02-25 21:08:55 cananian Exp $
  */
-
-public class Tuple  {
-    Object elements[];
+public class Tuple implements Comparable, java.io.Serializable {
+    final Comparator objcmp;
+    final Object elements[];
     /** Creates a <code>Tuple</code>. */
     public Tuple(Object[] elements) {
         this.elements = elements;
+	this.objcmp = Default.comparator;
     }
+    /** Creates a <code>Comparable</code> <code>Tuple</code> which will use
+     *  the specified <code>Comparator</code> to do object comparisons. */
+    public Tuple(Object[] elements, Comparator objcmp) {
+	this.elements = elements;
+	this.objcmp = objcmp;
+    }
+    /** Projects an element of the <code>Tuple</code>. */
+    public Object proj(int i) { return elements[i]; }
+    /** Returns an unmodifiable list view of the <code>Tuple</code>. */
+    public List asList() {
+	return Collections.unmodifiableList(Arrays.asList(elements));
+    }
+    /** Returns a human-readable description of this <code>Tuple</code>. */
+    public String toString() { return Util.print(asList()); }
+    /** Synthesizes a hashcode from the hashcodes of the elements. */
     public int hashCode() {
 	int hc = elements.length;
 	for (int i=0; i<elements.length; i++)
-	    hc ^= elements[i].hashCode();
+	    if (elements[i]!=null)
+		hc ^= elements[i].hashCode();
 	return hc;
     }
+    /** Does an element-by-element comparison of two <code>Tuple</code>s. */
     public boolean equals(Object obj) {
-	if (!(obj instanceof Tuple)) return false;
-	Tuple t = (Tuple) obj;
+	Tuple t;
+	if (this==obj) return true;
+	if (null==obj) return false;
+	try { t = (Tuple) obj; } catch (ClassCastException e) { return false; }
 	if (this.elements.length != t.elements.length) return false;
 	for (int i=0; i<elements.length; i++)
-	    if (!this.elements[i].equals(t.elements[i]))
-		return false;
+	    if (this.elements[i]==null) {
+		if (t.elements[i]!=null) return false;
+	    } else {
+		if (!this.elements[i].equals(t.elements[i])) return false;
+	    }
 	return true;
+    }
+    /** Does an element-by-element comparison of two <code>Tuple</code>s.
+     *  Inconsistent with <code>equals()</code> only if the underlying
+     *  comparator is.  Shorter tuples are compared as less than longer
+     *  tuples. */
+    public int compareTo(Object o) { // dict order: smaller first.
+	Object[] el2 = ((Tuple)o).elements;
+	if (elements.length!=el2.length) return elements.length-el2.length;
+	for (int i=0; i<elements.length; i++) {
+	    int c = objcmp.compare(elements[i], el2[i]);
+	    if (c!=0) return c;
+	}
+	return 0;
     }
 }

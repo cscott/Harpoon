@@ -8,6 +8,8 @@ package harpoon.IR.AIRE;
  * An enumerated type must be provided, called <code>IR_Pure</code>,
  * which specifies various options associated with predefined 
  * <code>IIR_FunctionDeclaration</code> classes.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IR_Pure.java,v 1.5 2002-02-25 21:03:59 cananian Exp $
  */
 public class IR_Pure {
     public final static IR_Pure IR_UNKNOWN_PURE = _(0);

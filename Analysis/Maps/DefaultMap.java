@@ -3,8 +3,11 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Maps;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
+
 /**
  * A <code>DefaultMap</code> returns conservative values for
  * const and exec information: namely that no temp corresponds
@@ -12,14 +15,13 @@ import harpoon.Temp.Temp;
  * executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultMap.java,v 1.2 1998-10-11 02:37:07 cananian Exp $
+ * @version $Id: DefaultMap.java,v 1.3 2002-02-25 20:58:10 cananian Exp $
  */
-
 public class DefaultMap implements ConstMap, ExecMap {
-    public boolean isConst(HCode hc, Temp t) { return false; }
-    public Object constMap(HCode hc, Temp t) {
+    public boolean isConst(HCodeElement hce, Temp t) { return false; }
+    public Object constMap(HCodeElement hce, Temp t) {
 	throw new Error("Temp "+t+" not constant.");
     }
-    public boolean execMap(HCode hc, HCodeElement node) { return true; }
-    public boolean execMap(HCode hc, HCodeEdge edge) { return true; }
+    public boolean execMap(HCodeElement node) { return true; }
+    public boolean execMap(HCodeEdge edge) { return true; }
 }

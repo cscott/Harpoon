@@ -1,10 +1,17 @@
-// OpConstant.java, created by cananian
+// OpConstant.java, created Sun Sep 13 22:49:22 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Linker;
+import harpoon.IR.RawClass.Constant;
+import harpoon.IR.RawClass.ConstantValue;
+import harpoon.IR.RawClass.ConstantDouble;
+import harpoon.IR.RawClass.ConstantFloat;
+import harpoon.IR.RawClass.ConstantInteger;
+import harpoon.IR.RawClass.ConstantLong;
+import harpoon.IR.RawClass.ConstantString;
 import harpoon.Util.Util;
 
 /**
@@ -17,27 +24,28 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.3 2002-02-25 21:04:17 cananian Exp $
  * @see Operand
  * @see Instr
- * @see harpoon.ClassFile.Raw.Constant.ConstantDouble
- * @see harpoon.ClassFile.Raw.Constant.ConstantFloat
- * @see harpoon.ClassFile.Raw.Constant.ConstantInteger
- * @see harpoon.ClassFile.Raw.Constant.ConstantLong
- * @see harpoon.ClassFile.Raw.Constant.ConstantString
+ * @see harpoon.IR.RawClass.ConstantDouble
+ * @see harpoon.IR.RawClass.ConstantFloat
+ * @see harpoon.IR.RawClass.ConstantInteger
+ * @see harpoon.IR.RawClass.ConstantLong
+ * @see harpoon.IR.RawClass.ConstantString
  */
-public class OpConstant extends Operand {
-  Object value;
-  HClass type;
+public final class OpConstant extends Operand {
+  final Object value;
+  final HClass type;
   /** Make a new <code>OpConstant</code> with the specified value and type. */
   public OpConstant(Object value, HClass type) {
     this.value = value;  this.type=type; check();
   }
   private void check() {
     // assert that value matches type.
-    HClass check = HClass.forClass(value.getClass());
+    Linker l = type.getLinker(); // use a consistent linker, whichever that is.
+    HClass check = l.forClass(value.getClass());
     if ((!type.isPrimitive() && check!=type) ||
-	( type.isPrimitive() && check!=type.getWrapper()))
+	( type.isPrimitive() && check!=type.getWrapper(l)))
       throw new Error("value doesn't match type of OpConstant: " + 
 		      type + "/" + check);
   }
@@ -52,7 +60,7 @@ public class OpConstant extends Operand {
       else if (c instanceof ConstantInteger) this.type=HClass.Int;
       else if (c instanceof ConstantLong)    this.type=HClass.Long;
       else if (c instanceof ConstantString)  
-	this.type=HClass.forName("java.lang.String");
+	this.type=parent.linker.forName("java.lang.String");
       else throw new Error("Unknown ConstantValue type: "+c);
     } else throw new Error("Unknown constant pool entry: "+c);
     check();
@@ -64,7 +72,7 @@ public class OpConstant extends Operand {
 
   /** Return a human-readable representation of this OpConstant. */
   public String toString() {
-    if (getType()==HClass.forName("java.lang.String"))
+    if (getType().getName().equals("java.lang.String"))
       return "(String)\""+Util.escape(getValue().toString())+"\"";
     return "("+getType().getName()+")"+getValue().toString();
   }

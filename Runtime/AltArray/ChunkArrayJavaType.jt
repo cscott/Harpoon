@@ -1,0 +1,27 @@
+// SimpleArray.java, created Wed Feb 21 17:37:36 2001 by cananian
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Runtime.AltArray;
+
+/**
+ * <code>ChunkArrayJavaType</code> is an abstract superclass for a candidate
+ * array implementation.
+ * 
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ChunkArrayJavaType.jt,v 1.2 2002-02-25 21:06:36 cananian Exp $
+ */
+public final class ChunkArrayJavaType extends ArrayImplJavaType {
+    private static final int CHUNK_SIZE=8;
+    private final javaType[][] a;
+    /* can't enforce this, but should have a constructor like the following */
+    public ChunkArrayJavaType(int length) { super(length);
+	this.a = new javaType[(length+(CHUNK_SIZE-1))/CHUNK_SIZE][CHUNK_SIZE];
+	// XXX: last chunk is slightly oversized.
+    }
+    public javaType get(int index) {
+	return a[index/CHUNK_SIZE][index%CHUNK_SIZE];
+    }
+    public void set(int index, javaType value) {
+	a[index/CHUNK_SIZE][index%CHUNK_SIZE] = value;
+    }
+}

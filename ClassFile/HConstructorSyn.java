@@ -1,90 +1,50 @@
-// HConstructorSyn.java, created by cananian
+// HConstructorSyn.java, created Fri Oct 16  3:30:52 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import java.lang.reflect.Modifier;
-import java.util.Hashtable;
-import java.util.Vector;
+import harpoon.Util.Util;
 
 /**
  * An <code>HConstructorSyn</code> is a mutable representation of a
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.2 1998-10-16 11:42:57 cananian Exp $
- * @see HMember
- * @see HClass
+ * @version $Id: HConstructorSyn.java,v 1.3 2002-02-25 21:03:03 cananian Exp $
  */
-public class HConstructorSyn extends HMethod {
+class HConstructorSyn extends HMethodSyn implements HConstructor {
 
-  /** Create a new method based on a template. */
-  public HConstructorSyn(HConstructor template) {
-    this.parent = template.getDeclaringClass();
-    //this.name = template.getName(); // superclass inits.
-    // XXX ensure uniqueness (parameter types?)
-    this.modifiers = template.getModifiers();
-    //this.returnType = template.getReturnType(); // superclass inits.
-    this.parameterTypes = template.getParameterTypes();
-    this.parameterNames = template.getParameterNames();
-    this.exceptionTypes = template.getExceptionTypes();
-    this.isSynthetic = template.isSynthetic();
-    ((HClassSyn)parent).addDeclaredMethod(this);
+  /** Create a new constructor likes the template, but in
+   *  class <code>parent</code>.
+   */
+  HConstructorSyn(HClassSyn parent, HConstructor template) {
+    super(parent, "<init>", template);
+    Util.assert(this.returnType.actual()==HClass.Void);
   }
+
   /** Create a new empty constructor for the specified class
    *  with the specified descriptor that
    *  throws no checked exceptions.
    *  You must putCode to make this constructor valid.
    */
-  public HConstructorSyn(HClass parent, String descriptor) {
-    this.parent = parent;
-    //this.name = name; // superclass inits.
-    // XXX ensure uniqueness?
-    this.modifiers = 0;
-    //this.returnType = HClass.Void; // superclass inits.
-    { // parse descriptor for parameter types.
-      String desc = descriptor.substring(1, descriptor.lastIndexOf(')'));
-      Vector v = new Vector();
-      for (int i=0; i<desc.length(); i++) {
-	v.addElement(HClass.forDescriptor(desc.substring(i)));
-	while (desc.charAt(i)=='[') i++;
-	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
-      }
-      this.parameterTypes = new HClass[v.size()];
-      v.copyInto(this.parameterTypes);
-    }
-    this.parameterNames = new String[parameterTypes.length];
-    this.exceptionTypes = new HClass[0];
-    this.isSynthetic = false;
-    ((HClassSyn)parent).addDeclaredMethod(this);
+  HConstructorSyn(HClassSyn parent, String descriptor) {
+    super(parent, "<init>", descriptor);
+    Util.assert(this.returnType.actual()==HClass.Void);
+  }
+  /** Create a new empty constructor in the specified class
+   *  with the specified parameter and return types
+   *  that throws no checked exceptions.
+   */
+  HConstructorSyn(HClassSyn parent, HClass[] paramTypes) {
+    super(parent, "<init>", paramTypes, HClass.Void);
+    Util.assert(this.returnType.actual()==HClass.Void);
   }
 
-  public void setModifiers(int m) { this.modifiers = m; }
-
-  public void setParameterTypes(HClass[] parameterTypes) {
-    this.parameterTypes = parameterTypes;
+  public void setReturnType(HClass returnType) {
+    Util.assert(returnType==HClass.Void);
   }
-  public void setParameterType(int which, HClass type) {
-    this.parameterTypes[which] = type;
-  }
-
-  public void setParameterNames(String[] parameterNames) {
-    this.parameterNames = parameterNames;
-  }
-  public void setParameterName(int which, String name) {
-    this.parameterNames[which] = name;
-  }
-
-  public void setExceptionTypes(HClass[] exceptionTypes) {
-    this.exceptionTypes = exceptionTypes;
-  }
-  public void setExceptionType(int which, HClass type) {
-    this.exceptionTypes[which] = type;
-  }
-
-  public void setSynthetic(boolean isSynthetic) {
-    this.isSynthetic = isSynthetic;
-  }
+  public int hashCode() { return HConstructorImpl.hashCode(this); }
+  public String toString() { return HConstructorImpl.toString(this); }
 }
 
 // set emacs indentation style.

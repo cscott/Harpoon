@@ -9,11 +9,12 @@ import java.util.NoSuchElementException;
  * An <code>ArrayEnumerator</code> enumerates the elements of an array.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayEnumerator.java,v 1.2 1998-10-11 02:37:58 cananian Exp $
+ * @version $Id: ArrayEnumerator.java,v 1.3 2002-02-25 21:08:44 cananian Exp $
+ * @deprecated Use harpoon.Util.ArrayIterator instead.
  */
 
 public class ArrayEnumerator implements Enumeration {
-    Object[] oa;
+    final Object[] oa;
     int i = 0;
 
     /** Creates an <code>ArrayEnumerator</code>. */

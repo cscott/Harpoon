@@ -1,0 +1,4 @@
+The harpoon.IR.Quads package contains a high-level flat representation
+which preserves object-oriented structure.
+
+There are variants for explicit/implicit exception handling and ssa form.

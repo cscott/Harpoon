@@ -1,181 +1,88 @@
-// Place.java, created Mon Sep 14 23:41:52 1998 by cananian
-// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Place.java, created Mon Jan 31 08:30:07 2000 by cananian
+// Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
-import harpoon.ClassFile.*;
-import harpoon.Analysis.Maps.UseDefMap;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCode;
+import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
-import harpoon.Util.Worklist;
-import harpoon.Util.NullEnumerator;
-import harpoon.Util.Set;
-import harpoon.Util.Util;
+import harpoon.Util.Collections.WorkSet;
+import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.Factories;
+import harpoon.Util.Collections.MultiMap;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 /**
- * <code>Place</code>
+ * <code>Place</code> determines the proper locations for phi/sigma
+ * functions.  This is the placement algorithm detailed in my
+ * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10 1998-10-11 02:36:59 cananian Exp $
+ * @version $Id: Place.java,v 1.11 2002-02-25 20:56:10 cananian Exp $
  */
-
-public class Place  {
-    UseDef ud; // null indicates create-on-demand and release asap.
-    DomFrontier df; // null indicates create-on-demand and release asap.
-    DomFrontier pdf; // null indicates create-on-demand and release asap.
-
+public class Place {
+    private final MultiMap phis;
+    private final MultiMap sigmas;
+    
     /** Creates a <code>Place</code>. */
-    public Place(UseDef usedef, DomFrontier df, DomFrontier pdf) {
-	this.ud = usedef;
-	this.df = df;
-	this.pdf = pdf;
-    }
-    public Place() {
-	this(null, null, null);
-    }
-    SetHTable Aphi = new SetHTable();
-    SetHTable Asig = new SetHTable();
-
-    public Temp[] phiNeeded(HCode hc, HCodeElement n) {
-	analyze(hc); return Aphi.getSet(n);
-    }
-    public Enumeration phiNeededE(HCode hc, HCodeElement n) {
-	analyze(hc); return Aphi.getSetE(n);
-    }
-    public Temp[] sigNeeded(HCode hc, HCodeElement n) {
-	analyze(hc); return Asig.getSet(n);
-    }
-    public Enumeration sigNeededE(HCode hc, HCodeElement n) {
-	analyze(hc); return Asig.getSetE(n);
-    }
-
-    Hashtable analyzed = new Hashtable();
-    HCode lastHCode = null;
-    void analyze(HCode hc) {
-	if (hc == lastHCode) return; // quick exit for common case.
-	if (analyzed.get(hc)==null) {
-	    boolean tempUse = (ud == null);
-	    boolean tempDF  = (df == null);
-	    boolean tempPDF = (pdf== null);
-	    if (tempUse) ud  = new UseDef();
-	    if (tempDF ) df  = new DomFrontier(false);
-	    if (tempPDF) pdf = new DomFrontier(true);
-
-	    place(hc);
-
-	    if (tempUse)  ud  = null; // free analysis objects.
-	    if (tempDF )  df  = null;
-	    if (tempPDF ) pdf = null;
-
-	    analyzed.put(hc, hc);
-	    lastHCode = hc;
+    public Place(HCode hc, Liveness live) {
+	// create SESE
+	SESE sese = new SESE(hc);
+	// collect all vars
+        Set vars = new WorkSet();
+	for (Iterator it=hc.getElementsI(); it.hasNext(); )
+	    vars.addAll(((UseDefable)it.next()).defC());
+	// create result multimaps
+	phis = new GenericMultiMap(new BitSetFactory(vars));
+	sigmas = new GenericMultiMap(new BitSetFactory(vars));
+	// for each variable v in G, do:
+	for (Iterator it=vars.iterator(); it.hasNext(); ) {
+	    Temp v = (Temp) it.next();
+	    PlaceOne(sese.topLevel, v, live); // place phis and sigmas
 	}
     }
-
-    void place(HCode hc) {
-	Worklist Wphi = new Set();
-	Worklist Wsig = new Set();
-
-	// for each used/defined variable a
-	for (Enumeration aE = ud.allTempsE(hc); aE.hasMoreElements(); ) {
-	    Temp a = (Temp) aE.nextElement();
-
-	    // worklists are empty here.
-	    Util.assert(Wphi.isEmpty() && Wsig.isEmpty());
-
-	    // Wphi <- defsites[a]
-	    for (Enumeration e = ud.defMapE(hc, a); e.hasMoreElements(); )
-		Wphi.push(e.nextElement());
-	    // Wsig <- usesites[a]
-	    for (Enumeration e = ud.useMapE(hc, a); e.hasMoreElements(); )
-		Wsig.push(e.nextElement());
-
-	    while ( ! ( Wphi.isEmpty() && Wsig.isEmpty() ) )  {
-		if (!Wphi.isEmpty()) {
-		    // remove some node n from Wphi
-		    HCodeElement n = (HCodeElement) Wphi.pull();
-		    // for each Y in DF[n]
-		    for (Enumeration yE=df.dfE(hc, n); 
-			 yE.hasMoreElements(); ) {
-			HCodeElement Y = (HCodeElement) yE.nextElement();
-			if (!Aphi.memberSet(Y, a)) {
-			    Aphi.unionSet(Y, a);
-			    update(a, Y, Wphi, Wsig);
-			}
-		    }
-		} // end Wphi processing.
-		if (!Wsig.isEmpty()) {
-		    // remove some node n from Wsig
-		    HCodeElement n = (HCodeElement) Wsig.pull();
-		    // for each Y in PDF[n]
-		    for (Enumeration yE = pdf.dfE(hc, n); 
-			 yE.hasMoreElements(); ) {
-			HCodeElement Y = (HCodeElement) yE.nextElement();
-			if (!Asig.memberSet(Y, a)) {
-			    Asig.unionSet(Y, a);
-			    update(a, Y, Wphi, Wsig);
-			}
-		    }
-		} // end Wsig processing.
-	    } // end while.
-	} // end "for all variables a"
-    } // end place.
-
-    // determine whether we need to add n to Wphi or Wsig.
-    private static void update(Temp a, HCodeElement Y, 
-			       Worklist Wphi, Worklist Wsig)
+    private boolean PlaceOne(SESE.Region r, Temp v, Liveness live)
     {
-	harpoon.IR.Properties.UseDef Yud =
-	    (harpoon.IR.Properties.UseDef) Y; // access this property.
-	int i;
-	// Get Aorig_def and Aorig_use (pre-phi/sig uses and defs of Y)
-	Temp[] Aorig_def = Yud.def();
-	Temp[] Aorig_use = Yud.use();
-	// if a not in Aorig_def[Y] then Wphi = Wphi union { Y }
-	for (i = 0; i < Aorig_def.length; i++)
-	    if (Aorig_def[i] == a)
-		break;
-	if (i == Aorig_def.length) // a not in Aorig_def[Y]
-	    Wphi.push(Y);
-	// if a not in Aorig_use[Y] then Wsig = Wsig union { Y }
-	for (i = 0; i < Aorig_use.length; i++)
-	    if (Aorig_use[i] == a)
-		break;
-	if (i == Aorig_use.length) // a not in Aorig_use[Y]
-	    Wsig.push(Y);
+	// post-order traversal.
+	boolean flag = false;
+	for (Iterator it=r.children().iterator(); it.hasNext(); )
+	    if (PlaceOne((SESE.Region)it.next(), v, live))
+		flag = true;
+	for (Iterator it=r.nodes().iterator(); !flag && it.hasNext(); ) {
+	    UseDefable n = (UseDefable) it.next();
+	    // we need phis for 'use-only' vars because the sigma is
+	    // going to create a definition for them.  Likewise we
+	    // need sigmas for 'def-only' vars. [CSA]
+	    if (n.defC().contains(v) || n.useC().contains(v))
+		flag = true;
+	}
+
+	// add phis/sigmas to merges/splits where v may be live
+	if (flag) {
+	    for (Iterator it=r.nodes().iterator(); it.hasNext(); ) {
+		HCodeElement n = (HCodeElement) it.next();
+		if (((CFGraphable)n).predC().size() > 1 && 
+		    live.getLiveIn(n).contains(v))
+		    phis.add(n, v);
+		if (((CFGraphable)n).succC().size() > 1 &&
+		    live.getLiveIn(n).contains(v))
+		    sigmas.add(n, v);
+	    }
+	}
+	return flag;
     }
 
-    static class SetHTable extends Hashtable {
-	void clearSet(HCodeElement hce) {
-	    remove(hce);
-	}
-	Temp[] getSet(HCodeElement hce) {
-	    Set s = (Set) get(hce);
-	    if (s==null) return new Temp[0];
-	    Temp[] r = new Temp[s.size()];
-	    s.copyInto(r);
-	    return r;
-	}
-	Enumeration getSetE(HCodeElement hce) {
-	    Set s = (Set) get(hce);
-	    if (s==null)
-		return NullEnumerator.STATIC;
-	    else
-		return s.elements();
-	}
-	boolean memberSet(HCodeElement hce, Temp t) {
-	    Set s = (Set) get(hce);
-	    if (s==null) return false;
-	    return s.contains(t);
-	}
-	void unionSet(HCodeElement hce, Temp Tnew) {
-	    Set s = (Set) get(hce);
-	    if (s == null) {
-		s = new Set();
-		put(hce, s);
-	    }
-	    s.union(Tnew);
-	}
+    public Temp[] phiNeeded(HCodeElement n) {
+	Collection c = phis.getValues(n);
+	return (Temp[]) c.toArray(new Temp[c.size()]);
+    }
+    public Temp[] sigNeeded(HCodeElement n) {
+	Collection c = sigmas.getValues(n);
+	return (Temp[]) c.toArray(new Temp[c.size()]);
     }
 }

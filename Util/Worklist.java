@@ -3,21 +3,45 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
-import harpoon.ClassFile.*;
 /**
  * A <code>Worklist</code> is a unique set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Worklist.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: Worklist.java,v 1.3 2002-02-25 21:08:56 cananian Exp $
  */
-
 public interface Worklist  {
-    /** Pushes an item onto the Worklist if it is not already there. */
-    public Object push(Object item);
-    /** Removes an item from the Worklist and return it. */
+   
+    /** Pushes an item onto the Worklist if it is not already there. 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> If <code>item</code> is not already an
+	                     element of <code>this</code>, adds
+			     <code>item</code> to <code>this</code>.
+			     Else does nothing. 
+     */
+    public void push(Object item);
+
+    /** Removes some item from the Worklist and return it. 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> If there exists an <code>Object</code>,
+	                     <code>item</code>, that is an element of
+			     <code>this</code>, removes
+			     <code>item</code> from <code>this</code>
+			     and returns <code>item</code>. Else does
+			     nothing.
+    */
     public Object pull();
-    /** Determines if the Worklist contains an item. */
+
+    /** Determines if the Worklist contains an item.
+	<BR> <B>effects:</B> If <code>item</code> is an element of 
+	                     <code>this</code>, returns true.
+			     Else returns false.
+    */
     public boolean contains(Object item);
-    /** Determines if there are any more items left in the Worklist. */
+
+    /** Determines if there are any more items left in the Worklist. 
+	<BR> <B>effects:</B> If <code>this</code> has any elements,
+	                     returns true.  Else returns false.
+    */
     public boolean isEmpty();
 }
+

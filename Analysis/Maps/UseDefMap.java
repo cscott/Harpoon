@@ -13,7 +13,7 @@ import java.util.Enumeration;
  * <code>HCodeElements</code> that define them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDefMap.java,v 1.3 1998-10-11 02:37:07 cananian Exp $
+ * @version $Id: UseDefMap.java,v 1.4 2002-02-25 20:58:10 cananian Exp $
  */
 
 public interface UseDefMap  {
@@ -21,8 +21,6 @@ public interface UseDefMap  {
      * Return an array of <code>HCodeElement</code>s that use 
      * <code>Temp t</code>.
      * @param hc The <code>HCode</code> containing <code>t</code>.
-     *           The <code>HCodeElement</code>s in <code>hc</code> must
-     *           implement <code>harpoon.IR.Properties.UseDef</code>.
      * @param t  The temporary to examine.
      * @return an array of <code>HCodeElement</code>s where
      *         <code>HCodeElement.use()</code> includes <code>t</code>.
@@ -32,8 +30,6 @@ public interface UseDefMap  {
      * Return an Enumeration of <code>HCodeElement</code>s that use 
      * <code>Temp t</code>.
      * @param hc The <code>HCode</code> containing <code>t</code>.
-     *           The <code>HCodeElement</code>s in <code>hc</code> must
-     *           implement <code>harpoon.IR.Properties.UseDef</code>.
      * @param t  The temporary to examine.
      * @return an Enumeration of <code>HCodeElement</code>s where
      *         <code>HCodeElement.use()</code> includes <code>t</code>.
@@ -43,8 +39,6 @@ public interface UseDefMap  {
      * Return an array of <code>HCodeElement</code>s that define 
      * <code>Temp t</code>.
      * @param hc The <code>HCode</code> containing <code>t</code>.
-     *           The <code>HCodeElement</code>s in <code>hc</code> must
-     *           implement <code>harpoon.IR.Properties.UseDef</code>.
      * @param t  The temporary to examine.
      * @return an array of <code>HCodeElement</code>s where
      *         <code>HCodeElement.def()</code> includes <code>t</code>.
@@ -54,8 +48,6 @@ public interface UseDefMap  {
      * Return an Enumeration of <code>HCodeElement</code>s that define 
      * <code>Temp t</code>.
      * @param hc The <code>HCode</code> containing <code>t</code>.
-     *           The <code>HCodeElement</code>s in <code>hc</code> must
-     *           implement <code>harpoon.IR.Properties.UseDef</code>.
      * @param t  The temporary to examine.
      * @return an Enumeration of <code>HCodeElement</code>s where
      *         <code>HCodeElement.def()</code> includes <code>t</code>.

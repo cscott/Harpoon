@@ -9,7 +9,8 @@ import java.util.NoSuchElementException;
  * A <code>NullEnumerator</code> enumerates no elements.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NullEnumerator.java,v 1.2 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: NullEnumerator.java,v 1.3 2002-02-25 21:08:45 cananian Exp $
+ * @deprecated Use harpoon.Util.Default.nullIterator instead.
  */
 
 public class NullEnumerator implements Enumeration {
@@ -20,7 +21,4 @@ public class NullEnumerator implements Enumeration {
     public boolean hasMoreElements() { return false; }
     /** @return <code>null</code> */
     public Object  nextElement() { throw new NoSuchElementException(); }
-
-    /** A static instance of the null enumerator. */
-    public static NullEnumerator STATIC = new NullEnumerator();
 }

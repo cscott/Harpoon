@@ -3,11 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import harpoon.ClassFile.*;
 /**
  * An <code>HCodeFactory</code> makes an <code>HCode</code> from an
  * <code>HMethod</code>. For example, an 
- * <code>HCodeFactory</code> may make an <code>harpoon.IR.QuadSSA.Code</code>
+ * <code>HCodeFactory</code> may make an <code>harpoon.IR.Quads.QuadSSI</code>
  * from a <code>harpoon.IR.Bytecode.Code</code>, calling
  * <code>HMethod.getCode("bytecode")</code> to get the source representation
  * for the conversion.  The <code>HCodeFactory</code> should call 
@@ -15,19 +14,15 @@ import harpoon.ClassFile.*;
  * to cache the result.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeFactory.java,v 1.4 1998-10-11 02:37:08 cananian Exp $
+ * @version $Id: HCodeFactory.java,v 1.5 2002-02-25 21:03:03 cananian Exp $
  */
 
 public interface HCodeFactory  {
     /** Make an <code>HCode</code> from an <code>HMethod</code>.
-     *  This method should call the <code>getCode</code> method of
-     *  <code>m</code> to get the source representation for the
-     *  conversion.  <code>HMethod.getCode()</code> will take
-     *  care of properly caching the value <code>convert</code>
-     *  returns. <p>
+     *  <p>
      *  <code>convert</code> is allowed to return null if the requested
      *  conversion is impossible; typically this is because it's attempt
-     *  to <code>getCode</code> a source representation failed -- for
+     *  to convert a source representation failed -- for
      *  example, because <code>m</code> is a native method.
      */
     public HCode convert(HMethod m);
@@ -37,4 +32,9 @@ public interface HCodeFactory  {
      *  <code>this.convert(m).getName()</code> for every 
      *  <code>HMethod m</code>. */
     public String getCodeName();
+    /**
+     * Removes representation of method <code>m</code> from all caches
+     * in this factory and its parents.
+     */
+    public void clear(HMethod m);
 }

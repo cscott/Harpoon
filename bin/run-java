@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# Usage: run-java <class_name> <args>
+#
+# note that you can set JAVA=jdb to invoke the debugger with an identical
+# environment.
+
+# set FLEX_DIR
+. `dirname $0`/find-flex-dir
+
+# grab more java opts from the command line.
+while [ -n "$1" ]; do
+    case "$1" in
+    -D*) javaopts="$javaopts $1" ;;
+    *)   break ;;
+    esac
+    shift
+done
+
+# check java version
+optprefix=X
+if java -version 2>&1 | grep -q 'version "1.1'; then
+  echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)" 1>&2
+  optprefix=""
+fi
+# ok.
+
+# you can set OPT_FLEX_SUPPORT_FILES to add additional support files: .jar/.zip
+FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/cpzip.jar ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip ${FLEX_DIR}/Support/realtime.jar"
+
+for supp_file in ${FLEX_SUPPORT_FILES}; do
+    if [ ! -f $supp_file ]; then
+	echo Support file ${supp_file} missing!;
+	exit -1;
+    else
+	SUPP_FILES_PATH="${SUPP_FILES_PATH}:${supp_file}";
+    fi;
+done
+
+# you can set FLEXPATH to assign additional components to the harpoon classpath
+harpoonpath=${FLEXPATH}${FLEXPATH:+:}.${SUPP_FILES_PATH}
+
+if type -t cygpath > /dev/null ; then
+    harpoonpath=`cygpath -wp "$harpoonpath"`
+fi
+
+${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath $*

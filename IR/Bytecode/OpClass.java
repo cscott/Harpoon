@@ -1,10 +1,11 @@
-// OpClass.java, created by cananian
+// OpClass.java, created Sun Sep 13 22:49:22 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.ClassFile.HClass;
+import harpoon.IR.RawClass.Constant;
+import harpoon.IR.RawClass.ConstantClass;
 
 /**
  * <code>OpClass</code> represents a class reference operand of a
@@ -12,11 +13,11 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
- * @see harpoon.ClassFile.Raw.Constant.ConstantClass
+ * @version $Id: OpClass.java,v 1.3 2002-02-25 21:04:17 cananian Exp $
+ * @see harpoon.IR.RawClass.ConstantClass
  */
-public class OpClass extends Operand {
-  HClass hclass;
+public final class OpClass extends Operand {
+  final HClass hclass;
   /** Creates an <code>OpClass</code> from the <code>CONSTANT_CLASS</code>
    *  at the given index in the constant pool.
    */
@@ -27,7 +28,7 @@ public class OpClass extends Operand {
     String classname = ((ConstantClass) c).name();
     if (classname.charAt(0) != '[') // not a real descriptor yet.
 	classname = "L" + classname + ";";
-    hclass = HClass.forDescriptor(classname);
+    hclass = parent.linker.forDescriptor(classname);
   }
   /** Return the class referenced. */
   public HClass value() { return hclass; }

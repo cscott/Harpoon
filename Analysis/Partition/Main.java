@@ -1,3 +1,7 @@
+// Main.java, created Mon Nov 16 23:33:21 1998 by mfoltz
+// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+
 // -*-Mode: Java-*- 
 // Main.java -- 
 // Author: Mark Foltz <mfoltz@ai.mit.edu> 
@@ -21,7 +25,7 @@ import java.io.FileReader;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version 
+ * @version $Id: Main.java,v 1.6 2002-02-25 20:58:28 cananian Exp $
  */
 
 public class Main  {

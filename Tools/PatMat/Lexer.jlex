@@ -1,0 +1,276 @@
+// Lexer.jlex, created Wed Feb 17 03:58:23 1999 by cananian
+// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Tools.PatMat;
+
+/** Input file lexer for instruction selection tool.
+ *
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Lexer.jlex,v 1.2 2002-02-25 21:08:30 cananian Exp $
+ */
+%%
+
+%line
+%char
+%class Lexer
+%function nextToken
+%type java_cup.runtime.Symbol
+%state CLASS_SCOPE RULES BRACED PARENED STRING COMMENT1 COMMENT2
+
+%{
+private void newline() { errorMsg.newline(yychar); }
+private void err(int pos, String s) { errorMsg.error(pos, "Lexing: "+s); }
+private void err(String s) { err(yychar, s); }
+
+private java_cup.runtime.Symbol tok(int kind) {
+	return new java_cup.runtime.Symbol(kind, yychar, yychar+yylength());
+}
+private java_cup.runtime.Symbol tok(int kind, Object obj) {
+    return new java_cup.runtime.Symbol(kind, yychar, yychar+yylength(), obj);
+}
+private java_cup.runtime.Symbol tok(int kind, int start, int end, Object obj) {
+    return new java_cup.runtime.Symbol(kind, start, end, obj);
+}
+
+private ErrorMsg errorMsg = null;
+
+Lexer(java.io.Reader r, ErrorMsg e) {
+    this(r);
+    errorMsg = e;
+}
+
+// Internal lexer variables
+
+private StringBuffer strText=new StringBuffer(); // Space to build up a string.
+private int strStart=0;	      // Starting location of the string.
+
+private int prevState;
+private boolean doneEOF=false;
+%}
+
+%eofval{
+    {
+	if (doneEOF) return tok(Sym.EOF);
+	switch(yy_lexical_state) {
+	case CLASS_SCOPE:
+	    err("No rules section found.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok(Sym.CLASS_STATEMENTS,
+		       strStart, yychar, strText.toString());
+	case RULES:
+	    /* rules is okay. */ break;
+	case BRACED:
+	    err("Unterminated action string at end of file.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok(Sym.BRACED, strStart, yychar, strText.toString());
+	case PARENED:
+	    err("Unterminated predicate at end of file.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok(Sym.PARENED, strStart, yychar, strText.toString());
+	case STRING:
+	    err("Unterminated string at end of file.");
+	    /* error recovery */
+	    yybegin(RULES);
+	    return tok((prevState==BRACED)?Sym.BRACED:
+	               (prevState==PARENED)?Sym.PARENED:Sym.error,
+	               strStart, yychar, strText.toString());
+	case COMMENT1:
+	    /* i guess an unterminate slash-slash comment is okay. */ break;
+	case COMMENT2:
+	    err("Unterminated comment at end of file."); break;
+	default:
+	    err("Unexpected end of file."); break; // will never happen?
+	}
+	doneEOF=true;
+	return tok(Sym.EOF);
+    }
+%eofval}
+
+ALPHA=[A-Za-z]
+DIGIT=[0-9]
+INTEGER={DIGIT}+
+LONG={INTEGER}[Ll]
+FPNUM=(({DIGIT}*"."{DIGIT}+)|({DIGIT}+"."{DIGIT}*))
+FLOAT=(({INTEGER}[Ff])|({FPNUM}[Ff]))
+DOUBLE=(({INTEGER}[Dd])|({FPNUM}[Dd]?))
+ID=[A-Za-z_][A-Za-z0-9_\$]*
+HEXDIGIT=[0-9A-Fa-f]
+WS=[\ \t\012\b]
+NL=([\r]|[\r]?[\n])
+
+%%
+
+<YYINITIAL>	^"%%"{WS}*{NL}	{ yybegin(CLASS_SCOPE);
+				  /* two NLs because of how Jlex matches ^ */
+				  newline();newline();
+				  String global = strText.toString();
+				  strText = new StringBuffer();
+				  strStart = yychar;
+				  return tok(Sym.GLOBAL_STATEMENTS,
+					     0, yychar, global);
+				}
+<CLASS_SCOPE>	^"%%"{WS}*{NL}	{ yybegin(RULES);
+				  /* two NLs because of how Jlex matches ^ */
+				  newline();newline();
+				  return tok(Sym.CLASS_STATEMENTS,
+					     strStart, yychar,
+					     strText.toString());
+				}
+<YYINITIAL,CLASS_SCOPE>	{NL}	{ newline(); strText.append('\n'); }
+<YYINITIAL,CLASS_SCOPE>	.	{ strText.append(yytext()); }
+
+<RULES,PARENED>	"%{"		{ int old_state = yy_lexical_state;
+				  int old_start = strStart;
+				  yybegin(BRACED);
+				  strText = new StringBuffer();
+				  strStart = yychar;
+				  /* Error recovery. */
+				  if (old_state==PARENED) {
+				    err("Unterminated predicate.");
+				    return tok(Sym.error, old_start, yychar-2,
+				               null);
+				  }
+				}
+<BRACED>	"}%"		{ yybegin(RULES);
+				  return tok(Sym.BRACED,
+					     strStart, yychar,
+					     strText.toString());
+				}
+<RULES,BRACED>	"%("		{ int old_state = yy_lexical_state;
+				  int old_start = strStart;
+				  yybegin(PARENED);
+				  strText = new StringBuffer();
+				  strStart = yychar;
+				  /* Error recovery. */
+				  if (old_state==BRACED) {
+				    err("Unterminated action string.");
+				    return tok(Sym.error, old_start, yychar-2,
+				               null);
+				  }
+				}
+<PARENED>	")%"		{ yybegin(RULES);
+				  return tok(Sym.PARENED,
+					     strStart, yychar,
+					     strText.toString());
+				}
+<BRACED,PARENED> [\"]		{ /* enter string context. */
+				  strText.append(yytext());
+				  prevState = yy_lexical_state;
+				  yybegin(STRING);
+				}
+<BRACED,PARENED> {NL}		{ strText.append(yytext()); newline(); }
+<STRING>	\\[0-3][0-7][0-7] { /* octal escape in string */
+				  strText.append(yytext());
+				}
+<STRING>	\\[0-7][0-7]    { /* octal escape in string */
+				  strText.append(yytext());
+				}
+<STRING>	\\.             { /* any other escape */
+				  strText.append(yytext());
+				}
+<STRING>	{NL}		{ /* error, unterminated string constant. */
+				  err("Embedded newline in string.");
+				  newline();
+				  strText.append(yytext());
+				  yybegin(prevState); // end quote.
+				}
+<STRING>	[\"]		{ /* saw closing quote. */
+				  strText.append(yytext());
+				  yybegin(prevState);
+				}
+<BRACED,PARENED,STRING>	.	{ strText.append(yytext()); }
+
+<RULES>		"//"		{ yybegin(COMMENT1); }
+<COMMENT1>	[^\n\r]+	{ /* eat up comments. */ }
+<COMMENT1>	{NL}		{ yybegin(RULES); newline(); }
+<RULES>		"/*"		{ yybegin(COMMENT2); }
+<COMMENT2>	"*"+"/"		{ yybegin(RULES); }
+<COMMENT2>	{NL}		{ newline(); }
+<COMMENT2>	.		{ /* eat up comments. */ }
+
+<RULES>		"%extra"	{ return tok(Sym.KEY_EXTRA); }
+<RULES>		"%weight"	{ return tok(Sym.KEY_WEIGHT); }
+<RULES>		"%pred" 	{ return tok(Sym.KEY_PRED); }
+
+<RULES>		"%start with"	{ return tok(Sym.START_WITH); }
+<RULES>		"%end with"	{ return tok(Sym.END_WITH); }
+
+<RULES>		ALIGN		{ return tok(Sym.ALIGN); }
+<RULES>		BINOP		{ return tok(Sym.BINOP); }
+<RULES>		CALL		{ return tok(Sym.CALL); }
+<RULES>		CJUMP		{ return tok(Sym.CJUMP); }
+<RULES>		CONST		{ return tok(Sym.CONST); }
+<RULES>		DATUM		{ return tok(Sym.DATUM); }
+<RULES>		EXPR		{ return tok(Sym.EXPR); }
+<RULES>		JUMP		{ return tok(Sym.JUMP); }
+<RULES>		LABEL		{ return tok(Sym.LABEL); }
+<RULES>		MEM		{ return tok(Sym.MEM); }
+<RULES>		METHOD		{ return tok(Sym.METHOD); }
+<RULES>		MOVE		{ return tok(Sym.MOVE); }
+<RULES>		NAME		{ return tok(Sym.NAME); }
+<RULES>		NATIVECALL	{ return tok(Sym.NATIVECALL); }
+<RULES>		RETURN		{ return tok(Sym.RETURN); }
+<RULES>		SEGMENT		{ return tok(Sym.SEGMENT); }
+<RULES>		SEQ		{ return tok(Sym.SEQ); }
+<RULES>		TEMP		{ return tok(Sym.TEMP); }
+<RULES>		THROW		{ return tok(Sym.THROW); }
+<RULES>		UNOP		{ return tok(Sym.UNOP); }
+
+<RULES>		ADD		{ return tok(Sym.ADD); }
+<RULES>		AND		{ return tok(Sym.AND); }
+<RULES>		CMPEQ		{ return tok(Sym.CMPEQ); }
+<RULES>		CMPNE		{ return tok(Sym.CMPNE); }
+<RULES>		CMPGE		{ return tok(Sym.CMPGE); }
+<RULES>		CMPGT		{ return tok(Sym.CMPGT); }
+<RULES>		CMPLE		{ return tok(Sym.CMPLE); }
+<RULES>		CMPLT		{ return tok(Sym.CMPLT); }
+<RULES>		DIV		{ return tok(Sym.DIV); }
+<RULES>		MUL		{ return tok(Sym.MUL); }
+<RULES>		OR		{ return tok(Sym.OR); }
+<RULES>		REM		{ return tok(Sym.REM); }
+<RULES>		SHL		{ return tok(Sym.SHL); }
+<RULES>		SHR		{ return tok(Sym.SHR); }
+<RULES>		USHR		{ return tok(Sym.USHR); }
+<RULES>		XOR		{ return tok(Sym.XOR); }
+
+<RULES>		I2B		{ return tok(Sym.I2B); }
+<RULES>		I2C		{ return tok(Sym.I2C); }
+<RULES>		_2D		{ return tok(Sym._2D); }
+<RULES>		_2F		{ return tok(Sym._2F); }
+<RULES>		_2I		{ return tok(Sym._2I); }
+<RULES>		_2L		{ return tok(Sym._2L); }
+<RULES>		I2S		{ return tok(Sym.I2S); }
+<RULES>		NEG		{ return tok(Sym.NEG); }
+<RULES>		NOT		{ return tok(Sym.NOT); }
+
+<RULES>		null		{ return tok(Sym.NULL); }
+
+<RULES>		{ID}		{ return tok(Sym.ID, yytext()); }
+<RULES>		{LONG}		{ return tok(Sym.LONG,
+					     new Long(yytext())); }
+<RULES>		{INTEGER}	{ return tok(Sym.INTEGER,
+				             new Integer(yytext())); }
+<RULES>		{DOUBLE}	{ return tok(Sym.DOUBLE,
+				             new Double(yytext())); }
+<RULES>		{FLOAT}		{ return tok(Sym.FLOAT,
+				             new Float(yytext())); }
+
+<RULES>		"{"		{ return tok(Sym.LBRACE); }
+<RULES>		"}"		{ return tok(Sym.RBRACE); }
+<RULES>		"("		{ return tok(Sym.LPAREN); }
+<RULES>		")"		{ return tok(Sym.RPAREN); }
+<RULES>		"["		{ return tok(Sym.LBRACK); }
+<RULES>		"]"		{ return tok(Sym.RBRACK); }
+<RULES>		"<"		{ return tok(Sym.LANGLE); }
+<RULES>		">"		{ return tok(Sym.RANGLE); }
+<RULES>		":"		{ return tok(Sym.COLON); }
+<RULES>		","		{ return tok(Sym.COMMA); }
+<RULES>		"="		{ return tok(Sym.EQUALS); }
+
+<RULES>		{NL}            { newline(); }
+<RULES>		{WS}		{/*eat whitespace*/}
+
+<RULES>		.		{ err("Illegal input character."); }

@@ -1,0 +1,4 @@
+sun.rmi.registry.RegistryHandler.<init>()V
+java.rmi.server.RemoteRef.<clinit>()V
+# comments are also allowed
+# and inclusions in the form 'include [filename]' (on a line by itself)

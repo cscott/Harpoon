@@ -1,0 +1,2 @@
+The harpoon.IR.RawClass package contains routines to read/write java
+class files at a very low level.

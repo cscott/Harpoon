@@ -1,13 +1,14 @@
-// HMethodSyn.java, created by cananian
+// HMethodSyn.java, created Fri Oct 16  2:21:03 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
+
+import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
-
 /**
  * An <code>HMethodSyn</code> provides information about, and access to, a 
  * single method on a class or interface.  The reflected method
@@ -15,96 +16,121 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.7 2002-02-25 21:03:04 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public class HMethodSyn extends HMethod {
+class HMethodSyn extends HMethodImpl implements HMethodMutator {
 
-  /** Create a new method based on a template. 
-   *  The new method will be added to the class containing the 
-   *  template method. The parent class of the template method must be
-   *  an <code>HClassSyn</code>. */
-  public HMethodSyn(HMethod template) {
-    this((HClassSyn)(template.getDeclaringClass()), template);
-  }
-  
-  /** Create a new method like the <code>template</code>, 
-   *  but in class <code>parent</code>. 
+  /** Create a new method like the <code>template</code>, but named
+   *  <code>name</code>.
    *  The new method will be added to class <code>parent</code>. */
-  public HMethodSyn(HClassSyn parent, HMethod template) {
+  HMethodSyn(HClassSyn parent, String name, HMethod template) {
+    this ((HClass)parent, name, template);
+  }
+  HMethodSyn(HClassArraySyn parent, String name, HMethod template) {
+    this ((HClass)parent, name, template);
+  }
+  // private, not-as-type-safe implementation.
+  private HMethodSyn(HClass parent, String name, HMethod template) {
     this.parent = parent;
-    this.name = uniqueName(parent, template.getName(), 
-			   template.getDescriptor());
+    this.name = name;
     this.modifiers = template.getModifiers();
     this.returnType = template.getReturnType();
     this.parameterTypes = template.getParameterTypes();
     this.parameterNames = template.getParameterNames();
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
-    parent.addDeclaredMethod(this);
-
-    // clone all code representations.
-    for (Enumeration e = template.codetable.keys(); e.hasMoreElements(); ) {
-      HCode oldCode = (HCode) template.getCode((String)e.nextElement());
-      try {
-	this.putCode(oldCode.clone(this));
-      } catch (CloneNotSupportedException cnse) {
-	/* ignore this HCode; it can't be cloned. */
-      }
-    }
+    // ensure linker information is consistent.
+    Util.assert(checkLinker((HClass)this.returnType));
+    for(int i=0; i<this.parameterTypes.length; i++)
+      Util.assert(checkLinker((HClass)this.parameterTypes[i]));
+    for(int i=0; i<this.exceptionTypes.length; i++)
+      Util.assert(checkLinker((HClass)this.exceptionTypes[i]));
   }
 
-  /** Create a new empty abstract method in the specified class
+  /** Create a new empty method in the specified class
    *  with the specified parameter and return types
    *  that throws no checked exceptions.
-   *  Adding code to the method will make it non-abstract.
    */
-  public HMethodSyn(HClassSyn parent, String name, 
+  HMethodSyn(HClassSyn parent, String name, 
+		    HClass[] paramTypes, HClass returnType) {
+    this(parent, name, makeDescriptor (paramTypes, returnType));
+  }
+  HMethodSyn(HClassArraySyn parent, String name, 
 		    HClass[] paramTypes, HClass returnType) {
     this(parent, name, makeDescriptor (paramTypes, returnType));
   }
   
-  /** Create a new empty abstract method in the specified class
+  /** Create a new empty method in the specified class
    *  with the specified descriptor
    *  that throws no checked exceptions.
-   *  Adding code to the method will make it non-abstract.
    */
-  public HMethodSyn(HClassSyn parent, String name, String descriptor) {
+  HMethodSyn(HClassSyn parent, String name, String descriptor) {
+    this((HClass)parent, name, descriptor);
+  }
+  HMethodSyn(HClassArraySyn parent, String name, String descriptor) {
+    this((HClass)parent, name, descriptor);
+  }
+  // private, not-as-type-safe implementation.
+  private HMethodSyn(HClass parent, String name, String descriptor) {
     this.parent = parent;
-    this.name = uniqueName(parent, name, descriptor);
-    this.modifiers = Modifier.ABSTRACT;
+    this.name = name;
+    this.modifiers = 0;
     { // parse descriptor for return type.
       String desc = descriptor.substring(descriptor.lastIndexOf(')')+1);
-      this.returnType = HClass.forDescriptor(desc);
+      this.returnType = new ClassPointer(parent.getLinker(), desc);
     }
     { // parse descriptor for parameter types.
       String desc = descriptor.substring(1, descriptor.lastIndexOf(')'));
       Vector v = new Vector();
       for (int i=0; i<desc.length(); i++) {
-	v.addElement(HClass.forDescriptor(desc.substring(i)));
+	int first = i;
 	while (desc.charAt(i)=='[') i++;
 	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
+	v.addElement(new ClassPointer(parent.getLinker(),
+				      desc.substring(first, i+1)));
       }
-      this.parameterTypes = new HClass[v.size()];
+      this.parameterTypes = new HPointer[v.size()];
       v.copyInto(this.parameterTypes);
     }
     this.parameterNames = new String[this.parameterTypes.length];
     this.exceptionTypes = new HClass[0];
     this.isSynthetic = false;
-    parent.addDeclaredMethod(this);
   }
 
-  public void setModifiers(int m) { this.modifiers = m; }
+  public HMethodMutator getMutator() { return this; }
 
-  public void setReturnType(HClass returnType) { this.returnType = returnType;}
+  public void addModifiers(int m) { setModifiers(getModifiers()|m); }
+  public void removeModifiers(int m) { setModifiers(getModifiers()&(~m)); }
+  public void setModifiers(int m) {
+    if (this.modifiers != m) parent.hasBeenModified = true;
+    this.modifiers = m;
+  }
+
+  public void setReturnType(HClass returnType) {
+    Util.assert(checkLinker(returnType));
+    if (this.returnType != returnType) parent.hasBeenModified = true;
+    this.returnType = returnType;
+  }
 
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterTypes(HClass[] parameterTypes) {
+    for (int i=0; i<parameterTypes.length; i++)
+      Util.assert(checkLinker(parameterTypes[i]));
+    if (this.parameterTypes.length != parameterTypes.length)
+      parent.hasBeenModified = true;
+    else for (int i=0;
+	      i<this.parameterTypes.length && i<parameterTypes.length; i++)
+      if (this.parameterTypes[i] != parameterTypes[i])
+	parent.hasBeenModified = true;
     this.parameterTypes = parameterTypes;
   }
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterType(int which, HClass type) {
+    Util.assert(checkLinker(type));
+    if (this.parameterTypes[which] != type)
+      parent.hasBeenModified = true;
     this.parameterTypes[which] = type;
   }
 
@@ -115,47 +141,48 @@ public class HMethodSyn extends HMethod {
     this.parameterNames[which] = name;
   }
 
+  public void addExceptionType(HClass exceptionType) {
+    Util.assert(checkLinker(exceptionType));
+    for (int i=0; i<exceptionTypes.length; i++)
+      if (exceptionTypes[i]==exceptionType)
+	return;
+    this.exceptionTypes = (HPointer[]) Util.grow(HPointer.arrayFactory,
+						 exceptionTypes, exceptionType,
+						 exceptionTypes.length);
+    parent.hasBeenModified = true;
+  }
   public void setExceptionTypes(HClass[] exceptionTypes) {
+    for (int i=0; i<exceptionTypes.length; i++)
+      Util.assert(checkLinker(exceptionTypes[i]));
+    if (this.exceptionTypes.length != exceptionTypes.length)
+      parent.hasBeenModified = true;
+    else for (int i=0;
+	      i<this.exceptionTypes.length && i<exceptionTypes.length; i++)
+      if (this.exceptionTypes[i] != exceptionTypes[i])
+	parent.hasBeenModified = true;
     this.exceptionTypes = exceptionTypes;
   }
-  public void setExceptionType(int which, HClass type) {
-    this.exceptionTypes[which] = type;
+  public void removeExceptionType(HClass exceptionType) {
+    Util.assert(checkLinker(exceptionType));
+    for (int i=0; i<exceptionTypes.length; i++)
+      if (exceptionTypes[i].actual().equals(exceptionType)) {
+	exceptionTypes = (HPointer[]) Util.shrink(HPointer.arrayFactory,
+						  exceptionTypes, i);
+	parent.hasBeenModified = true;
+	return;
+      }
   }
 
   public void setSynthetic(boolean isSynthetic) {
+    if (this.isSynthetic != isSynthetic) parent.hasBeenModified = true;
     this.isSynthetic = isSynthetic;
-  }
-
-  /** Add a new code representation for this method, or replace a
-   *  previously existing one.<p>
-   *  An abstract method does not have code; thus <code>putCode</code> 
-   *  resets the <code>abstract</code> modifier on this
-   *  <code>HMethodSyn</code>.
-   */
-  public void putCode(HCode codeobj) {
-    super.putCode(codeobj);
-    // if it's got code, it's not abstract.
-    this.modifiers &= ~Modifier.ABSTRACT;
-  }
-  /** Remove a specified code representation for this method. 
-   *  If there are no code representations left, sets the 
-   *  <code>abstract</code> modifier. */
-  public void removeCode(String codetype) {
-    codetable.remove(codetype);
-    if (codetable.size()==0) this.modifiers |= Modifier.ABSTRACT;
-  }
-  /** Remove all code representations for this method.
-   *  Sets the <code>abstract</code> modifier. */
-  public void removeAllCode() {
-    codetable.clear();
-    this.modifiers |= Modifier.ABSTRACT;
   }
 
   //----------------------------------------------------------
 
-  /** Make a mathod descriptor string given parameter and return value types.
+  /** Make a method descriptor string given parameter and return value types.
    *  A helper function. */
-  private static String makeDescriptor(HClass[] paramTypes, HClass returnType){
+  static String makeDescriptor(HClass[] paramTypes, HClass returnType){
     StringBuffer sb = new StringBuffer();
     sb.append ('(');
     for (int i = 0; i < paramTypes.length; i++){
@@ -165,6 +192,13 @@ public class HMethodSyn extends HMethod {
     sb.append (returnType.getDescriptor());
     return  sb.toString();
   }
+
+  //----------------------------------------------------------
+  // assertion helper.
+  private boolean checkLinker(HClass hc) {
+    return hc.isPrimitive() || hc.getLinker()==parent.getLinker();
+  }
+  //----------------------------------------------------------
 }
 
 // set emacs indentation style.

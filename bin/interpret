@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "Executing $*." 1>&2
+javaopts="-oss2m $javaopts"
+. `dirname $0`/run-java harpoon.Main.Run $*

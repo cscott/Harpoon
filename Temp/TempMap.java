@@ -4,13 +4,14 @@
 package harpoon.Temp;
 
 /**
- * A <code>TempMap</code> maps one temp to another temp.  It is typically
- * used to represent a set of variable renamings.
+ * A <code>TempMap</code> maps one <code>Temp</code> to another
+ * <code>Temp</code>.  It is typically used to represent a set of
+ * variable renamings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempMap.java,v 1.2 1998-10-11 02:37:58 cananian Exp $
- */
+ * @version $Id: TempMap.java,v 1.3 2002-02-25 21:07:05 cananian Exp $ */
 
 public interface TempMap  {
+    /** Rename a single <code>Temp</code>. */
     public Temp tempMap(Temp t);
 }

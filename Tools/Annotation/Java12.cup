@@ -1,0 +1,1428 @@
+package harpoon.Tools.Annotation;
+
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.NoSuchClassException;
+import harpoon.Tools.Annotation.Lex.LinePos;
+import harpoon.Util.Collections.HashEnvironment;
+import harpoon.Util.HClassUtil;
+import harpoon.Util.Collections.Environment;
+import harpoon.Util.Tuple;
+import harpoon.Util.Util;
+
+import java_cup.runtime.Symbol;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Stack;
+
+/* Java 1.2 parser for CUP.  
+ * Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+ * This program is released under the terms of the GPL; see the file
+ * COPYING for more details.  There is NO WARRANTY on this code.
+ */
+
+/*
+JDK 1.2 Features added:
+  strictfp modifier.
+  explicit_constructor_invocation ::= ...
+        | primary DOT THIS LPAREN argument_list_opt RPAREN SEMICOLON ;
+  field_access ::= ...
+        |       name DOT SUPER DOT IDENTIFIER ;
+  method_invocation ::= ...
+        |       name DOT SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN ;
+*/
+
+/* THIS COPY MODIFIED EXTENSIVELY FOR ANNOTATION BY CSA [9-12-99]. */
+action code {:
+  Environment env = new HashEnvironment();
+  { env.put("#qualified",null); }
+  Stack s = new Stack();
+  private void pushenv() { s.push(env.getMark()); }
+  private void popenv()  { env.undoToMark((Environment.Mark)s.pop()); }
+
+  // ANNOTATION FUNCTIONS:
+  public void annotateURL(int left, int right, String link) {
+    LinePos lp = parser.lexer.linepos(left), rp = parser.lexer.linepos(right);
+    System.out.println(lp.line+" "+lp.pos+"\t"+rp.line+" "+rp.pos);
+    System.out.println("<A HREF=\""+link+"\">");
+    System.out.println("</A>");
+  }
+  public void annotateURL(int left, int right, QualName qn, String what) {
+    if (qn==null) System.err.println("COULD NOT RESOLVE: "+what+" in "+env.get("#qualified"));
+    else annotateURL(left, right, qn.toURL());
+  }
+  public void annotateURL(int left, int right, HClass hc) {
+    annotateURL(left, right, new QualName(hc).toURL());
+  }
+  public void annotateURL(int left, int right, HField hf) {
+    if (hf.getDeclaringClass().isArray()) return;
+    String link = new QualName(hf.getDeclaringClass()).toBaseURL();
+    link+="#field-"+hf.getDeclaringClass().getName().replace('$','.')+"."+hf.getName();
+    annotateURL(left, right, link);
+  }
+  public void annotateURL(int left, int right, HMethod hm) {
+    if (hm.getDeclaringClass().isArray()) return;
+    String link = new QualName(hm.getDeclaringClass()).toBaseURL();
+    String cls  = hm.getDeclaringClass().getName().replace('$','.');
+    link+="#method-"+cls+".";
+    if (hm instanceof HConstructor) {
+	link += (cls.lastIndexOf('.')<0) ? cls :
+	    cls.substring(1+cls.lastIndexOf('.'));
+    } else link+=hm.getName();
+    String desc = hm.getDescriptor();
+    link+=desc.substring(0,1+desc.lastIndexOf(')'));
+    annotateURL(left, right, link);
+  }
+  public void annotateANCHOR(int left, int right, String name) {
+    LinePos lp = parser.lexer.linepos(left), rp = parser.lexer.linepos(right);
+    System.out.println(lp.line+" "+lp.pos+"\t"+rp.line+" "+rp.pos);
+    System.out.println("<A NAME=\""+name+"\">");
+    System.out.println("</A>");
+  }
+  public String this_package=null;
+
+  class QualName {
+    public final String packageN; // null for default package
+    public final String classN;   // non-null if this is a class name
+    public final String innerN;   // non-null if this is an inner class.
+    QualName(String p, String c, String i) {
+      this.packageN=p; this.classN=c; this.innerN=i;
+    }
+    QualName(HClass hc) {
+      Util.assert(hc!=null && !hc.isPrimitive() && !hc.isArray());
+      String pkg=hc.getPackage(), simple=hc.getName(), inner=null;
+      if (pkg.length()==0) pkg=null;
+      else simple=simple.substring(1+pkg.length());
+      if (simple.indexOf('$')>=0) {
+	  inner  = simple.substring(1+simple.indexOf('$')).replace('$','.');
+	  simple = simple.substring(0,simple.indexOf('$'));
+      }
+      this.packageN = pkg; this.classN = simple; this.innerN = inner;
+    }
+    public HClass toClass() {
+	if (classN==null) return null;
+	String name = combineWithDot(packageN, classN);
+	if (innerN!=null) name+="$"+innerN.replace('.','$');
+	try { return parser.linker.forName(name); }
+	catch (NoSuchClassException e) { return null; }
+    }
+    public String toString() {
+      StringBuffer sb = new StringBuffer();
+      if (classN==null) return (packageN==null)?"":packageN;
+      sb.append(combineWithDot(packageN, classN));
+      if (innerN==null) return sb.toString();
+      sb.append('.'); sb.append(innerN);
+      return sb.toString();
+    }
+    public String toBaseURL() {
+      StringBuffer sb = new StringBuffer();
+      if (packageN!=null) sb.append(pkg_offset(packageN));
+      if (classN==null) return sb.toString()+"index.html"; // package page
+      sb.append(classN); sb.append(".html");
+      return sb.toString();
+    }
+    public String toDocURL() {
+      StringBuffer sb = new StringBuffer();
+      if (packageN!=null && packageN.length()>0)
+	for(String s=packageN+"."; s.indexOf('.')>=0;
+	    s=s.substring(s.indexOf('.')+1))
+	  sb.append("../");
+      sb.append("../doc/");
+      if (packageN!=null && packageN.length()>0) {
+	sb.append(packageN.replace('.','/')); sb.append('/');
+      }
+      sb.append(combineWithDot(classN, innerN));
+      sb.append(".html");
+      return sb.toString();
+    }
+    public String toURL() {
+      StringBuffer sb = new StringBuffer(toBaseURL());
+      if (classN==null) return sb.toString();
+      sb.append("#class-");
+      sb.append(combineWithDot(combineWithDot(packageN, classN), innerN));
+      return sb.toString();
+    }
+    private String pkg_offset(String pkg) {
+      StringBuffer path = new StringBuffer();
+      // chew up identical portions of pkg and this_package
+      String s = this_package;
+      do {
+	String f1=(s  .indexOf('.')<0)?s  :s  .substring(0,s  .indexOf('.')+1);
+	String f2=(pkg.indexOf('.')<0)?pkg:pkg.substring(0,pkg.indexOf('.')+1);
+	if (!f1.equals(f2)) break;
+	s  = s  .substring(f1.length());
+	pkg= pkg.substring(f2.length());
+      } while (s.length()>0 && pkg.length()>0);
+      if (s.length()>0)
+	for (s+="." ; s.indexOf('.')>=0; s=s.substring(s.indexOf('.')+1))
+	  path.append("../");
+      path.append(pkg.replace('.','/'));
+      if (pkg.length()>0) path.append('/');
+      return path.toString();
+    }
+  }
+
+  QualName packageName(String n) { return new QualName(n, null, null); }
+  QualName className(String cls) { /* split into package and class */
+      String inner=null;
+      do {
+	  try {
+	      parser.linker.forName(cls);
+	      // OK, check that cls/inner split is correct.
+	      if (inner!=null)
+		 parser.linker.forName(cls+"$"+inner.replace('.','$'));
+	      // cool! it all works!
+	      if (cls.indexOf('.')<0) return new QualName(null,cls,inner);
+	      else return new QualName(cls.substring(0,cls.lastIndexOf('.')),
+				       cls.substring(1+cls.lastIndexOf('.')),
+				       inner);
+	  } catch (NoSuchClassException e) { /* no class found */ }
+	  // move an element to the inner class portion.
+	  if (cls.indexOf('.')<0) return null; // give up.
+	  inner = combineWithDot(cls.substring(1+cls.lastIndexOf('.')), inner);
+	  cls = cls.substring(0, cls.lastIndexOf('.'));
+      } while (true);
+  }
+  QualName typeName(String ty) {
+      String lhs = (ty.indexOf('.')<0)?ty:ty.substring(0,ty.indexOf('.'));
+      String rhs = (ty.indexOf('.')<0)?null:ty.substring(ty.indexOf('.')+1);
+      QualName qn;
+      // try single-type import statement.
+      if (env.containsKey("#import-"+lhs)) {
+	  qn = className(combineWithDot((String)env.get("#import-"+lhs),rhs));
+	  if (qn!=null) return qn;
+      }
+      // FIXME: try name "in scope of visible local class declaration"
+      // try name 'in current compilation units', then in current package.
+      // try name 'in scope of exactly one visible member type'
+      for (String s=(String)env.get("#qualified");
+	   this_package==null || s.startsWith(this_package);
+	   s = s.substring(0, s.lastIndexOf('.')) ) {
+	  if ((!s.equals(this_package)) &&
+	      (qn = className(s)) != null) {
+	      Iterator it=allParents(qn.toClass()).iterator();
+	      while (it.hasNext()) {
+		  HClass hc = (HClass) it.next();
+		  // first try replacing '$' with '.' to name inner class.
+		  String dots = hc.getName().replace('$','.');
+		  if (null!=(qn = className(combineWithDot(dots, ty))))
+		      return qn;
+		  // also try non-inner class version.
+		  if (null!=(qn = className(combineWithDot(hc.getName(), ty))))
+		      return qn;
+	      }
+	  } else if (null!=(qn = className(combineWithDot(s, ty))))
+	      return qn;
+
+	  if (s.indexOf('.')<0) break; // deal with this_package==null.
+      }
+      // try type-import-on-demand.
+      if (env.containsKey("#demand-"+lhs)) {
+	  qn = className(combineWithDot((String)env.get("#demand-"+lhs),rhs));
+	  if (qn!=null) return qn;
+      }
+      // implicit import-on-demand of java.lang
+      qn = className("java.lang."+ty);
+      if (qn!=null) return qn;
+      // ok, give up.  Assume it's fully qualified.
+      return className(ty);
+  }
+  HClass expName(String name) { // deal with expression names
+      if (name.indexOf('.')<0) // simple expression names, check environment
+	  if (env.containsKey(name)) return (HClass) env.get(name);
+      HField hf=expName2(name);
+      return (hf==null)?null:hf.getType();
+  }
+  HField expName2(String name) { // deal with expression names which are fields
+      if (name.indexOf('.')<0) { // simple expression names
+	  if (env.containsKey(name)) return null; // not a field.
+	  // check fields in current classes
+	  for (String s=(String)env.get("#qualified");
+	       this_package==null || s.length() > this_package.length();
+	       s = s.substring(0, s.lastIndexOf('.')) ) {
+	      try {
+		  return parser.linker.forName(s).getField(name);
+	      } catch (NoSuchFieldError e) { // not a valid field
+	      } catch (NoSuchClassException e) { // not a valid class
+	      }
+	      if (s.indexOf('.')<0) break; // deal with this_package==null.
+	  }
+	  // ok, can't find anything matching this name
+	  return null;
+      } else { // qualified expression names
+	  String Q = name.substring(0,name.lastIndexOf('.'));
+	  String id= name.substring(1+name.lastIndexOf('.'));
+	  QualName qn = typeName(Q);
+	  if (qn!=null && qn.toClass()!=null) { // it's a type name
+	      try { return qn.toClass().getField(id); }
+	      catch (NoSuchFieldError e) { /* hm.  nope. */ }
+	  }
+	  HClass hc = expName(Q); // Q is an expression name?
+	  if (hc==null || hc.isPrimitive()) return null;
+	  try { return (hc.isArray())?hc.getDeclaredField(id):hc.getField(id);}
+	  catch (NoSuchFieldError e) { return null; /* error */ }
+      }
+  }
+  public HMethod methodName(String name, HClass[] paramtypes) {
+      List l = new ArrayList();
+      if (name.indexOf('.')<0) { // simple method name
+	  // check methods in current classes
+	  for (String s=(String)env.get("#qualified");
+	       this_package==null || s.length() > this_package.length();
+	       s = s.substring(0, s.lastIndexOf('.')) ) {
+	      try {
+		  HMethod[] hms = parser.linker.forName(s).getMethods();
+		  for (int i=0; i<hms.length; i++)
+		      if (hms[i].getName().equals(name))
+			  l.add(hms[i]);
+	      } catch (NoSuchClassException e) { /* not a valid class */ }
+	      if (s.indexOf('.')<0) break; // deal with this_package==null.
+	  }
+      } else { // qualified expression names
+	  String Q = name.substring(0,name.lastIndexOf('.'));
+	  String id= name.substring(1+name.lastIndexOf('.'));
+	  QualName qn = typeName(Q);
+	  if (qn!=null && qn.toClass()!=null) { // it's a type name
+	      HMethod[] hms = qn.toClass().getMethods();
+	      for (int i=0; i<hms.length; i++)
+		  if (hms[i].getName().equals(id))
+		      l.add(hms[i]);
+	  } else {
+	      HClass hc = expName(Q); // Q is an expression name?
+	      if (hc!=null && !hc.isPrimitive()) {
+		  HMethod[] hms = hc.getMethods();
+		  for (int i=0; i<hms.length; i++)
+		      if (hms[i].getName().equals(id))
+			  l.add(hms[i]);
+	      }
+	  }
+      }
+      // find most specific applicable method from those in l
+      return methodMatch(l, paramtypes);
+  }
+  private HMethod methodMatch(List l, HClass[] params) {
+  L1: // remove invalid matches.
+      for (Iterator it=l.iterator(); it.hasNext(); ) {
+	  HMethod hm = (HMethod) it.next();
+	  HClass hcs[] = hm.getParameterTypes();
+	  if (hcs.length!=params.length) { it.remove(); continue L1; }
+	  for (int i=0; i<params.length; i++)
+	      if (params[i]!=null&&!isValidMethodConversion(params[i], hcs[i]))
+		  { it.remove(); continue L1; }
+      }
+      // now find most specific match (if any are left)
+      Iterator it = l.iterator();
+      if (!it.hasNext()) return null;
+      HMethod spec = (HMethod) it.next(); // candidate for most specific
+      HClass[] specty = spec.getParameterTypes();
+  L2:
+      while (it.hasNext()) {
+	  HMethod chal = (HMethod) it.next(); // the challenger
+	  HClass[] chalty = chal.getParameterTypes();
+	  for (int i=0; i<params.length; i++)
+	      if (!isValidMethodConversion(chalty[i], specty[i]))
+		  continue L2;
+	  if (chal.getDeclaringClass().isInstanceOf(spec.getDeclaringClass())){
+	      spec = chal; // new most-specific method.
+	      specty=chalty;
+	  }
+      }
+      return spec;
+  }
+  private boolean isValidMethodConversion(HClass small, HClass big) {
+      return (small.isPrimitive()||big.isPrimitive()) ?
+	  isValidWidePrimitiveConversion(small, big) :
+	  small.isInstanceOf(big);
+  }
+  private boolean isValidWidePrimitiveConversion(HClass small, HClass big) {
+      if (!(small.isPrimitive() && big.isPrimitive())) return false;
+      if (small==big) return true;
+      if (small==HClass.Boolean || big==HClass.Boolean) return false;
+      if (big==HClass.Byte) return false;
+      if (big==HClass.Char) return false;
+      if (small==HClass.Byte) return true;
+      if (big==HClass.Short) return false;
+      if (small==HClass.Short) return true;
+      if (small==HClass.Char) return true;
+      if (big==HClass.Int) return false;
+      if (small==HClass.Int) return true;
+      if (big==HClass.Long) return false;
+      if (small==HClass.Long) return true;
+      if (big==HClass.Float) return false;
+      if (small==HClass.Float) return true;
+      return false;
+  }
+      
+  private String fieldString(String name) {
+      return "field-"+env.get("#qualified")+"."+name;
+  }
+  private String methodString(String name, String formals) {
+      return "method-"+env.get("#qualified")+"."+name+"("+formals+")";
+  }
+  private static String combineWithDot(String a, String b) {
+      return (a==null)?b:(b==null)?a:(a+"."+b);
+  }
+  private void newClassScope(String inner) {
+      env.put("#qualified",
+	      combineWithDot((String) env.get("#qualified"), inner));
+      env.remove("#inner");
+  }
+  private Integer newInner() {
+      Integer innerindex=(Integer)env.get("#inner");
+      innerindex=new Integer(1+(innerindex==null?0:innerindex.intValue()));
+      env.put("#inner", innerindex);
+      return innerindex;
+  }
+
+  private List allParents(HClass hc) {
+      List l = new ArrayList();
+      l.add(hc);
+      for (int i=0; i<l.size(); i++) {
+	  HClass hcc = (HClass) l.get(i);
+	  HClass sc = hcc.getSuperclass();
+	  if (sc!=null) l.add(sc);
+	  l.addAll(Arrays.asList(hcc.getInterfaces()));
+      }
+      return l;
+  }
+:};
+
+parser code  {: 
+  Lexer lexer;
+
+  public Java12(Lexer l) {
+    this();
+    lexer=l;
+  }
+
+  public void syntax_error(java_cup.runtime.Symbol current) {
+    report_error("Syntax error (" + current.sym + ")", current);
+  }
+  public void report_error(String message, java_cup.runtime.Symbol info) {
+    lexer.errorMsg(message, info);
+  }
+
+  Linker linker = Loader.systemLinker;
+:};
+
+scan with {: return lexer.nextToken(); :};
+
+terminal BOOLEAN; // primitive_type
+terminal BYTE, SHORT, INT, LONG, CHAR; // integral_type
+terminal FLOAT, DOUBLE; // floating_point_type
+terminal LBRACK, RBRACK; // array_type
+terminal String IDENTIFIER; // name
+terminal DOT; // qualified_name
+terminal SEMICOLON, MULT, COMMA, LBRACE, RBRACE, EQ, LPAREN, RPAREN, COLON;
+terminal PACKAGE; // package_declaration
+terminal IMPORT; // import_declaration
+terminal PUBLIC, PROTECTED, PRIVATE; // modifier
+terminal STATIC; // modifier
+terminal ABSTRACT, FINAL, NATIVE, SYNCHRONIZED, TRANSIENT, VOLATILE;
+terminal List CLASS; // class_declaration
+terminal EXTENDS; // super
+terminal IMPLEMENTS; // interfaces
+terminal VOID; // method_header
+terminal THROWS; // throws
+terminal THIS, SUPER; // explicit_constructor_invocation
+terminal INTERFACE; // interface_declaration
+terminal IF, ELSE; // if_then_statement, if_then_else_statement
+terminal SWITCH; // switch_statement
+terminal CASE, DEFAULT; // switch_label
+terminal DO, WHILE; // while_statement, do_statement
+terminal FOR; // for_statement
+terminal BREAK; // break_statement
+terminal CONTINUE; // continue_statement
+terminal RETURN; // return_statement
+terminal THROW; // throw_statement
+terminal TRY; // try_statement
+terminal CATCH; // catch_clause
+terminal FINALLY; // finally
+terminal NEW; // class_instance_creation_expression
+terminal PLUSPLUS; // postincrement_expression
+terminal MINUSMINUS; // postdecrement_expression
+terminal PLUS, MINUS, COMP, NOT, DIV, MOD;
+terminal LSHIFT, RSHIFT, URSHIFT; // shift_expression
+terminal LT, GT, LTEQ, GTEQ, INSTANCEOF; // relational_expression
+terminal EQEQ, NOTEQ; // equality_expression
+terminal AND; // and_expression
+terminal XOR; // exclusive_or_expression
+terminal OR;  // inclusive_or_expression
+terminal ANDAND; // conditional_and_expression
+terminal OROR; // conditional_or_expression
+terminal QUESTION; // conditional_expression
+terminal MULTEQ, DIVEQ, MODEQ, PLUSEQ, MINUSEQ; // assignment_operator
+terminal LSHIFTEQ, RSHIFTEQ, URSHIFTEQ; // assignment_operator
+terminal ANDEQ, XOREQ, OREQ; // assignment_operator
+
+terminal java.lang.Number INTEGER_LITERAL;
+terminal java.lang.Number FLOATING_POINT_LITERAL;
+terminal java.lang.Boolean BOOLEAN_LITERAL;
+terminal java.lang.Character CHARACTER_LITERAL;
+terminal java.lang.String STRING_LITERAL;
+terminal NULL_LITERAL;
+
+// strictfp keyword, new in Java 1.2
+terminal STRICTFP;
+
+// Reserved but unused:
+terminal CONST, GOTO;
+
+// 19.2) The Syntactic Grammar
+non terminal goal;
+// 19.3) Lexical Structure
+non terminal HClass literal;
+// 19.4) Types, Values, and Variables
+non terminal HClass type, primitive_type, numeric_type;
+non terminal HClass integral_type, floating_point_type;
+non terminal HClass reference_type;
+non terminal HClass class_or_interface_type;
+non terminal HClass class_type, interface_type;
+non terminal HClass array_type;
+// 19.5) Names
+non terminal String name, simple_name, qualified_name;
+// 19.6) Packages
+non terminal compilation_unit;
+non terminal package_declaration_opt, package_declaration;
+non terminal import_declarations_opt, import_declarations;
+non terminal type_declarations_opt, type_declarations;
+non terminal import_declaration;
+non terminal single_type_import_declaration;
+non terminal type_import_on_demand_declaration;
+non terminal type_declaration;
+// 19.7) Productions used only in the LALR(1) grammar
+non terminal modifiers_opt, modifiers, modifier;
+// 19.8.1) Class Declaration
+non terminal class_declaration, super, super_opt;
+non terminal interfaces, interfaces_opt, interface_type_list;
+non terminal class_body;
+non terminal class_body_declarations, class_body_declarations_opt;
+non terminal class_body_declaration, class_member_declaration;
+// 19.8.2) Field Declarations
+non terminal field_declaration;
+non terminal List variable_declarators;
+non terminal Object[] variable_declarator_id, variable_declarator;
+non terminal variable_initializer;
+// 19.8.3) Method Declarations
+non terminal method_declaration, method_header, method_declarator;
+non terminal String formal_parameter_list_opt, formal_parameter_list;
+non terminal String formal_parameter;
+non terminal throws_opt, throws;
+non terminal class_type_list, method_body;
+// 19.8.4) Static Initializers
+non terminal static_initializer;
+// 19.8.5) Constructor Declarations
+non terminal constructor_declaration, constructor_declarator;
+non terminal constructor_body;
+non terminal explicit_constructor_invocation;
+// 19.9.1) Interface Declarations
+non terminal interface_declaration;
+non terminal extends_interfaces_opt, extends_interfaces;
+non terminal interface_body;
+non terminal interface_member_declarations_opt, interface_member_declarations;
+non terminal interface_member_declaration, constant_declaration;
+non terminal abstract_method_declaration;
+// 19.10) Arrays
+non terminal array_initializer;
+non terminal variable_initializers;
+// 19.11) Blocks and Statements
+non terminal block;
+non terminal block_statements_opt, block_statements, block_statement;
+non terminal local_variable_declaration_statement, local_variable_declaration;
+non terminal statement, statement_no_short_if;
+non terminal statement_without_trailing_substatement;
+non terminal empty_statement;
+non terminal labeled_statement, labeled_statement_no_short_if;
+non terminal expression_statement, statement_expression;
+non terminal if_then_statement;
+non terminal if_then_else_statement, if_then_else_statement_no_short_if;
+non terminal switch_statement, switch_block;
+non terminal switch_block_statement_groups;
+non terminal switch_block_statement_group;
+non terminal switch_labels, switch_label;
+non terminal while_statement, while_statement_no_short_if;
+non terminal do_statement;
+non terminal for_statement, for_statement_no_short_if;
+non terminal for_init_opt, for_init;
+non terminal for_update_opt, for_update;
+non terminal statement_expression_list;
+non terminal identifier_opt;
+non terminal break_statement, continue_statement;
+non terminal return_statement, throw_statement;
+non terminal synchronized_statement, try_statement;
+non terminal catches_opt, catches, catch_clause;
+non terminal finally;
+// 19.12) Expressions
+non terminal HClass primary, primary_no_new_array;
+non terminal class_instance_creation_expression;
+non terminal List argument_list_opt, argument_list;
+non terminal array_creation_expression;
+non terminal Integer dim_exprs, dim_expr, dims_opt, dims;
+non terminal HClass field_access, method_invocation, array_access;
+non terminal HClass postfix_expression;
+non terminal HClass postincrement_expression, postdecrement_expression;
+non terminal HClass unary_expression, unary_expression_not_plus_minus;
+non terminal preincrement_expression, predecrement_expression;
+non terminal HClass cast_expression;
+non terminal HClass multiplicative_expression, additive_expression;
+non terminal HClass shift_expression, relational_expression, equality_expression;
+non terminal HClass and_expression, exclusive_or_expression, inclusive_or_expression;
+non terminal HClass conditional_and_expression, conditional_or_expression;
+non terminal HClass conditional_expression, assignment_expression;
+non terminal assignment;
+non terminal left_hand_side;
+non terminal assignment_operator;
+non terminal expression_opt;
+non terminal HClass expression, constant_expression;
+
+start with goal;
+
+// 19.2) The Syntactic Grammar
+goal ::=	compilation_unit
+	;
+
+// 19.3) Lexical Structure.
+literal ::=	INTEGER_LITERAL:n
+		{: RESULT=(n instanceof Long)?HClass.Long:HClass.Int; :}
+	|	FLOATING_POINT_LITERAL:n
+		{: RESULT=(n instanceof Double)?HClass.Double:HClass.Float; :}
+	|	BOOLEAN_LITERAL
+		{: RESULT=HClass.Boolean; :}
+	|	CHARACTER_LITERAL
+		{: RESULT=HClass.Char; :}
+	|	STRING_LITERAL
+		{: RESULT=parser.linker.forName("java.lang.String"); :}
+	|	NULL_LITERAL
+		{: RESULT=HClass.Void; :}
+	;
+
+// 19.4) Types, Values, and Variables
+type	::=	primitive_type:ty {: RESULT=ty; :}
+	|	reference_type:ty {: RESULT=ty; :}
+	;
+primitive_type ::=
+		numeric_type:ty {: RESULT=ty; :}
+	|	BOOLEAN {: RESULT=HClass.Boolean; :}
+	;
+numeric_type::=	integral_type:ty {: RESULT=ty; :}
+	|	floating_point_type:ty {: RESULT=ty; :}
+	;
+integral_type ::= 
+		BYTE	{: RESULT=HClass.Byte; :}
+	|	SHORT	{: RESULT=HClass.Short; :}
+	|	INT	{: RESULT=HClass.Int; :}
+	|	LONG	{: RESULT=HClass.Long; :}
+	|	CHAR	{: RESULT=HClass.Char; :}
+	;
+floating_point_type ::= 
+		FLOAT	{: RESULT=HClass.Float; :}
+	|	DOUBLE	{: RESULT=HClass.Double; :}
+	;
+
+reference_type ::=
+		class_or_interface_type:ty {: RESULT=ty; :}
+	|	array_type:ty {: RESULT=ty; :}
+	;
+class_or_interface_type ::= name:n
+		{: QualName qn=typeName(n);
+		   RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright, qn, n); :}
+	;
+
+class_type ::=	class_or_interface_type:ty {: RESULT=ty; :};
+interface_type ::= class_or_interface_type:ty {: RESULT=ty; :};
+
+array_type ::=	primitive_type:ty dims:d
+		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
+	|	name:n dims:d
+		{: QualName qn=typeName(n);
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
+		   annotateURL(nleft,nright, qn, n); :}
+	;
+
+// 19.5) Names
+name	::=	simple_name:n
+		{: RESULT=n; :}
+	|	qualified_name:n
+		{: RESULT=n; :}
+	;
+simple_name ::=	IDENTIFIER:id
+		{: RESULT=id; :}
+	;
+qualified_name ::=
+		name:n DOT IDENTIFIER:id
+		{: RESULT=combineWithDot(n,id); :}
+	;
+
+// 19.6) Packages
+compilation_unit ::=
+		package_declaration_opt 
+		import_declarations_opt
+		type_declarations_opt
+		;
+package_declaration_opt ::= package_declaration | ;
+import_declarations_opt ::= import_declarations | ;
+type_declarations_opt   ::= type_declarations   | ;
+
+import_declarations ::= 
+		import_declaration
+	|	import_declarations import_declaration
+	;
+type_declarations ::= 
+		type_declaration
+	|	type_declarations type_declaration
+	;
+package_declaration ::= 
+		PACKAGE name:n SEMICOLON
+		{: this_package=n; env.put("#qualified",n);
+		   annotateURL(nleft, nright, packageName(n), n);
+		:}
+	;
+import_declaration ::= 
+		single_type_import_declaration
+	|	type_import_on_demand_declaration
+	;
+single_type_import_declaration ::= 
+		IMPORT name:n SEMICOLON {:
+		  env.put("#import-"+n.substring(1+n.lastIndexOf('.')), n);
+		  QualName qn = className(n);
+		  if (qn==null) qn = packageName(n);
+		  annotateURL(nleft, nright, qn, n);
+		:}
+	;
+type_import_on_demand_declaration ::=
+		IMPORT name:n DOT MULT SEMICOLON {:
+		  /* try as class name to handle inner classes. */
+		  QualName qn = className(n);
+		  if (qn==null) qn = packageName(n);
+		  String pkg = (qn.packageN==null)?"":qn.packageN;
+		  for (Iterator it=Loader.listClasses(pkg); it.hasNext(); ) {
+		    /** note evilness here w/regard to classes named with $ */
+		    String cls = ((String) it.next()).replace('$','.');
+		    if (qn.classN!=null &&
+			!cls.startsWith(combineWithDot(qn.packageN,qn.classN)))
+		      continue;
+		    env.put("#demand-"+cls.substring(1+cls.lastIndexOf('.')),
+			    cls);
+		  }
+		  annotateURL(nleft, nright, qn, n);
+		:}
+	;
+type_declaration ::=
+		class_declaration
+	|	interface_declaration
+	|	SEMICOLON
+	;
+
+// 19.7) Productions used only in the LALR(1) grammar
+modifiers_opt::=
+	|	modifiers
+	;
+modifiers ::= 	modifier
+	|	modifiers modifier
+	;
+modifier ::=	PUBLIC | PROTECTED | PRIVATE
+	|	STATIC
+	|	ABSTRACT | FINAL | NATIVE | SYNCHRONIZED | TRANSIENT | VOLATILE
+	|	STRICTFP // note that semantic analysis must check that the
+	                 // context of the modifier allows strictfp.
+	;
+
+// 19.8) Classes
+
+// 19.8.1) Class Declaration:
+class_declaration ::= 
+	modifiers_opt CLASS:kw IDENTIFIER:id super_opt interfaces_opt
+	{: if (env.containsKey("#in_method")) { // ok, create anonymous context
+	     Integer num = newInner();
+	     newClassScope(num.toString());
+	   }
+	   pushenv(); newClassScope(id); env.remove("#in_method");
+           annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+	   // annotate doc comment.
+	   if (kw!=null) {
+	     int comment_start = ((Integer) kw.get(1)).intValue();
+	     LinePos lp = parser.lexer.linepos(comment_start+1);
+	     LinePos rp = parser.lexer.linepos(comment_start+2);
+	     QualName qn = className((String)env.get("#qualified"));
+	     if (qn!=null) {
+		 System.out.println(lp.line+" "+lp.pos+"\t"+
+				    rp.line+" "+rp.pos);
+		 System.out.println("<A HREF=\""+qn.toDocURL()+"\">");
+		 System.out.println("</A>");
+	     }
+	   }
+	:} class_body {: popenv(); :}
+	;
+super ::=	EXTENDS class_type
+	;
+super_opt ::=	
+	|	super
+	;
+interfaces ::=	IMPLEMENTS interface_type_list
+	;
+interfaces_opt::=
+	|	interfaces 
+	;
+interface_type_list ::= 
+		interface_type
+	|	interface_type_list COMMA interface_type
+	;
+class_body ::=	LBRACE {:pushenv();:} class_body_declarations_opt {:popenv();:} RBRACE 
+	;
+class_body_declarations_opt ::= 
+	|	class_body_declarations ;
+class_body_declarations ::= 
+		class_body_declaration
+	|	class_body_declarations class_body_declaration
+	;
+class_body_declaration ::=
+		class_member_declaration
+	|	static_initializer
+	|	constructor_declaration
+	|	block
+	|	SEMICOLON /* the extra semicolon has become official JLS */
+	;
+class_member_declaration ::=
+		field_declaration
+	|	method_declaration
+	/* repeat the prod for 'class_declaration' here: */
+	|	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
+	{: pushenv(); newClassScope(id);
+           annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+	:} class_body {: popenv(); :}
+	|	interface_declaration
+	;
+
+// 19.8.2) Field Declarations
+field_declaration ::= 
+		modifiers_opt type variable_declarators:l SEMICOLON {:
+		  for(Iterator it=l.iterator(); it.hasNext(); ) {
+		    Object[] v=(Object[]) it.next();
+		    annotateANCHOR(((Integer)v[2]).intValue(),
+		                   ((Integer)v[3]).intValue(),
+		                   fieldString((String)v[0]));
+		  }
+		:}
+	;
+variable_declarators ::=
+		variable_declarator:v
+		{: RESULT=new ArrayList(); RESULT.add(v); :}
+	|	variable_declarators:l COMMA variable_declarator:v
+		{: RESULT=l; RESULT.add(v); :}
+	;
+variable_declarator ::=
+		variable_declarator_id:v {:RESULT=v;:}
+	|	variable_declarator_id:v EQ variable_initializer {:RESULT=v;:}
+	;
+variable_declarator_id ::=
+		IDENTIFIER:id
+		{: RESULT=new Object[] { id, new Integer(0),
+		          new Integer(idleft), new Integer(idright) }; :}
+	|	variable_declarator_id:v LBRACK RBRACK
+		{: RESULT=new Object[] { v[0], new Integer(1+((Integer)v[1]).intValue()), v[2], v[3] }; :}
+	;
+variable_initializer ::=
+		expression
+	|	array_initializer
+	;
+
+// 19.8.3) Method Declarations
+method_declaration ::=
+		method_header method_body {:popenv();:}
+	;
+method_header ::=
+		modifiers_opt type method_declarator throws_opt
+	|	modifiers_opt VOID method_declarator throws_opt
+	;
+method_declarator ::=
+		IDENTIFIER:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
+		{: env.put("#in_method","yes");
+		   annotateANCHOR(idleft,idright,methodString(id, f)); :}
+	|	method_declarator LBRACK RBRACK // deprecated
+	// be careful; the above production also allows 'void foo() []'
+	;
+formal_parameter_list_opt ::=
+		{: RESULT=""; :}
+	|	formal_parameter_list:f
+		{: RESULT=f; :}
+	;
+formal_parameter_list ::=
+		formal_parameter:f
+		{: RESULT=f; :}
+	|	formal_parameter_list:f1 COMMA formal_parameter:f2
+		{: RESULT=f1+f2; :}
+	;
+formal_parameter ::=
+		type:ty variable_declarator_id:v
+		{:
+		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass
+	                                       (parser.linker, ty,
+						((Integer)v[1]).intValue());
+		  env.put(v[0],hc); RESULT=(hc==null)?"*":hc.getDescriptor();
+		:}
+	|	FINAL type:ty variable_declarator_id:v
+		{:
+		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass
+					       (parser.linker, ty,
+						((Integer)v[1]).intValue());
+		  env.put(v[0],hc); RESULT=(hc==null)?"*":hc.getDescriptor();
+		:}
+	;
+throws_opt ::=	
+	|	throws
+	;
+throws ::=	THROWS class_type_list
+	;
+class_type_list ::=
+		class_type
+	|	class_type_list COMMA class_type
+	;
+method_body ::=	block
+	|	SEMICOLON
+	;
+
+// 19.8.4) Static Initializers
+static_initializer ::=
+		STATIC block
+	;
+
+// 19.8.5) Constructor Declarations
+constructor_declaration ::=
+		modifiers_opt constructor_declarator throws_opt 
+			constructor_body {: popenv(); :}
+	;
+constructor_declarator ::=
+		simple_name:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
+		{: env.put("#in_method","yes");
+		   annotateANCHOR(idleft,idright,methodString(id, f)); :}
+	;
+constructor_body ::=
+		LBRACE explicit_constructor_invocation
+			block_statements RBRACE
+	|	LBRACE explicit_constructor_invocation RBRACE
+	|	LBRACE block_statements RBRACE
+	|	LBRACE RBRACE
+	;
+explicit_constructor_invocation ::=
+		THIS LPAREN argument_list_opt RPAREN SEMICOLON
+	|	SUPER LPAREN argument_list_opt RPAREN SEMICOLON
+	|	primary DOT THIS LPAREN argument_list_opt RPAREN SEMICOLON
+	|	primary DOT SUPER LPAREN argument_list_opt RPAREN SEMICOLON
+	;
+
+// 19.9) Interfaces
+
+// 19.9.1) Interface Declarations
+interface_declaration ::=
+		modifiers_opt INTERFACE IDENTIFIER:id extends_interfaces_opt {:
+	if (env.containsKey("#in_method")) { // ok, create anonymous context
+	  Integer num = newInner();
+	  newClassScope(num.toString());
+	}
+	pushenv(); newClassScope(id); env.remove("#in_method");
+        annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+		:} interface_body {: popenv(); :}
+	;
+extends_interfaces_opt ::=
+	|	extends_interfaces
+	;
+extends_interfaces ::=
+		EXTENDS interface_type
+	|	extends_interfaces COMMA interface_type
+	;
+interface_body ::=
+		LBRACE interface_member_declarations_opt RBRACE
+	;
+interface_member_declarations_opt ::=
+	|	interface_member_declarations
+	;
+interface_member_declarations ::=
+		interface_member_declaration
+	|	interface_member_declarations interface_member_declaration
+	;
+interface_member_declaration ::=
+		constant_declaration
+	|	abstract_method_declaration
+	|	class_declaration
+	|	interface_declaration
+	;
+constant_declaration ::=
+		field_declaration
+	// need to semantically check that modifiers of field declaration
+	// include only PUBIC, STATIC, or FINAL.  Other modifiers are
+	// disallowed.
+	;
+abstract_method_declaration ::=
+		method_header SEMICOLON {:popenv();:}
+	;
+
+// 19.10) Arrays
+array_initializer ::=
+		LBRACE variable_initializers COMMA RBRACE
+	|	LBRACE variable_initializers RBRACE
+	|	LBRACE COMMA RBRACE
+	|	LBRACE RBRACE
+	;
+variable_initializers ::=
+		variable_initializer
+	|	variable_initializers COMMA variable_initializer
+	;
+
+// 19.11) Blocks and Statements
+block ::=	LBRACE {:pushenv();:} block_statements_opt {:popenv();:} RBRACE
+	;
+block_statements_opt ::=
+	|	block_statements
+	;
+block_statements ::=
+		block_statement
+	|	block_statements block_statement
+	;
+block_statement ::=
+		local_variable_declaration_statement
+	|	statement
+	|	class_declaration
+	|	interface_declaration
+	;
+local_variable_declaration_statement ::=
+		local_variable_declaration SEMICOLON
+	;
+local_variable_declaration ::=
+		type:ty variable_declarators:l {:
+		  for (Iterator it=l.iterator(); it.hasNext(); ) {
+		    Object[] v=(Object[]) it.next();
+		    HClass hc = (ty==null) ? null :
+		         HClassUtil.arrayClass(parser.linker, ty,((Integer)v[1]).intValue());
+		    env.put(v[0], hc);
+		  }
+		:}
+	|	FINAL type:ty variable_declarators:l {:
+		  for (Iterator it=l.iterator(); it.hasNext(); ) {
+		    Object[] v=(Object[]) it.next();
+		    HClass hc = (ty==null) ? null :
+		         HClassUtil.arrayClass(parser.linker, ty,((Integer)v[1]).intValue());
+		    env.put(v[0], hc);
+		  }
+		:}
+	;
+statement ::=	statement_without_trailing_substatement
+	|	labeled_statement
+	|	if_then_statement
+	|	if_then_else_statement
+	|	while_statement
+	|	for_statement
+	;
+statement_no_short_if ::=
+		statement_without_trailing_substatement
+	|	labeled_statement_no_short_if
+	|	if_then_else_statement_no_short_if
+	|	while_statement_no_short_if
+	|	for_statement_no_short_if
+	;
+statement_without_trailing_substatement ::=
+		block
+	|	empty_statement
+	|	expression_statement
+	|	switch_statement
+	|	do_statement
+	|	break_statement
+	|	continue_statement
+	|	return_statement
+	|	synchronized_statement
+	|	throw_statement
+	|	try_statement
+	;
+empty_statement ::=
+		SEMICOLON
+	;
+labeled_statement ::=
+		IDENTIFIER COLON statement
+	;
+labeled_statement_no_short_if ::=
+		IDENTIFIER COLON statement_no_short_if
+	;
+expression_statement ::=
+		statement_expression SEMICOLON
+	;
+statement_expression ::=
+		assignment
+	|	preincrement_expression
+	|	predecrement_expression
+	|	postincrement_expression
+	|	postdecrement_expression
+	|	method_invocation
+	|	class_instance_creation_expression
+	;
+if_then_statement ::=
+		IF LPAREN expression RPAREN statement
+	;
+if_then_else_statement ::=
+		IF LPAREN expression RPAREN statement_no_short_if 
+			ELSE statement
+	;
+if_then_else_statement_no_short_if ::=
+		IF LPAREN expression RPAREN statement_no_short_if
+			ELSE statement_no_short_if
+	;
+switch_statement ::=
+		SWITCH LPAREN expression RPAREN {:pushenv();:} switch_block {:popenv();:}
+	;
+switch_block ::=
+		LBRACE switch_block_statement_groups switch_labels RBRACE
+	|	LBRACE switch_block_statement_groups RBRACE
+	|	LBRACE switch_labels RBRACE
+	|	LBRACE RBRACE
+	;
+switch_block_statement_groups ::=
+		switch_block_statement_group
+	|	switch_block_statement_groups switch_block_statement_group
+	;
+switch_block_statement_group ::=
+		switch_labels block_statements
+	;
+switch_labels ::=
+		switch_label
+	|	switch_labels switch_label
+	;
+switch_label ::=
+		CASE constant_expression COLON
+	|	DEFAULT COLON
+	;
+
+while_statement ::=
+		WHILE LPAREN expression RPAREN statement
+	;
+while_statement_no_short_if ::=
+		WHILE LPAREN expression RPAREN statement_no_short_if
+	;
+do_statement ::=
+		DO statement WHILE LPAREN expression RPAREN SEMICOLON
+	;
+for_statement ::=
+		FOR LPAREN for_init_opt SEMICOLON expression_opt SEMICOLON
+			for_update_opt RPAREN statement {:popenv();:}
+	;
+for_statement_no_short_if ::=
+		FOR LPAREN for_init_opt SEMICOLON expression_opt SEMICOLON
+			for_update_opt RPAREN statement_no_short_if {:popenv();:}
+	;
+for_init_opt ::= {:pushenv();:}
+	|	{:pushenv();:} for_init
+	;
+for_init ::=	statement_expression_list
+	|	local_variable_declaration
+	;
+for_update_opt ::=
+	|	for_update
+	;
+for_update ::=	statement_expression_list
+	;
+statement_expression_list ::=
+		statement_expression
+	|	statement_expression_list COMMA statement_expression
+	;
+
+identifier_opt ::= 
+	|	IDENTIFIER
+	;
+
+break_statement ::=
+		BREAK identifier_opt SEMICOLON
+	;
+
+continue_statement ::=
+		CONTINUE identifier_opt SEMICOLON
+	;
+return_statement ::=
+		RETURN expression_opt SEMICOLON
+	;
+throw_statement ::=
+		THROW expression SEMICOLON
+	;
+synchronized_statement ::=
+		SYNCHRONIZED LPAREN expression RPAREN block
+	;
+try_statement ::=
+		TRY block catches
+	|	TRY block catches_opt finally
+	;
+catches_opt ::=
+	|	catches
+	;
+catches ::=	catch_clause
+	|	catches catch_clause
+	;
+catch_clause ::=
+		CATCH LPAREN {:pushenv();:} formal_parameter RPAREN block {:popenv();:}
+	;
+finally ::=	FINALLY block
+	;
+
+// 19.12) Expressions
+primary ::=	primary_no_new_array:p {: RESULT=p; :}
+	|	array_creation_expression
+	;
+primary_no_new_array ::=
+		literal:l {: RESULT=l; :}
+	|	THIS	{:
+		  QualName qn=typeName((String)env.get("#qualified"));
+		  RESULT=(qn==null)?null:qn.toClass();
+		:}
+	|	LPAREN expression:e RPAREN	{:RESULT=e;:}
+	|	class_instance_creation_expression
+	|	field_access:e		{:RESULT=e;:}
+	|	method_invocation:e	{:RESULT=e;:}
+	|	array_access:e		{:RESULT=e;:}
+	|	primitive_type DOT CLASS
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+	|	VOID DOT CLASS
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+	|	array_type DOT CLASS
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+	|	name DOT CLASS
+			{: RESULT=parser.linker.forName("java.lang.Class"); :}
+	|	name DOT THIS
+	;
+class_instance_creation_expression ::=
+		NEW class_type LPAREN argument_list_opt RPAREN
+	|	NEW class_type LPAREN argument_list_opt RPAREN {:
+		  Integer innerindex=newInner(); pushenv();
+		  newClassScope(innerindex.toString());
+		:} class_body {: popenv(); :}
+	|	primary DOT NEW IDENTIFIER
+			LPAREN argument_list_opt RPAREN
+	|	primary DOT NEW IDENTIFIER
+			LPAREN argument_list_opt RPAREN class_body
+	;
+argument_list_opt ::=
+    		{: RESULT=Collections.EMPTY_LIST; :}
+	|	argument_list:l
+		{: RESULT=l; :}
+	;
+argument_list ::=
+		expression:e
+		{: RESULT=new ArrayList(); RESULT.add(e); :}
+	|	argument_list:l COMMA expression:e
+		{: RESULT=l; RESULT.add(e); :}
+	;
+array_creation_expression ::=
+		NEW primitive_type dim_exprs dims_opt
+	|	NEW class_or_interface_type dim_exprs dims_opt
+	|	NEW primitive_type dims array_initializer
+	|	NEW class_or_interface_type dims array_initializer
+	;
+dim_exprs ::=	dim_expr:d {: RESULT=d; :}
+	|	dim_exprs:d1 dim_expr:d2
+		{: RESULT=new Integer(d1.intValue()+d2.intValue()); :}
+	;
+dim_expr ::=	LBRACK expression RBRACK {: RESULT=new Integer(1); :}
+	;
+dims_opt ::=	{: RESULT = new Integer(0); :}
+	|	dims:d {: RESULT=d; :}
+	;
+dims ::=	LBRACK RBRACK	{: RESULT=new Integer(1); :}
+	|	dims:d LBRACK RBRACK {: RESULT=new Integer(1+d.intValue()); :}
+	;
+field_access ::=
+		primary:p DOT IDENTIFIER:id
+		{: HField hf=null;
+		   if (p!=null)
+		     try { hf=p.getField(id); }
+		     catch (NoSuchFieldError e) { /* no op */ }
+		   if (hf!=null) annotateURL(idleft,idright,hf);
+		   RESULT=(hf==null)?null:hf.getType();
+		:}
+	|	SUPER DOT IDENTIFIER
+	|	name DOT SUPER DOT IDENTIFIER
+	;
+method_invocation ::=
+		name:n LPAREN argument_list_opt:al RPAREN
+		{: HClass[] params = (HClass[]) al.toArray(new HClass[al.size()]);
+		   HMethod hm = methodName(n, params);
+		   if (hm!=null) {
+		       annotateURL(nleft,nright,hm);
+		       RESULT=hm.getReturnType();
+		   }
+		:}
+	|	primary:ty DOT IDENTIFIER:id LPAREN argument_list_opt:al RPAREN
+		{: if (ty!=null) {
+		     HClass[] params = (HClass[]) al.toArray(new HClass[al.size()]);
+		     List l = new ArrayList();
+		     HMethod[] hms = ty.getMethods();
+		     for (int i=0; i<hms.length; i++)
+		       if (hms[i].getName().equals(id))
+		         l.add(hms[i]);
+		     HMethod hm = methodMatch(l, params);
+		     if (hm!=null) {
+			 annotateURL(idleft,idright,hm);
+			 RESULT=hm.getReturnType();
+		     }
+		   }
+		:}
+	|	SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN
+	|	name DOT SUPER DOT IDENTIFIER LPAREN argument_list_opt RPAREN
+	;
+array_access ::=
+		name:n LBRACK expression RBRACK
+		{: HField hf=expName2(n);
+		   if (hf!=null) annotateURL(nleft,nright,hf);
+		   HClass hc=(hf==null)?expName(n):hf.getType();
+		   RESULT=(hc==null)?null:hc.getComponentType();
+		:}
+	|	primary_no_new_array:ty LBRACK expression RBRACK
+		{: RESULT=(ty==null)?null:ty.getComponentType(); :}
+	;
+postfix_expression ::=
+		primary:p {: RESULT=p; :}
+	|	name:n {:
+		  HField hf=expName2(n);
+		  if (hf!=null) annotateURL(nleft,nright,hf);
+		  RESULT=(hf==null)?expName(n):hf.getType();
+		:}
+	|	postincrement_expression:e {: RESULT=e; :}
+	|	postdecrement_expression:e {: RESULT=e; :}
+	;
+postincrement_expression ::=
+		postfix_expression:e PLUSPLUS {: RESULT=e; :}
+	;
+postdecrement_expression ::=
+		postfix_expression:e MINUSMINUS {: RESULT=e; :}
+	;
+unary_expression ::=
+		preincrement_expression
+	|	predecrement_expression
+	|	PLUS unary_expression
+	|	MINUS unary_expression
+	|	unary_expression_not_plus_minus:e {: RESULT=e; :}
+	;
+preincrement_expression ::=
+		PLUSPLUS unary_expression
+	;
+predecrement_expression ::=
+		MINUSMINUS unary_expression
+	;
+unary_expression_not_plus_minus ::=
+		postfix_expression:e	{: RESULT=e; :}
+	|	COMP unary_expression
+	|	NOT unary_expression
+	|	cast_expression:e	{: RESULT=e; :}
+	;
+cast_expression ::=
+		LPAREN primitive_type:ty dims_opt:d RPAREN unary_expression
+		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
+	|	LPAREN expression RPAREN unary_expression_not_plus_minus
+	|	LPAREN name:n dims RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	;
+multiplicative_expression ::=
+		unary_expression:e {: RESULT=e; :}
+	|	multiplicative_expression MULT unary_expression
+	|	multiplicative_expression DIV unary_expression
+	|	multiplicative_expression MOD unary_expression
+	;
+additive_expression ::=
+		multiplicative_expression:e {: RESULT=e; :}
+	|	additive_expression PLUS multiplicative_expression
+	|	additive_expression MINUS multiplicative_expression
+	;
+shift_expression ::=
+		additive_expression:e {: RESULT=e; :}
+	|	shift_expression LSHIFT additive_expression
+	|	shift_expression RSHIFT additive_expression
+	|	shift_expression URSHIFT additive_expression
+	;
+relational_expression ::=
+		shift_expression:e {: RESULT=e; :}
+	|	relational_expression LT shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	relational_expression GT shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	relational_expression LTEQ shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	relational_expression GTEQ shift_expression
+		{: RESULT=HClass.Boolean; :}
+	|	relational_expression INSTANCEOF reference_type
+		{: RESULT=HClass.Boolean; :}
+	;
+equality_expression ::=
+		relational_expression:e {: RESULT=e; :}
+	|	equality_expression EQEQ relational_expression
+		{: RESULT=HClass.Boolean; :}
+	|	equality_expression NOTEQ relational_expression
+		{: RESULT=HClass.Boolean; :}
+	;
+and_expression ::=
+		equality_expression:e {: RESULT=e; :}
+	|	and_expression AND equality_expression
+	;
+exclusive_or_expression ::=
+		and_expression:e {: RESULT=e; :}
+	|	exclusive_or_expression XOR and_expression
+	;
+inclusive_or_expression ::=
+		exclusive_or_expression:e {: RESULT=e; :}
+	|	inclusive_or_expression OR exclusive_or_expression
+	;
+conditional_and_expression ::=
+		inclusive_or_expression:e {: RESULT=e; :}
+	|	conditional_and_expression ANDAND inclusive_or_expression
+		{: RESULT=HClass.Boolean; :}
+	;
+conditional_or_expression ::=
+		conditional_and_expression:e {: RESULT=e; :}
+	|	conditional_or_expression OROR conditional_and_expression
+		{: RESULT=HClass.Boolean; :}
+	;
+conditional_expression ::=
+		conditional_or_expression:e {: RESULT=e; :}
+	|	conditional_or_expression QUESTION expression 
+			COLON conditional_expression:e {: RESULT=e; :}
+	;
+assignment_expression ::=
+		conditional_expression:e {: RESULT=e; :}
+	|	assignment
+	;
+assignment ::=	left_hand_side assignment_operator assignment_expression
+	;
+left_hand_side ::=
+		name:n {:
+		  HField hf=expName2(n);
+		  if (hf!=null) annotateURL(nleft,nright,hf);
+		:}
+	|	field_access
+	|	array_access
+	;
+assignment_operator ::=
+		EQ
+	|	MULTEQ
+	|	DIVEQ
+	|	MODEQ
+	|	PLUSEQ
+	|	MINUSEQ
+	|	LSHIFTEQ
+	|	RSHIFTEQ
+	|	URSHIFTEQ
+	|	ANDEQ
+	|	XOREQ
+	|	OREQ
+	;
+expression_opt ::=
+	|	expression
+	;
+expression ::=	assignment_expression:e {: RESULT=e; :}
+	;
+constant_expression ::=
+		expression:e {: RESULT=e; :}
+	;
