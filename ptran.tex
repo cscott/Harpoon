@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.8 2002-07-24 03:29:51 cananian Exp $
+% $Id: ptran.tex,v 1.9 2002-07-24 03:44:29 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.8 $ $}
+\date{\today \\ $ $Revision: 1.9 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -45,13 +45,13 @@ the move, and
 \item every non-trivial path from $s$ to $s$ redefines $v$.
 \end{itemize}
 
-Let $\text{rd}(s,v)$ be the set of reaching definitions of $v$ at $s$.
+Let $\text{Rd}(s,v)$ be the set of reaching definitions of $v$ at $s$.
 We define the set of \newterm{generation sites} for a variable $v$ singular at
 use $s$ as:
 \begin{displaymath}
 \text{GenSite}(s,v) %\text{ where } v\in\text{use}(s)
  =
-\bigcup_{d \in \text{rd}(s,v)} g(d)
+\bigcup_{d \in \text{Rd}(s,v)} g(d)
 \text{ where }
 g(d) = \left\{ \begin{array}{cl}
                 \text{GenSite}(d,x) &\text{when } d \text{ is } v=x \\
@@ -76,29 +76,31 @@ dataflow framework:
 \text{In}(n)&=&\bigcup_{p\in\text{pred}(n)} \text{Out}(p)\\
 \end{eqnarray*}
 
-We will perform the analysis simultaneously on two relations 
-$\text{Rd}$ and $\text{Ru}$, and a set $\text{Ns}$.
+We will perform the analysis simultaneously on two relations
+$\text{Ru}$ and $\text{Ns}$.
 The relations are represented as
 sets of pairs \tuple{v, X} where
 $\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.
-The set $\text{Ns}$ can be viewed as a boolean function where
-$\text{Ns}(v)=\text{true}$ iff $v \in \text{Ns}$.
-All four sets are initialized
-to the empty set, and grow monotonically as the analysis
+Both sets are initialized
+to the empty set for all $n$, and grow monotonically as the analysis
 progresses.
 We let
-$\text{Rd}(v)$ be the set of reaching definitions of $v$ at $n$,
-$\text{Ru}(v)$ be a set of reaching \textbf{uses} of $v$ at $n$,
+$\text{Ru}(v)$ be the set of reaching \textbf{uses} of $v$ at $n$,
  and
-$\text{Ns}$ be the set of \textbf{non-}singular variables at $n$.
+$\text{Ns}$ be the set of \textbf{non-}singular reaching definitions
+of $v$ at $n$.
+An auxilliary predicate $\text{Bad}(n)$ is true for all statements
+which are not allocation sites, move operations, or binary or unary
+operations.  In particular, it is true for fetches from the heap.
 The appropriate Gen and Kill rules are:
 \begin{eqnarray*}
-\text{Gen}_\text{Rd}(n) &=&
-	\{ \tuple{v, n} | v \in \text{def}(n) \} \\
-\text{Kill}_\text{Rd}(n) &=&
-	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Rd}(n) \wedge
-                          v \in \text{def}(n) \} \\
-%
+% this is the standard reaching-def rule:
+%\text{Gen}_\text{Rd}(n) &=&
+%	\{ \tuple{v, n} | v \in \text{def}(n) \} \\
+%\text{Kill}_\text{Rd}(n) &=&
+%	\{ \tuple{v, s} | \tuple{v,s} \in \text{In}_\text{Rd}(n) \wedge
+%                          v \in \text{def}(n) \} \\
+%%%%%%%%%%%%%%%%%%%%%%%%
 \text{Gen}_\text{Ru}(n) &=&
 	\{ \tuple{v, n} | v \in \text{use}(n) \} \\
 \text{Kill}_\text{Ru}(n) &=&
@@ -116,7 +118,7 @@ The appropriate Gen and Kill rules are:
                           v \in \text{def}(n) \} \\
 \end{eqnarray*}
 
-After the analysis is complete, $v$ is nonsingular at $n$ iff
+After the analysis is complete, $v$ is (conservatively) nonsingular at $n$ iff
 \begin{displaymath}
 v\in\text{use}(n) \wedge \left(
 \tuple{v,n} \in \text{In}_\text{Ru}(n) \vee
@@ -124,7 +126,11 @@ v\in\text{use}(n) \wedge \left(
 \right)
 \end{displaymath}
 
-\textbf{Extend to compute GenSite(v,n)?}
+%\textbf{XXX: Extend to compute GenSite(v,n)?}
+
+The mutual singularity of a group of statements can be computed from
+the variable singularity information using the definitions in the
+previous section.
 
 \subsection{Interprocedural singular value analysis}
 
