@@ -37,7 +37,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.28 1999-09-11 05:43:18 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.29 1999-09-11 16:43:42 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -90,37 +90,4 @@ public abstract class Frame {
 	associated with <code>this</code>.
      */
     public abstract GenericCodeGen codegen();
-
-    // The remainder of this code are simple implementations of
-    // methods that once were implemented in the Frame class but now
-    // have been moved into their own modules.  At one point we could
-    // remove all of these methods and make the code using them do
-    // the "righter" thing (which isn't quite the "right" thing but it
-    // tries real hard)
-
-    public Temp[] getAllRegisters() { 
-	return getRegFileInfo().getAllRegisters(); 
-    }
-    public Temp[] getGeneralRegisters() {
-	return getRegFileInfo().getGeneralRegisters();
-    }
-    public Iterator suggestRegAssignment(Temp t, Map regfile) 
-	throws RegFileInfo.SpillException {
-	return getRegFileInfo().suggestRegAssignment(t, regfile);
-    }
-    public Temp FP() {
-	return getRegFileInfo().FP();
-    }
-    public TempFactory regTempFactory() {
-	return getRegFileInfo().regTempFactory();
-    }
-    public boolean isRegister(Temp t) {
-	return getRegFileInfo().isRegister(t);
-    }
-    public List makeStore(List l, int s, Instr t) {
-	return getInstrBuilder().makeStore(l,s,t);
-    }
-    public List makeLoad(List l, int s, Instr t) {
-	return getInstrBuilder().makeLoad(l,s,t);
-    }
 }

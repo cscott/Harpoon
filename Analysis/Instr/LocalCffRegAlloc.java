@@ -42,7 +42,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.41 1999-09-11 05:43:17 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.42 1999-09-11 16:43:40 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -185,7 +185,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// live) 
 			CloneableIterator suggestions = 
 			    new CloneableIterator
-			    (frame.suggestRegAssignment
+			    (frame.getRegFileInfo().suggestRegAssignment
 			     (ref, regfile));
 
 			Util.assert(workOnRef < 3, 

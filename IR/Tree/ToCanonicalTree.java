@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.14 1999-09-08 21:33:08 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.15 1999-09-11 16:43:44 cananian Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -283,7 +283,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
     
 	private TEMP _MAP(TEMP t) { 
-	    if (code.getFrame().isRegister(t.temp)) { 
+	    if (code.getFrame().getRegFileInfo().isRegister(t.temp)) { 
 		return (TEMP)t.build(tf, t.kids());
 	    }
 	    else { 

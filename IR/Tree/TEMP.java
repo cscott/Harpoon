@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.18 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: TEMP.java,v 1.1.2.19 1999-09-11 16:43:44 cananian Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -31,8 +31,8 @@ public class TEMP extends Exp {
 	Util.assert(Type.isValid(type));
 	Util.assert(temp!=null);
 	Util.assert((temp.tempFactory() == tf.tempFactory()) ||
-		    (temp.tempFactory() == tf.getFrame().regTempFactory()),
-		    (tf.getFrame().isRegister(temp)?"Register factory":
+		    (temp.tempFactory() == tf.getFrame().getRegFileInfo().regTempFactory()),
+		    (tf.getFrame().getRegFileInfo().isRegister(temp)?"Register factory":
 		    "Non-register factory") + " is not equal");
     }
     
@@ -48,7 +48,7 @@ public class TEMP extends Exp {
     public Exp build(ExpList kids) { return build(tf, kids); } 
     public Exp build(TreeFactory tf, ExpList kids) {
 	Util.assert(tf.tempFactory() == temp.tempFactory() ||
-		    tf.getFrame().regTempFactory() == temp.tempFactory());
+		    tf.getFrame().getRegFileInfo().regTempFactory() == temp.tempFactory());
 	return new TEMP(tf, this, type, temp); 
     }
 
@@ -60,8 +60,8 @@ public class TEMP extends Exp {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
 	// Registers are immutable
-	if (getFactory().getFrame().isRegister(this.temp)) {
-	    Util.assert(tf.getFrame().isRegister(temp));
+	if (getFactory().getFrame().getRegFileInfo().isRegister(this.temp)) {
+	    Util.assert(tf.getFrame().getRegFileInfo().isRegister(temp));
 	    return new TEMP(tf, this, this.type, this.temp);
 	}
 	else {

@@ -47,7 +47,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.36 1999-09-11 05:43:17 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.37 1999-09-11 16:43:40 cananian Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -319,7 +319,7 @@ public abstract class RegAlloc  {
 		// stack offset locations
 		Integer i = (Integer) tempsToOffsets.get(m.def()[0]);
 		Util.assert(i != null, "tempsToOffsets should have a value for "+m.def()[0]);
-		List instrs = frame.makeStore(Arrays.asList(m.use()), i.intValue(), m);
+		List instrs = frame.getInstrBuilder().makeStore(Arrays.asList(m.use()), i.intValue(), m);
 
 		// add a comment saying which temp is being stored
 		Instr first = (Instr) instrs.get(0);
@@ -337,7 +337,7 @@ public abstract class RegAlloc  {
 		// stack offset locations
 		Integer i = (Integer) tempsToOffsets.get(m.use()[0]);
 		Util.assert(i != null, "tempsToOffsets should have a value for "+m.use()[0]);
-		List instrs = frame.makeLoad(Arrays.asList(m.def()), i.intValue(), m);
+		List instrs = frame.getInstrBuilder().makeLoad(Arrays.asList(m.def()), i.intValue(), m);
 
 		// add a comment saying which temp is being loaded
 		Instr first = (Instr) instrs.get(0);
@@ -392,7 +392,7 @@ public abstract class RegAlloc  {
 	     then returns true.  Else returns false.   
     */ 
     protected boolean isTempRegister(Temp t) {
-	return frame.isRegister(t);
+	return frame.getRegFileInfo().isRegister(t);
         
 	// Temp[] allRegs = frame.getAllRegisters();
 	// boolean itIs = false;
@@ -458,7 +458,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
     }
 	
     class BrainDeadInstrVisitor extends InstrVisitor {
-	Temp[] regs = frame.getGeneralRegisters();
+	Temp[] regs = frame.getRegFileInfo().getGeneralRegisters();
 		
 	public void visit(Instr instr) {
 	    InstrFactory inf = instr.getFactory();
@@ -476,7 +476,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 		    Temp preg = instr.use()[i];
 		    if (!isTempRegister(preg)) {
 			Iterator iter =
-			    frame.suggestRegAssignment(preg, regFile); 
+			    frame.getRegFileInfo().suggestRegAssignment(preg, regFile); 
 			List regList = (List) iter.next();
 			InstrMEM loadSrcs = 
 			    new FskLoad(inf, null, "FSK-LOAD", 
@@ -495,7 +495,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 		    Temp preg = instr.def()[i];
 		    if(!isTempRegister(preg)) {
 			Iterator iter =
-			    frame.suggestRegAssignment(preg, regFile); 
+			    frame.getRegFileInfo().suggestRegAssignment(preg, regFile); 
 			List regList = (List) iter.next();
 			InstrMEM storeDsts = 
 			    new FskStore(inf, null, "FSK-STORE",

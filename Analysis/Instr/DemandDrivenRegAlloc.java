@@ -25,7 +25,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.6 1999-07-30 18:45:11 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.7 1999-09-11 16:43:40 cananian Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -149,11 +149,11 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 	candidates.removeAll(allocated);
 	
 	// min( REGISTERS - |allocated|, |candidates| )
-	int possibly = Math.min(frame.getGeneralRegisters().length - 
+	int possibly = Math.min(frame.getRegFileInfo().getGeneralRegisters().length - 
 				allocated.size(), candidates.size() );
 	
   	// REGISTERS - ( |allocated| + possibly )
-	int unallocated = frame.getGeneralRegisters().length - 
+	int unallocated = frame.getRegFileInfo().getGeneralRegisters().length - 
 	    (allocated.size() + possibly);
 
 	// *** Implementation Specific local variables *** 

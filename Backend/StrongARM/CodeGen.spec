@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.46 1999-09-11 06:12:44 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.47 1999-09-11 16:43:43 cananian Exp $
  */
 %%
 
@@ -1155,18 +1155,18 @@ CALL(retval, NAME(retex), func, arglist) %{
 	   case 0: case 1: case 2: // put in registers 
         // not certain an emitMOVE is legal with the l/h modifiers
 	      emit( ROOT, "mov `d0, `s0l",
-		    frame.getAllRegisters()[index] ,
+		    frame.getRegFileInfo().getRegister(index) ,
 		    tempExp.temp );
 	      index++;			     
         // not certain an emitMOVE is legal with the l/h modifiers
 	      emit( ROOT, "mov `d0, `s0h",
-		    frame.getAllRegisters()[index],
+		    frame.getRegFileInfo().getRegister(index),
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
         // not certain an emitMOVE is legal with the l/h modifiers
 	     emit( ROOT, "mov `d0, `s0l",
-			      frame.getAllRegisters()[index],
+			      frame.getRegFileInfo().getRegister(index),
 			      tempExp.temp );
 	     index++;
 	     stackOffset += 4;
@@ -1193,7 +1193,7 @@ CALL(retval, NAME(retex), func, arglist) %{
 	  // arg is one word
 	  if (index < 4) {
 	     emitMOVE( ROOT, "mov `d0, `s0", 
-		   frame.getAllRegisters()[index], tempExp.temp);
+		   frame.getRegFileInfo().getRegister(index), tempExp.temp);
 	  } else {
 	     emit(new InstrMEM(
 		      instrFactory, ROOT,
@@ -1252,17 +1252,17 @@ NATIVECALL(retval, func, arglist) %{
 	   case 0: case 1: case 2: // put in registers 
         // not certain an emitMOVE is legal with the l/h modifiers
 	      emit( ROOT, "mov `d0, `s0l",
-		    frame.getAllRegisters()[index] ,
+		    frame.getRegFileInfo().getRegister(index) ,
 		    tempExp.temp );
 	      index++;			     
 	      emit( ROOT, "mov `d0, `s0h",
-		    frame.getAllRegisters()[index],
+		    frame.getRegFileInfo().getRegister(index),
 		    tempExp.temp );
 	      break;			     
 	   case 3: // spread between regs and stack
         // not certain an emitMOVE is legal with the l/h modifiers
 	     emit( ROOT, "mov `d0, `s0l",
-		       frame.getAllRegisters()[index],
+		       frame.getRegFileInfo().getRegister(index),
 		       tempExp.temp );
 	     index++;
 	     stackOffset += 4;
@@ -1289,7 +1289,7 @@ NATIVECALL(retval, func, arglist) %{
 	  // arg is one word
 	  if (index < 4) {
 	     emitMOVE( ROOT, "mov `d0, `s0", 
-		   frame.getAllRegisters()[index], tempExp.temp);
+		   frame.getRegFileInfo().getRegister(index), tempExp.temp);
 	  } else {
 	     emit(new InstrMEM(
 		      instrFactory, ROOT,

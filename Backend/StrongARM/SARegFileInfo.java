@@ -22,7 +22,7 @@ import java.util.HashSet;
  * <code>SARegFileInfo</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SARegFileInfo.java,v 1.1.2.1 1999-09-11 05:43:19 pnkfelix Exp $
+ * @version $Id: SARegFileInfo.java,v 1.1.2.2 1999-09-11 16:43:43 cananian Exp $
  */
 public class SARegFileInfo extends RegFileInfo {
 
@@ -99,6 +99,9 @@ public class SARegFileInfo extends RegFileInfo {
 
     public Temp[] getAllRegisters() { 
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg); 
+    }
+    public Temp getRegister(int index) {
+	return reg[index];
     }
 
     public Temp[] getGeneralRegisters() { 

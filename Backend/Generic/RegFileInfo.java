@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.1 1999-09-11 05:43:18 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.2 1999-09-11 16:43:42 cananian Exp $
  */
 public abstract class RegFileInfo {
     
@@ -147,6 +147,10 @@ public abstract class RegFileInfo {
     /** Returns an array of <code>Temp</code>s which represent all
      *  the available registers on the machine. */
     public abstract Temp[] getAllRegisters();
+    /** Returns a specific register on the machine.<BR>
+     *  <code>getRegister(index)==getAllRegisters()[index]</code>
+     */
+    public Temp getRegister(int index) { return getAllRegisters()[index]; }
 
     /** Returns an array of <code>Temp</code>s for all the registers
      *  that the register allocator can feel free to play with */
