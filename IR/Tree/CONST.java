@@ -9,11 +9,14 @@ import harpoon.Util.Util;
 
 /**
  * <code>CONST</code> objects are expressions which stand for a constant
- * value.
+ * value.  <code>CONST</code>s should be used to represent numeric types 
+ * only.  The one notable exception is the constant <code>null</code>,
+ * which is represented by a <code>CONST</code> with <code>value == null</code>
+ * and <code>type == POINTER</code>. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.14 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.15 1999-08-09 23:40:18 duncan Exp $
  */
 public class CONST extends Exp {
     /** The constant value of this <code>CONST</code> expression. */
@@ -37,15 +40,14 @@ public class CONST extends Exp {
 	super(tf, source);
 	this.type = DOUBLE; this.value = new Double(dval);
     }
-    /** Creates the constant <code>null</code>.  This constant has a value
-     *  of <code>0</code>, but it's type is <code>POINTER</code>.     */
-    public CONST(TreeFactory tf, HCodeElement source, 
-		 boolean pointersAreLong) { 
+    /** Creates a <code>CONST</code> representing the constant 
+     * <code>null</code>. */
+    public CONST(TreeFactory tf, HCodeElement source) { 
 	super(tf, source);
 	this.type  = POINTER; 
-	this.value = pointersAreLong ? 
-	    (Number)new Long(0) : (Number)new Integer(0);
+	this.value = null;
     }
+
     private CONST(TreeFactory tf, HCodeElement source, 
 		  int type, Number value) {
         super(tf, source);

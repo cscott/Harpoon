@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.9 1999-08-09 22:38:32 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.10 1999-08-09 23:40:19 duncan Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -409,7 +409,7 @@ public final class Method extends HCLibrary {
 	
 	public void visit(CONST e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    sf.update(e, e.value);
+	    sf.update(e, e.value==null?(Number)new Integer(0):e.value);
 	}
 
 	public void visit(DATA e) { 
