@@ -28,7 +28,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.9 1999-08-17 19:15:40 pnkfelix Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.10 1999-08-18 19:24:02 duncan Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -251,6 +251,8 @@ public class InterpreterOffsetMap extends OffsetMap {
 	}
       return hf.getDeclaringClass() + "_" + token;
     }
+
+    public int wordsize() { return 1; } 
 }
 
 
