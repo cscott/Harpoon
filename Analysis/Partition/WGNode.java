@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Thu Oct 22 23:42:00 1998> 
-// Time-stamp: <1998-11-16 23:50:01 mfoltz> 
+// Time-stamp: <1998-11-26 11:45:04 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -26,15 +26,18 @@ public class WGNode {
   public Vector _weights = new Vector();
   public boolean _dummy = false;
   public long _d;
+  public int _binding;
   
   public WGNode(String name, Object value) {
     _name = name;
     _value = value;
+    _binding = -1;
   }
 
   public WGNode(WGNode node) {
     _name = node._name;
     _value = node._value;
+    _binding = node._binding;
     _edges = (Vector) node._edges.clone();
     _weights = (Vector) node._weights.clone();
     _dummy = node._dummy;

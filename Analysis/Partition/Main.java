@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 12:37:16 1998> 
-// Time-stamp: <1998-11-21 18:43:24 mfoltz> 
+// Time-stamp: <1998-11-27 14:38:58 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -91,6 +91,7 @@ public class Main  {
       // add pseudo-nodes that allow bindings of object creation sites to nodes
       for (i = 0; i < 2; i++) 
 	pt[i].addNode(pseudo_nodes[i]);
+	
 
       System.err.println("Edge sum:  "+Partition.computeEdgeSum(pt[0], pt[1]));
       Callback cb = new Callback(pt);
@@ -127,12 +128,12 @@ public class Main  {
 	Enumeration enum = _partition[0].getNodes();
 	while (enum.hasMoreElements()) {
 	  node = (WGNode) enum.nextElement();
-	  if (!node._dummy) System.err.println("MACHINE 0 "+node._value);
+	  if (!node._dummy) System.err.println("MACHINE "+node._value+" 0");
 	}
 	enum = _partition[1].getNodes();
 	while (enum.hasMoreElements()) {
 	  node = (WGNode) enum.nextElement();
-	  if (!node._dummy) System.err.println("MACHINE 1 "+node._value);
+	  if (!node._dummy) System.err.println("MACHINE "+node._value+" 1");
 	}
 	if (gain == 0) {
 	  System.err.println("Phase-1 optimal partition found.");
@@ -201,6 +202,16 @@ public class Main  {
 	    System.err.println("IGNORING: "+line);
 	  } else {
 	    WeightedGraph.setEdge(source,target,Long.MAX_VALUE);
+	    target._binding = machine_no;
+	  }
+	} else if (token.startsWith("MACHINE")) {
+	  node_name = st.nextToken();
+	  machine_no = Integer.parseInt(st.nextToken());
+	  target = g.getNode(node_name);
+	  if (target == null) {
+	    System.err.println("IGNORING: "+line);
+	  } else {
+	    target._binding = machine_no;
 	  }
 	}
 	line = in.readLine();

@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Fri Oct 23 00:24:17 1998> 
-// Time-stamp: <1998-11-21 19:01:57 mfoltz> 
+// Time-stamp: <1998-11-26 11:47:57 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -27,16 +27,22 @@ public class Partition {
 
     p[0] = new WeightedGraph();
     p[1] = new WeightedGraph();
+    
+    nodes = g.getNodes();
+    while (nodes.hasMoreElements()) {
+      node = (WGNode) nodes.nextElement();
+      if (node._binding > -1) p[node._binding].addNode(node);
+    }
 
     nodes = g.getNodes();
     while (p[0].size() < g.size()/2) {
       node = (WGNode) nodes.nextElement();
-      p[0].addNode(node);
+      if (node._binding < 0) p[0].addNode(node);
     }
 
     while (nodes.hasMoreElements()) {
       node = (WGNode) nodes.nextElement();
-      p[1].addNode(node);
+      if (node._binding < 0) p[1].addNode(node);
     }
 
     return;
