@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.8 1998-09-04 01:39:21 cananian Exp $
+ * @version $Id: Code.java,v 1.9 1998-09-10 22:44:32 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -68,6 +68,10 @@ public class Code extends HCode {
 	    throw new Error("getName() or convertFrom() is not working.");
 	return new Code(codeview.getMethod(), 
 			(harpoon.ClassFile.Bytecode.Code) codeview);
+    }
+    /** Return code in QuadSSA form given a method. */
+    public static Code code(HMethod m) {
+	return (Code) convertFrom(m.getCode("bytecode"));
     }
 
     /**
