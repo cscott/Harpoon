@@ -18,7 +18,7 @@ import java.util.Iterator;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.10 1999-11-30 05:25:10 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.11 2000-07-01 00:58:30 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -142,7 +142,7 @@ public abstract class Graph  {
 	pw.println("graph: {");
 	pw.println("title: \""+title+"/"+hc.getName()+"\"");
 	if (setup==null) {
-	    String[] defaultSetup = { "x: 30", "y: 30",
+	    String[] defaultSetup = { "x: 30", "y: 30", "yspace: 15",
 		      "height: 800", "width: 500",
 		      "stretch: 60", "shrink: 100",
 		      "display_edge_labels: yes",
