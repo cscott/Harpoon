@@ -50,7 +50,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.14 2000-08-02 02:10:08 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.15 2000-08-02 06:41:39 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -92,8 +92,19 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     MultiMap regToDefs; // Reg -> Instr
     MultiMap regToUses; // Reg -> Instr
+
     
+    // Below is broken; only keys on ONE AReg (The first one in the
+    // assignment) but I think we may need to change this to map ANY
+    // AReg in the assignment to the according assignment.  
+    // ( IE, VReg -> Index -> AReg -> Assign ) 
+    // However, due to 1. How the graph coloring algorithms are
+    // implemented and 2. How the implementation of replace() works,
+    // this implementation will work for now *AS A HACK*
+
     Map implicitAssigns; // VReg -> AReg -> Assign
+
+
     Map regToColor;  // AReg -> RegColor
 
     Map ixtToWebPreCombine = new HashMap(); // Instr x VReg -> WebRecord    
@@ -103,11 +114,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
     List tempWebRecords; // List<TempWebRecord>
     List regWebRecords; // List<RegWebRecord>
     
-    // NOT BUILT YET
-    // Maps Temp:t -> Set of Reg whose live regions interfere with
-    //                t's live region
-    MultiMap preassignMap;
-
     GraphColorer colorer;
 
     /** Creates a <code>GraphColoringRegAlloc</code>, assigning `gc'
@@ -119,15 +125,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	buildRegAssigns();
 	rdefs = new ReachingDefsAltImpl(code);
 	liveTemps = LiveTemps.make(code, rfi.liveOnExit());
-	// preassignMap = buildPreassignMap(code, rfi.liveOnExit());
         colorer = gc;
     }
 
     protected Derivation getDerivation() {
-	return null;
-    }
-
-    protected MultiMap buildPreassignMap(Code code, Set liveOnExit) {
 	return null;
     }
 
@@ -232,7 +233,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    if (TIME) System.out.println("Building Graph");
 
-	    final ColorableGraph graph = buildGraph(adjLsts);
+	    final Graph graph = buildGraph(adjLsts);
 	    
 	    final Map nodeToNum = new HashMap(); 
 	    if (RESULTS) System.out.println("nodes of graph");
@@ -264,7 +265,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 							 nodeToNum));
 		}
 
-		modifyCode();
+		modifyCode(graph);
 		
 		success = true;
 	    } catch (UnableToColorGraph u) {
@@ -622,32 +623,17 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	return g;
     }
 
-    private void modifyCode() { 
-	HashMap colorToAssign; // RegColor -> AReg
-	colorToAssign = new HashMap();
-	for(Iterator ars = regWebRecords.iterator(); ars.hasNext();){
-	    RegWebRecord wr = (RegWebRecord) ars.next();
-	    colorToAssign.put(wr.regColor(), wr.reg);
-	}
+    private void modifyCode(Graph g) { 
 	for(Iterator wrs = tempWebRecords.iterator(); wrs.hasNext();){
 	    TempWebRecord wr = (TempWebRecord) wrs.next();
 	    Iterator instrs;
 	    for(instrs = wr.defs.iterator(); instrs.hasNext();) {
 		Instr i = (Instr) instrs.next();
-		Temp reg = (Temp) colorToAssign.get(wr.regColor());
-
-		// FSK: BROKEN!  Need to change this to map multiple
-		// nodes (and associated colors) to single Temp and
-		// associated reg assignment
-		List regs = Arrays.asList(new Temp[]{ reg }); 
-
-		code.assignRegister(i, wr.sym, regs);
+		code.assignRegister(i, wr.sym, g.regs(wr));
 	    }
 	    for(instrs = wr.uses.iterator(); instrs.hasNext();) {
 		Instr i = (Instr) instrs.next();
-		List regs =  (List) colorToAssign.get(wr.regColor());
-		Util.assert(regs != null);
-		code.assignRegister(i, wr.sym, regs);
+		code.assignRegister(i, wr.sym, g.regs(wr));
 	    }
 	}
     } 
@@ -659,15 +645,20 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     /** Graph is a graph view of the adjacency lists in this. 
 	There is a many-to-one mapping from Nodes to WebRecords. 
+	Note that when a Node is hidden or colored, its association
+	with the WebRecord it maps to may cause other nodes to be
+	hidden or colored (nb: need to think this through more
+	carefully; algorithms depend on a particular semantics for
+	replace()'s behavior...)
     */
     class Graph extends AbstractGraph implements ColorableGraph {
-	private LinkedList nodes;
-	private LinkedList hidden;
-	private MultiMap wr2node; // WebRecord -> Node
+	private LinkedList nodes;  // List<Node>
+	private LinkedList hidden; // List<WebRecord>
+	private MultiMap wr2node;  // WebRecord -> Node
 
-	/** Node is a simple record class representing the 
-	    Node -> WebRecord mapping.  It also holds the color for the
-	    node. 
+	/** Node is a record class representing the 
+	    Node -> WebRecord mapping.  
+	    It also holds the color for the node. 
 	*/
 	class Node {
 	    final WebRecord wr;
@@ -676,7 +667,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Node(WebRecord w, int i) { wr = w; index = i; }
 	}
 	
-	private Collection nodes(Object wr) { 
+	/** Helper function for resolving the WebRecord -> Node
+	    relation.
+	*/
+	private Collection nodes(Object wr) {
 	    return wr2node.getValues(wr); 
 	}
 	
@@ -685,15 +679,39 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    hidden = new LinkedList();
 	    wr2node = new GenericMultiMap();
 	}
+
+	/** Adds nodes and edges representing `wr' and its conflicts
+	    to this graph. 
+	*/
 	void add(WebRecord wr) {
-	    Map r2a = (Map) implicitAssigns.get(wr.temp());
-	    List rl = (List) r2a.values().iterator().next();
-	    for(int j=0; j<rl.size(); j++) {
-		Node n = new Node(wr, j);
-		nodes.add(n);
-		wr2node.add(wr, n);
+	    if (wr instanceof RegWebRecord) {
+		Node n = new Node(wr, 0);
+		n.color = (RegColor) regToColor.get(wr.temp());
+	    } else {
+		Map r2a = (Map) implicitAssigns.get(wr.temp());
+		Util.assert(r2a != null, "no implicit assigns for "+wr.temp());
+		List rl = (List) r2a.values().iterator().next();
+		for(int j=0; j<rl.size(); j++) {
+		    Node n = new Node(wr, j);
+		    nodes.add(n);
+		    wr2node.add(wr, n);
+		}
 	    }
 	}
+
+	/** Returns the Assignment that has been given to `wr'. 
+	    requires: this has been colored.
+	*/
+	List regs(WebRecord wr) {
+	    Collection c = wr2node.getValues(wr);
+	    List a = new ArrayList(c);
+	    for(Iterator nodes=c.iterator(); nodes.hasNext(); ) {
+		Node n = (Node) nodes.next();
+		a.set(n.index, n.color.reg);
+	    }
+	    return a;
+	}
+
 	public Set nodeSet() { 
 	    return new AbstractSet() {
 		public int size() { return nodes.size(); }
@@ -702,6 +720,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		}
 	    };
 	}
+
 	public Collection neighborsOf(Object n) { 
 	    if (!(n instanceof Node))
 		throw new IllegalArgumentException();
@@ -729,7 +748,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    };
 	}
 
-	public void resetGraph() { replaceAll(); resetColors(); }
 	public void hide(Object n) { 
 	    if (nodes.contains(n)) { // check if in nodeSet
 		WebRecord wr = ((Node) n).wr;
@@ -745,6 +763,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		throw new IllegalArgumentException();
 	    }
 	}
+
 	public Object replace() { 
 	    WebRecord wr;
 	    try {
@@ -758,6 +777,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		wr = null;
 	    }
 	    return (wr==null)?null:nodes(wr).iterator().next();
+	    // FSK: this hack will work for now because coloring any
+	    // node of a multi-reg temp will cause all of the nodes
+	    // for that temp to be colored accordingly, but if this is
+	    // later changed to allow more flexibility, this
+	    // implementation will have to be rethought...
 	}
 	public void replaceAll() {
 	    while(!hidden.isEmpty()) {
@@ -775,10 +799,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	public void resetColors() { 
 	    Iterator ns;
 	    for(ns = nodes.iterator(); ns.hasNext();) {
-		((WebRecord) ns.next()).regColor(null);
+		((Node) ns.next()).color = null;
 	    }
 	    for(ns = hidden.iterator(); ns.hasNext();) {
-		((WebRecord) ns.next()).regColor(null);
+		((Node) ns.next()).color = null;
 	    }
 	}
 
@@ -799,17 +823,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	private int sreg; 
 	private boolean sregYet = false;
 
-	private RegColor regColor;
-	private boolean regColorYet = false;
-	final boolean colorOnce;
-      
-	WebRecord(boolean colorOnce) {
+	WebRecord() {
 	    nints = 0;
-	    regColor = null;
 	    disp = Integer.MIN_VALUE;
 	    spcost = 0.0;
 	    adjnds = new LinkedList();
-	    this.colorOnce = colorOnce;
 	}
 	
 	int sreg() { Util.assert(sregYet); return sreg; }
@@ -819,30 +837,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    sregYet = true;
 	}
 
-	RegColor regColor()  {
-	    return regColor;
-	}
-
-	/** Sets color of this.
-	    requires: (this can only be colored once and it has
-	               already been colored) ==> rc == null
-	    modifies: this
-	    effects: if this can only be colored once, has already
-	       been colored then no modification to this
-	       else if rc == null then deletes color for this
-	       else sets color for this to rc.
-	*/
-	void regColor(RegColor rc)  { 
-	    if (colorOnce && regColorYet) {
-		// attempts to erase color should do nothing 
-		Util.assert(rc == null);
-	    } else {
-		regColor = rc;
-		regColorYet = true;
-	    }
-	}
-	
-	
 	// ( interference based on Muchnick, page 494.)
 	boolean conflictsWith(WebRecord wr) {
 	    return this.conflictsWith1D(wr) ||
@@ -880,9 +874,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
     class RegWebRecord extends WebRecord {
 	final Temp reg;
 	RegWebRecord(Temp reg) {
-	    super(true);
+	    super();
 	    this.reg = reg;
-	    regColor( (RegColor) regToColor.get(reg) );
 	}
 	public Set defs() { return (Set) regToDefs.getValues(reg); }
 	public Set uses() { return (Set) regToUses.getValues(reg); }
@@ -919,7 +912,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	int disp;
 	
 	TempWebRecord(Temp symbol, Set defSet, Set useSet) {
-	    super(false);
+	    super();
 	    sym = symbol; defs = defSet; uses = useSet;
 	    spill = false; disp = -1;
 	}
