@@ -56,8 +56,24 @@ class ToyTree {
 	long start;
 	if (RTJ) {
 	    if (noheap) {
-		ToyTreeNoHeap ta = new ToyTreeNoHeap(ma, asize, repeats);
-		ToyTreeNoHeap tb = new ToyTreeNoHeap(mb, asize, repeats);
+		javax.realtime.ImmortalMemory im =
+		    javax.realtime.ImmortalMemory.instance();
+		Class[] params = new Class[] { javax.realtime.MemoryArea.class,
+					       int.class, int.class};
+		Object[] vals = new Object[] { ma, new Integer(asize),
+					       new Integer(repeats) };
+		Class cls = ToyTreeNoHeap.class;
+		/* To make sure the correct roots are generated! */
+		ToyTreeNoHeap ta = (params == null)?
+		    new ToyTreeNoHeap(ma, asize, repeats):null;
+		ToyTreeNoHeap tb = null;
+		try {
+		    ta = (ToyTreeNoHeap)im.newInstance(cls, params, vals);
+		    tb = (ToyTreeNoHeap)im.newInstance(cls, params, vals);
+		} catch (Exception e) {
+		    System.out.println(e);
+		    System.exit(-1);
+		}
 		start=System.currentTimeMillis();
 		ta.start();
 		tb.start();

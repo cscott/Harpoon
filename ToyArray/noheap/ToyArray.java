@@ -57,8 +57,24 @@ class ToyArray {
 	long start;
 	if (RTJ) {
 	    if (noheap) {
-		ToyArrayNoHeap ta = new ToyArrayNoHeap(ma, asize, repeats);
-		ToyArrayNoHeap tb = new ToyArrayNoHeap(mb, asize, repeats);
+		javax.realtime.ImmortalMemory im = 
+		    javax.realtime.ImmortalMemory.instance();
+		Class[] params = new Class[] { javax.realtime.MemoryArea.class, 
+					       int.class, int.class};
+		Object[] vals = new Object[] { ma, new Integer(asize), 
+					       new Integer(repeats) };
+		Class cls = ToyArrayNoHeap.class;
+		/* To make sure the correct roots are generated! */
+		ToyArrayNoHeap ta = (params == null)?
+		    new ToyArrayNoHeap(ma, asize, repeats):null;
+		ToyArrayNoHeap tb = null;
+		try {
+		    ta = (ToyArrayNoHeap)im.newInstance(cls, params, vals);
+		    tb = (ToyArrayNoHeap)im.newInstance(cls, params, vals);
+		} catch (Exception e) {
+		    System.out.println(e);
+		    System.exit(-1);
+		}
 		start=System.currentTimeMillis();
 		ta.start();
 		tb.start();
