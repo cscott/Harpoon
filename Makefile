@@ -5,7 +5,7 @@ SSH=ssh
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
-RELEASE=*.java README BUILDING Makefile
+RELEASE=*.java README BUILDING Makefile ChangeLog
 
 # eventually we'd like to use something like Code/bin/find-flex-dir
 # to set this variable.  The below is an interim hack.
@@ -45,7 +45,7 @@ realtime.jar:
 	@jar -c javax/realtime/*.class > $(FLEX_DIR)/Support/realtime.jar
 	@rm -rf javax
 
-realtime.tgz realtime.tgz.TIMESTAMP:
+realtime.tgz realtime.tgz.TIMESTAMP: $(RELEASE)
 	@echo Generating realtime.tgz file.
 	tar c $(RELEASE) | gzip -9 > realtime.tgz 	
 	@date '+%-d-%b-%Y at %r %Z.' > realtime.tgz.TIMESTAMP
