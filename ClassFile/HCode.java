@@ -7,7 +7,7 @@ package harpoon.ClassFile;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.3 1998-08-03 01:37:15 cananian Exp $
+ * @version $Id: HCode.java,v 1.4 1998-08-03 21:33:31 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.ClassFile.Bytecode.Code
@@ -59,4 +59,16 @@ public abstract class HCode {
    * @see HMethod#putCode
    */
   public static HCode convertFrom(HCode codeview) { return null; }
+
+  /**
+   * Pretty-print this code view.
+   */
+  public void print(java.io.PrintWriter pw) {
+    pw.println("Codeview \""+getName()+"\" for "+getMethod()+":");
+    HCodeElement[] hce = getElements();
+    for (int i=0; i<hce.length; i++)
+      pw.println("  #"+hce[i].getID()+"/"+
+		 hce[i].getSourceFile()+":"+hce[i].getLineNumber()+" - " +
+		 hce[i].toString());
+  }
 }
