@@ -73,7 +73,7 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
 {
   struct timeval time; //the current time
   JNIEnv* env;         //a JNI environment
-  struct jobject* ref_marker;
+  jobject ref_marker;
   jclass schedClass, rttClass; //class of the scheduler & of the RealtimeThread
   jlong threadID; //threadID returned by the scheduler
   jobject scheduler; //thread and scheduler objects
@@ -416,7 +416,7 @@ struct thread_queue_struct* lookupThread(jlong threadID)
 void DisableThread(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
-  jobject* ref_marker = ((struct FNI_Thread_State *)env)->localrefs_next;
+  jobject ref_marker = ((struct FNI_Thread_State *)env)->localrefs_next;
 
   jclass rttClass;
   jobject scheduler;
@@ -470,7 +470,7 @@ void DisableThread(struct thread_queue_struct* queue)
 void EnableThread(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
-  jobject* ref_marker = ((struct FNI_Thread_State *)env)->localrefs_next;
+  jobject ref_marker = ((struct FNI_Thread_State *)env)->localrefs_next;
 
   jclass rttClass;
   jobject scheduler;
@@ -522,7 +522,7 @@ void EnableThread(struct thread_queue_struct* queue)
 void EnableThreadList(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
-  jobject* ref_marker = ((struct FNI_Thread_State *)env)->localrefs_next;
+  jobject ref_marker = ((struct FNI_Thread_State *)env)->localrefs_next;
 
   jclass rttClass;
   jobject scheduler;
