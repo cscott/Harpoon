@@ -13,10 +13,10 @@ for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     if [ -f $rootset ]; then
       echo "include $rootset" >> $tmprootset
     fi
-    dir=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`arm
+    dir=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`pnk
     echo $dir $rootset
     rm -rf as$dir as$dir.err as$dir.out
-    bin/build-arm-hack -r $tmprootset SpecApplication $dir \
+    bin/build-arm-pnk -r $tmprootset SpecApplication $dir \
 	2> as$dir.err | tee as$dir.out
     if [ $? -ne 0 ]; then
 	errors="$errors$dir "

@@ -1,10 +1,11 @@
 #!/bin/sh
 SPECPATH=${SPECPATH:-${HOME}/Spec/jvm98}
 export FLEXPATH=SupportNP/specthunk.jar:$SPECPATH
-start=${1:-"10"}
+start=${1:-"1"}
+end=${2:-"10"}
 errors=
 tmprootset=tmp-root-set
-for s in `ls $SPECPATH/spec/benchmarks | sort | tail -$start`; do
+for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     rm -f $tmprootset
     echo "include Support/locale-root-set" > $tmprootset
     echo "spec.benchmarks.$s.Main.<init>()V" >> $tmprootset
