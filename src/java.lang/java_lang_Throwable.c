@@ -4,7 +4,7 @@
 #include <jni-private.h> /* for FNI_Thread_State */
 #include "java_lang_Throwable.h"
 #ifdef arm32
-# include "../../include/asm/stack.h"
+# include "asm/stack.h"
 #endif
 
 char *name_of_binary;

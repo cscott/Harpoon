@@ -1,4 +1,4 @@
-#include "../../include/jni-gc.h"
+#include "jni-gc.h"
 
 #define DESC_SIZE 6  /* number of bits needed for descriptor */
 #define JINT_SIZE 32 /* number of bits in a jint */
