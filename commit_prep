@@ -1,7 +1,12 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.7 1998-10-18 10:28:48 cananian Exp $"
+#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.8 2002-09-01 03:19:35 cananian Exp $"
+
+# first thing: delegate to cvs_acls for access controls.
+system "$CVSROOT/CVSROOT/cvs_acls" == 0
+    or exit 1; # bad access controls!
+
 #
 # Perl filter to handle pre-commit checking of files.  This program
 # records the last directory where commits will be taking place for
