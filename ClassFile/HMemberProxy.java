@@ -8,11 +8,11 @@ package harpoon.ClassFile;
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.1.4.3 2000-03-29 20:06:35 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.1.4.4 2000-03-29 23:02:56 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */
-abstract class HMemberProxy implements HMember {
+abstract class HMemberProxy implements HMember, java.io.Serializable {
     Relinker relinker;
     boolean sameLinker;
     private HMember proxy;

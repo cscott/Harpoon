@@ -13,9 +13,9 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.4.1 2000-01-13 23:47:48 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.4.2 2000-03-29 23:02:56 cananian Exp $
  */
-public class Relinker extends Linker {
+public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
 
     /** Creates a <code>Relinker</code>. */

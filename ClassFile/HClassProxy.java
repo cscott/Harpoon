@@ -9,15 +9,16 @@ import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.io.Serializable;
 /**
  * <code>HClassProxy</code> serves as a proxy class for
  * <code>HClass</code> objects, allowing them to be swapped out &
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.4.3 2000-01-17 23:49:06 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.4.4 2000-03-29 23:02:55 cananian Exp $
  */
-class HClassProxy extends HClass implements HClassMutator {
+class HClassProxy extends HClass implements HClassMutator, Serializable {
   Relinker relinker;
   HClass proxy;
   HClassMutator proxyMutator;
@@ -216,6 +217,22 @@ class HClassProxy extends HClass implements HClassMutator {
   }
   public void setSourceFile(String sourcefilename) {
     proxyMutator.setSourceFile(sourcefilename);
+  }
+
+  // Serializable interface.
+  // we have to work around the fact that the base HClass is not Serializable.
+  public Object writeReplace() { return new HClassProxyStub(this); }
+  private static final class HClassProxyStub implements java.io.Serializable {
+    private Relinker relinker;
+    private HClass proxy;
+    HClassProxyStub(HClassProxy hcp) {
+      this.relinker = hcp.relinker;
+      this.proxy = hcp.proxy;
+    }
+    public Object readResolve() {
+      // call 'real' constructor on reconstruct.
+      return new HClassProxy(relinker, proxy);
+    }
   }
 
   // wrap/unwrap methods.
