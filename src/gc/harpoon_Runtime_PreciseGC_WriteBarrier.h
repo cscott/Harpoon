@@ -31,6 +31,14 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_fsc
 JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_asc
   (JNIEnv *, jclass, jobject, jint, jobject, jint);
 
+/*
+ * Class:     harpoon_Runtime_PreciseGC_WriteBarrier
+ * Method:    clearBit
+ * Signature: (Ljava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_harpoon_Runtime_PreciseGC_WriteBarrier_clearBit
+  (JNIEnv *, jclass, jobject);
+
 #ifdef __cplusplus
 }
 #endif
