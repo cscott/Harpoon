@@ -6,5 +6,7 @@
 # You may want to alias 'makejava' to 'make java; source bin/brilliance.tcsh'
 # and 'makejikes' to 'make jikes; source bin/brilliance.tcsh'
 
+set lib_classes=`unzip -l /usr/local/jdk/lib/classes.zip | cut -b28- | grep .class | sed -e 's/.class//g' -e 's|/|.|g'`
 set harpoon_classes=`find ~/Harpoon/Code/harpoon/ -type f -name "*.class" | sed -e 's|^.*Harpoon/Code/||g' -e 's|.class$||' -e 's|/|.|g'`
-complete java 'p/*/$harpoon_classes/'
+set all_classes = ($harpoon_classes $lib_classes)
+complete java 'p/*/$all_classes/'
