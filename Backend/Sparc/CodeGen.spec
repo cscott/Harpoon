@@ -32,7 +32,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.12 1999-11-23 09:39:05 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.13 1999-11-29 03:58:09 andyb Exp $
  */
 %%
     private Instr root;
@@ -254,6 +254,22 @@ BINOP<i,p>(MUL, e1, e2) = r %{
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
 }%
 
+BINOP<i,p>(DIV, e1, e2) = r %{
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
+    emit (ROOT, "call .div\n", new Temp[] { r1 }, new Temp[] { r8, r9 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
+}%
+
+BINOP<i,p>(REM, e1, e2) = r %{
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
+    emit (ROOT, "call .rem\n", new Temp[] { r1 }, new Temp[] { r8, r9 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
+}%
+
 BINOP(CMPLT, e1, e2) = r
 %pred  %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
 %{
@@ -270,11 +286,11 @@ BINOP(CMPLE, e1, e2) = r
 %pred  %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
 %{
     Label templabel = new Label();
-    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
     emit (ROOT, "cmp `s0, `s1\n" +
                 "bg "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
 }%
 
@@ -282,11 +298,11 @@ BINOP(CMPEQ, e1, e2) = r
 %pred  %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
 %{
     Label templabel = new Label();
-    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
     emit (ROOT, "cmp `s0, `s1\n" +
                 "bne "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
 }%
 
@@ -294,11 +310,11 @@ BINOP(CMPGE, e1, e2) = r
 %pred %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
 %{
     Label templabel = new Label();
-    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
     emit (ROOT, "cmp `s0, `s1\n" +
                 "bl "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
 }%
 
@@ -306,12 +322,152 @@ BINOP(CMPGT, e1, e2) = r
 %pred %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
 %{
     Label templabel = new Label();
-    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
     emit (ROOT, "cmp `s0, `s1\n" +
                 "ble "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPLT, e1, e2) = r
+%pred %( ROOT.operandType() == Type.LONG )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "cmp `s0h, `s1h\n" +
+                "bge "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "cmp `s0l, `s1l\n" +
+                "bge "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPLE, e1, e2) = r
+%pred %( ROOT.operandType() == Type.LONG )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "cmp `s0h, `s1h\n" +
+                "bg "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "cmp `s0l, `s1l\n" +
+                "bg "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPEQ, e1, e2) = r
+%pred %( ROOT.operandType() == Type.LONG )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "cmp `s0h, `s1h\n" +
+                "bne "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "cmp `s0l, `s1l\n" +
+                "bne "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPGE, e1, e2) = r
+%pred %( ROOT.operandType() == Type.LONG )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "cmp `s0h, `s1h\n" +
+                "bl "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "cmp `s0l, `s1l\n" +
+                "bl "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPGT, e1, e2) = r
+%pred %( ROOT.operandType() == Type.LONG )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "cmp `s0h, `s1h\n" +
+                "ble "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "cmp `s0l, `s1l\n" +
+                "ble "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPLT, e1, e2) = r
+%pred %( ROOT.operandType() == Type.FLOAT )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "fcmps `s0, `s1\n" +
+                "nop\n" +
+                "fbges "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPLE, e1, e2) = r
+%pred %( ROOT.operandType() == Type.FLOAT )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "fcmps `s0, `s1\n" +
+                "nop\n" +
+                "fbgs "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPEQ, e1, e2) = r
+%pred %( ROOT.operandType() == Type.FLOAT )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "fcmps `s0, `s1\n" +
+                "nop\n" +
+                "fbnes "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPGE, e1, e2) = r
+%pred %( ROOT.operandType() == Type.FLOAT )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "fcmps `s0, `s1\n" +
+                "nop\n" +
+                "fbls "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
+}%
+
+BINOP(CMPGT, e1, e2) = r
+%pred %( ROOT.operandType() == Type.FLOAT )%
+%{
+    Label templabel = new Label();
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, null);
+    emit (ROOT, "fcmps `s0, `s1\n" +
+                "nop\n" +
+                "fbles "+templabel+"\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r }, null);
+    emitLABEL (ROOT, templabel + ":", templabel);
 }%
 
 // Call some methods
@@ -328,7 +484,15 @@ CONST<p>(c) = r %{
 
 DATA(CONST<i>(exp)) %{
     String lo = "0x" + Integer.toHexString(exp.intValue());
-    emitDIRECTIVE(ROOT, "\t.word " + lo + " @ " + exp);
+    emitDIRECTIVE (ROOT, "\t.word " + lo + " @ " + exp);
+}%
+
+DATA(CONST<l>(exp)) %{
+    long val = exp.longValue();
+    String lo = "0x" + Integer.toHexString((int) val);
+    String hi = "0x" + Integer.toHexString((int) (val >> 32));
+    emitDIRECTIVE (ROOT, "\t.word " + hi + " @ " + exp);
+    emitDIRECTIVE (ROOT, "\t.word " + lo + " @ " + exp);
 }%
 
 DATA(CONST<s:8,u:8>(exp)) %{
@@ -543,18 +707,30 @@ LABEL(l) %{
 
 // expressions
 
-CONST<i,l,p>(0)=r %{
+CONST<i,p>(0)=r %{
     emit (ROOT, "\tmov `s0, `d0\n", new Temp[] { r }, new Temp[] { r0 });
 }%
 
-CONST<i>(c)=r %{
- if (is13bit(c)) {
-   emit (ROOT, "\t set "+c+", `d0\n", new Temp[] {r}, new Temp[] {});
- } else {
-   emit (ROOT, "\t sethi %hi("+c+"), `d0\n", new Temp[]{r}, new Temp[] {});
-   emit (ROOT, "\t or `s0, %lo("+c+"), `d0\n",
-         new Temp[] { r }, new Temp[] { r });
- }
+CONST<l>(0)=r %{
+    emit (ROOT, "\tmov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r0 });
+    emit (ROOT, "\tmov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r0 });
+}%
+
+CONST<f, i>(c)=r %{
+    int val = (ROOT.type() == Type.INT) 
+              ? ROOT.value.intValue()
+              : Float.floatToIntBits(ROOT.value.floatValue());
+    if (is13bit(c)) {
+        emit (ROOT, "\t set "+val+", `d0\n", new Temp[] {r}, new Temp[] {});
+    } else {
+        emit (ROOT, "\t sethi %hi("+val+"), `d0\n", new Temp[]{r}, null);
+        emit (ROOT, "\t or `s0, %lo("+val+"), `d0\n",
+              new Temp[] { r }, new Temp[] { r });
+    }
+}%
+
+CONST<f>(c) = r %{
+
 }%
 
 // FIXME: long and floating-point constants (change section?)
@@ -634,6 +810,11 @@ UNOP<i,p>(_2L, e)=r %{ /* make 64-bit word. */
 UNOP<i,p>(_2I, e)=r %{ /* do nothing */
  emit(ROOT, "\t mov `s0, `d0\n",
       new Temp[] { r } , new Temp[] { e });
+}%
+
+UNOP<i,p,f,l,d>(_2F, e) = r %{
+    // AAA - this is broken. 
+    emit (ROOT, "fitos `s0, `d0\n", new Temp[] { r }, new Temp[] { e });
 }%
 /* FIXME: finish UNOP rules */
 
