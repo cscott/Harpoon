@@ -53,7 +53,7 @@ import java.util.Iterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.73 2000-02-11 06:35:01 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.74 2000-02-18 22:53:26 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -265,12 +265,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    
 	    emptyRegFile(regfile, v.last, liveOnExit);
 	}
-	
+
 	class LocalAllocVisitor extends harpoon.IR.Assem.InstrVisitor {
 	    // last Instr that was visited that still remains in the
 	    // code (thus, not a removed InstrMOVE)
 	    Instr last;
-	    
 	    
 	    public void visit(Instr i) {
 		// filters out hardcoded refs to machine registers 
@@ -309,8 +308,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 				"elements of i's useC.");
 		    Temp t = (Temp) refs.next();
 		    if (regfile.hasAssignment(t)) {
-			code.assignRegister
-			    (i, t, regfile.getAssignment(t));
+			code.assignRegister(i, t, regfile.getAssignment(t));
 			evictables.remove(t);
 		    } else /* not already assigned */ {
 			

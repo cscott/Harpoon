@@ -24,6 +24,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
+import harpoon.Util.Default;
 import harpoon.Util.LinearMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.GenericMultiMap;
@@ -70,7 +71,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.81 2000-02-18 20:20:50 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.82 2000-02-18 22:53:26 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -80,6 +81,7 @@ public abstract class RegAlloc  {
     protected Frame frame;
     protected Code code;
     protected BasicBlock.Factory bbFact;
+
 
     private static String getSrcStr(int num) {
 	String s = "`s0";
@@ -259,11 +261,14 @@ public abstract class RegAlloc  {
 		
 		globalCode.generateRegAssignment();
 		
-		final Instr instr = globalCode.resolveOutstandingTemps();
+		List pair = globalCode.resolveOutstandingTemps();
+		final Instr instr = (Instr) pair.get(0);
+		final RegFileInfo.TempLocator tl = (RegFileInfo.TempLocator) pair.get(1);
 		final Code mycode = globalCode.code;
+
 		Util.assert(mycode != null);
 
-	        return new Code(mycode, instr, 
+	        return new Code(mycode, instr,
 				mycode.getDerivation(),
 				mycode.getName()) {
 		    public String getName() { return mycode.getName(); }
@@ -286,8 +291,9 @@ public abstract class RegAlloc  {
 
 	    public String getCodeName() { return p.getCodeName(); }
 	    public void clear(HMethod m) { p.clear(m); }
-	    public harpoon.Backend.Generic.RegFileInfo.TempLocator
-		getTempLocator() { return null; }
+	    public RegFileInfo.TempLocator getTempLocator() { 
+		return null; 
+	    }
 	};
     }
     
@@ -354,6 +360,19 @@ public abstract class RegAlloc  {
 		    i.accept(replace);
 		}
 
+		if (DEBUG) {
+		    instrs = absCode.getElementsI(); // debug check
+		    while(instrs.hasNext()) {
+			Instr i = (Instr) instrs.next();
+			Util.assert(!(i instanceof SpillLoad), "SpillLoad in i-list!");
+			Util.assert(!(i instanceof SpillStore), 
+				    "SpillStore in i-list! "+
+				    i.getPrev() + " " +
+				    i + " " + i.getNext());
+		    }
+		}	    
+		
+
 		return absCode; 
 	    }
 	    
@@ -386,9 +405,10 @@ public abstract class RegAlloc  {
         <BR> <B>modifies:</B> this
 	<BR> <B>effects:</B> Replaces the <code>SpillLoad</code> and
 	     <code>SpillStore</code>s with memory instructions for the
-	     appropriate <code>Frame</code>.
+	     appropriate <code>Frame</code>.  Returns a two-elem list
+	     pair (Instr, TempLocator)
     */
-    protected final Instr resolveOutstandingTemps() {
+    protected final List resolveOutstandingTemps() {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
 	Code in = code;
@@ -467,32 +487,15 @@ public abstract class RegAlloc  {
 	// now 'instrs' has spill instructions which reference Temps
 	// that are associated with stack offsets 
 
-	// InstrReplacer ir = new InstrReplacer(tf.tempsToOffsets);
-	// instrs = in.getElementsI();
-	// while(instrs.hasNext()) {
-	//     Instr i = (Instr) instrs.next();
-	//     i.accept(ir);
-	// }
-
-	if (DEBUG) {
-	    instrs = in.getElementsI(); // debug check
-	    while(instrs.hasNext()) {
-		Instr i = (Instr) instrs.next();
-		Util.assert(!(i instanceof SpillLoad), "SpillLoad in i-list!");
-		Util.assert(!(i instanceof SpillStore), 
-			    "SpillStore in i-list! "+
-			    i.getPrev() + " " +
-			    i + " " + i.getNext());
-	    }
-	}	    
-
 	Instr instr = (Instr) in.getRootElement();
 
 	final int locals = tf.nextOffset - 1; 
 
-	return frame.getCodeGen().
+	instr = frame.getCodeGen().
 	    procFixup(in.getMethod(), instr, locals, 
 		      computeUsedRegs(instr));
+
+	return Default.pair(instr, null);
     }
     
     private Set computeUsedRegs(Instr instrs) {
@@ -579,6 +582,8 @@ public abstract class RegAlloc  {
     
 }
 
+// note that this doesn't even work any more because it does not
+// support garbage collection.
 class BrainDeadLocalAlloc extends RegAlloc {
     BrainDeadLocalAlloc(Code code) {
 	super(code);
@@ -683,6 +688,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 	while(instrs.hasNext()) {
 	    ((Instr)instrs.next()).accept(memVisitor);
 	}
+
     }
 
 }

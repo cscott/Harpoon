@@ -16,7 +16,7 @@ import harpoon.Analysis.Maps.Derivation;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.13 2000-02-18 01:17:54 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.14 2000-02-18 22:53:26 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -52,12 +52,12 @@ public abstract class CodeGen {
      *  it is known how many registers and how much stack space is used.
      */ // FIXME: is there a more abstract way to specify these 
         // quantities?   FSK: This is what I think we should use instead
-    public void procFixup(HMethod hm,
+        public void procFixup(HMethod hm,
 			  harpoon.Backend.Generic.Code code, 
 			  int stackspace, 
 			  java.util.Set usedRegisters) {
 	harpoon.Util.Util.assert(false, "abstract me and implement in subclasses");
-    }
+        }
 
     /** Creates a <code>Instr</code> list from the
 	<code>IR.Tree.Code</code> <code>tree</code>.  
