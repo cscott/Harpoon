@@ -15,15 +15,22 @@ public class GraphAnalysis {
     public GraphAnalysis(Termination t) {
 	termination=t;
     }
-
+    /**  This method returns true if leaving node gn in the repair
+     *  dependence graph will not result in cycles.
+     gn = updatenode, conjunctionnode, consequence node
+    */
     private boolean safetransclosure(GraphNode gn, Set removed, Set cantremove, Set couldremove) {
 	Stack workset=new Stack();
 	HashSet closureset=new HashSet();
 	boolean needcyclecheck=false;
 	HashSet cantremovetrans=new HashSet();
 	workset.push(gn);
+
+	/* Iterating over everything reachable from gn */
 	while(!workset.empty()) {
 	    GraphNode gn2=(GraphNode)workset.pop();
+
+	    /* Closureset is everything we've already iterated over */
 	    if (!closureset.contains(gn2)) {
 		closureset.add(gn2);
 		boolean goodoption=false;
@@ -31,6 +38,10 @@ public class GraphAnalysis {
 		    GraphNode gn3=((GraphNode.Edge)edgeit.next()).getTarget();
 		    if (removed.contains(gn3))
 			continue;
+
+		    /* Consider only the nodes in the graph */
+
+		    
 		    if (((cantremove.contains(gn2)||!couldremove.contains(gn2))
 			 &&termination.conjunctions.contains(gn2))||
 			cantremovetrans.contains(gn2))
@@ -97,7 +108,7 @@ public class GraphAnalysis {
 	    for(Iterator it=termination.consequencenodes.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode) it.next();
 		if (safetransclosure(gn, mustremove,cantremove, couldremove)) {
-			    couldremove.remove(gn);
+		    couldremove.remove(gn);
 		}
 	    }
 
@@ -105,8 +116,8 @@ public class GraphAnalysis {
 
 	    for(Iterator it=termination.updatenodes.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode) it.next();
-		if (safetransclosure(gn, mustremove,cantremove, cantremove)) {
-			couldremove.remove(gn);
+		if (safetransclosure(gn, mustremove,cantremove, couldremove)) {
+		    couldremove.remove(gn);
 		}
 	    }
 
@@ -116,7 +127,7 @@ public class GraphAnalysis {
 		GraphNode gn=(GraphNode) it.next();
 		if (mustremove.contains(gn)||cantremove.contains(gn))
 		    continue;
-		if (!safetransclosure(gn, mustremove,cantremove, cantremove))
+		if (!safetransclosure(gn, mustremove,cantremove, couldremove))
                     continue;
 
 		boolean allgood=true;
@@ -172,9 +183,10 @@ public class GraphAnalysis {
 	    }
 
 
-	    /* Search through conjunction which must be satisfied, and attempt
-	       to generate appropriate repair actions.
-	     */
+	    /* Search through conjunction nodes which must be
+	       satisfied, and see if there are any data structure
+	       updates that must exist. */
+
 	    HashSet newset=new HashSet();
 	    for(Iterator cit=cantremove.iterator();cit.hasNext();) {
 		GraphNode gn=(GraphNode)cit.next();
@@ -313,7 +325,7 @@ public class GraphAnalysis {
 	    for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
 		boolean foundnocycle=false;
-
+		
 		for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
 		    GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
 		    GraphNode gn2=e.getTarget();
@@ -323,14 +335,14 @@ public class GraphAnalysis {
 		    AbstractRepair ar=tn2.getAbstract();
 		    boolean ismodify=ar.getType()==AbstractRepair.MODIFYRELATION;
 		    int numadd=0;int numremove=0;
-
+		    
 		    for (Iterator edgeit2=gn2.edges();edgeit2.hasNext();) {
 			GraphNode.Edge e2=(GraphNode.Edge)edgeit2.next();
 			GraphNode gn3=e2.getTarget();
 			TermNode tn3=(TermNode)gn3.getOwner();
 			if (tn3.getType()!=TermNode.UPDATE)
 			    continue;
-
+			
 			boolean containsgn=cantremove.contains(gn);
 			boolean containsgn2=cantremove.contains(gn2);
 			boolean containsgn3=cantremove.contains(gn3);
@@ -388,17 +400,11 @@ public class GraphAnalysis {
 	    /* Searches scope nodes + compensation nodes */
 	    for(Iterator it=termination.scopenodes.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
-		int count=0;
 		if (nodes.contains(gn)) {
     		    for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
 			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
 			GraphNode gn2=e.getTarget();
 			TermNode tn2=(TermNode)gn2.getOwner();
-
-			if ((tn2.getType()==TermNode.CONSEQUENCE)&&
-			    !mustremove.contains(gn2))
-			    count++;
-
 
 			if (tn2.getType()!=TermNode.UPDATE)
 			    continue;
@@ -414,29 +420,11 @@ public class GraphAnalysis {
 				change=true;
 				mustremove.add(gn2);
 			    }
-			} else {
-			    if (!mustremove.contains(gn2))
-				count++;
-			}
+			} 
 			if (!containsgn)
 			    cantremove.remove(gn);
 			if (!containsgn2)
 			    cantremove.remove(gn2);
-		    }
-
-		    if (count==1) {
-			for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
-			    GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
-			    GraphNode gn2=e.getTarget();
-			    TermNode tn2=(TermNode)gn2.getOwner();
-			    if ((tn2.getType()==TermNode.UPDATE||tn2.getType()==TermNode.CONSEQUENCE)&&
-				!mustremove.contains(gn2)) {
-				if (!cantremove.contains(gn2)) {
-				    cantremove.add(gn2);
-				    change=true;
-				}
-			    }
-			}
 		    }
 		}
 	    }
