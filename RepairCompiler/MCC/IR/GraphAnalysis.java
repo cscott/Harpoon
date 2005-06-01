@@ -56,6 +56,9 @@ public class GraphAnalysis {
 			if (cantremove.contains(gn3)||
 			    cantremovetrans.contains(gn3)) {
 			    needcyclecheck=true;
+			} else if (termination.updatenodes.contains(gn3)&&
+				   !couldremove.contains(gn3)) {
+			    needcyclecheck=true;
 			} else return false;
 		    }
 		    if ((!couldremove.contains(gn3))||cantremove.contains(gn3))
