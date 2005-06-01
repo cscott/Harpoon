@@ -53,8 +53,7 @@ public class GraphAnalysis {
 			/**  Check for cycles if the graphnode can't
 			 * be removed (we know we aren't introducing
 			 * new things to repair). */
-			if ((!termination.abstractrepair.contains(gn3)&&
-			     cantremove.contains(gn3))||
+			if (cantremove.contains(gn3)||
 			    cantremovetrans.contains(gn3)) {
 			    needcyclecheck=true;
 			} else return false;
@@ -63,8 +62,10 @@ public class GraphAnalysis {
 			goodoption=true;
 		    workset.push(gn3);
 		}
-		if (!goodoption) {
+		if (!goodoption&&!cantremovetrans.contains(gn2)) {
 		    if (termination.scopenodes.contains(gn2))
+			return false;
+		    if (termination.abstractrepair.contains(gn2))
 			return false;
 		}
 	    }
