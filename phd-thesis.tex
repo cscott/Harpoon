@@ -1,29 +1,30 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.1 2005-06-07 16:06:58 cananian Exp $
+% $Id: phd-thesis.tex,v 1.2 2005-06-07 17:24:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[12pt,titlepage,twoside]{article}
-\usepackage{beton}\usepackage{euler}
-\linespread{1.2} % ``double-space''
+\documentclass{phd-thesis}
+\usepackage[light,first,bottomafter]{draftcopy}
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.1 $ $}
+\date{\subdate \\ $ $Revision: 1.2 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
+\frontmatter
 \input{phd-titlepage}
 
-\cleardoublepage
-\section{Introduction}
-\subsection{Locking vs nonblocking synchronization}
-\subsection{Deadlocks, ordering, and other frightening prospects}
-\subsection{Transactions and transactional memory}
+\mainmatter
+\chapter{Introduction}
+\section{Locking vs nonblocking synchronization}
+\section{Deadlocks, ordering, and other frightening prospects}
+\section{Transactions and transactional memory}
 
-\section{An Efficient Software Implementation of Transactions}
-
-\section{Transactions in Hardware: Unbounded Transactional Memory}
+\chapter{An Efficient Software Implementation of Transactions}
+\section{The Big Idea: waving FLAGs}
+\section{Arrays}
+\chapter{Transactions in Hardware: Unbounded Transactional Memory}
 \begin{quote}
 People who are really serious about software should make their own hardware.
 
@@ -36,19 +37,24 @@ it.
 \end{quote}
 
 
-\section{A Hybrid Transaction Implementation}
+\chapter{A Hybrid Transaction Implementation}
 
-\section{Extending transactions: beyond atomic power}
+\chapter{Extending transactions: beyond atomic power}
 
-\subsection{Nesting}
-\subsection{Exchange and Merging}
-\subsection{Loopholes and NITs}
+\section{Nesting}
+\section{Exchange and Merging}
+\section{Loopholes and NITs}
 
-\section{Compiler optimizations and type systems}
+\chapter{Compiler optimizations and type systems}
 
-\section{Conclusion}
+\chapter{Conclusion}
 \appendix
-\section{Model-checking the software implementation}
-\section{Compiling to precise garbage-collectable C code}
+\chapter{Model-checking the software implementation}
+
+\chapter{Compiling to precise garbage-collectable C code}
+
+\backmatter
+\nocite{*}
+\bibliography{harpoon}
 
 \end{document}

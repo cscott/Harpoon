@@ -7,9 +7,9 @@ export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
 	pldi03 oopsla02 oqe lctes03 pldi04 ecoop04 popl05 hpec \
-	oxygen3-talk phd-proposal
+	oxygen3-talk phd-proposal phd-thesis
 
-default: phd-proposal.ps
+default: phd-thesis.ps # all
 .PRECIOUS: %.dvi
 
 ## funky stuff for martin.
@@ -36,7 +36,7 @@ lctes03.dvi: comdef.sty
 p072-ananian.dvi: comdef.sty
 
 # bibtex dependencies
-exec.dvi quads.dvi design.dvi thesis.dvi: harpoon.bib
+exec.dvi quads.dvi design.dvi thesis.dvi phd-thesis.dvi: harpoon.bib
 pldi99.dvi pldi99-outline.dvi: harpoon.bib
 pldi02.dvi: harpoon.bib
 pldi03.dvi: harpoon.bib
@@ -102,7 +102,10 @@ pldi04.dvi ecoop04.dvi popl05.dvi: \
 ecoop04.dvi: csallncs.cls
 popl05.dvi: csaacmconfbig.cls acmconfbig.cls
 
-# thesis figure dependencies
+# Phd Thesis dependencies
+phd-thesis.dvi: phd-thesis.cls
+
+# masters thesis figure dependencies
 export THESIS_FIGURES=\
 	Figures/THundir.fig \
 	Figures/THcqdata.tex Figures/THcqalg.tex Figures/THcqex.fig \
@@ -123,7 +126,7 @@ thesis.dvi: $(patsubst %.fig,%.tex,$(THESIS_FIGURES)) \
 	Figures/THcqex2.tex Figures/phisig.tex \
 	Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
 
-# thesis figure rules
+# masters thesis figure rules
 Figures/%: always
 	@$(MAKE) --no-print-directory -C Figures $*
 always:
