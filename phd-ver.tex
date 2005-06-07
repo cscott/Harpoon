@@ -1,0 +1,12 @@
+\section{Verification}
+My initial work on both software and hardware transaction systems has
+reiterated the difficulty of creating correct implementations of
+concurrent and fault-tolerant constructs.  Automatic model checking is
+a requirement to achieve confidence in the design and implementation.
+Versions of the software transaction system have been modelled in
+Promela using Spin 4.1.0 and verified on an SGI 64-processor MIPS
+machine with 16G of main memory; detecting an correcting a number of
+subtle race-conditions in the process.  I plan to construct a model of
+the proposed hardware transaction system as well in order to gain more
+confidence in its correct specification.
+

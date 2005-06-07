@@ -1,0 +1,72 @@
+\secput{efficient}{Designing Efficient Transactions}
+In this section I briefly describe some desired properties of the
+software transaction system being designed for this thesis.
+
+\subsection{Field Flags}\label{sec:flagfield}
+\note{Missing: performance numbers for adding check.  Use ``no trans''
+version of transaction app and add check into the access functions.}
+We would like non-transactional code to execute with minimal overhead,
+however, transactions should still appear atomic to non-transactional
+code.  My basic mechanism is loosely based on the
+distributed shared memory implementation of Scales and Gharachorloo
+\cite{ScalesGh97}.  I pick a special ``flag'' value, and
+``cross-out'' locations currently involved in a transaction by
+overwriting them with the flag value.  Reading or attempting to
+overwrite a flagged value will indicate to non-transactional code
+that exceptional processing is necessary; all other non-transactional
+operations proceed as usual.
+
+Note that this technique explicitly allows safe access to fields
+involved in a transaction from non-transactional code.
+\punt{
+Ensuring that transactional updates remain atomic to non-transactional
+code eases ``transactification'' and 
+Key idea is to allow safe access by non-transactional code, so as to
+allow transactification.
+}
+
+\epsfigput{bloat}{Application slowdown with increasing object bloat
+for the SPECjvm98 benchmark applications.}
+\subsection{Object expansion}
+I will need to add some additional information to each object to
+track transaction state.  I measured the slowdown caused by various
+amounts of object ``bloat'' to determine reasonable bounds on the
+size of this extra information.  \figref{bloat} presents these
+results for the SPECjvm98 applications; I determined that two words
+(eight bytes) of additional storage per object would not impact
+performance unreasonably.  This amount of bloat causes a geometric
+mean of 2\% slowdown on these benchmarks.
+
+\begin{figure}\sis%
+\begin{center}
+\begin{tabular}{lrrrr}
+        & transactional & transactional\\
+program & memory ops    & stores \% \\\hline
+{\tt 201\_compress} & 50,029 & 26.2\% \\
+{\tt 202\_jess} & 36,701,037 & 0.6\% \\
+{\tt 205\_raytrace} & 7,294,648 & 23.2\% \\
+{\tt 209\_db} & 195,374,420 & 6.3\% \\
+{\tt 213\_javac} & 472,134,289 & 22.9\% \\
+{\tt 222\_mpegaudio} & 41,422 & 18.6\% \\
+{\tt 228\_jack} & 63,912,386 & 17.0\% \\
+\end{tabular}
+\end{center}
+\caption{Comparison of loads and stores inside transactions for the
+  SPECjvm98 benchmark suite, full input runs.}
+\label{fig:writepercent}
+\end{figure}
+\subsection{Reads vs. Writes}
+\figref{writepercent} shows that transactional reads typically
+outnumber transactional writes by at least 4 to 1; in some cases reads
+outnumber writes by over 100 to 1.  It is worthwhile, therefore, to
+make reads more efficient than writes.  In particular, since the
+flag-overwrite technique discussed in \secref{flagfield} requires us
+to allocate additional memory to store the ``real'' value of the
+field, I wish to avoid this process for transactional reads,
+reserving the extra allocation effort for transactional writes.
+
+\punt{
+\subsection{Large objects}
+See \secref{properties}.
+}
+
