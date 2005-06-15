@@ -36,7 +36,7 @@ lctes03.dvi: comdef.sty
 p072-ananian.dvi: comdef.sty
 
 # bibtex dependencies
-exec.dvi quads.dvi design.dvi thesis.dvi phd-thesis.dvi: harpoon.bib
+exec.dvi quads.dvi design.dvi thesis.dvi: harpoon.bib
 pldi99.dvi pldi99-outline.dvi: harpoon.bib
 pldi02.dvi: harpoon.bib
 pldi03.dvi: harpoon.bib
@@ -44,6 +44,7 @@ lctes03.dvi: harpoon.bib
 p072-ananian.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
+phd-thesis.dvi: xaction.bib
 
 # lots of dependencies for the pldi99 paper
 pldi99.dvi: pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
