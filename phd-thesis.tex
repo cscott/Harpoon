@@ -1,20 +1,22 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.8 2005-06-15 20:01:26 cananian Exp $
+% $Id: phd-thesis.tex,v 1.9 2005-06-15 23:01:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
+\usepackage{epigraph}
 \usepackage{makeidx}
 \makeindex
 
 % draft options:
-\usepackage[light,first,bottomafter]{draftcopy}
+\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
+%\draftcopyName{DRAFT $Revision: 1.9 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.8 $ $}
+\date{\subdate \\ $ $Revision: 1.9 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -32,25 +34,28 @@
 \section{Transactions and transactional memory}
 \input{phd-intro}
 
+\chapter{Challenges}
+\section{Performance isolation}
+\section{Progress guarantees}
+\section{The Semantic Gap}
+\section{I/O}
+\section{OS interactions}
+
 \chapter[Efficient Software Implementation]{An Efficient Software Implementation of Transactions}
 \section{The Big Idea: waving FLAGs}
-\section{Why O-O?} % answer: long-running xactions
+\section{Why Object-Oriented?} % answer: long-running xactions
 \section{Arrays}
 \input{phd-stm}
 
 \chapter[Transactions in Hardware]{Transactions in Hardware: Unbounded Transactional Memory}
-\begin{quote}\index{Kay, Alan}
+\epigraphhead[70]{\epigraph{%
 People who are really serious about software should make their own hardware.
 
 Remember, it's all software, it just depends on when you crystallize
-it. 
-
- --- Alan Kay
-
+it.}{\textit{Alan Kay}}}
+\index{Kay, Alan}
 % http://www.folklore.org/StoryView.py?project=Macintosh&story=Creative_Think.txt
-\end{quote}
 
-\section{Formal equivalence proof of UTM/xstate}
 \section{Large Transactional Memory}
 \section{Calling-convention and function issues}
 
@@ -66,11 +71,14 @@ it.
 \section{Opportunistic parallelism}
 
 \chapter[Optimizations and type systems]{Compiler optimizations and type systems}
+\section{Closing the semantic gap}
 
 \chapter{Conclusion}
 \appendix
 \chapter[Model-checking the implementation]{Model-checking the software implementation}
 \input{phd-ver}
+
+\chapter{Formal equivalence proof of UTM/xstate}\label{sec:hw-proof}
 
 \chapter[Precise garbage-collectable C]{Compiling to precise garbage-collectable C code}
 
