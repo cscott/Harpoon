@@ -1,6 +1,7 @@
 # makefile.
 LATEX=latex
 BIBTEX=bibtex --min-crossrefs=9999
+MAKEINDEX=makeindex
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
@@ -152,6 +153,7 @@ always:
 %.dvi %.aux: %.tex
 	$(LATEX) $*
 	if egrep -s '^[^%]*\\bibliography' $< ; then $(BIBTEX) $*; fi
+	if egrep -s '^[^%]*\\makeindex' $< ; then $(MAKEINDEX) $*; fi
 	if egrep -s 'Rerun to get cross-r|Citation.*undefined' $*.log; then \
 		$(LATEX) $*; fi
 	if egrep -s 'Rerun to get cross-r' $*.log; then $(LATEX) $*; fi

@@ -1,14 +1,20 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.7 2005-06-15 19:51:25 cananian Exp $
+% $Id: phd-thesis.tex,v 1.8 2005-06-15 20:01:26 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
+\usepackage{makeidx}
+\makeindex
+
+% draft options:
 \usepackage[light,first,bottomafter]{draftcopy}
+\usepackage{showidx}
+
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.7 $ $}
+\date{\subdate \\ $ $Revision: 1.8 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -33,7 +39,7 @@
 \input{phd-stm}
 
 \chapter[Transactions in Hardware]{Transactions in Hardware: Unbounded Transactional Memory}
-\begin{quote}
+\begin{quote}\index{Kay, Alan}
 People who are really serious about software should make their own hardware.
 
 Remember, it's all software, it just depends on when you crystallize
@@ -70,5 +76,5 @@ it.
 
 \backmatter
 \bibliography{xaction}
-
+\printindex
 \end{document}
