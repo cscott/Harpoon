@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.4 2005-06-07 17:45:37 cananian Exp $
+% $Id: phd-thesis.tex,v 1.5 2005-06-15 19:16:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -8,7 +8,7 @@
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.4 $ $}
+\date{\subdate \\ $ $Revision: 1.5 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -28,6 +28,7 @@
 
 \chapter{An Efficient Software Implementation of Transactions}
 \section{The Big Idea: waving FLAGs}
+\section{Why O-O?} % answer: long-running xactions
 \section{Arrays}
 \input{phd-stm}
 
@@ -43,14 +44,20 @@ it.
 % http://www.folklore.org/StoryView.py?project=Macintosh&story=Creative_Think.txt
 \end{quote}
 
+\section{Formal equivalence proof of UTM/xstate}
+\section{Large Transactional Memory}
+\section{Calling-convention and function issues}
 
 \chapter{A Hybrid Transaction Implementation}
+
+% dual-path coding: publishable paper: try in hw, fall back to sftware
 
 \chapter{Extending transactions: beyond atomic power}
 
 \section{Nesting}
 \section{Exchange and Merging}
 \section{Loopholes and NITs}
+\section{Opportunistic parallelism}
 
 \chapter{Compiler optimizations and type systems}
 
