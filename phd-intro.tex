@@ -746,13 +746,14 @@ the transactified applications may contain large transactions,
 proposed hardware support for transactions is inadequate.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\secput{related}{Related work}
+\section{Related work}\label{sec:related}
+
 A number of researchers have been investigating transactional memory
 systems.  This thesis will be the first to present a model-checked non-blocking
 object-oriented system which allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 
-\subsecput{nb-sync}{Non-blocking synchronization}
+\subsection{Non-blocking synchronization}\label{sec:nb-sync}
 
 Lamport presented the first alternative to synchronization via mutual
 exclusion in \cite{Lamport77}, for a limited situation involving a single
@@ -806,7 +807,7 @@ We will be concerned mainly with lock-free algorithms.%
   our three specific progress criteria, and the dissimilar
   \emph{non-blocking} for the general class.}
 
-\subsecput{efficiency}{Efficiency}
+\subsection{Efficiency}\label{sec:efficiency}
 Herlihy presented the first \emph{universal} method for wait-free
 concurrent implementation of an arbitrary sequential object
 \cite{Herlihy88,Herlihy91}.  This original method was based on
