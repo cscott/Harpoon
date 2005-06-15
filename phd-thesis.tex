@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.6 2005-06-15 19:43:52 cananian Exp $
+% $Id: phd-thesis.tex,v 1.7 2005-06-15 19:51:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -8,7 +8,7 @@
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.6 $ $}
+\date{\subdate \\ $ $Revision: 1.7 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -26,13 +26,13 @@
 \section{Transactions and transactional memory}
 \input{phd-intro}
 
-\chapter{An Efficient Software Implementation of Transactions}
+\chapter[Efficient Software Implementation]{An Efficient Software Implementation of Transactions}
 \section{The Big Idea: waving FLAGs}
 \section{Why O-O?} % answer: long-running xactions
 \section{Arrays}
 \input{phd-stm}
 
-\chapter{Transactions in Hardware: Unbounded Transactional Memory}
+\chapter[Transactions in Hardware]{Transactions in Hardware: Unbounded Transactional Memory}
 \begin{quote}
 People who are really serious about software should make their own hardware.
 
@@ -52,21 +52,21 @@ it.
 
 % dual-path coding: publishable paper: try in hw, fall back to sftware
 
-\chapter{Extending transactions: beyond atomic power}
+\chapter[Extending transactions]{Extending transactions: beyond atomic power}
 
 \section{Nesting}
 \section{Exchange and Merging}
 \section{Loopholes and NITs}
 \section{Opportunistic parallelism}
 
-\chapter{Compiler optimizations and type systems}
+\chapter[Optimizations and type systems]{Compiler optimizations and type systems}
 
 \chapter{Conclusion}
 \appendix
-\chapter{Model-checking the software implementation}
+\chapter[Model-checking the implementation]{Model-checking the software implementation}
 \input{phd-ver}
 
-\chapter{Compiling to precise garbage-collectable C code}
+\chapter[Precise garbage-collectable C]{Compiling to precise garbage-collectable C code}
 
 \backmatter
 \bibliography{xaction}
