@@ -1,22 +1,4 @@
-Transactions are coming into vogue as a flexible synchronization
-primitive which maps naturally to human intuition about the desired
-behavior of concurrent systems.  This thesis presents efficient
-implementations of transactions in an object-oriented
-software-only system, in scalable hardware systems, and in a hybrid
-of the two systems, obtaining the benefits of both.  I will also present
-formal models of the implementation which have been mechanically
-checked for correct behavior.
-
-I will explore the implications on available, efficient, and usable
-transactions on high-level language design, presenting solutions for
-transaction nesting, merging, and loop-hole mechanisms.  This presents
-a solution to the vexing ``I/O'' and modularity problems with
-existing transactional mechanisms.  Compiler analyses
-and type systems to further improve the efficiency, safety, and
-usability of our transaction mechanisms will also be presented.
-
-\section{Transactions}
-
+\index{locks!problems with}
 Conventionally, atomicity in shared-memory multiprocessors is provided
 via mutual-exclusion \defn{locks} (see, for example,
 \cite{Tanenbaum92}[p.~35]).  Although locks are easy to
@@ -45,6 +27,7 @@ backoff algorithm to preclude live-lock.
 
 Although transactions can be implemented using mutual exclusion
 (locks), our algorithms will utilize non-blocking synchronization
+\index{non-blocking synchronization}
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
 synchronization offers a number of advantages; foremost for the
@@ -66,22 +49,23 @@ of operation sequences; non-blocking
 synchronization allows undelayed processes or processors to continue
 to make progress.
 Similarly, in real-time systems, the use of non-blocking
-synchronization can prevent \emph{priority inversion} in the system
-\cite{Jones97}.
+synchronization can prevent \defnlti{priority inversion} in the system
+\cite{Jones97}, although na\"{\i}ve implementations may result in
+starvation of low-priority tasks; see \secref{progress}.
 
 The transaction model is a natural means to express both desired
-atomicity and fault-tolerance properties.  In my thesis research, I
-will also show how transactions can be used as a general
-exception-handling mechanism and to implement back-tracking.
-Transactions can be integrated into Java and used for fault-tolerance,
-backtracking, exception-handling, and concurrency control in new
-programs.  Further, existing code can often be ``transactified'' to
-fix existing concurrency bugs.
+atomicity and fault-tolerance properties.  In this thesis, I will also
+show how transactions can be integrated into an object-oriented
+language and used for fault-tolerance, backtracking,
+exception-handling, and concurrency control in new programs.  I will
+also show how
+existing code might safely be ``transactified'' to fix existing
+concurrency bugs (\secref{safe-transactify}).
 
-I will explore both software and hardware implementations of the
+I will present both software and hardware implementations of the
 transaction model.
 Previous implementation work has concentrated on the
-\defn{transactional memory} abstraction
+\defni{transactional memory} abstraction
 \cite{Knight86,HerlihyMo93,StoneStHe93,RajwarGo02,ShavitTo95,HerlihyLuMoSc03},
 which has
 been proposed as a general and flexible way to allow programs to read
@@ -89,8 +73,12 @@ and modify disparate primary memory locations atomically as a single
 operation, much as a database transaction can atomically modify many
 records on disk.
 
+\index{HTM|see{Hardware Transactional Memory}}
+\index{STM|see{Software Transactional Memory}}
+\index{Hardware Transactional Memory}
 \defn{Hardware transactional memory} (HTM) supports atomicity through
 architectural means, whereas \defn{software transactional memory}
+\index{Software Transactional Memory}
 (STM) supports atomicity through languages, compilers, and libraries.
 Researchers of both HTM and STM commonly express the opinion that
 transactions need never touch many memory locations, and hence it is
@@ -114,147 +102,13 @@ certain size, but must still operate correctly for larger
 transactions.  The size of transactional hardware should be an
 implementation parameter, like cache size or memory size, which can
 vary without affecting the portability of binaries.
+\charef{hybrid} will show how a fast hardware implementation for
+frequent short transactions can gracefully fail over to a software
+implementation designed to efficiently execute large long-lived
+transactions.
 
-\section{Language-level Approaches to \\Synchronization}
-\begin{figure}
-{\it\sis%
-\begin{tabular}{l}\sis%
-{\bf const} myDirectory == {\bf object} oneEntryDirectory\\
-~~{\bf export} Store, Lookup\\
-~~{\bf monitor}\\
-~~~~{\bf var} name : String\\
-~~~~{\bf var} AnObject : Any\\
-\\
-~~~~{\bf operation} Store [ n : String, o : Any ]\\
-~~~~~~name $\gets$ n\\
-~~~~~~AnObject $\gets$ o\\
-~~~~{\bf end} Store
-\\
-~~~~{\bf function} Lookup [ n : String ] $\to$ [ o : Any ]\\
-~~~~~~{\bf if} n = name\\
-~~~~~~~~{\bf then} o $\gets$ AnObject\\
-~~~~~~~~{\bf else} o $\gets$ {\bf nil}\\
-~~~~~~{\bf end if}\\
-~~~~{\bf end} Lookup\\
-\\
-~~~~{\bf initially}\\
-~~~~~~name $\gets$ {\bf nil}\\
-~~~~~~AnObject $\gets$ {\bf nil}\\
-~~~~{\bf end initially}\\
-\\
-~~{\bf end monitor}\\
-{\bf end} oneEntryDirectory
-\end{tabular}
-}
-\caption{A directory object in Emerald, from \cite{BlackHuJuLe86},
-  illustrating the use of monitor synchronization.}
-\label{fig:emerald-dir}
-\end{figure}
-
-\begin{figure}
-{\ttfamily\small\vspace{.25in}
-\sis%
-\begin{tabular}{l}
-class Account \{\\
-\\
-~~int balance = 0;\\
-\\
-~~{\bf atomic} int deposit(int amt) \{\\
-~~~~int t = this.balance;\\
-~~~~t = t + amt;\\
-~~~~this.balance = t;\\
-~~~~return t;\\
-~~\}\\
-\\
-~~{\bf atomic} int readBalance() \{\\
-~~~~return this.balance;\\
-~~\}\\
-\\
-~~{\bf atomic} int withdraw(int amt) \{\\
-~~~~int t = this.balance;\\
-~~~~t = t - amt;\\
-~~~~this.balance = t;\\
-~~~~return t;\\
-~~\}\\
-\\
-\}\\
-\end{tabular}
-}\vspace{.2in}
-\caption{A simple bank account object, adapted from \cite{FlanaganQa03},
-  illustrating the use of the \atomic modifier.}
-\label{fig:atomic}
-\end{figure}
-
-Our work on integrating transactions into the Java programming
-language is related to prior work on integrating synchronization
-mechanisms for multiprogramming, and in particular, to prior work on
-synchronization in an object-oriented framework.
-
-The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
-\emph{monitored objects} for synchronization.  Emerald code to
-implement a simple directory object is shown in
-Figure~\ref{fig:emerald-dir}.  Each object is associated with
-Hoare-style monitor, which provides mutual exclusion and process
-signalling.  Each Emerald object is divided into a monitored part and
-a non-monitored part.  Variables declared in the monitored part are
-shared, and access to them from methods in the non-monitored part is
-prohibited---although non-monitored methods may call monitored methods
-to effect the access.  Methods in the monitored part acquire the monitor lock
-associated with the receiver object before entry and release it on
-exit, providing for mutual exclusion and safe update of the shared
-variables.  Monitored objects naturally integrate synchronization into
-the object model.
-
-Unlike Emerald monitored objects, where methods can only acquire the
-monitor of their receiver and where restricted access to shared
-variables is enforced by the compiler, Java implements a loose
-variant where any monitor may be explicitly acquired and no shared
-variable protection exists.  As a default, however, Java methods
-declared with the {\tt synchronized} keyword behave like Emerald
-monitored methods,
-ensuring that the monitor lock of their receiver is held during execution.
-
-Java's synchronization primitives arguably allow for more efficient
-concurrent code than Emerald's---for example, Java objects can use
-multiple locks to
-protect disjoint sets of fields, and coarse-grain locks can be used
-which protect multiple objects---but Java is also more prone to programmer
-error.  However, even Emerald's restrictive
-monitored objects are not sufficient to prevent data races.  As a
-simple example, imagine that an object provided two monitored methods
-{\tt read} and {\tt write} which accessed a shared variable.
-Non-monitored code can call {\tt read}, increment the value returned,
-and then call {\tt write}, creating a classic race condition scenario.
-The atomicity of the parts is not sufficient to guarantee atomicity of
-the whole \cite{FlanaganQa03}.
-
-This suggests that a better model for synchronization in
-object-oriented systems is \emph{atomicity}.  Figure~\ref{fig:atomic}
-shows Java extended with an \atomic keyword to implement an
-object representing a bank account.  Rather than explicitly
-synchronizing on locks, I simply require that the methods marked
-\atomic execute atomically with respect to other threads in the
-system; that is, that every execution of the program computes the same
-result as some execution where all atomic methods were run \emph{in
-  isolation} at a certain point in time, called the
-\defn{linearization point}, between their invocation and return.
-Note that
-atomic methods invoked directly or indirectly from an atomic
-method are subsumed by it: if the outermost method appears atomic,
-then by definition all inner method invocations will also appear atomic.
-Flanagan and Qadeer provide a more formal semantics in \cite{FlanaganQa03}.
-Atomic methods can be analyzed using sequential reasoning techniques, which
-significantly simplifies reasoning about program correctness.
-
-Atomic methods can be implemented using locks.  A simple if inefficient
-implementation would simply acquire a single global lock during
-the execution of every atomic method.  Flanagan and Qadeer
-\cite{FlanaganQa03} present a more sophisticated technique which proves that
-a given implementation using standard Java monitors correctly
-guarantees method atomicity.
-
-I will base my integration of transactions into Java on the use of
-non-blocking synchronization to implement atomic methods.
+\section{Five things you can't (easily) do with locks}
+%\section{Deadlocks, ordering, and other frightening prospects}
 
 \section{Examples and Motivation}
 I present three examples in this section, illustrating how
@@ -266,13 +120,13 @@ transaction implementation can be treated as an exception-handling
 mechanism.   I then, using a network flow example, show how this
 transaction mechanism can be used to simplify
 the locking discipline required when synchronizing concurrent
-modifications to multiple objects
+modifications to multiple objects.
 Finally, I show an existing race in the Java standard libraries (in 
 the class \texttt{java.lang.StringBuffer}).  ``Transactification'' of
 the existing class corrects this race.
 
 \subsection{Destructive traversal}\label{sec:destruct}
-Many recursive data structures can be traversed without the use of an
+Many recursive data structures can be traversed without the use of a
 stack using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
 Schorr and Waite \cite{SchorrWa67}.  The following code implements a
@@ -337,16 +191,18 @@ try {
 The {\tt try}/{\tt else} block appears to make a non-deterministic
 choice between executing the {\tt try} or the {\tt else} clause,
 depending on whether the {\tt try} would succeed or not.
-I implement this with a transaction around the traversal,
+This can be straight-forwardly implemented
+with a transaction around the traversal,
 always initially attempting
 the {\tt try}.  Exceptions or faults cause the transaction to abort;
 when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
 Introducing an explicit {\tt fail} statement allows us to use the same
-{\tt try}/{\tt else} for back-tracking search.
+{\tt try}/{\tt else} for back-tracking search.\index{back-tracking}
+\note{Insert example here?}
 
-\subsection{Network flow}\label{sec:flow}
+\subsection{Network flow}\label{sec:flow}\index{network flow}
 
 I'll turn our attention now to parallel codes.
 Consider a serial program for computing network flow (see, for
@@ -454,10 +310,11 @@ synchronization as well.
 \note{Mention optimistic parallelism here?}
 
 \subsection{The \texttt{StringBuffer} class}\label{sec:stringbuffer}
-The existing \defn{monitor synchronization} methodology for Java
+The existing \defni{monitor synchronization} methodology for Java
 implicitly associates an 
 lock with each object.  As in Java's progenitor, Emerald
-\cite{BlackHuJuLe86,JulSt91}, data races are prevented by
+\cite{BlackHuJuLe86,JulSt91},\index{Emerald}\footnote{See \secref{emerald}.}
+data races are prevented by
 requiring a thread to acquire an
 object's lock before touching the object's shared fields.
 However, the lack of races is not sufficient to prevent unanticipated
@@ -466,7 +323,7 @@ parallel behavior.
 Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this
 insufficiency with an
 actual bug they discovered in the Sun JDK 1.4.2 Java standard
-libraries.  The {\tt java.lang.StringBuffer} class,
+libraries.  The \texttt{java.lang.StringBuffer}\index{java.lang.StringBuffer@\texttt{java.lang.StringBuffer}} class,
 which implements a mutable string abstraction, is implemented as follows:
 \par {\footnotesize\samepage\sis
 \begin{verbatim}
@@ -503,12 +360,12 @@ This non-atomicity may cause incorrect data to be appended to the
 target or a \texttt{StringIndexOutOfBoundException} to be thrown. 
 Although the calls to
 \texttt{sb.length()} and \texttt{sb.getChars()} are individually
-atomic, but they do not compose to form an atomic implementation of
+atomic, they do not compose to form an atomic implementation of
 \texttt{append()}.  
 %The simple monitor synchronization scheme breaks
 %down when operations touch multiple objects.
 
-Note however that replacing {\tt synchronized} with {\tt atomic} in
+Note that replacing {\tt synchronized} with {\tt atomic} in
 this code gives us the semantics
 we desire: the atomicity of nested {\tt atomic} blocks is guaranteed
 by the atomicity of the outermost block, ensuring that the entire
@@ -746,6 +603,150 @@ the transactified applications may contain large transactions,
 proposed hardware support for transactions is inadequate.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Language-level Approaches to \\Synchronization}
+\begin{figure}
+{\it\sis%
+\begin{tabular}{l}\sis%
+{\bf const} myDirectory == {\bf object} oneEntryDirectory\\
+~~{\bf export} Store, Lookup\\
+~~{\bf monitor}\\
+~~~~{\bf var} name : String\\
+~~~~{\bf var} AnObject : Any\\
+\\
+~~~~{\bf operation} Store [ n : String, o : Any ]\\
+~~~~~~name $\gets$ n\\
+~~~~~~AnObject $\gets$ o\\
+~~~~{\bf end} Store
+\\
+~~~~{\bf function} Lookup [ n : String ] $\to$ [ o : Any ]\\
+~~~~~~{\bf if} n = name\\
+~~~~~~~~{\bf then} o $\gets$ AnObject\\
+~~~~~~~~{\bf else} o $\gets$ {\bf nil}\\
+~~~~~~{\bf end if}\\
+~~~~{\bf end} Lookup\\
+\\
+~~~~{\bf initially}\\
+~~~~~~name $\gets$ {\bf nil}\\
+~~~~~~AnObject $\gets$ {\bf nil}\\
+~~~~{\bf end initially}\\
+\\
+~~{\bf end monitor}\\
+{\bf end} oneEntryDirectory
+\end{tabular}
+}
+\caption{A directory object in Emerald, from \cite{BlackHuJuLe86},
+  illustrating the use of monitor synchronization.\index{monitor synchronization}}
+\label{fig:emerald-dir}
+\end{figure}
+
+\begin{figure}
+{\ttfamily\small\vspace{.25in}
+\sis%
+\begin{tabular}{l}
+class Account \{\\
+\\
+~~int balance = 0;\\
+\\
+~~{\bf atomic} int deposit(int amt) \{\\
+~~~~int t = this.balance;\\
+~~~~t = t + amt;\\
+~~~~this.balance = t;\\
+~~~~return t;\\
+~~\}\\
+\\
+~~{\bf atomic} int readBalance() \{\\
+~~~~return this.balance;\\
+~~\}\\
+\\
+~~{\bf atomic} int withdraw(int amt) \{\\
+~~~~int t = this.balance;\\
+~~~~t = t - amt;\\
+~~~~this.balance = t;\\
+~~~~return t;\\
+~~\}\\
+\\
+\}\\
+\end{tabular}
+}\vspace{.2in}
+\caption{A simple bank account object, adapted from \cite{FlanaganQa03},
+  illustrating the use of the \atomic modifier.}
+\label{fig:atomic}
+\end{figure}
+
+Our work on integrating transactions into the Java programming
+language is related to prior work on integrating synchronization
+mechanisms for multiprogramming, and in particular, to prior work on
+synchronization in an object-oriented framework.
+
+\index{Emerald|(}\label{sec:emerald}
+The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
+\defnlti{monitored objects} for synchronization.  Emerald code to
+implement a simple directory object is shown in
+Figure~\ref{fig:emerald-dir}.  Each object is associated with
+Hoare-style monitor, which provides mutual exclusion and process
+signalling.  Each Emerald object is divided into a monitored part and
+a non-monitored part.  Variables declared in the monitored part are
+shared, and access to them from methods in the non-monitored part is
+prohibited---although non-monitored methods may call monitored methods
+to effect the access.  Methods in the monitored part acquire the monitor lock
+associated with the receiver object before entry and release it on
+exit, providing for mutual exclusion and safe update of the shared
+variables.  Monitored objects naturally integrate synchronization into
+the object model.
+
+Unlike Emerald monitored objects, where methods can only acquire the
+monitor of their receiver and where restricted access to shared
+variables is enforced by the compiler, Java implements a loose
+variant where any monitor may be explicitly acquired and no shared
+variable protection exists.  As a default, however, Java methods
+declared with the {\tt synchronized} keyword behave like Emerald
+monitored methods,
+ensuring that the monitor lock of their receiver is held during execution.
+
+Java's synchronization primitives arguably allow for more efficient
+concurrent code than Emerald's---for example, Java objects can use
+multiple locks to
+protect disjoint sets of fields, and coarse-grain locks can be used
+which protect multiple objects---but Java is also more prone to programmer
+error.  However, even Emerald's restrictive
+monitored objects are not sufficient to prevent data races.  As a
+simple example, imagine that an object provided two monitored methods
+{\tt read} and {\tt write} which accessed a shared variable.
+Non-monitored code can call {\tt read}, increment the value returned,
+and then call {\tt write}, creating a classic race condition scenario.
+The atomicity of the parts is not sufficient to guarantee atomicity of
+the whole \cite{FlanaganQa03}.
+\note{``Composibility'': cite PPoPP paper?}
+\index{Emerald|)}
+
+This suggests that a better model for synchronization in
+object-oriented systems is \defnlti{atomicity}.  Figure~\ref{fig:atomic}
+shows Java extended with an \atomic keyword to implement an
+object representing a bank account.  Rather than explicitly
+synchronizing on locks, I simply require that the methods marked
+\atomic execute atomically with respect to other threads in the
+system; that is, that every execution of the program computes the same
+result as some execution where all atomic methods were run \emph{in
+  isolation} at a certain point in time, called the
+\defni{linearization point}, between their invocation and return.
+Note that
+atomic methods invoked directly or indirectly from an atomic
+method are subsumed by it: if the outermost method appears atomic,
+then by definition all inner method invocations will also appear atomic.
+Flanagan and Qadeer provide a more formal semantics in \cite{FlanaganQa03}.
+Atomic methods can be analyzed using sequential reasoning techniques, which
+significantly simplifies reasoning about program correctness.
+
+Atomic methods can be implemented using locks.  A simple if inefficient
+implementation would simply acquire a single global lock during
+the execution of every atomic method.  Flanagan and Qadeer
+\cite{FlanaganQa03} present a more sophisticated technique which proves that
+a given implementation using standard Java monitors correctly
+guarantees method atomicity.
+
+The transaction implementations presented in this thesis will use
+non-blocking synchronization to implement atomic methods.
+
 \section{Related work}\label{sec:related}
 
 A number of researchers have been investigating transactional memory

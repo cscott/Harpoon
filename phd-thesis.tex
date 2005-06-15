@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.9 2005-06-15 23:01:56 cananian Exp $
+% $Id: phd-thesis.tex,v 1.10 2005-06-15 23:36:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 \usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.9 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.10 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.9 $ $}
+\date{\subdate \\ $ $Revision: 1.10 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -29,14 +29,13 @@
 
 \mainmatter
 \chapter{Introduction}
-\section{Locking vs nonblocking synchronization}
-\section{Deadlocks, ordering, and other frightening prospects}
-\section{Transactions and transactional memory}
+%\section{Locking vs nonblocking synchronization}
+%\section{Transactions and transactional memory}
 \input{phd-intro}
 
 \chapter{Challenges}
 \section{Performance isolation}
-\section{Progress guarantees}
+\section{Progress guarantees}\label{sec:progress}
 \section{The Semantic Gap}
 \section{I/O}
 \section{OS interactions}
@@ -59,7 +58,7 @@ it.}{\textit{Alan Kay}}}
 \section{Large Transactional Memory}
 \section{Calling-convention and function issues}
 
-\chapter{A Hybrid Transaction Implementation}
+\chapter{A Hybrid Transaction Implementation}\label{cha:hybrid}
 
 % dual-path coding: publishable paper: try in hw, fall back to sftware
 
@@ -71,7 +70,7 @@ it.}{\textit{Alan Kay}}}
 \section{Opportunistic parallelism}
 
 \chapter[Optimizations and type systems]{Compiler optimizations and type systems}
-\section{Closing the semantic gap}
+\section{Closing the semantic gap}\label{sec:safe-transactify}
 
 \chapter{Conclusion}
 \appendix

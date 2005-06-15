@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.3 2005-06-15 19:45:00 cananian Exp $
+% $Id: phd-thesis.cls,v 1.4 2005-06-15 23:36:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -25,7 +25,10 @@
 \linespread{1.2} % ``double-space''
 
 % definitions
-\newcommand{\defn}[1]           {{\textit{\textbf{\boldmath #1}}}}
+\newcommand{\defn}[1]           {{\textbf{\boldmath\defnlt{#1}}}}
+\newcommand{\defnlt}[1]         {{\textit{#1}}}
+\newcommand{\defni}[1]          {\defn{#1}\index{#1}}
+\newcommand{\defnlti}[1]        {\defnlt{#1}\index{#1}}
 % A breaking non-space for URLs
 \newcommand{\bp}{\hspace{0pt}}
 % single-spacing for code examples.
@@ -35,6 +38,7 @@
 \newcommand{\appref}[1]         {Appendix~\ref{sec:#1}}
 \newcommand{\figref}[1]         {Figure~\ref{fig:#1}}
 \newcommand{\secref}[1]         {Section~\ref{sec:#1}}
+\newcommand{\charef}[1]         {Chapter~\ref{cha:#1}}
 
 \newcommand{\figput}[2]{%
 \begin{figure}[t]\sis%
