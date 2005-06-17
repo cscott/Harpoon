@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.10 2005-06-15 23:36:21 cananian Exp $
+% $Id: phd-thesis.tex,v 1.11 2005-06-17 22:13:46 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 \usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.10 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.11 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.10 $ $}
+\date{\subdate \\ $ $Revision: 1.11 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -36,14 +36,11 @@
 \chapter{Challenges}
 \section{Performance isolation}
 \section{Progress guarantees}\label{sec:progress}
-\section{The Semantic Gap}
+\section{The Semantic Gap}\label{sec:semantic}
 \section{I/O}
 \section{OS interactions}
 
 \chapter[Efficient Software Implementation]{An Efficient Software Implementation of Transactions}
-\section{The Big Idea: waving FLAGs}
-\section{Why Object-Oriented?} % answer: long-running xactions
-\section{Arrays}
 \input{phd-stm}
 
 \chapter[Transactions in Hardware]{Transactions in Hardware: Unbounded Transactional Memory}
@@ -58,7 +55,7 @@ it.}{\textit{Alan Kay}}}
 \section{Large Transactional Memory}
 \section{Calling-convention and function issues}
 
-\chapter{A Hybrid Transaction Implementation}\label{cha:hybrid}
+\chapter{A Hybrid Transaction Implementation}\label{sec:hybrid}
 
 % dual-path coding: publishable paper: try in hw, fall back to sftware
 

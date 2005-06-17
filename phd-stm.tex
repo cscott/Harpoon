@@ -2,29 +2,6 @@
 In this section I briefly describe some desired properties of the
 software transaction system being designed for this thesis.
 
-\subsection{Field Flags}\label{sec:flagfield}
-\note{Missing: performance numbers for adding check.  Use ``no trans''
-version of transaction app and add check into the access functions.}
-We would like non-transactional code to execute with minimal overhead,
-however, transactions should still appear atomic to non-transactional
-code.  My basic mechanism is loosely based on the
-distributed shared memory implementation of Scales and Gharachorloo
-\cite{ScalesGh97}.  I pick a special ``flag'' value, and
-``cross-out'' locations currently involved in a transaction by
-overwriting them with the flag value.  Reading or attempting to
-overwrite a flagged value will indicate to non-transactional code
-that exceptional processing is necessary; all other non-transactional
-operations proceed as usual.
-
-Note that this technique explicitly allows safe access to fields
-involved in a transaction from non-transactional code.
-\punt{
-Ensuring that transactional updates remain atomic to non-transactional
-code eases ``transactification'' and 
-Key idea is to allow safe access by non-transactional code, so as to
-allow transactification.
-}
-
 \epsfigput{bloat}{Application slowdown with increasing object bloat
 for the SPECjvm98 benchmark applications.}
 \subsection{Object expansion}
@@ -65,8 +42,31 @@ to allocate additional memory to store the ``real'' value of the
 field, I wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
 
+\section{The Big Idea: waving FLAGs}
+
+\subsection{Field Flags}\label{sec:flagfield}
+\note{Missing: performance numbers for adding check.  Use ``no trans''
+version of transaction app and add check into the access functions.}
+We would like non-transactional code to execute with minimal overhead,
+however, transactions should still appear atomic to non-transactional
+code.  My basic mechanism is loosely based on the
+distributed shared memory implementation of Scales and Gharachorloo
+\cite{ScalesGh97}.  I pick a special ``flag'' value, and
+``cross-out'' locations currently involved in a transaction by
+overwriting them with the flag value.  Reading or attempting to
+overwrite a flagged value will indicate to non-transactional code
+that exceptional processing is necessary; all other non-transactional
+operations proceed as usual.
+
+Note that this technique explicitly allows safe access to fields
+involved in a transaction from non-transactional code.
 \punt{
-\subsection{Large objects}
-See \secref{properties}.
+Ensuring that transactional updates remain atomic to non-transactional
+code eases ``transactification'' and 
+Key idea is to allow safe access by non-transactional code, so as to
+allow transactification.
 }
 
+\section{Why Object-Oriented?} % answer: long-running xactions
+
+\section{Arrays and large objects}
