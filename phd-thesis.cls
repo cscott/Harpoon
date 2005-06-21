@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.5 2005-06-17 22:13:46 cananian Exp $
+% $Id: phd-thesis.cls,v 1.6 2005-06-21 18:31:54 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -61,3 +61,6 @@
 \label{fig:#1}%
 \end{figure}%
 }
+
+% work around fig2dev wanting to add colors to .figures.
+\providecommand{\color}[2][rgb]{}

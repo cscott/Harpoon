@@ -1,15 +1,100 @@
 \section{Verification}
-My initial work on both software and hardware transaction systems has
+My work on both software and hardware transaction systems has
 reiterated the difficulty of creating correct implementations of
 concurrent and fault-tolerant constructs.  Automatic model checking is
-a requirement to achieve confidence in the design and implementation.
+a prerequisite to achieving confidence in the design and implementation.
 Versions of the software transaction system have been modelled in
 Promela using Spin 4.1.0 and verified on an SGI 64-processor MIPS
-machine with 16G of main memory; detecting an correcting a number of
-subtle race-conditions in the process.  
+machine with 16G of main memory.
 
-Appendix \ref{sec:hw-proof}
-presents a model of
-the proposed hardware transaction system as well in order to gain more
-confidence in its correct specification.
+Sequences of transactional and non-transactional load and store
+operations were checked using two concurrent processes, and all possible
+interleavings were found to produce correct results consistent with
+the semantic atomicity of the transactions.  A number of subtle race
+conditions were discovered and corrected during this process.
+In particular, early versions of the algorithms sometimes allowed
+readers to escape being aborted while racing a writer in
+createVersion, and could allow inconsistent reads.
 
+Spin is not particularly suited to checking models with dynamic
+allocation and deallocation.  In particular, it considers the
+location of objects part of the state space, and allocating object
+A before object B produces a different state than if object B
+were allocated first.  This artificially enlarges the
+state space.  A great deal of effort was expended tweaking the
+model to approach a canonical allocation ordering.  A better solution
+to this problem would allow larger model instances to be checked.
+
+
+\subsection{Promela Primer}\label{sec:promela}
+A concise Promela reference is available at
+\url{http://spinroot.com/spin/Man/Quick.html}; we will here attempt to
+summarize just enough of the language to allow the model we've
+presented in this thesis to be understood.
+
+Promela syntax is C-like, with the same lexical and commenting
+conventions.  Statements are separated by either a semi-colon, or,
+equivalently, an arrow.  The arrow is typically used to separate a
+guard expression from the statements it is guarding.
+
+The program counter moves past a statement only if the statement is
+{\it enabled}.  Most
+statements, including assignments, are always enabled.
+A statement consisting only of an expression is enabled iff the
+expression is true (non-zero).
+Our model uses three basic Promela statements: selection, repetition,
+and {\tt atomic}.
+
+The selection statement,
+%\par{\footnotesize\samepage
+\begin{verbatim}
+if
+:: guard -> statements
+...
+:: guard -> statements
+fi
+\end{verbatim}
+%}
+selects one among its options and executes it.  An option can be
+selected iff its first statement (the guard) is enabled.  The
+special guard {\tt else} is enabled iff all other guards are not.
+
+The repetition statement,
+%\par{\footnotesize\samepage
+\begin{verbatim}
+do
+:: statements
+...
+:: statements
+fi
+\end{verbatim}
+%}
+is similar: one among its enabled statements is selected and executed,
+and then the process is repeated (with a different statement possibly
+being selected each time) until control is explicitly transfered out
+of the loop with a {\tt break} or {\tt goto}.
+
+Finally,
+%\par{\footnotesize\samepage
+\begin{verbatim}
+atomic { statements }
+\end{verbatim}
+%}
+executes the given statements in one indivisible step.  For the
+purposes of this model, a {\tt d\_step} block is functionally identical.
+Outside {\tt atomic} or {\tt d\_step} blocks, Promela allows
+interleaving before and after every statement, but statements are
+indivisible.
+
+Functions as specified in this model are similar to C macros: every
+parameter is potentially both an input {\it and} an output.  Calls to
+functions with names starting with {\tt move} are simple assignments;
+they've been turned into macros so that reference counting
+can be performed.
+
+\subsection{Spin model for Software Transactions}
+The complete Spin 4.1.0 model for the FLEX software transaction system is
+available for download at
+\url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
+
+% insert it here?

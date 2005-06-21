@@ -42,9 +42,8 @@ to allocate additional memory to store the ``real'' value of the
 field, I wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
 
-\section{The Big Idea: waving FLAGs}
+\subsection{The Big Idea: waving FLAGs}\label{sec:flagfield}
 
-\subsection{Field Flags}\label{sec:flagfield}
 \note{Missing: performance numbers for adding check.  Use ``no trans''
 version of transaction app and add check into the access functions.}
 We would like non-transactional code to execute with minimal overhead,
@@ -69,4 +68,1025 @@ allow transactification.
 
 \section{Why Object-Oriented?} % answer: long-running xactions
 
+
+\section{Software Transaction Mechanism}
+We now present an algorithm which has these desired properties.
+Our algorithms will be completely non-blocking, which allows good
+scaling and proper fault-tolerant behavior: one faulty or slow
+processor cannot hold up the remaining good processors.
+
+We will implement the synchronization required by our algorithm using
+load-linked/store-conditional instructions.  We require a particular
+variant of these instructions which allows the location of the
+load-linked to be different from the target of the store-conditional:
+this variant is supported on the PowerPC processor family, although it
+has been deprecated in the newest chips.  This disjoint location
+capability is essential to allow us to keep a finger on one location
+while modifying another: a poor man's ``Double Compare And Swap''
+instruction.
+
+We will describe our algorithms in the Promela modeling language
+\cite{Holzmann03},
+which we used to allow mechanical model checking of the race-safety
+and correctness of the design.  Portions of the model have been
+abbreviated for this presentation;  the full Promela model is
+available from a URL given at the end of the paper.
+
+\appref{promela} provides a brief primer on Promela syntax and semantics.
+
+%\subsecput{interface}{Interface}
+\subsection{Object Structures}%datastruct
+\figput{tr-multi-obj}{Implementing software transactions with version
+  lists.  A transaction object consists of a single field {\it
+    status}, which indicates if it has COMMITTED, ABORTED, or is WAITING.
+  Each object contains two extra fields: {\it readers}, a
+  singly-linked list of transactions which have read this object; and
+  {\it versions} a linked list of version objects.  If an object field
+  is FLAG, then the value for the field is obtained from the
+  appropriate linked version object.}
+\figref{tr-multi-obj} illustrates the basic data structures of our
+software transaction implementation.  Objects are extended with two
+additional fields.  The first field, {\tt versions}, points to a
+singly-linked list of object versions.  Each one contains field values
+corresponding to a committed, aborted, or in-progress transaction,
+identified by its {\tt owner} field.  There is a single unique
+transaction object for each transaction.
+
+The other added field, {\tt readers}, points to a singly-linked list
+of transactions which have read from this object.  Committed and
+aborted transactions are pruned from this list.  The {\tt readers}
+field is used to ensure that a transaction does not operate with
+out-of-date values if the object is later written
+non-transactionally.
+
+There is a special flag value, here denoted by {\tt FLAG}.  It should be
+an uncommon value, i.e. not a small positive or negative integer
+constant, nor zero.  In our implementation, we have chosen the byte
+\texttt{0xCA} to be our flag value, repeated as necessary to fill out
+the width of the appropriate type.
+The semantic value of an object field is the value in the original
+object structure, \emph{unless that value is \texttt{FLAG}}, in which
+case the field's value is the value of the field in the first
+committed transaction in the object's version list.  A ``false flag''
+occurs when the application wishes to ``really'' store the value FLAG
+in a field; this is handled by creating a fully-committed version
+attached to the object and storing FLAG in that version as well as in
+the object field.
+
+\subsection{Operations}%ops
+We support transactional read/write and non-transactional read/write
+as well as transaction begin, transaction abort, and transaction
+commit.  Transaction begin simply involves the creation of a new
+transaction identifier object.  Transaction commit and abort are simply
+compare-and-swap operations which atomically set the transaction object's {\tt
+  status} field appropriately if and only if it was previously in the
+WAITING state.
+The simplicity of commit and abort are appealing: our algorithm
+requires no complicated processing, delay, roll-back or validate
+procedure to commit or abort a transaction.
+
+We will present the other operations one-by-one.
+
+\subsubsection{Read}
+
+The {\tt ReadNT} function does a non-transactional read of field $f$ from
+object $o$, putting the result in $v$.
+In the common case, the only overhead is to check that
+the read value is not FLAG.  However, if the value read \emph{is}
+FLAG, we copy back the field value 
+from the most-recently committed transaction (aborting all other
+transactions) and try again.  The copy-back procedure will notify
+us if this is a ``false flag'', in which case the value of this
+field really is FLAG.  We pass the {\tt kill\_writers} constant
+to the copy-back procedure to
+indicate that only transactional writers need be aborted, not
+transactional readers.
+All possible races are confined to the copy-back procedure.
+\par {\footnotesize\samepage
+\begin{verbatim}
+inline readNT(o, f, v) {
+  do
+  :: v = object[o].field[f];
+     if
+     :: (v!=FLAG) -> break /* done! */
+     :: else
+     fi;
+     copyBackField(o, f, kill_writers, _st);
+     if
+     :: (_st==false_flag) ->
+        v = FLAG;
+        break
+     :: else
+     fi
+  od
+}
+\end{verbatim}
+}
+
+\subsubsection{Write}
+The {\tt WriteNT} function does a non-transactional write of new value $nval$
+to field $f$ of object $o$.  For correctness, we need to ensure that
+the reader list is empty before we do the write.  We implement this
+with a load-linked/store-conditional pair, which is modelled in
+Promela slightly differently, ensuring that our write only succeeds
+so long as the reader list remains empty.\footnote{Note that a
+  standard CAS would not suffice, as the load-linked targets a
+  different location than the store-conditional.}
+If it is not empty, we
+call the copy-back procedure (as in {\tt readNT}), passing the
+constant {\tt kill\_all} to indicate that both transactional readers
+and writers should be aborted during the copy-back.  The copy-back
+procedure leaves the reader list empty.
+
+If the value to be written is actually the FLAG value, things get a
+little bit trickier.  This case does not occur often, and so the
+simplest correct implementation is to treat this non-transactional
+write as a short transactional write, creating a new transaction for
+this one write, and attempting to commit it immediately after the
+write.  This is slow, but adequate for this uncommon case.
+\par {\footnotesize\samepage
+\begin{verbatim}
+inline writeNT(o, f, nval) {
+  if
+  :: (nval != FLAG) ->
+     do
+     :: atomic {
+          if /* this is a LL(readerList)/SC(field) */
+          :: (object[o].readerList == NIL) ->
+             object[o].fieldLock[f] = _thread_id;
+             object[o].field[f] = nval;
+             break /* success! */
+          :: else
+          fi
+        }
+        /* unsuccessful SC */
+        copyBackField(o, f, kill_all, _st)
+     od
+  :: else -> /* create false flag */
+     /* implement this as a short *transactional* write. */
+     /* start a new transaction, write FLAG, commit the */
+     /* transaction; repeat until successful. */
+     /* Implementation elided. */
+     ...
+  fi;
+}
+\end{verbatim}
+}
+\subsubsection{Field Copy-Back}
+\begin{figure}
+\fontsize{6.5}{7.4}
+\begin{verbatim}
+inline copyBackField(o, f, mode, st) {
+  _nonceV=NIL; _ver = NIL; _r = NIL; st = success;
+  /* try to abort each version.  when abort fails, we've got a
+   * committed version. */
+  do
+  :: _ver = object[o].version;
+     if
+     :: (_ver==NIL) ->
+        st = saw_race; break /* someone's done the copyback for us */
+     :: else
+     fi;
+      /* move owner to local var to avoid races (owner set to NIL behind
+       * our back) */
+     _tmp_tid=version[_ver].owner;
+     tryToAbort(_tmp_tid);
+     if
+     :: (_tmp_tid==NIL || transid[_tmp_tid].status==committed) ->
+        break /* found a committed version */
+     :: else
+     fi;
+     /* link out an aborted version */
+     assert(transid[_tmp_tid].status==aborted);
+     CAS_Version(object[o].version, _ver, version[_ver].next, _);
+  od;
+  /* okay, link in our nonce.  this will prevent others from doing the
+   * copyback. */
+  if
+  :: (st==success) ->
+     assert (_ver!=NIL);
+     allocVersion(_retval, _nonceV, aborted_tid, _ver);
+     CAS_Version(object[o].version, _ver, _nonceV, _cas_stat);
+     if
+     :: (!_cas_stat) ->
+        st = saw_race_cleanup
+     :: else
+     fi
+  :: else
+  fi;
+  /* check that no one's beaten us to the copy back */
+  if
+  :: (st==success) ->
+     if
+     :: (object[o].field[f]==FLAG) ->
+        _val = version[_ver].field[f];
+        if
+        :: (_val==FLAG) -> /* false flag... */
+           st = false_flag /* ...no copy back needed */
+        :: else -> /* not a false flag */
+           d_step { /* LL/SC */
+             if
+             :: (object[o].version == _nonceV) ->
+                object[o].fieldLock[f] = _thread_id;
+                object[o].field[f] = _val;
+             :: else /* hmm, fail.  Must retry. */
+                st = saw_race_cleanup /* need to clean up nonce */
+             fi
+           }
+        fi
+     :: else /* may arrive here because of readT, which doesn't set _val=FLAG*/
+        st = saw_race_cleanup /* need to clean up nonce */
+     fi
+  :: else /* !success */
+  fi;
+  /* always kill readers, whether successful or not.  This ensures that we
+   * make progress if called from writeNT after a readNT sets readerList
+   * non-null without changing FLAG to _val (see immediately above; st will
+   * equal saw_race_cleanup in this scenario). */
+  if
+  :: (mode == kill_all) ->
+     do /* kill all readers */
+     :: moveReaderList(_r, object[o].readerList);
+        if
+        :: (_r==NIL) -> break
+        :: else
+        fi;
+        tryToAbort(readerlist[_r].transid);
+        /* link out this reader */
+        CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _);
+     od;
+  :: else /* no more killing needed. */
+  fi;
+  /* done */
+}
+\end{verbatim}
+\caption{The field copy-back routine.}\label{fig:copyback}
+\end{figure}
+\figref{copyback} presents the field copy-back routine.  We create a
+new version owned by a pre-aborted transaction which serves as a
+reservation on the head of the version list.  We then write to the
+object field with a load-linked/store-conditional pair if and only if
+our version is still at the head of the versions list.\footnote{Note
+  again that a CAS does not suffice.}  This addresses
+the major race possible in this routine.
+
+\subsubsection{Transactional Read}
+A transactional read is split into two parts.  Before the read, we
+must ensure that our transaction is on the reader list for the
+object.  This is straight-forward to do in a non-blocking manner as
+long as we always add ourselves to the head of the list.  We must also
+walk the versions list, and abort any uncommitted transaction other
+than our own.  These steps can be combined and hoisted so that they
+are done once before the first read from an object and not repeated.
+
+At read time, we initially read from the original object.  If the
+value read is not FLAG, we use it.  Otherwise, we look up the version
+object associated with our transaction (this will typically be at the
+head of the version list) and read the appropriate value from that
+version.  Note that the initial read-and-check can be omitted if we
+know that we have already written to this field inside this transaction.
+\par {\footnotesize\samepage
+\begin{verbatim}
+inline readT(tid, o, f, ver, result) {
+  do
+  ::
+     /* we should always either be on the readerlist or
+      * aborted here */
+     result = object[o].field[f];
+     if
+     :: (result==FLAG) ->
+        if
+        :: (ver!=NIL) ->
+           result = version[ver].field[f];
+           break /* done! */
+        :: else ->
+           findVersion(tid, o, ver);
+           if
+           :: (ver==NIL) ->/*use val from committed vers.*/
+              assert (_r!=NIL);
+              result = version[_r].field[f];/*false flag?*/
+              moveVersion(_r, NIL);
+              break /* done */
+           :: else /* try, try, again */
+           fi
+        fi
+     :: else -> break /* done! */
+     fi
+  od
+}
+\end{verbatim}
+}
+
+\begin{figure}
+\fontsize{6.5}{8}
+\begin{verbatim}
+/* per-object, before write. */
+inline ensureWriter(tid, o, ver) {
+  assert(tid!=NIL);
+  ver = NIL; _r = NIL; _rr = NIL;
+  do
+  :: assert (ver==NIL);
+     findVersion(tid, o, ver);
+     if
+     :: (ver!=NIL) -> break /* found a writable version for us */
+     :: (ver==NIL && _r==NIL) ->
+        /* create and link a fully-committed root version, then
+         * use this as our base. */
+        allocVersion(_retval, _r, NIL, NIL);
+        CAS_Version(object[o].version, NIL, _r, _cas_stat)
+     :: else ->
+        _cas_stat = true
+     fi;
+     if
+     :: (_cas_stat) ->
+        /* so far, so good. */
+        assert (_r!=NIL);
+        assert (version[_r].owner==NIL ||
+                transid[version[_r].owner].status==committed);
+        /* okay, make new version for this transaction. */
+        assert (ver==NIL);
+        allocVersion(_retval, ver, tid, _r);
+        /* want copy of committed version _r.  No race because
+         * we never write to a committed versions. */
+        version[ver].field[0] = version[_r].field[0];
+        version[ver].field[1] = version[_r].field[1];
+        assert(NUM_FIELDS==2); /* else ought to initialize more fields */
+        CAS_Version(object[o].version, _r, ver, _cas_stat);
+        moveVersion(_r, NIL); /* free _r */
+        if
+        :: (_cas_stat) ->
+           /* kill all readers (except ourself) */
+           /* note that all changes have to be made from the front of the
+            * list, so we unlink ourself and then re-add us. */
+           do
+           :: moveReaderList(_r, object[o].readerList);
+              if
+              :: (_r==NIL) -> break
+              :: (_r!=NIL && readerlist[_r].transid!=tid)->
+                 tryToAbort(readerlist[_r].transid)
+              :: else
+              fi;
+              /* link out this reader */
+              CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _)
+           od;
+           /* okay, all pre-existing readers dead & gone. */
+           assert(_r==NIL);
+           /* link us back in. */
+           ensureReaderList(tid, o);
+           break
+        :: else
+        fi;
+        /* try again */
+     :: else
+     fi;
+     /* try again from the top */
+     moveVersion(ver, NIL)
+  od;
+  /* done! */
+  assert (_r==NIL);
+}
+\end{verbatim}
+\caption{The per-object version-setup routine for transactional writes.}
+\label{fig:ensurewriter}
+\end{figure}
+\begin{figure}
+\fontsize{6.5}{8}
+\begin{verbatim}
+/* per-field, before write. */
+inline checkWriteField(o, f) {
+  _r = NIL; _rr = NIL;
+  do
+  ::
+     /* set write flag, if not already set */
+     _val = object[o].field[f];
+     if
+     :: (_val==FLAG) ->
+        break; /* done! */
+     :: else
+     fi;
+     /* okay, need to set write flag. */
+     moveVersion(_rr, object[o].version);
+     moveVersion(_r, _rr);
+     assert (_r!=NIL);
+     do
+     :: (_r==NIL) -> break /* done */
+     :: else ->
+        object[o].fieldLock[f] = _thread_id;
+        if
+        /* this next check ensures that concurrent copythroughs don't stomp
+         * on each other's versions, because the field will become FLAG
+         * before any other version will be written. */
+        :: (object[o].field[f]==_val) ->
+           if
+           :: (object[o].version==_rr) ->
+              atomic {
+                if
+                :: (object[o].fieldLock[f]==_thread_id) ->
+                   version[_r].field[f] = _val;
+                :: else -> break /* abort */
+                fi
+              }
+           :: else -> break /* abort */
+           fi
+        :: else -> break /* abort */
+        fi;
+        moveVersion(_r, version[_r].next) /* on to next */
+     od;
+     if
+     :: (_r==NIL) ->
+        /* field has been successfully copied to all versions */
+        atomic {
+          if
+          :: (object[o].version==_rr) ->
+             assert(object[o].field[f]==_val ||
+                    /* we can race with another copythrough and that's okay;
+                     * the locking strategy above ensures that we're all
+                     * writing the same values to all the versions and not
+                     * overwriting anything. */
+                    object[o].field[f]==FLAG);
+             object[o].fieldLock[f]=_thread_id;
+             object[o].field[f] = FLAG;
+             break; /* success!  done! */
+          :: else
+          fi
+        }
+     :: else
+     fi
+     /* retry */
+  od;
+  /* clean up */
+  moveVersion(_r, NIL);
+  moveVersion(_rr, NIL);
+}
+\end{verbatim}
+\caption{The per-field copy-through routine for transactional writes.}
+\label{fig:copythrough}
+\end{figure}
+\subsubsection{Transactional Write}
+Again, writes are split in two.  Once for each object we must traverse
+the version list, aborting other versions and locating or creating a
+version corresponding to our transaction.  We must also traverse the
+reader list, aborting all transactions on the list except ourself.
+This is shown in the {\tt ensureWriter} routine in \figref{ensurewriter}.
+
+Once for each field we intend to write, we must perform a
+copy-through: copy the object's field value into all the versions and
+then write FLAG to the object's field.  We use
+load-linked/store-conditional to update versions only if the object's
+field has not already been set to FLAG behind our backs by another
+copy-through.  The {\tt checkWriteField} routine is shown in
+\figref{copythrough}.
+
+Then, for each write, we simply write to the identified version.
+\par {\footnotesize\samepage
+\begin{verbatim}
+inline writeT(ver, f, nval) {
+  /* easy enough: */
+  version[ver].field[f] = nval;
+}
+\end{verbatim}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 \section{Arrays and large objects}
+%% XXX
+
+\subsection{A simple implementation of functional arrays}
+Our atomic method implementation will use \emph{functional arrays} as
+a building block.  Functional arrays are \emph{persistent}; that is,
+after an element is updated both the new and the old contents of the
+array are available for use.  Since arrays are simply maps from
+integers (indexes) to values; any functional map datatype (for
+example, a functional balanced tree) can be used to implement
+functional arrays.
+
+However, the distinguishing characteristic of an imperative array is its
+theoretical complexity: $O(1)$ access or update of any element.
+Implementing functional arrays with a functional balanced tree yields
+$O(\lg n)$ worst-case access or update.
+% We will address this
+% discrepancy in Section~\ref{sec:large-obj}.
+
+For concreteness, functional arrays have the following three
+operations defined:
+\begin{itemize}
+\item $\funcname{FA-Create}(n)$: Return an array of size $n$.  The contents of
+  the array are initialized to zero.
+\item $\funcname{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ which is
+  functionally identical to array $A_j$ except that $A_{j'}(i)=v$.
+  Array $A_j$ is not destroyed and can be accessed further.
+\item $\funcname{FA-Read}(A_j, i)$: Return $A_j(i)$.
+\end{itemize}
+We allow any of these operations to \emph{fail}.  Failed operations
+can be safely retried, as all operations are idempotent by definition.
+
+For the moment, consider the following na{\"\i}ve implementation:
+\begin{itemize}
+\item $\funcname{FA-Create}(n)$: Return an ordinary imperative array of size
+  $n$.
+\item $\funcname{FA-Update}(A_j, i, v)$: Create a new imperative array
+  $A_{j'}$ and copy the contents of $A_j$ to $A_{j'}$.  Return $A_{j'}$.
+\item $\funcname{FA-Read}(A_j, i)$: Return $A_j[i]$.
+\end{itemize}
+This implementation has $O(1)$ read and $O(n)$ update, so it matches
+the performance of imperative arrays only when $n=O(1)$.  We will
+therefore call these \emph{small object functional arrays}.  Operations
+in this implementation never fail.  Every operation is non-blocking
+and no synchronization is necessary, since the imperative arrays are
+never mutated after they are created.
+
+\subsection{A single-object protocol}
+\begin{figure}\centering
+\includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj.eps}
+\caption{Implementing non-blocking single-object concurrent operations
+  with functional arrays.}
+\label{fig:single-o}
+\end{figure}
+Given a non-blocking implementation of functional arrays, we can
+construct an implementation of \atomic for single objects.  In
+this implementation, fields of at most one object may be referenced
+during the execution of the atomic method.
+
+We will consider the following two operations on objects:
+\begin{itemize}
+\item $\funcname{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
+  there is a constant mapping function which given a field name
+  returns an integer index.  We will write the result of mapping $f$
+  as \fref{f}{index}.  For simplicity, and without loss of generality,
+  we will assume all fields are of equal size.
+\item $\funcname{Write}(o, f, v)$: Write value $v$ to field $f$ of $o$.
+\end{itemize}
+All other operations on Java objects, such as method dispatch and type
+interrogation, can be performed using the immutable {\tt type}
+field in the object.  Because the {\tt type} field is never changed
+after object creation, non-blocking implementations of operations on
+the {\tt type} field are trivial.
+
+As Figure~\ref{fig:single-o} shows, our single-object implementation
+of \atomic represents objects as a pair, combining {\tt type} and a
+reference to a functional array.  When not inside an atomic
+method, object reads and writes are implemented using the
+corresponding functional array operation, with the array reference in
+the object being updated appropriately:
+\begin{itemize}
+\item $\funcname{Read}(o, f)$:
+  Return $\funcname{FA-Read}(\fref{o}{fields}, \fref{f}{index})$.
+\item $\funcname{Write}(o, f, v)$: Replace \fref{o}{fields} with the
+  result of $\funcname{FA-Update}(\fref{o}{fields}, \fref{f}{index}, v)$.
+\end{itemize}
+
+The interesting cases are reads and writes inside an atomic method.
+At entry to our atomic method which will access (only) object $o$, we
+store \fref{o}{fields} in a local variable $u$.  We create another
+local variable $u'$ which we initialize to $u$.  Then our read and
+write operations are implemented as:
+\begin{itemize}
+\item $\funcname{ReadAtomic}(o, f)$:
+  Return $\funcname{FA-Read}(u', \fref{f}{index})$.
+\item $\funcname{WriteAtomic}(o, f, v)$:
+  Update variable $u'$ to the result of
+  $\funcname{FA-Update}(u', \fref{f}{index}, v)$.
+\end{itemize}
+
+At the end of the atomic method, we use Compare-And-Swap to atomically
+set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
+we back-off and retry.
+
+With our na{\"\i}ve ``small object'' functional arrays, this implementation is
+exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
+Herlihy's protocol is rightly criticized for an excessive amount of
+copying.  We will address this with a better implementation of
+functional arrays in Section~\ref{sec:large-obj}.
+However, the restriction that only one object
+may be referenced within an atomic method is overly limiting.
+
+\subsection{Extension to multiple objects}
+\begin{figure}[t]\centering
+\includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
+\caption{Data structures to support non-blocking multi-object
+  concurrent operations.  Objects point to a linked list of versions,
+  which reference operation identifiers.  Versions created within the
+  same execution of an atomic method share the same operation
+  identifier.  Version structure also contain pointers to functional
+  arrays, which record the values for the fields of the object.
+  If no modifications have been made to the object, multiple versions
+  in the list may share the same functional array.}
+\label{fig:multi-o}
+\end{figure}
+\begin{figure}[p]
+\renewcommand{\>}{~~}
+\newcommand{\com}[1]{\hfill [{\sl #1}]}
+\begin{tabular}{l}
+$\funcname{Read}(o, f)$:\\
+begin\\
+retry:\\
+\>$u \gets \fref{o}{versions}$ \\
+\>$u' \gets \fref{u}{next}$ \\
+\>$s  \gets \fref{\fref{u}{owner}}{status}$ \\
+\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>\>goto retry \\
+\>else if ($s=\text{\sl COMPLETE}$)\\
+\>\>$a \gets \fref{u}{fields}$ \com{$u$ is COMPLETE}\\
+\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>else\\
+\>\>$a \gets \fref{u'}{fields}$ \com{$u'$ is COMPLETE}\\
+\>return $\funcname{FA-Read}(a, \fref{f}{index})$ \com{Do the read}\\
+end\\
+\\
+$\funcname{ReadAtomic}(o, f)$:\\
+begin\\
+\>$u \gets \fref{o}{versions}$\\
+\>if ($\var{oid} = \fref{u}{owner}$) \com{My OID should be first}\\
+\>\>return $\funcname{FA-Read}(\fref{u}{fields}, \fref{f}{index})$
+\com{Do the read}\\
+\>else \com{Make me first!}\\
+\>\>$u' \gets \fref{u}{next}$\\
+\>\>$s  \gets \fref{\fref{u}{owner}}{status}$\\
+\>\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>\>else if ($\fref{\var{oid}}{status}=\text{\sl DISCARDED}$)
+\com{Am I alive?}\\
+\>\>\>fail\\
+\>\>else if ($s=\text{\sl IN-PROGRESS}$) \com{Abort IN-PROGRESS?}\\
+\>\>\>CAS$(s, \text{\sl DISCARDED}, \addr{\fref{\fref{u}{owner}}{status}})$\\
+\>\>else \com{Link new version in:} \\
+\>\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>\>\>$u' \gets \text{new \tt Version}(\var{oid}, u, \text{\bf null})$
+\com{Create new version}\\
+\>\>\>if (CAS$(u, u', \addr{\fref{o}{versions}}) \neq \text{\sl FAIL}$)\\
+\>\>\>\>$\fref{u'}{fields} \gets \fref{u}{fields}$ \com{Copy old fields}\\
+\>\>goto retry\\
+end\\
+\end{tabular}
+\caption{\funcname{Read} and \funcname{ReadAtomic} implementations for the
+  multi-object protocol.}\label{fig:reads}
+\end{figure}
+
+\begin{figure}[p]
+\renewcommand{\>}{~~}
+\newcommand{\com}[1]{\hfill [{\sl #1}]}
+\begin{tabular}{l}
+$\funcname{Write}(o, f, v)$:\\
+begin\\
+retry:\\
+\>$u  \gets \fref{o}{versions}$\\
+\>$u' \gets \fref{u}{next}$\\
+\>$s  \gets \fref{\fref{u}{owner}}{status}$\\
+\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>else if ($s=\text{\sl IN-PROGRESS}$) \com{Abort IN-PROGRESS?}\\
+\>\>CAS$(s, \text{\sl DISCARDED}, \addr{\fref{\fref{u}{owner}}{status}})$\\
+\>else \com{$u$ is COMPLETE}\\
+\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>\>$a \gets \fref{u}{fields}$\\
+\>\>$a' \gets \funcname{FA-Update}(a, \fref{f}{index}, v)$\\
+\>\>if (CAS$(a, a', \addr{\fref{u}{fields}}) \neq \text{\sl FAIL}$)
+\com{Do the write}\\
+\>\>\>return \com{Success!}\\
+\>goto retry\\
+end\\
+\\
+$\funcname{WriteAtomic}(o, f, v)$:\\
+begin\\
+\>$u  \gets \fref{o}{versions}$\\
+\>if ($oid = \fref{u}{owner}$) \com{My OID should be first}\\
+\>\>$\fref{u}{fields} \gets \funcname{FA-Update}(\fref{u}{fields}, \fref{f}{index}, v)$\com{Do write}\\
+\>else \com{Make me first!}\\
+\>\>$u' \gets \fref{u}{next}$\\
+\>\>$s  \gets \fref{\fref{u}{owner}}{status}$\\
+\>\>if ($s=\text{\sl DISCARDED}$) \com{Delete DISCARDED?}\\
+\>\>\>CAS$(u, u', \addr{\fref{o}{versions}})$\\
+\>\>else if ($\fref{\var{oid}}{status}=\text{\sl DISCARDED}$)
+\com{Am I alive?}\\
+\>\>\>{\it fail}\\
+\>\>else if ($s=\text{\sl IN-PROGRESS}$) \com{Abort IN-PROGRESS?}\\
+\>\>\>CAS$(s, \text{\sl DISCARDED}, \addr{\fref{\fref{u}{owner}}{status}})$\\
+\>\>else \com{Link new version in:} \\
+\>\>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
+\>\>\>$u' \gets \text{new \tt Version}(\var{oid}, u, \text{\bf null})$
+\com{Create new version}\\
+\>\>\>if (CAS$(u, u', \addr{\fref{o}{versions}}) \neq \text{\sl FAIL}$)\\
+\>\>\>\>$\fref{u'}{fields} \gets \fref{u}{fields}$ \com{Copy old fields}\\
+\>\>goto retry\\
+end\\
+\end{tabular}
+\caption{\funcname{Write} and \funcname{WriteAtomic} implementations for the
+  multi-object protocol.}\label{fig:writes}
+\end{figure}
+
+We now extend the implementation to allow the fields of any number of
+objects to be accessed during the atomic method.
+Figure~\ref{fig:multi-o} shows our new object representation.
+Objects consist of two slots, and the first represents the immutable
+{\tt type}, as before.  The second field, {\tt versions}, points to a
+linked list of {\tt Version} structures.  The {\tt Version} structures
+contain a pointer {\tt fields} to a functional array, and a pointer
+{\tt owner} to an \emph{operation identifier}.  The operation
+identifier contains a single field, {\tt status}, which can be set to
+one of three values: \textsl{COMPLETE}, \textsl{IN-PROGRESS}, or
+\textsl{DISCARDED}.  When the operation identifier is created, the
+status field is initialized to \textsl{IN-PROGRESS}, and it will be
+updated exactly once thereafter, to either \textsl{COMPLETE} or
+\textsl{DISCARDED}.  A \textsl{COMPLETE} operation identifier never
+later becomes \textsl{IN-PROGRESS} or \textsl{DISCARDED}, and
+a \textsl{DISCARDED} operation identifier never becomes
+\textsl{COMPLETE} or \textsl{IN-PROGRESS}.
+
+We create an operation identifier when we begin or restart an atomic
+method and place it in a local variable \emph{oid}.  At the end of the
+atomic method, we use CAS to set \fref{\var{oid}}{status} to
+{\sl COMPLETE} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
+the atomic method has also executed successfully; otherwise
+$\fref{\var{oid}}{status}=\text{\sl DISCARDED}$ and we must
+back-off and retry the atomic method.  All {\tt Version} structures
+created while in the atomic method will reference \emph{oid} in
+in their {\tt owner} field.
+
+Semantically, the current field values for the object will be given by
+the first version in 
+the versions list whose operation identifier is {\sl COMPLETE}.
+This allows us to link {\sl IN-PROGRESS} versions in at the head of
+multiple objects' versions lists and atomically change the values of
+all these objects by setting the one common operation identifier to
+{\sl COMPLETE}.  We only allow one {\sl IN-PROGRESS} version on the
+versions list, and it must be at the head, so
+Therefore, before we can link a new version at the head, we
+must ensure that every other version on the list is {\sl DISCARDED} or
+{\sl COMPLETE}.
+
+Since we will never look past the first {\sl COMPLETE} version in the
+versions list, we can free all versions past that point.  In our
+presentation of the algorithm, we do this by explicitly setting the
+{\tt next} field of every {\sl COMPLETE} version we see to {\bf null};
+this allows the versions past that point to be garbage collected.
+An optimization would be to have the garbage collector do the list
+trimming for us when it does a collection.
+% always must read u.next before u.owner.status to ensure we don't
+% get caught with a null pointer from a version that just committed.
+
+We don't want to inadvertently chase the null {\tt next} pointer
+of a {\sl COMPLETE} version, so we always load the {\tt next}
+field of a version \emph{before} we load {\tt owner.status}.  Since
+the writes occur in the reverse order ({\sl COMPLETE} to
+{\tt owner.status}, then {\bf null} to {\tt next}) we have ensured that
+our {\tt next} pointer is valid whenever the status is not {\sl COMPLETE}.
+
+We begin an atomic method with \funcname{AtomicEntry} and attempt to
+complete an atomic method with \funcname{AtomicExit}.  They are defined as
+follows:
+\begin{itemize}
+\item $\funcname{AtomicEntry}$: create a new operation identifier, with
+  its status initialized to {\sl IN-PROGRESS}.  Assign it to the
+  thread-local variable \var{oid}.
+\item $\funcname{AtomicExit}$:
+  If
+ $$\text{CAS}(\text{\sl IN-PROGRESS}, \text{\sl COMPLETE},
+             \addr{\fref{\var{oid}}{status}})$$
+  is successful, the atomic method as a whole has completed successfully,
+  and can be linearized at the location of the CAS.
+  Otherwise, the method has failed.  Back-off and retry from
+  \funcname{AtomicEntry}.
+\end{itemize}
+Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{AtomicRead},
+and \funcname{AtomicWrite} is presented in Figures~\ref{fig:reads} and
+\ref{fig:writes}.  In the absence of contention, all operations take
+constant time plus an invocation of \funcname{FA-Read} or
+\funcname{FA-Update}.
+
+\subsection{Lock-free functional arrays}\label{sec:large-obj}
+\begin{figure*}\centering
+\includegraphics[width=7in,clip=true]{Figures/chuang.eps}
+\caption{Shallow binding scheme for functional arrays, from
+  \cite[Figure~1]{Chuang94}.}
+\label{fig:chuang}
+\end{figure*}
+In this section we will present a lock-free implementation of functional
+arrays with $O(1)$ performance in the absence of contention.  This
+will complete our implementation of non-blocking \atomic methods for Java.
+
+There have been a number of proposed implementations of functional
+arrays, starting from the ``classical'' functional binary tree
+implementation.  O'Neill and Burton \cite{ONeillBu97} give a fairly
+inclusive overview.  Functional array implementations fall generally
+into one of three categories: \emph{tree-based}, \emph{fat-elements},
+or \emph{shallow-binding}.
+
+Tree-based implementations typically have a logarithmic term in their
+complexity.  The simplest is the persistent binary tree with $O(\ln
+n)$ look-up time; Chris Okasaki 
+\cite{Okasaki95} has implemented a purely-functional random-access list
+with $O(\ln i)$ expected lookup time, where $i$ is the index of the
+desired element.
+
+Fat-elements implementations have per-element data structures indexed
+by a master array. Cohen \cite{Cohen84} hangs a list of
+versions from each element in the master array.
+O'Neill and Burton \cite{ONeillBu97}, in a more sophisticated
+technique, hang a splay tree off each element and achieve $O(1)$
+operations for single-threaded use, $O(1)$ amortized cost when
+accesses to the array are ``uniform'', and $O(\ln n)$ amortized worst
+case time. 
+
+Shallow binding was introduced by Baker \cite{Baker78} as a method to
+achieve fast variable lookup in Lisp environments.  Baker clarified
+the relationship to functional arrays in \cite{Baker91}.  Shallow
+binding is also called \emph{version tree arrays}, \emph{trailer
+  arrays}, or \emph{reversible differential lists}.  A typical
+drawback of shallow binding is that reads may take $O(u)$ worst-case
+time, where $u$ is the number of updates made to the array.  Tyng-Ruey
+Chuang \cite{Chuang94} uses randomized cuts to the version tree to limit
+the cost of a read to $O(n)$ in the worst case.  Single-threaded
+accesses are $O(1)$.
+
+Our use of functional arrays is single-threaded in the common case,
+when transactions do not abort.  Chuang's scheme is attractive because
+it limits the worst-case cost of an abort, with very little added
+complexity.   In this section we will present a lock-free version of
+Chuang's randomized algorithm.
+
+In shallow binding, only one version of the functional array (the
+\emph{root}) keeps its contents in an imperative array (the
+\emph{cache}).   Each of the other versions is represented as a path
+of \emph{differential nodes}, where each node describes the
+differences between the current array and the previous array.  The
+difference is represented as a pair \tuple{\text{\it index},\text{\it value}},
+representing the new value to be stored at the specified index.
+All paths lead to the root.  An update to the functional array is
+simply implemented by adding a differential node pointing to the array it is
+updating.
+
+The key to constant-time access for single-threaded use is provided by the read
+operation.  A read to the root simply reads the appropriate value from
+the cache.  However, a read to a differential node triggers a series
+of rotations which swap the direction of differential nodes and result
+in the current array acquiring the cache and becoming the new root.
+This sequence of rotations is called \emph{re-rooting}, and is
+illustrated in Figure~\ref{fig:chuang}.  Each rotation
+exchanges the root nodes for a differential node pointing to it, after
+which the differential node becomes the new root and the root becomes
+a differential node pointing to the new root. The cost of a read is
+proportional to its re-rooting length, but after the first read
+accesses to the same version are $O(1)$ until the array is re-rooted again.
+
+Shallow binding performs badly if read operations ping-pong between two
+widely separated versions of the array, as we will continually
+re-root the array from one version to the other.
+Chuang's contribution is to provide for \emph{cuts} to the chain of
+differential nodes: once in a while we clone the cache and create a
+new root instead of performing a rotation.  This operation takes
+$O(n)$ time, so we amortize it over $n$ operations by randomly
+choosing to perform a cut with probability $1/n$.
+
+\begin{figure*}\centering
+\includegraphics[width=7in,clip=true]{Figures/funarr.eps}
+\caption{Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
+  on the left hand side, and then top-to-bottom on the right.
+  Array $A$ is a root node, and $\funcname{FA-Read}(A, x)=z$.
+  Array $B$ has the almost the same contents as $A$, but
+  $\funcname{FA-Read}(B, x)=y$.}
+\label{fig:funarr}
+\end{figure*}
+
+\begin{figure*}\centering
+\renewcommand{\>}{~~}
+\newcommand{\com}[1]{\hfill [{\sl #1}]}
+\begin{tabular}{l}
+$\funcname{FA-Update}(A, i, v)$:\\
+begin\\
+\>$d \gets \text{new DiffNode}(i, v, A)$\\
+\>$A'\gets \text{new Array}(\fref{A}{size}, d)$\\
+\>return $A'$\\
+end\\
+\\
+$\funcname{FA-Read}(A, i)$:\\
+begin\\
+retry:\\
+\>$d_C \gets \fref{A}{node}$\\
+\>if $d_C$ is a cache, then\\
+\>\>$v \gets \fref{A}{node}[i]$\\
+\>\>if $(\fref{A}{node} \neq d_C)$\com{consistency check}\\
+\>\>\>goto retry\\
+\>\>return $v$\\
+\>else\\
+\>\>\funcname{FA-Rotate}(A)\\
+\>\>goto retry\\
+end\\
+\\
+$\funcname{FA-Rotate}(B)$:\\
+begin\\
+retry:\\
+\>$d_B \gets \fref{B}{node}$\com{step (1): assign names as per Figure~\ref{fig:funarr}.}\\
+\>$A \gets \fref{d_B}{array}$\\
+\>$x \gets \fref{d_B}{index}$\\
+\>$y \gets \fref{d_B}{value}$\\
+\>$z \gets \funcname{FA-Read}(A, x)$\com{rotates A as side effect}\\
+\\
+\>$d_C \gets \fref{A}{node}$\\
+\>if $d_C$ is not a cache, then \\
+\>\>goto retry\\
+\\
+\>if $(0 = (\text{random} \bmod \fref{A}{size}))$\com{random cut}\\
+\>\>$d_C' \gets \text{copy of }d_C$\\
+\>\>$d_C'[x] \gets y$\\
+\>\>$s\gets\text{DCAS}(d_C, d_C, \addr{\fref{A}{node}}, d_B, d_C', \addr{\fref{B}{node}})$\\
+\>\>if $(s \neq \text{\sl SUCCESS})$ goto retry\\
+\>\>else return\\
+\\
+\>$C \gets \text{new Array}(\fref{A}{size}, d_C)$\\
+\>$d_A \gets \text{new DiffNode}(x, z, C)$\\
+\\
+\>$s \gets \text{CAS}(d_C, d_A, \addr{\fref{A}{node}})$\com{step (2)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s\gets\text{CAS}(A, C, \addr{\fref{d_B}{array}})$\com{step (3)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s \gets\text{CAS}(C, B, \addr{\fref{d_A}{array}})$\com{step (4)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s \gets \text{DCAS}(z, y, \addr{d_C[x]},  d_C, d_C, \addr{\fref{C}{node}})$\com{step (5)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+\\
+\>$s \gets \text{DCAS}(d_B, d_C, \addr{\fref{B}{node}}, d_C, {\bf nil}, \addr{\fref{C}{node}})$\com{step (6)}\\
+\>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
+end\\
+\end{tabular}
+\caption{Implementation of lock-free functional array using shallow
+  binding and randomized cuts.}
+\label{fig:fun-impl}
+\end{figure*}
+
+Figure~\ref{fig:funarr} shows the data structures used for the
+functional array implementation, and the series of atomic steps used
+to implement a rotation.  The {\tt Array} class represents a
+functional array; it consists of a {\tt size} for the array and a
+pointer to a {\tt Node}.  There are two types of nodes: a {\tt
+  CacheNode} stores a value for every index in the array, and a {\tt
+  DiffNode} stores a single change to an array.  {\tt Array} objects
+which point to {\tt CacheNode}s are roots.
+
+In step 1 of the figure, we have a root array $A$ and an
+array $B$ whose differential node $d_B$ points to $A$.  The functional
+arrays $A$ and $B$ differ in one element: element $x$ of $A$ is $z$,
+while element $x$ of $B$ is $y$.  We are about to rotate $B$ to give
+it the cache, while linking a differential node to $A$.
+
+Step 2 shows our first atomic action.  We have created a new {\tt
+  DiffNode} $d_A$ and a new {\tt Array} $C$ and linked them between
+$A$ and its cache.  The {\tt DiffNode} $d_A$ contains the value for
+element $x$ contained in the cache, $z$, so there is no change in
+the value of $A$.
+
+We continue swinging pointers until step 5, when can finally set
+the element $x$ in the cache to $y$.  We perform this operation with a
+DCAS operation which checks that $\fref{C}{node}$ is still pointing to
+the cache as we expect.  Note that a concurrent rotation would swing
+$\fref{C}{node}$ in its step 1.  In general, therefore, the location
+pointing to the cache serves as a reservation on the cache.
+
+Thus in step 6 we need to again use DCAS to simultaneously swing
+$\fref{C}{node}$ away 
+from the cache as we swing $\fref{B}{node}$ to point to the cache.
+
+Figure~\ref{fig:fun-impl} presents pseudocode for \funcname{FA-Rotate},
+\funcname{FA-Read}, and \funcname{FA-Update}.  Note that \funcname{FA-Read} also
+uses the cache pointer as a reservation,
+double-checking the cache pointer after it finishes its read to ensure that the
+cache hasn't been stolen from it.
+
+Let us now consider cuts, where \funcname{FA-Read} clones the cache
+instead of performing a rotation.   Cuts also check the cache pointer
+to protect against concurrent rotations.  But what if the cut occurs
+while a rotation is mutating the cache in step 5?  In this case the
+only array adjacent to the root is $B$, so the cut must be occurring
+during an invocation of $\funcname{FA-Rotate}(B)$.  But then the
+differential node $d_B$ will be applied after the cache is copied,
+which will safely overwrite the mutation we were concerned about.
+
+Note that with hardware support for small transactions \cite{HerlihyMo93}
+we could cheaply perform the entire rotation atomically, instead of
+using this six-step approach.
+
+
+%% \subsection{Optimizations}
+%% Re-rooting is the most complicated part of the functional array
+%% algorithm.  It can be optimized in a number of ways.  For example,
+
+%% %unsync rotate for transaction-local data.
+%% The first is to recognize that some array versions can only be seen by
+%% a single thread.  In particular, when we are working on an {\sl
+%%   IN-PROGRESS} operation, all array versions which it creates are
+%% unreachable from other threads until the operation is committed.
+%% We can add a field {\tt creator} to the {\tt Array} object which records what
+%% operation created that version.  If the {\tt creator} field of both
+%% $A$ and $B$ contains our own \var{oid} when we begin a rotate, we know
+%% that these versions are both thread local
+
+%% .. uh, no.  This doesn't work.
+
+%% % scales method of tagging fields.
+
+
+
