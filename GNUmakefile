@@ -105,7 +105,8 @@ ecoop04.dvi: csallncs.cls
 popl05.dvi: csaacmconfbig.cls acmconfbig.cls
 
 # Phd Thesis dependencies
-phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex phd-intro.tex
+phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex \
+	phd-intro.tex phd-stm.tex phd-ver.tex
 
 # masters thesis figure dependencies
 export THESIS_FIGURES=\
