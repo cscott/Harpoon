@@ -1,0 +1,955 @@
+\newcommand{\subheading}[1]{\subsubsection{#1}}
+\section{The LTM implementation}\label{sec:ltm}
+
+%% Points we are trying to make:
+%% \begin{itemize}
+%% \item 
+%% We want to implement something simpler than UTM to understand how
+%% something like UTM will behave. It will tell us something about UTM.
+%% \item
+%% Understand how programs might behave - microbenchmarks, ping-ponging
+%% effect. overheads - they are indeed low for the common case, even
+%% lower than locks - the point is not to reduce overhead but to show we
+%% have low verhead.
+%% \item
+%% Understand issues with overflow - performance, data structure
+%% \item
+%% Understand changes to hardware - processor core, caches
+%% \item
+%% This design is interesting in its own right - it's easy to implement,
+%% good first step, good engineering trade off, reduce technology risk,
+%% can be implemented in today's processors with low risk.
+%% 
+%% \end{itemize}
+
+This section describes LTM, a scaled-down version of UTM used to help
+us understand how UTM behaves.  LTM, which stands for ``large
+transactional memory,'' stores speculative transactional data in the
+cache and detects conflicts using the cache-coherency protocol in much
+the same way as the designs by Herlihy and Moss~\cite{HerlihyMo92} and
+Knight~\cite{Knight86,Knight89}.  Also, like previous designs, LTM
+detects conflicts using the cache coherency protocol.  Unlike previous
+designs, however, LTM allows transactional data to overflow from the
+cache into a overflow hash table in main memory.  LTM also provides an
+architectural state-save mechanism in hardware.
+
+LTM was designed to be a first step towards a truly unbounded
+transactional-memory system such as UTM\@.  But, whereas UTM can
+support transactions whose footprint exceeds physical memory, in LTM
+transactions can only be as large as the physical memory.  By avoiding
+intricacies of virtual memory, LTM has much of the advantage of UTM
+while being much easier to implement.  We were able to implement LTM
+in a detailed simulator and obtain results that provide insight into
+the behavior of unbounded transactions.  The remainder of this section
+outlines the following three ways we used LTM to evaluate the behavior
+of an unbounded transactional memory system such as UTM.
+
+\paragraph{Understanding hardware modifications:}
+We used LTM to evaluate how the processor pipeline and cache needs to
+be changed to support common case transactions. We found that the
+common case can run essentially as fast as nonsynchronized code by
+using the existing hardware effectively.
+
+\paragraph{Understanding overflows:}
+We used LTM to evaluate how the efficiency of the overflow data
+structure affects the overall performance of transactional
+programs. We found that although overflows are uncommon, the overflow
+data structure must be scalable in order to handle all types of
+applications with reasonable performance.
+
+\paragraph{Understanding program behavior:}
+We used LTM to evaluate how parallel transactional programs would
+behave. We found that small transactions are likely to complete even
+when contention is high.
+
+\subsection{Understanding hardware modifications}
+
+This section describes the LTM implementation.  Since LTM does not
+support the truly unbounded transactions, as does UTM\@.  Moreover,
+LTM neither allows transactions to be moved between processors nor
+does it support context switches during a transaction.  The advantage
+of cutting corners in this way is that LTM can be implemented by only
+modifying the cache and processor core and without making changes to
+the memory subsystem.  Since UTM handles small transactions in the
+cache in a similar fashion, LTM provides a useful intermediate step
+toward truly unbounded transactions, while maintaining implementation
+simplicity.
+
+We implemented LTM in the UVSIM software simulator. UVSIM is an
+execution-driven simulator based on RSIM~\cite{PaiRaAd97}.  UVSIM
+simulates MIPS R10K~\cite{MIPSR10K} microprocessors in a shared-memory
+multiprocessor configuration similar to the SGI Origin 3000.  The
+memory is distributed in the system among the processor nodes. Cache
+coherency is maintained using a directory based write-invalidate
+protocol. For our tests, each UVSIM processor was configured with a
+1MB 4-way set-associative L2 cache using 128-byte cache lines.
+
+LTM has the same semantics as those described in \secref{utm}.  The
+\texttt{XBEGIN} instruction only accepts the \texttt{pc} field for the
+abort handler, since LTM does not use a transaction record.  The
+remainder of this section describes the modifications to the cache and
+processor core needed to support the LTM semantics.
+
+%% This stuff should now be in the UTM section
+%% \subheading{Instruction set interface and semantics}
+%% 
+%% LTM uses MIPS as an example baseline instruction set and adds the
+%% following instructions to support transactions:
+%% \begin{closeitemize}
+%% \item \texttt{xBEGIN} mark start of transaction.
+%% \item \texttt{xEND} mark end of transaction.
+%% \end{closeitemize}
+%% 
+%% The \texttt{xBEGIN} instruction starts a transaction and specifies the
+%% address of an abort handler using a PC-relative offset.  Semantically,
+%% \texttt{xBEGIN} can be viewed as a prescient branch which jumps to the
+%% abort handler if the subsequent transaction will be aborted, otherwise
+%% execution falls through to the next instruction.  
+%% 
+%% In LTM, when the \texttt{xBEGIN} is executed, the hardware takes a
+%% snapshot of the architectural register state and records the abort
+%% handler address.  If the following transaction is aborted at any
+%% point, the architectural registers are restored, any pending
+%% transactional memory updates are revoked, and execution is restarted
+%% at the abort handler address.  The abort handler software is
+%% responsible for actions to resolve contention, such as backoff and
+%% retry.  The simplest contention resolution policy is to point the
+%% \texttt{xBEGIN} instruction at itself, causing an aborted transaction
+%% to retry immediately with the restored processor and memory state.
+%% 
+%% The \texttt{xEND} instruction commits a transaction, atomically
+%% updating global memory with all transactional stores executed since
+%% the last \texttt{xBEGIN}.  The hardware ensures that all transactions
+%% are executed atomically when viewed from global memory, and that
+%% transactions are committed in a sequentially consistent order.
+%% 
+%% Normal loads and stores behave differently inside and outside of a
+%% transaction.  Normal memory operations are treated as transactional if
+%% they are executed while a transaction is pending.  The local thread
+%% can see pending transactional updates, but these are not visible in
+%% global memory until committed.  Loads and stores executed outside of
+%% transaction ({\em non-transactional memory operations}) have the same
+%% semantics as they would in a conventional non-transactional machine.
+%% Within a transactional machine this is equivalent to them behaving as
+%% miniature transactions that consist of a single atomic memory operation
+%% that cannot be aborted.  One advantage of handling normal loads and
+%% stores in this fashion is that any subroutine can be called from
+%% within a transaction, and that subroutine's operations become part of
+%% the transaction.  Thus all old binary libraries and programs will work
+%% without any changes, which dramatically reduces the cost of migrating
+%% to the LTM system.
+%% 
+%% As a transaction executes, hardware keeps track of the set of memory
+%% locations that have been read or written transactionally.  If a second
+%% processor attempts operate on one of these locations in a conflicting
+%% manner, an abort is triggered.  In general, either the ongoing
+%% transaction or the external reader or writer could be aborted.
+%% However, LTM adopts a non-obstructive policy of aborting the ongoing
+%% transaction on a conflicting read or write from a second processor.
+%% Such a policy relies on appropriate backoff and retry mechanisms to
+%% avoid livelock or starvation. However, this was implemented in LTM
+%% since it can use the existing cache consistency protocol to detect
+%% conflicts without any modifications to the protocol. In addition, this
+%% non-obstructive policy also supports normal non-transactional loads
+%% and stores very naturally.
+%% 
+%% LTM supports subsumed transactions, where an \texttt{xBEGIN} can be
+%% executed while another transaction is already pending.  This enables
+%% modular code development, where a subroutine can use transactions
+%% oblivious of whether its callers or callees also use transactions.  In
+%% LTM, all nested transactions are merged into the outermost transaction
+%% so that each processor can have at most one transaction in progress at
+%% any time.  Any abort that occurs while executing within the outermost
+%% transaction causes the entire outermost transaction to abort. This, in
+%% effect, causes all the inner nested transactions to abort as well. The
+%% hardware maintains a counter that keeps track of the nesting level.
+%% 
+
+\subheading{Cache modifications}
+
+\figput{cachemods}%
+{LTM cache modifications. The T bit indicates if the line is
+transactional. The O bit indicates of the set has
+overflowed. Overflowed data is stored in a data structure in uncached
+DRAM.}
+
+LTM requires only a few small modifications to the cache.  For small
+transactions, the cache is used to store the speculative transactional
+state. For large transactions, transactional state is spilled into an
+overflow data structure in main memory. An additional bit (T) is added
+per cache line to indicate if it is transactional. When a
+transactional-memory request hits a cache line, the T bit is set. An
+additional bit (O) is added per cache set to indicate if it has
+overflowed. When a transactional cache line is evicted from the cache
+for capacity reasons, the O bit is set on the set.
+
+In LTM, the main memory always contains the original state of any data
+being modified transactionally and all speculative transactional state
+is stored in the cache and overflow hash table. A transaction is
+committed by simply clearing all the T bits in cache and writing back
+to memory all overflowed data. Conflicts are detected using the
+cache-coherency protocol. When an incoming cache intervention hits a
+transactional cache line, the running transaction is aborted. A
+transaction is aborted by simply clearing all the T bits and
+invalidating all modified transactional cache lines.
+
+The overflow hash table in uncached main memory is maintained by
+hardware, but its location and size are set up by the operating
+system.  If a request from the processor or a cache intervention misses
+on the resident tags of an overflowed set, the overflow hash table
+needs to be searched for the requested line. If the requested cache
+line is found, it is swapped with a line in the cache set and handled
+like a hit.  If the line is not found, it is handled like a miss.
+While handling overflows, all incoming cache interventions are stalled
+using a NACK-based network protocol.
+
+The LTM hash-table structure uses the low-order bits of the address as
+the index and uses linear probing to resolve conflicts. When the
+overflow data structure is full, the hardware signals an exception so
+that the operating system can increase the size of the hash table and
+retry the transaction.
+
+%% In related work, Herlihy and Moss \cite{HerlihyMo92} sketch a scheme
+%% for supporting transactions that do not fit within cache by using a
+%% hash table that indicates whether software must trap. In contrast,
+%% LTM is a hardware-only scheme for transactions that scale to arbitrary
+%% size, which now makes technological sense, because the VLSI density is
+%% much greater than it was ten years ago when Herlihy and Moss first
+%% studied the problem.  In our hardware scheme, the common case stays
+%% on-chip, and the uncommon case spills transactions into user-provided
+%% memory.
+%% 
+
+\subheading{Processor modifications}
+
+\figput{snapshot}%
+{LTM processor modifications. The S bit vector tracks the active
+ physical registers. There is an S bit vector snapshot associated with
+ each rename table snapshot. The Register Reserved List holds the
+ otherwise free physical registers until the transaction commits. The
+ LPR field is the next physical register to free (the last physical
+ register referenced by the destination architectural register).}
+ 
+
+LTM requires only minor modifications to the processor core as shown
+in \figref{snapshot}. Most modifications are to support the
+architectural register state-save that occurs at \texttt{XBEGIN}. A
+Register Reserved List FIFO is added and an active physical-register
+bit vector (S) with corresponding snapshots are added. The
+modifications are minor since LTM uses much of the existing
+branch-prediction hardware to implement the state-save mechanism.
+
+LTM uses the S bit vector to mark the physical registers that need to
+be saved and does not free them until the transaction commits. On
+\texttt{XBEGIN}, a snapshot of the current rename table and the active
+S bit vector is taken and saved away. If a physical register marked in
+the saved S vector is supposed to be freed before the transaction
+commits, it is added to the Register Reserved List instead of the
+Register Free List. When the transaction commits, the Register
+Reserved List is allowed to drain lazily into the Register Free
+List. Therefore, physical registers containing saved data are not
+overwritten until after the transaction is committed.
+
+In the event that the transaction aborts, the saved rename table is
+restored and the reorder buffer is rolled back as in an exception.
+Since none of the saved registers were overwritten, this restores the
+architectural register state.
+
+%% \subsection{Optimizing the common case}
+%% 
+%% A main goal of LTM and UTM is to run the common case fast. As shown in
+%% \secref{benchmarks}, the common case is when transactions are small
+%% and fit in the cache. Therefore, by using the cache and cache
+%% coherency mechanism to handle small transactions, LTM is able to
+%% execute with almost no overhead over serial code in the common
+%% case. In this section, we discuss qualitatively how the LTM
+%% implementation is optimized for the common case and how similar
+%% techniques are used in UTM. The discussion is broken into the
+%% following three cases: starting, running, committing a transaction.
+%% 
+%% Starting a transaction in LTM requires virtually no overhead in the
+%% common case since the hardware only needs to record the abort handler
+%% address. No communication with the cache or other external hardware is
+%% necessary. There is the added overhead of decoding the \texttt{XBEGIN}
+%% however that overhead is generally insignificant compared to the cost
+%% of the transaction. Further, instruction decode overhead is much lower
+%% in LTM than with locks. Even schemes where the lock is not actually
+%% held such as SLE have higher decode overhead since they have more
+%% instructions. LTM's low transaction startup overhead is a very good
+%% indicator of the corresponding overhead in UTM since transaction start
+%% up in UTM is virtually the same.
+%% 
+%% Running a transaction in LTM requires no more overhead than running
+%% the corresponding non-synchronized code in the common case. In LTM,
+%% the T bit is simply set on each transactional cache access. LTM's low
+%% overhead in this case unfortunately does not translate directly to UTM
+%% since UTM modifies the transaction record on each memory
+%% request. However, in the common case the transaction record entry is
+%% also in the cache. Thus all operations are local and no external
+%% communication is needed. Also, in some cases, the cache can respond to
+%% the memory request once the requested data is found. However, if the
+%% request requires data from the transaction record before it can be
+%% serviced, an additional cache lookup is necessary. However, the lookup
+%% is local and thus can be done relatively quickly. \note{Is this
+%% enough?  Seems like the additional lookup in the cache could increase
+%% cache latency significantly} Therefore, the common case overhead of
+%% running a transaction can be minimal even in UTM.
+%% 
+%% Committing a transaction in LTM has virtually no overhead in the
+%% common case since it can be done in one clock cycle. LTM transaction
+%% commits only requires a simply flash clear of all the transaction bits
+%% in the cache. Similarly, UTM transaction commits only require a single
+%% change of the cached transaction record to ``committed''. UTM
+%% transaction commit also writes the updated values from the transaction
+%% record back to memory. However, this write back can be done lazily in
+%% the background.  Therefore, since transaction commit requires only a
+%% single change in the cache for both LTM and UTM, the overhead is
+%% minimal in both cases.
+%% 
+\subsection{Understanding overflows}
+
+We also used the LTM implementation to study the behavior of the
+overflow data structure. Overflows occur only in the uncommon case
+however our studies show that it is important to have a scalable data
+structure even though it is used infrequently.
+
+For evaluation, we compiled three versions of the SPECjvm98 benchmark
+suite to run under UVSIM using our modified Java compiler. We compiled
+a \defn{Base} version that uses no synchronization, a \defn{Locks}
+version that uses spin-locks for synchronization, and a \defn{Trans}
+version that uses LTM transactions for synchronization. To measure
+overheads, we ran these versions of the SPECjvm98 benchmark suite on
+one processor of UVSIM.
+
+%% As described in \secref{spec}, our transactional version uses method
+%% cloning to flatten transactions; we performed the same cloning on the
+%% other compiled versions so that performance improvements due to the
+%% specialization would not be improperly attributed to
+%% transactionification.  The three different benchmark versions were
+%% built from a common code-base using method inlining in GCC\footnote{We
+%% compiled the files generated by FLEX's ``PreciseC'' backend with
+%% \texttt{-O9} for a \texttt{-mips4} target using the
+%% \texttt{n64} api to generate fully-static binaries executable by
+%% UVSIM.}  to remove or replace all invocations of lock and transaction
+%% entry and exit code with appropriate implementations.  No garbage
+%% collection was performed during benchmark runs.
+%% 
+
+\label{sec:javac}
+Our initial results from \secref{benchmarks} suggested that since
+overflows are infrequent, the efficiency of the data structure would
+have a negligible effect on overall performance. Therefore, our first
+LTM implementation used an unsorted array that required a linear
+search on each miss to an overflowed set. The unsorted array was
+effective for most of our test cases, as they had less overhead than
+locks.  Using LTM with the unsorted array, however, the transactional
+version of \texttt{213\_javac} was 14 times slower than the base
+version.  Virtually all of the overhead came from handling overflows,
+which is not surprising, since the entire application is enclosed in
+one large transaction. The large transaction touches 13K cache lines
+with 9K lines overflowed.  So, even though only 0.5\% of the
+transactional memory operations miss in the cache, each one incurs a
+huge search cost. This unexpected slowdown indicated that a naive
+unsorted array is insufficient as an overflow data
+structure. Therefore, LTM was redesigned to use a hash table to store
+overflows.
+
+%% Since the entire application was enclosed in a transaction, the
+%% \texttt{213\_javac} application was clearly not written to be a
+%% parallel application. However, it is important that an unbounded
+%% transactional memory system be able to support even such applications
+%% with reasonable performance. Therefore, we redesigned LTM to use hash
+%% table as described in \secref{cachemods}.
+%% 
+
+\begin{figure}
+\footnotesize
+\begin{center}
+\begin{tabular}{l|r|rr|rr}
+Benchmark                 &  Base       & Locks         & Trans                  & Time in   & Time in                    \\
+application               &  time       & time          & time                   & trans     & overflow                   \\
+                          &  (cycles)   & \multicolumn{2}{c|}{(\% of Base time)} & \multicolumn{2}{c}{(\% of Trans time)} \\ \hline
+\texttt{200\_check}       &   8.1M      & 124.0\%       & 101.0\%                & 32.5\%     & 0.0085\%                  \\
+% \texttt{201\_compress}    & 608.3M      & 102.5\%       & 106.1\%                &  3.8\%     & 4.0\%                     \\
+\texttt{202\_jess}        &  75.0M      & 140.9\%       & 108.0\%                & 59.4\%     & 0.0072\%                  \\
+\texttt{209\_db}          &  11.8M      & 142.4\%       & 105.2\%                & 54.0\%     & 0\%                       \\
+\texttt{213\_javac}       &  30.7M      & 169.9\%       & 114.2\%                & 84.2\%     & 10\%                      \\
+\texttt{222\_mpegaudio}   &  99.0M      & 100.3\%       &  99.6\%                &  0.8\%     & 0\%                       \\
+\texttt{228\_jack}        & 261.4M      & 175.3\%       & 104.3\%                & 32.1\%     & 0.0056\%                  \\
+\end{tabular}
+\end{center}
+\caption{
+SPECjvm98 performance on a 1-processor UVSIM simulation.  The {\em
+Time in trans} and {\em Time in overflow} are the times spent actually
+running a transaction and handling overflows respectively. The input
+size is!1. The overflow hash table is 128MB.}
+\label{fig:specperf}
+\end{figure}
+
+Using LTM with the hash table, the SPECjvm98 application overheads
+were much more reasonable as shown in \figref{specperf}.  The hash
+table data structure decreased the overhead from a 14x slowdown to
+under 15\% in \texttt{213\_javac}. Using the hash table, LTM
+transactional overhead is less than locking overhead in all cases.
+
+These results indicate that UTM will also have minimal overhead, since
+the UTM data structure behaves much like the LTM hash table. When we
+miss in the cache, LTM requires one additional access of memory to
+index the hash table when there is no conflict. Similarly, UTM
+requires one additional access of memory to retrieve the requested
+cache line.  UTM may require an additional access of memory, however,
+to retrieve the transactional record entry. UTM requires at most one
+more access to memory than LTM when there is overflow.  Therefore, the
+overflow overhead of UTM will be very similar to that of UTM.
+
+\subsection{Understanding program behavior}
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{c}
+\includegraphics{Figures/uvsimCounterRuntime.eps}
+%% \includegraphics{uvsimLinkedListRuntime.eps}
+\end{tabular}
+\end{center}
+\caption{\texttt{Counter} performance on UVSIM.}
+\label{fig:microbenchperf}
+\end{figure}
+
+Using LTM we are able to gain insight into how transactional programs
+behave in a transactional memory system such as UTM. Using the
+\texttt{Counter} microbenchmark, we found that small transactions are
+likely to complete even when contention is high. LTM uses the
+cache and cache-coherency protocol to store transactional state and
+detect conflicts in the common case. Transactional-memory systems that
+use the same technique, such as UTM, all exhibit similar
+properties for the common case.
+
+We implemented the \texttt{Counter} parallel application to examine
+program behavior for small transactions with high contention. Our
+results show that the extremely low overhead of small transactions
+enable them to almost always complete even when contention is high.
+
+The \texttt{Counter} microbenchmark has one shared variable that each
+processor atomically increments repeatedly with no backoff
+policy. Each transaction is only a few instructions long and every
+processor attempts to write to the same location repeatedly.  Both a
+locking and a transactional version of \texttt{Counter} were run on
+UVSIM with LTM, and the results are shown in
+\figref{microbenchperf}. In the locking version, there is a global
+spin-lock that each processor obtains using a
+load-linked/store-conditional (LLSC) sequence from the SGI
+synchronization libraries.
+
+The locking version scales poorly, because the LLSC causes many cache
+interventions even when the lock cannot be obtained. On the other
+hand, the transactional version scales much better, despite having no
+backoff policy.  When a transaction obtains a cache line, it is likely
+to be able to execute a few more instructions before receiving an
+intervention since the network latency is high.  Therefore, small
+transactions can start and complete (and perhaps even start and
+complete the next transaction) before the cache line is taken away.
+Similar behavior is expected from UTM since small transactions
+effectively use the cache the same way.
+
+%% \subheading{The \texttt{LinkedList} microbenchmark}
+%% 
+%% We implemented the \texttt{LinkedList} parallel application to examine
+%% program behavior for moderately sized transactions with varying
+%% contention. Our results show that when contention is low, transactions
+%% are very efficient as expected. However, as contention increases, the
+%% efficiency is highly dependent on the backoff policy. In some cases,
+%% simple backoff policies may be insufficient.
+%% 
+%% The \texttt{LinkedList} application has an equal number of consumer
+%% and producer processors. There is one doubly-linked list for each
+%% consumer. Each consumers repeatedly takes items from the head of its
+%% list while each producer repeatedly adds items to the tail of a random
+%% list. The locking version locks the entire list when adding or
+%% removing items. Locks are implemented as in \texttt{Counter}.
+%% 
+%% For very few processors, transactions perform much better than
+%% conventional locks because transactions allow concurrent accesses to
+%% the head and the tail of the linked list. However, as the number of
+%% processors is increased, the chance that multiple producers will
+%% conflict increases.  When \texttt{LinkedList} was first implemented,
+%% no backoff policy was used and, as a result, livelock prevented
+%% program completion for more than two processors. Then,
+%% \texttt{LinkedList} was implemented with binary exponential backoff
+%% and \figref{microbenchperf} shows those results. Backoff solved the
+%% livelock problem however as the contention increases, the performance
+%% of the transactions decreases dramatically. At high contention,
+%% transactions are being aborted repeatedly and a lot of time is spent
+%% in backoff. In fact, for \texttt{LinkedList} after 32 processors the
+%% transactional version is slower than the locking version. This
+%% suggests that such a simple backoff policy may be insufficient in high
+%% contention.
+%% 
+%% The \texttt{LinkedList} application illustrates the importance of a
+%% good back policy in non-obstructive transactional memory systems such
+%% as LTM and UTM.  Such systems do not face the problem of
+%% deadlock. However, they must prevent livelock using backoff or other
+%% policies. Perhaps there needs to be a forward progress guarantee to
+%% get reasonable performance in high contention. This is one of the main
+%% challenges that transactional memory schemes such as UTM face.
+%% 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%-----------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{The UTM architecture}\label{sec:utm}
+
+This section describes a system called UTM that implements
+unbounded transactional memory in hardware.  UTM allows
+transactions to grow (nearly) as large as virtual memory.  It also
+supports a semantics for nested transactions, where interior
+transactions are subsumed into the atomic region represented by the
+outer transaction.  Unlike previous schemes that tie a thread's
+transactional state to a particular processor and/or cache, UTM
+maintains bookkeeping information for a transaction in a
+memory-resident data structure, the \defn{transaction log}.  This
+enables transactions to survive timeslice interrupts and process
+migration from one processor to another.  We first present the
+software interface to UTM, and then describe the implementation
+details.
+
+\subheading{New instructions}
+
+UTM adds two new instructions to a processor's instruction set
+architecture:
+\begin{description}
+\item[\texttt{XBEGIN pc}:] Begin a new transaction.  The
+\texttt{pc} argument to \texttt{XBEGIN} specifies
+the address of an \defn{abort handler} (e.g., using a PC-relative offset).
+If at any time during the execution of a transaction the hardware determines
+that the transaction must fail, it immediately rolls back the
+processor and memory state to what it was when \texttt{XBEGIN} was
+executed, then jumps to \texttt{pc} to execute the abort handler.
+ 
+\item[\texttt{XEND}:] End the current transaction.  If \texttt{XEND}
+completes, then the transaction is committed, and all of its
+operations appear to be atomic with respect to any other transaction.
+\end{description}
+
+Semantically, we can think of an \texttt{XBEGIN} instruction as a
+conditional branch to the abort handler.  The \texttt{XBEGIN} for a
+transaction that fails has the behavior of a mispredicted branch.
+Initially, the processor executes the \texttt{XBEGIN} as a not-taken
+branch, falling through into the body of the transaction.  Eventually
+the processor realizes that the transaction cannot commit, at which
+point it reverts all processor and memory state back to the point of
+misprediction and branches to the abort handler.
+
+UTM supports the nesting of transactions by ``subsuming'' the inner
+transaction.  For example, within an ``outer'' transaction, a
+subroutine may be called that contains an ``inner'' transaction.
+UTM simply treats the inner transaction as part of the atomic
+region defined by the outer one.  This strategy is correct, because it
+maintains the property that the inner transaction executes atomically.
+Subsumed nested transactions are implemented by using a counter to
+keep track of nesting depth.  If the nesting depth is positive, then
+\texttt{XBEGIN} and \texttt{XEND} simply increment and decrement the
+counter, respectively, and perform no other transactional bookkeeping.
+
+\subheading{Rolling back processor state}
+
+The branch mispredict mechanism in conventional superscalar processors
+can roll back register state only for the small window of recent
+instructions that have not graduated from the reorder buffer.  To
+circumvent the window-size restriction and allow arbitrary rollback
+for unbounded transactions, the processor must be modified to retain
+an additional snapshot of the architectural register state.  A UTM
+processor saves the state of its architectural registers when it
+graduates an \texttt{XBEGIN}\@.  The snapshot is retained either until
+the transaction aborts, at which point the snapshot is restored into
+the architectural registers, or until the matching \texttt{XEND}
+graduates indicating that the transaction has committed.
+
+UTM's modifications to the processor core are illustrated in
+\figref{snapshot}.  We assume a machine with a unified physical
+register file, and so rather than saving the architectural registers
+themselves, UTM saves a snapshot of the register-renaming table
+and ensures the corresponding physical registers are not reused until
+the transaction commits.
+The rename stage maintains an additional ``saved'' bit
+for each physical register 
+to indicate which registers are part of the working
+architectural state, and takes a snapshot as
+each branch or \texttt{XBEGIN} is decoded and renamed.
+When an \texttt{XBEGIN} instruction
+graduates, activating the transaction, the associated ``\texttt{S} bit''
+snapshot will have bits set
+on exactly those registers holding the graduated architectural state.  Physical
+registers are normally freed on graduation of a later instruction that
+overwrites the same architectural register.  If the \texttt{S} bit on
+the snapshot for the active transaction is
+set, the physical register is added to a FIFO called a \defn{Register
+Reserved List} instead of the normal \defn{Register Free List}.  This
+prevents physical registers containing saved data from being
+overwritten during a transaction.  When the
+transaction's \texttt{XEND} commits, the active snapshot's \texttt{S}
+bits are cleared and the Register
+Reserved List is drained into the regular Register Free List.  In the
+event that the transaction aborts, the saved register-renaming table
+is restored and the reorder buffer is rolled back, as in an exception.
+After restoring the architectural register state, the branch is taken
+to the abort handler.  Even though the processor can internally
+speculatively execute ahead through multiple transactions,
+transactions only affect the global memory system as instructions
+graduate, and hence UTM requires only a single snapshot of the
+architectural register state.
+
+%% CSA: do we need to talk about performance implications of
+%% running transactions with a smaller effective register set?
+%% Our benchmarks in \secref{perf-results} indicate (obliquely)
+%% that this is not an issue.
+
+The current transaction abort handler address, nesting depth, and
+register snapshot are part of the transactional state.  They are made
+visible to the operating system (as additional processor control
+registers) to allow them to be saved and restored on context switches.
+
+% KA: This footnote is wrong: In section 5.2 of the paper they
+% describe the same register checkpoint mechanism that we use.
+% \footnote{In contrast, Rajwar and
+% Goodman's speculative lock-elision scheme \cite{RajwarGo01} uses the
+% branch-speculation hardware with no changes and uses (bounded)
+% transactions to implement critical sections only when the instructions
+% of the critical section fit within the reordering window of the
+% processor.  We discuss speculative lock elision further in
+% \secref{related}.}
+
+%%% INLINE FIGURES 
+% \figput{snapshot}%
+% {UTM processor modifications. The S bit vector tracks the active
+% physical registers.  For each rename table snapshot, there is an
+% associated S bit vector snapshot.  The Register Reserved List holds
+% the otherwise free physical registers until the transaction commits.
+% The LPR field is the next physical register to free (the last physical
+% register referenced by the destination architectural register).}
+
+\subheading{Memory state}
+
+Previous HTM systems \cite{Knight86,HerlihyMo93} represent a
+transaction partly in the processor and partly in the cache, taking
+advantage of the coincidence between the cache-consistency protocol
+and the underlying consistency requirements of transactional memory.
+Unlike those systems, UTM transactions are represented by a single
+\defn{xstate} data structure held in the memory of the system.  The
+cache in UTM is used to gain performance, but the correctness of
+UTM does not depend on having a cache.  In the following
+paragraphs, we first describe the xstate and how the system uses it
+assuming there is no caching.  Then, we describe how caching
+accelerates xstate operations.
+
+% We uniformly use 'block' to refer to the transaction chunk size.
+% block size may or may not be the same as cache-line size.
+
+The xstate is illustrated in \figref{datastruct-entry}.  The xstate
+contains a transaction log for each active transaction in the system.
+A transaction log is allocated by the operating system for each
+thread, and two processor control registers hold the base and bounds
+of the currently active thread's log.  Each log consists of a
+\defn{commit record} and a vector of \defn{log entries}.  The commit
+record maintains the transaction's status: \texttt{PENDING},
+\texttt{COMMITTED}, or \texttt{ABORTED}.  Each log entry corresponds
+to a block of memory that has been read or written by the transaction.
+The entry provides a pointer to the block and the old (backup) value
+for the block so that memory can be restored in case the transaction
+aborts.  Each log entry also contains a pointer to the commit record
+and pointers that form a linked list of all entries in all transaction
+logs that refer to the same block.
+
+The final part of the xstate consists of a \defn{log pointer} and one
+\defn{RW bit} for each block in memory (and on disk, when paging).  If
+the RW bit is \texttt{R}, any transactions that have accessed the
+block did so with a load; otherwise, if it is \texttt{W}, the block
+may have been the target of a transaction's store.  When a processor
+running a transaction reads or writes a block, the block's log pointer
+is made to point to a transaction log entry for that block.  Further,
+if the access is a write, the RW bit for the block is set to
+\texttt{W}.  Whenever another processor references a block that is
+already part of a pending transaction, the system consults the RW bit
+and log pointer to determine the correct action, for example, to use
+the old value, to use the new value, or to abort the transaction.
+
+%% Place these two sentences someplace better?
+%% Be sure to keep ``user-level'' as a modifier on programmer, because
+%% the OS programmer *can* see the bits.
+\punt{The log pointer (a global virtual address) and RW bit are
+not visible to the user-level programmer, and in this regard they are
+like error-correction bits or cache directory.  On the other hand the
+bits are visible to the operating system so that, for example, they
+can be paged to disk.  The xstate includes all the active transaction
+logs and all the RW bits and log pointers for the entire memory of the
+system.}
+%% CSA: I cut this and put the details elsewhere.
+
+% CSA: i removed a sentence about needing to consult the transaction
+% record if the bit is 'W' because it is unclear: you need to consult
+% the transaction record even if the bit is 'R'; for example if you're
+% in a different transaction (to make sure you're on the readers list),
+% or not in a transaction but you're planning on writing to the block
+% (kill all readers)).
+
+% CSA: we either need to specify how the RW bits in full detail, or
+% not.  We're getting into trouble because we'll make statements
+% about RW bits which don't actually treat some of the cases.  We must
+% always think about non-transactional and transactional accesses, and
+% four separate modes: untouched by transaction, read by a single
+% transaction (upgradable), written by a single transaction, and
+% read by multiple transactions.
+
+% CSA: i propose a single bit rather than RW, w/ the following
+% meanings:
+%   bit   log pointer
+%    0       0         -- not involved in xaction.
+%    0     somewhere   -- read by a single transaction.
+%    1       0         -- read by multiple transactions
+%    1     somewhere   -- written by a (single) transaction.
+% this is likely out-of-scope of this paper.
+% the RW bit does not distinguish the 'read by single xaction' and
+% 'read by multiple xactions' cases, which is important because we
+% probably don't want to have to traverse the readers list if we're
+% just writing to a block we read (i.e, increment).
+
+\begin{figure}[b]
+\hspace{-0.15cm}
+\input{Figures/snapshot.pstex_t}
+\caption{UTM processor modifications. The S bit vector
+tracks the active physical registers.  For each rename table snapshot,
+there is an associated S bit vector snapshot.  The Register Reserved
+List holds the otherwise free physical registers until the transaction
+commits.  The LPR field is the next physical register to free (the
+last physical register referenced by the destination architectural
+register).}
+\label{fig:snapshot}
+\end{figure}
+\begin{figure}[b]
+%\centering
+\hspace{-1.3cm} % Make the datastruct-entry slide over to the left (it is in the right column, going off the edge)
+\input{Figures/datastruct-entry.pstex_t}
+\caption{The xstate data structure.
+The transaction log for a transaction contains a commit record and a
+vector of log entries.  The log pointer of a block in memory
+points to a log entry, which contains the old value of the block and a
+pointer to the transaction's commit record.  Two transaction logs
+are shown here; generally, the xstate includes the active
+transaction logs for the entire system.}
+\label{fig:datastruct-entry}
+\end{figure}
+
+%\figput{datastruct-entry}{The xstate data structure.  The transaction
+%log for a transaction contains a commit record and a vector of log
+%entries.  The log pointer of a block in memory points to a log
+%entry, which contains the old value of the block and a pointer to the
+%transaction's commit record.  Only one transaction log is shown here,
+%but generally the xstate includes the active transaction logs in the
+%entire system.}
+
+When a processor makes an update as part of a transaction, the new
+value is stored in memory and the old value is stored in an entry in
+the transaction log.  In principle, there is one log entry for every
+load or store performed by the transaction.  If the memory allocated
+to the log  is not large enough, the
+transaction aborts and the operating system allocates a larger
+transaction log and retries the transaction.  When
+operating on the same block more than once in a transaction, the
+system can avoid writing multiple entries into the transaction log by
+checking the log pointer to see whether a log entry for the block
+already exists as part of the running transaction.
+
+By following the log pointer to the log entry, then following the log
+entry pointer to the commit record, one can determine the transaction
+status (pending, committed, or aborted) of each block.  To commit a
+transaction, the system simply changes the commit record from
+\texttt{PENDING} to \texttt{COMMITTED}.  At this point, a reference to
+the block produces the new value stored in memory, albeit after some
+delay in chasing pointers to discover that the transaction has been
+committed.  To avoid this delay, as well as to free the transaction
+log for reuse, the system must clean up after committing.  It does so
+by iterating through the log entries, clearing the log pointer for
+each block mentioned, thereby finalizing the contents of the block.
+Future references to that block will continue to produce the new value
+stored in memory, but without the delay of chasing pointers.  To abort
+a transaction, the system changes the commit record from
+\texttt{PENDING} to \texttt{ABORTED}.  To clean up, it iterates
+through the entries, storing the old value back to memory and then
+clearing the log pointer.  We chose to store the old value of a block
+in the transaction log and the new value in memory, rather than the
+reverse, to optimize the case when a transaction commits.  No data
+copying is needed to clean up after a commit, only after an abort.
+
+When two or more pending transactions have accessed a block and at
+least one of the accesses is a store, the transactions conflict.
+Conflicts are detected during operations on memory.  When a
+transaction performs a load, the system checks that either the log
+pointer refers to an entry in the current transaction log, or else
+that the RW bit is \texttt{R} (additionally creating an entry in the
+current log for the block if needed).  When a transaction performs a
+store, the system checks that no other transaction is referenced by
+the log pointer (i.e., that the log pointer is cleared or that the
+linked list of log entries corresponding to this block are all
+contained in the current transaction log).  If the conflict check
+fails, then some of the conflicting transactions are aborted.  To
+guarantee forward progress, UTM writes a timestamp into the
+transaction log the first time a transaction is attempted.  Then, when
+choosing which transactions to abort, older transactions take
+priority.  As an alternative, a backoff scheme \cite{MetcalfeBo76}
+could also be used.
+
+When a writing transaction wins a conflict, there may be multiple
+reading transactions that must be aborted.  These transactions are
+found efficiently by following the block's log pointer to an entry and
+traversing the linked list found there, which enumerates all entries
+for that block in all transaction logs.
+
+\note{KA: I wanted to say this but don't actually believe it's true:
+A transactional load or store operation may result in the processor
+performing many memory accesses to the xstate structure, but the data
+structure is designed to allow these to be arbitrarily interleaved
+with memory accesses from other ongoing transactions.}
+% CSA: i don't think it's true either; at least not obviously.
+
+\subheading{Caching}
+
+Although UTM can support transactions of unbounded size using the
+xstate data structure, multiple memory accesses for each operation may
+be required.  Caching is needed to achieve acceptable performance.  In
+the common case of a transaction that fits in cache, UTM, like the
+earlier proposed HTM systems \cite{Knight86,HerlihyMo93}, monitors the
+cache-coherence traffic for the transaction's cache lines to determine
+if another processor is performing a conflicting operation.  For
+example, when a transaction writes to a memory location, the cache
+protocol obtains exclusive ownership on the whole cache block.  New
+values can be stored in cache with old values left in memory.  As long
+as nothing revokes the ownership of any block, the transaction can
+succeed.  Since the contents of the transaction log are undefined
+after the transaction commits or aborts, in many cases the system does
+not even need to write back a transaction log.  Thus, for a small
+transaction that commits without intervention from another
+transaction, no additional interprocessor communication is required
+beyond the coherence traffic for the nontransactional case.  When the
+transaction is too big to fit in cache or interactions with other
+transactions are indicated by the cache protocol, the xstate for the
+transaction overflows into the ordinary memory hierarchy.  Thus, the
+UTM system does not actually need to create a log entry or update
+the log pointer for a cached block unless it is evicted.  After a
+transaction commits or aborts, the log entries of unspilled cached
+blocks can be discarded and the log pointer of each such block can be
+marked clean to avoid writeback traffic for the log pointer, which is
+no longer needed.  Most of the overhead is borne in the uncommon case,
+allowing the common case to run fast.
+
+The in-cache representation of transactional state and the xstate data
+structure stored in memory need not match.  The system can optimize
+the on-processor representation as long as, at the cache interface, the
+view of the xstate is properly maintained.  For convenience, the
+transaction block size can match the cache line size.
+
+\subheading{System issues}
+
+The goal of UTM is to support transactions that can run for an
+indefinite length of time (surviving time slice interrupts), can
+migrate from one processor to another along with the rest of a
+process's state, and can have footprints bigger than the physical
+memory.  Several system issues must be solved for UTM to achieve that
+goal.  The main technique that we propose is to treat the xstate as
+a system-wide data structure that uses global virtual addresses.
+
+Treating the xstate as data structure directly solves part of the
+problem.  For a transaction to run for an indefinite length of time,
+it must be able to survive a time-slice interrupt.  By adding the
+log pointer to the processor state and storing everything else in a
+data structure, it is easy to suspend a transaction and run another
+thread with its own transaction.  Similarly, transactions can be
+migrated from one processor to another.  The log pointer is
+simply part of the thread or process state provided by the operating
+system.
+
+UTM can support transactions that are even larger than physical
+memory.  The only limitation is how much virtual memory is available
+to store both old and new values.  
+% \note{We don't strictly need global virtual addresses, the scheme
+% outlined below will work for vanilla per-process virtual addresses.
+% CSA: added a `might' to this paragraph to reflect this.}
+To page the xstate out of main
+memory, the UTM data structures might employ global virtual addresses for
+their pointers.  Global virtual addresses are system-wide unique
+addresses that remain valid even if the referenced pages are paged out
+to disk and reloaded in another location.  Typically, systems that
+provide global virtual addresses provide an additional level of
+address translation, compared to ordinary virtual memory systems.
+Hardware first translates a process's virtual address into a global
+virtual address.  The global virtual address is then translated into a
+physical address.  Multics \cite{BensoussanClDa72} provided user-level
+global virtual addressing using segment-offset pairs as the addresses.
+The HP Precision Architecture \cite{Lee89} supports global virtual
+addresses in a 64-bit RISC processor.
+
+The log pointer and state bits for each user memory block,
+while typically not visible to a user-level programmer, are
+themselves stored in addressable physical memory to allow the
+operating system to page this information to disk.  The location of
+the memory holding the log pointer information for a given user data
+page is kept in the page table and cached in the TLB.
+
+During execution of a single load or store instruction, the processor can
+potentially touch a large number of disparate memory locations in the
+xstate, any of which may be paged out to disk.  To ensure forward
+progress, either the system must allow load or store instructions to
+be restarted in the middle of the xstate traversal, or, if only
+precise interrupts are allowed, the operating system must ensure that
+all pages required by an xstate traversal can be resident
+simultaneously to allow the load or store to complete without page
+faults.
+
+UTM assumes that each transaction is a serial instruction stream
+beginning with an \texttt{XBEGIN} instruction, ending with a
+\texttt{XEND} instruction, and containing only register, memory, and
+branch instructions in between.  A fault occurs if an I/O instruction
+is executed during a transaction.\punt{\footnote{Implementing atomic file or
+database operations requires higher-level programming, which might use
+the transactional memory as an implementation tool, but which is not
+directly supported by the hardware.}}
+
+%% \note{Didn't talk about initializing the transaction log: How does
+%% the time stamp get filled in?  How is the size of the transaction
+%% record specified?  --Bradley}
+
+%% CSA: I think that, when we get around to figuring out how to
+%% save/restore the reserved registers on a context-switch, we'll
+%% discover that a software-only mechanism makes more sense.
+%%
+%% KA: Don't agree - it's easy for software to see the snapshot.  Just
+%% provide an alternate register space that's read/written using the
+%% snapshot rename map.
+%%
+%% CSA: is recreating a saved register set as easy? (i.e context
+%% switch from non-transactional to transactional context)
+%%
+%% KA: Yup, just write the transactional register snapshot from the OS before
+%% jumping back to the user thread.
+%%
+%% CSA: Which presumably allocates new 's bit set' shadow registers
+%% for each architectural register as needed.
+
+% The processor contains hardware support for saving the register state
+% into \defn{shadow registers}, which are used to roll back the
+% processor state when a transaction fails.  Transaction failures also
+% cause a jump to a programmer-defined \defn{abort handler}, which
+% may retry the transaction.  The processor maintains bookkeeping
+% information for a transaction in a software-specified
+% \defn{transaction log} in memory.  One part of the transaction log, called the
+% \defn{commit record}, indicates to the hardware whether the
+% transaction is pending, committed, or aborted.  After the transaction
+% commits or aborts, the contents of the transaction log are undefined.
+
+%% CSA: KA rewrote around the above paragraph.  I readded \defns to
+%% the various places where the terms in the above are first
+%% mentioned; may want to look at the ``abort handler'' defn, because
+%% we only implicitly define the term at that point.

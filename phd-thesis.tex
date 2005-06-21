@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.12 2005-06-21 18:31:54 cananian Exp $
+% $Id: phd-thesis.tex,v 1.13 2005-06-21 20:53:22 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 \usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.12 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.13 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.12 $ $}
+\date{\subdate \\ $ $Revision: 1.13 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -59,6 +59,7 @@ it.}{\textit{Alan Kay}}}
 
 \section{Large Transactional Memory}
 \section{Calling-convention and function issues}
+\input{phd-htm}
 
 \chapter{A Hybrid Transaction Implementation}\label{sec:hybrid}
 

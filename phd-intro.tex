@@ -967,3 +967,89 @@ properties.  Implementing transactional memory in hardware allows the
 overheads to be low\note{\textbf{cite figures here}}, which is appropriate
 when transactional operations are common.
 
+\section{More related work}
+\note{XXX: fold into previous section}%XXXXXXXXXXXXXXX
+
+This section describes related research in the literature.
+
+Transactions are described in the database context by Gray
+\cite{Gray81b}, and \cite{GrayRe93} contains a thorough treatment of
+database issues.  HTM was first proposed by Knight~\cite{Knight86},
+and Herlihy and Moss coined the term ``transactional memory'' and
+proposed HTM in the context of lock-free data
+structures~\cite{HerlihyMo92,HerlihyMo93}.  The BBN
+Pluribus~\cite[Ch.~23]{SiewiorekBeNe82} provided transactions, with an
+architectural limit on the size of a transaction.  Experience with
+Pluribus showed that the headaches of programming correctly with such
+limits can be at least as challenging as using locks.  The
+\defn{Oklahoma Update} is another variation on transactional
+operations with an architectural limit on the number of values in a
+transaction~\cite{StoneStHe93}.
+
+Transactional memory is sometimes described as an extension of
+Load-Linked/Store-Conditional \cite{JensenHaBr87} and other atomic
+instruction sequences.  In fact, some CISC machines, such as the VAX,
+had complex atomic instructions such as enqueue and
+dequeue~\cite{Digital96}.  Lamport proposed lock-free data
+structures~\cite{Lamport77}, and Herlihy proposed wait-free
+programming~\cite{Herlihy91,Herlihy93}.
+
+Of particular relevance to our work are \defn{Speculative Lock
+Elision} (SLE) \cite{RajwarGo01} and \defn{Transactional Lock Removal}
+(TLR) \cite{RajwarGo02}, which speculatively identify locks and use
+the cache to give the appearance of atomicity.  SLE and TLR handle
+mutual exclusion through a standard programmer interface (locks),
+dynamically translating locks into transactional regions.  Our
+research thrust differs from theirs in that we hope to free
+programmers from the protocol complexities of locking, not just
+optimize existing practice.  Despite the difference in outlook,
+however, our quantitative results from \secref{benchmarks} confirm
+their finding that transactional hardware can be more efficient than
+locks.
+
+Martinez and Torrellas proposed \defn{Speculative Synchronization}
+\cite{MartinezTo02}, which allows some threads to execute atomic
+regions of code speculatively, using locks, while guaranteeing forward
+progress by maintaining a nonspeculative thread.  These techniques
+gain many of the performance advantages of transactional memory, but
+they still require new code to obey a locking protocol to avoid
+deadlock.  We believe programmers would enthusiastically abandon the
+locking paradigm if a transactional memory implementation of atomic
+regions was available and had good performance.
+
+The recent work on \defn{Transactional memory Coherence and
+Consistency} (TCC)~\cite{HammondWoCh04} is also relevant to our work.
+TCC uses a broadcast bus to implement the transaction protocols,
+performing all the writes of a particular transaction in one atomic
+bus operation.  This strategy limits scalability, whereas both UTM and
+LTM can employ scalable cache-consistency protocols to implement
+transactions.  One important conclusion is the same for both TCC and
+our work: most transactions are small, but some are very large.  TCC
+supports large transactions by locking the broadcast bus and stalling
+all other processors when any processor buffer overflows, whereas UTM
+and LTM allow overlapped execution of multiple large transactions with
+local overflow buffers.  TCC is similar to LTM in that transactions
+are bound to processor state and cannot extend across page faults,
+timer interrupts, or thread migrations.
+
+Many researchers have pursued software transactional memory (STM)
+\cite{ShavitTo95,HerlihyLuMoSc03,HarrisFr03}.  Some constrain the
+programmer and make transactions difficult to use by, for example,
+requiring all object memory touched by a transaction to either be
+known in advance \cite{ShavitTo95} or explicitly ``opened'' during the
+transaction \cite{HerlihyLuMoSc03}.  Harris and Fraser built a
+software transaction system on a flat word-oriented transactional
+memory abstraction \cite{HarrisFr03}, roughly similar to simulating
+Herlihy's original hardware transactional memory proposal in software.
+Their data structure bears some resemblance to the in-memory data kept
+by our UTM scheme.\note{CSA: cite my POPL submission?  CEL: Later, but
+no need for now.}  Unfortunately, software transactional memory
+appears to be too slow to support legacy code automatically.
+
+Herlihy and Moss \cite{HerlihyMo93} suggested that small transactions
+might be handled in cache with overflows handled by software.  These
+software overflows must interact with the transactional hardware in
+the same way that the hardware interacts with itself, however.  This
+approach may work, but designing a safe software interface to the
+consistency protocol on which hardware transactions depends seems to
+be a difficult open problem for current architectures.

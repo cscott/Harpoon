@@ -1,4 +1,7 @@
 FIG_MAG_tr-multi-obj=-m 0.4
+FIG_MAG_cachemods=-m 0.5
+FIG_MAG_snapshot=-m 0.5
+FIG_MAG_datastruct-entry=-m 0.5
 
 # definitions for example 1
 EX1FIG=THex1.fig
@@ -71,6 +74,9 @@ THlat6c2.tex: THlat6c.tex
 %.tex: %.gnuplot
 	gnuplot $< | uniq | sed -e '/setlength{.unitlength}/r head.tex' > $@
 	echo '\renewcommand{\figscale}{1.00}%' >> $@
+# gnuplot to eps rule
+%.eps: %.gnuplot
+	gnuplot $<
 
 # extra dependencies for data files of gnuplots
 phisig.tex: phisig.data-sorted

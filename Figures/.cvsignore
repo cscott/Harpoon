@@ -26,4 +26,7 @@ chuang.eps
 funarr.eps
 nb-*-obj.eps
 tr-*-obj.eps
+uvsimCounterRuntime.eps
+*.pstex
+*.pstex_t
 .*.autosave

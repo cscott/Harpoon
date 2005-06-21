@@ -106,7 +106,14 @@ popl05.dvi: csaacmconfbig.cls acmconfbig.cls
 
 # Phd Thesis dependencies
 phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex \
-	phd-intro.tex phd-stm.tex phd-ver.tex
+	phd-intro.tex phd-stm.tex phd-htm.tex phd-ver.tex
+#    figure dependencies
+phd-thesis.dvi: \
+	Figures/uvsimCounterRuntime.eps \
+	$(foreach f, \
+	cachemods snapshot datastruct-entry,\
+	Figures/$(f).pstex Figures/$(f).pstex_t)
+
 
 # masters thesis figure dependencies
 export THESIS_FIGURES=\
