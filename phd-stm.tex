@@ -37,7 +37,7 @@ program & memory ops    & stores \% \\\hline
 outnumber transactional writes by at least 4 to 1; in some cases reads
 outnumber writes by over 100 to 1.  It is worthwhile, therefore, to
 make reads more efficient than writes.  In particular, since the
-flag-overwrite technique discussed in \secref{flagfield} requires us
+flag-overwrite technique discussed in \charef{flagfield} requires us
 to allocate additional memory to store the ``real'' value of the
 field, I wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
@@ -96,7 +96,8 @@ available from a URL given at the end of the paper.
 
 %\subsecput{interface}{Interface}
 \subsection{Object Structures}%datastruct
-\figput{tr-multi-obj}{Implementing software transactions with version
+\figput[Implementing software transactions with version lists.]{tr-multi-obj}%
+ {Implementing software transactions with version
   lists.  A transaction object consists of a single field {\it
     status}, which indicates if it has COMMITTED, ABORTED, or is WAITING.
   Each object contains two extra fields: {\it readers}, a
@@ -664,7 +665,8 @@ may be referenced within an atomic method is overly limiting.
 \subsection{Extension to multiple objects}
 \begin{figure}[t]\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
-\caption{Data structures to support non-blocking multi-object
+\caption[Data structures to support non-blocking multi-object
+  concurrent operations.]{Data structures to support non-blocking multi-object
   concurrent operations.  Objects point to a linked list of versions,
   which reference operation identifiers.  Versions created within the
   same execution of an atomic method share the same operation
@@ -941,7 +943,8 @@ choosing to perform a cut with probability $1/n$.
 
 \begin{figure*}\centering
 \includegraphics[width=7in,clip=true]{Figures/funarr.eps}
-\caption{Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
+\caption[Atomic steps in $\funcname{FA-Rotate}(B)$.]%
+ {Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.
   Array $A$ is a root node, and $\funcname{FA-Read}(A, x)=z$.
   Array $B$ has the almost the same contents as $A$, but

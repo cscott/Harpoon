@@ -167,7 +167,7 @@ processor core needed to support the LTM semantics.
 
 \subheading{Cache modifications}
 
-\figput{cachemods}%
+\figput[LTM cache modifications.]{cachemods}%
 {LTM cache modifications. The T bit indicates if the line is
 transactional. The O bit indicates of the set has
 overflowed. Overflowed data is stored in a data structure in uncached
@@ -222,7 +222,7 @@ retry the transaction.
 
 \subheading{Processor modifications}
 
-\figput{snapshot}%
+\figput[LTM processor modifications.]{snapshot}%
 {LTM processor modifications. The S bit vector tracks the active
  physical registers. There is an S bit vector snapshot associated with
  each rename table snapshot. The Register Reserved List holds the
@@ -378,7 +378,7 @@ application               &  time       & time          & time                  
 \texttt{228\_jack}        & 261.4M      & 175.3\%       & 104.3\%                & 32.1\%     & 0.0056\%                  \\
 \end{tabular}
 \end{center}
-\caption{
+\caption[SPECjvm98 performance on a 1-processor UVSIM simulation.]{%
 SPECjvm98 performance on a 1-processor UVSIM simulation.  The {\em
 Time in trans} and {\em Time in overflow} are the times spent actually
 running a transaction and handling overflows respectively. The input
@@ -720,7 +720,8 @@ system.}
 \begin{figure}[b]
 \hspace{-0.15cm}
 \input{Figures/snapshot.pstex_t}
-\caption{UTM processor modifications. The S bit vector
+\caption[UTM processor modifications.]%
+{UTM processor modifications. The S bit vector
 tracks the active physical registers.  For each rename table snapshot,
 there is an associated S bit vector snapshot.  The Register Reserved
 List holds the otherwise free physical registers until the transaction
@@ -733,7 +734,7 @@ register).}
 %\centering
 \hspace{-1.3cm} % Make the datastruct-entry slide over to the left (it is in the right column, going off the edge)
 \input{Figures/datastruct-entry.pstex_t}
-\caption{The xstate data structure.
+\caption[The xstate data structure.]{The xstate data structure.
 The transaction log for a transaction contains a commit record and a
 vector of log entries.  The log pointer of a block in memory
 points to a log entry, which contains the old value of the block and a

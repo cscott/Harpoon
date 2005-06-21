@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.6 2005-06-21 18:31:54 cananian Exp $
+% $Id: phd-thesis.cls,v 1.7 2005-06-21 23:17:16 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -10,6 +10,7 @@
 \usepackage{xspace}
 \usepackage{epsfig}
 \usepackage{url}
+\usepackage{ifthen}
 
 % Pass on other options.
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
@@ -42,23 +43,22 @@
 \newcommand{\secref}[1]         {Section~\ref{sec:#1}}
 \newcommand{\charef}[1]         {Chapter~\ref{sec:#1}}
 
-\newcommand{\figput}[2]{%
+\newcommand{\figput}[3][]{%
 \begin{figure}[t]\sis%
  \begin{center}%
-  \input{Figures/#1.pstex_t}%
+  \input{Figures/#2.pstex_t}%
  \end{center}%
-%\caption{\mbox{\tt (#1.eps)} #2}%
- \caption{#2}%
- \label{fig:#1}%
+ \ifthenelse{\equal{#1}{}}{\caption{#3}}{\caption[#1]{#3}}%
+ \label{fig:#2}%
 \end{figure}%
 }
-\newcommand{\epsfigput}[2]{%
+\newcommand{\epsfigput}[3][]{%
 \begin{figure}[t]\sis%
 \begin{center}%
-\includegraphics[height=2.75in,clip=true]{Figures/#1.eps}%
+\includegraphics[height=2.75in,clip=true]{Figures/#2.eps}%
 \end{center}%
-\caption{#2}%
-\label{fig:#1}%
+\ifthenelse{\equal{#1}{}}{\caption{#3}}{\caption[#1]{#3}}%
+\label{fig:#2}%
 \end{figure}%
 }
 

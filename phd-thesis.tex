@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.13 2005-06-21 20:53:22 cananian Exp $
+% $Id: phd-thesis.tex,v 1.14 2005-06-21 23:17:16 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 \usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.13 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.14 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.13 $ $}
+\date{\subdate \\ $ $Revision: 1.14 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -40,15 +40,16 @@
 
 \chapter{Challenges}
 \section{Performance isolation}
+\note{Cite WDDD here.}
 \section{Progress guarantees}\label{sec:progress}
 \section{The Semantic Gap}\label{sec:semantic}
 \section{I/O}
 \section{OS interactions}
 
-\chapter[Efficient Software Implementation]{An Efficient Software Implementation of Transactions}
+\chapter[Efficient Software Implementation]{An Efficient Software Implementation of Transactions}\label{sec:softimpl}
 \input{phd-stm}
 
-\chapter[Transactions in Hardware]{Transactions in Hardware: Unbounded Transactional Memory}
+\chapter[Transactions in Hardware]{Transactions in Hardware: Unbounded Transactional Memory}\label{sec:hardimpl}
 \epigraphhead[70]{\epigraph{%
 People who are really serious about software should make their own hardware.
 
@@ -82,7 +83,7 @@ it.}{\textit{Alan Kay}}}
 
 \chapter{Formal equivalence proof of UTM/xstate}\label{sec:hw-proof}
 
-\chapter[Precise garbage-collectable C]{Compiling to precise garbage-collectable C code}
+%\chapter[Precise garbage-collectable C]{Compiling to precise garbage-collectable C code}
 
 \backmatter
 \bibliography{xaction}
