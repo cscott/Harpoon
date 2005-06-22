@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.9 2005-06-22 18:11:19 cananian Exp $
+% $Id: phd-thesis.cls,v 1.10 2005-06-22 21:13:37 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -67,6 +67,22 @@
 \newenvironment{inlinecode}%
   {\par\linespread{0.9}\footnotesize\samepage\verbatim}%
   {\endverbatim}
+
+% marginal notes, lifted from supertech.sty
+%\setlength{\marginparwidth}{0.6in}
+%\reversemarginpar
+\newif\ifnotes
+\notestrue
+\newcommand{\longnote}[1]{
+  \ifnotes
+    {\medskip\noindent Note: \marginpar[\hfill$\Longrightarrow$]
+      {$\Longleftarrow$}{#1}\medskip}
+  \fi}
+\newcommand{\note}[1]{% lines that do not end with control sequences should end with macros to avoid introducing spurious space -Bradley
+  \ifnotes
+    {\marginpar{\tiny \raggedright{#1}}}%
+  \fi}
+
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
