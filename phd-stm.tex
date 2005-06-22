@@ -670,7 +670,8 @@ the object being updated appropriately:
 \item $\funcname{Read}(o, f)$:
   Return $\funcname{FA-Read}(\fref{o}{fields}, \fref{f}{index})$.
 \item $\funcname{Write}(o, f, v)$: Replace \fref{o}{fields} with the
-  result of $\funcname{FA-Update}(\fref{o}{fields}, \fref{f}{index}, v)$.
+  result of \linebreak
+  $\funcname{FA-Update}(\fref{o}{fields}, \fref{f}{index}, v)$.
 \end{itemize}
 
 The interesting cases are reads and writes inside an atomic method.
@@ -682,7 +683,7 @@ write operations are implemented as:
 \item $\funcname{ReadAtomic}(o, f)$:
   Return $\funcname{FA-Read}(u', \fref{f}{index})$.
 \item $\funcname{WriteAtomic}(o, f, v)$:
-  Update variable $u'$ to the result of
+  Update variable $u'$ to the result of \linebreak
   $\funcname{FA-Update}(u', \fref{f}{index}, v)$.
 \end{itemize}
 
