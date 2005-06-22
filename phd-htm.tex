@@ -1,4 +1,4 @@
-\newcommand{\subheading}[1]{\subsubsection{#1}}
+
 \section{The LTM implementation}\label{sec:ltm}
 
 %% Points we are trying to make:
@@ -91,7 +91,7 @@ remainder of this section describes the modifications to the cache and
 processor core needed to support the LTM semantics.
 
 %% This stuff should now be in the UTM section
-%% \subheading{Instruction set interface and semantics}
+%% \subsubsection{Instruction set interface and semantics}
 %% 
 %% LTM uses MIPS as an example baseline instruction set and adds the
 %% following instructions to support transactions:
@@ -165,7 +165,7 @@ processor core needed to support the LTM semantics.
 %% hardware maintains a counter that keeps track of the nesting level.
 %% 
 
-\subheading{Cache modifications}
+\subsubsection{Cache modifications}
 
 \figput[LTM cache modifications.]{cachemods}%
 {LTM cache modifications. The T bit indicates if the line is
@@ -220,7 +220,7 @@ retry the transaction.
 %% memory.
 %% 
 
-\subheading{Processor modifications}
+\subsubsection{Processor modifications}
 
 \figput[LTM processor modifications.]{snapshot}%
 {LTM processor modifications. The S bit vector tracks the active
@@ -336,7 +336,7 @@ one processor of UVSIM.
 %% 
 
 \label{sec:javac}
-Our initial results from \secref{benchmarks} suggested that since
+Our initial results from \charef{efficient} suggested that since
 overflows are infrequent, the efficiency of the data structure would
 have a negligible effect on overall performance. Therefore, our first
 LTM implementation used an unsorted array that required a linear
@@ -451,7 +451,7 @@ complete the next transaction) before the cache line is taken away.
 Similar behavior is expected from UTM since small transactions
 effectively use the cache the same way.
 
-%% \subheading{The \texttt{LinkedList} microbenchmark}
+%% \subsubsection{The \texttt{LinkedList} microbenchmark}
 %% 
 %% We implemented the \texttt{LinkedList} parallel application to examine
 %% program behavior for moderately sized transactions with varying
@@ -517,7 +517,7 @@ migration from one processor to another.  We first present the
 software interface to UTM, and then describe the implementation
 details.
 
-\subheading{New instructions}
+\subsubsection{New instructions}
 
 UTM adds two new instructions to a processor's instruction set
 architecture:
@@ -555,7 +555,7 @@ keep track of nesting depth.  If the nesting depth is positive, then
 \texttt{XBEGIN} and \texttt{XEND} simply increment and decrement the
 counter, respectively, and perform no other transactional bookkeeping.
 
-\subheading{Rolling back processor state}
+\subsubsection{Rolling back processor state}
 
 The branch mispredict mechanism in conventional superscalar processors
 can roll back register state only for the small window of recent
@@ -570,7 +570,7 @@ the architectural registers, or until the matching \texttt{XEND}
 graduates indicating that the transaction has committed.
 
 UTM's modifications to the processor core are illustrated in
-\figref{snapshot}.  We assume a machine with a unified physical
+\figref{snapshot-utm}.  We assume a machine with a unified physical
 register file, and so rather than saving the architectural registers
 themselves, UTM saves a snapshot of the register-renaming table
 and ensures the corresponding physical registers are not reused until
@@ -632,7 +632,7 @@ registers) to allow them to be saved and restored on context switches.
 % The LPR field is the next physical register to free (the last physical
 % register referenced by the destination architectural register).}
 
-\subheading{Memory state}
+\subsubsection{Memory state}
 
 Previous HTM systems \cite{Knight86,HerlihyMo93} represent a
 transaction partly in the processor and partly in the cache, taking
@@ -728,7 +728,7 @@ List holds the otherwise free physical registers until the transaction
 commits.  The LPR field is the next physical register to free (the
 last physical register referenced by the destination architectural
 register).}
-\label{fig:snapshot}
+\label{fig:snapshot-utm}
 \end{figure}
 \begin{figure}[b]
 %\centering
@@ -816,7 +816,7 @@ structure is designed to allow these to be arbitrarily interleaved
 with memory accesses from other ongoing transactions.}
 % CSA: i don't think it's true either; at least not obviously.
 
-\subheading{Caching}
+\subsubsection{Caching}
 
 Although UTM can support transactions of unbounded size using the
 xstate data structure, multiple memory accesses for each operation may
@@ -852,7 +852,7 @@ the on-processor representation as long as, at the cache interface, the
 view of the xstate is properly maintained.  For convenience, the
 transaction block size can match the cache line size.
 
-\subheading{System issues}
+\subsubsection{System issues}
 
 The goal of UTM is to support transactions that can run for an
 indefinite length of time (surviving time slice interrupts), can

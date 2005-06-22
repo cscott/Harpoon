@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.15 2005-06-22 17:44:37 cananian Exp $
+% $Id: phd-thesis.tex,v 1.16 2005-06-22 20:02:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 \usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.15 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.16 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.15 $ $}
+\date{\subdate \\ $ $Revision: 1.16 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -42,14 +42,14 @@
 \section{Performance isolation}
 \note{Cite WDDD here.}
 \section{Progress guarantees}\label{sec:progress}
-\section{The Semantic Gap}\label{sec:semantic}
+\section{The semantic gap}\label{sec:semantic}
 \section{I/O}
 \section{OS interactions}
 
-\chapter[Efficient Software Implementation]{An Efficient Software Implementation of Transactions}\label{sec:softimpl}
+\chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:softimpl}
 \input{phd-stm}
 
-\chapter[Transactions in Hardware]{Transactions in Hardware: Unbounded Transactional Memory}\label{sec:hardimpl}
+\chapter[Transactions in hardware]{Transactions in hardware: Unbounded Transactional Memory}\label{sec:hardimpl}
 \epigraphhead[70]{\epigraph{%
 People who are really serious about software should make their own hardware.
 
@@ -62,14 +62,14 @@ it.}{\textit{Alan Kay}}}
 \section{Calling-convention and function issues}
 \input{phd-htm}
 
-\chapter{A Hybrid Transaction Implementation}\label{sec:hybrid}
+\chapter{A hybrid transaction implementation}\label{sec:hybrid}
 
 % dual-path coding: publishable paper: try in hw, fall back to sftware
 
 \chapter[Extending transactions]{Extending transactions: beyond atomic power}
 
 \section{Nesting}
-\section{Exchange and Merging}
+\section{Exchange and merging}
 \section{Loopholes and NITs}
 \section{Opportunistic parallelism}
 

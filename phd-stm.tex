@@ -9,7 +9,7 @@ out some deficiencies.  By recasting the basic implementation as a
 object protocol'', in the process addressing these performance
 problems.
 
-\section{Designing Efficient Transactions}\label{sec:efficient}
+\section{Designing efficient transactions}\label{sec:efficient}
 
 In this section I briefly describe some desired properties of the
 software transaction system of this thesis.
@@ -78,7 +78,7 @@ program & memory ops    & stores \% \\\hline
   SPECjvm98 benchmark suite, full input runs.}
 \label{fig:writepercent}
 \end{figure}
-\subsection{Designing for Reads vs. Writes}
+\subsection{Designing for reads vs. writes}
 \figref{writepercent} shows that transactional reads typically
 outnumber transactional writes by at least 4 to 1; in some cases reads
 outnumber writes by over 100 to 1.  It is worthwhile, therefore, to
@@ -88,7 +88,7 @@ to allocate additional memory to store the ``real'' value of the
 field, I wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
 
-\subsection{The Big Idea: waving FLAGs}\label{sec:flagfield}
+\subsection{The big idea: waving FLAGs}\label{sec:flagfield}
 
 \note{Missing: performance numbers for adding check.  Use ``no trans''
 version of transaction app and add check into the access functions.}
@@ -108,7 +108,7 @@ involved in a transaction from non-transactional code, which is
 another design goal of the system.  This eases ``transactification''
 of legacy code (but see \charef{semantic}!).
 
-\section{Specifying the mechanism}
+\section{Specifying the basic mechanism}
 We now present an algorithm which has these desired properties.
 Our algorithms will be completely non-blocking, which allows good
 scaling and proper fault-tolerant behavior: one faulty or slow
@@ -133,7 +133,7 @@ given in \appref{full-model}, along with a brief primer on Promela
 syntax and semantics.
 
 %\subsecput{interface}{Interface}
-\subsection{Object Structures}%datastruct
+\subsection{Object structures}%datastruct
 \figput[Implementing software transactions with version lists.]{tr-multi-obj}%
  {Implementing software transactions with version
   lists.  A transaction object consists of a single field {\it
@@ -584,6 +584,8 @@ inline writeT(ver, f, nval) {
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\section{Performance of the basic implementation}
+%% XXX
 \section{Arrays and large objects}\label{sec:largeobj}
 %% XXX
 
@@ -1099,11 +1101,12 @@ Thus in step 6 we need to again use DCAS to simultaneously swing
 $\fref{C}{node}$ away 
 from the cache as we swing $\fref{B}{node}$ to point to the cache.
 
-Figure~\ref{fig:fun-impl} presents pseudocode for \funcname{FA-Rotate},
-\funcname{FA-Read}, and \funcname{FA-Update}.  Note that \funcname{FA-Read} also
-uses the cache pointer as a reservation,
-double-checking the cache pointer after it finishes its read to ensure that the
-cache hasn't been stolen from it.
+Figures~\ref{fig:fun-impl1} and \ref{fig:fun-impl2} present pseudocode
+for \funcname{FA-Rotate}, \funcname{FA-Read}, and
+\funcname{FA-Update}.  Note that \funcname{FA-Read} also uses the
+cache pointer as a reservation, double-checking the cache pointer
+after it finishes its read to ensure that the cache hasn't been stolen
+from it.
 
 Let us now consider cuts, where \funcname{FA-Read} clones the cache
 instead of performing a rotation.   Cuts also check the cache pointer
