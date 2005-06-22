@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.8 2005-06-22 17:44:37 cananian Exp $
+% $Id: phd-thesis.cls,v 1.9 2005-06-22 18:11:19 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -36,7 +36,7 @@
 % A breaking non-space for URLs
 \newcommand{\bp}{\hspace{0pt}}
 % single-spacing for code examples.
-\newcommand{\sis}{\linespread{1.0}\setlength{\baselineskip}{0.8\baselineskip}}
+\newcommand{\sis}{\linespread{1.0}\normalsize}
 \newcommand{\punt}[1]{}% ignore punted stuff
 
 \newcommand{\appref}[1]         {Appendix~\ref{sec:#1}}
@@ -65,7 +65,7 @@
 
 % similar to verbatim, except it changes the size/spacing/etc
 \newenvironment{inlinecode}%
-  {\par\footnotesize\samepage\sis\verbatim}%
+  {\par\linespread{0.9}\footnotesize\samepage\verbatim}%
   {\endverbatim}
 
 % work around fig2dev wanting to add colors to .figures.

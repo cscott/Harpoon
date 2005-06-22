@@ -888,7 +888,7 @@ In \charef{hybrid} we present just such a system.
 \subsection{Language-level Approaches to \\Synchronization}
 \begin{figure}
 {\samepage\it\sis%
-\begin{tabular}{l}\sis%
+\begin{tabular}{l}%
 {\bf const} myDirectory == {\bf object} oneEntryDirectory\\
 ~~{\bf export} Store, Lookup\\
 ~~{\bf monitor}\\
@@ -922,9 +922,8 @@ In \charef{hybrid} we present just such a system.
 \end{figure}
 
 \begin{figure}
-{\ttfamily\small\vspace{.25in}
-\sis%
-\begin{tabular}{l}\sis
+{\ttfamily\sis\small%
+\begin{tabular}{l}
 class Account \{\\
 \\
 ~~int balance = 0;\\

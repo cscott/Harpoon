@@ -1,7 +1,7 @@
 FIG_MAG_tr-multi-obj=-m 0.4
-FIG_MAG_cachemods=-m 0.5
-FIG_MAG_snapshot=-m 0.5
-FIG_MAG_datastruct-entry=-m 0.5
+FIG_MAG_cachemods=-m 0.75
+FIG_MAG_snapshot=-m 0.75
+FIG_MAG_datastruct-entry=-m 0.75
 
 # definitions for example 1
 EX1FIG=THex1.fig

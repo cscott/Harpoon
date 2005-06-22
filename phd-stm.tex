@@ -272,7 +272,7 @@ inline writeNT(o, f, nval) {
 
 \subsubsection{Field Copy-Back}
 \begin{figure}
-\fontsize{6.5}{7.4}
+\sis\fontsize{6.5}{7.4}
 \begin{verbatim}
 inline copyBackField(o, f, mode, st) {
   _nonceV=NIL; _ver = NIL; _r = NIL; st = success;
@@ -415,7 +415,7 @@ inline readT(tid, o, f, ver, result) {
 \end{inlinecode}
 
 \begin{figure}
-\fontsize{6.5}{8}
+\sis\fontsize{6.5}{8}
 \begin{verbatim}
 /* per-object, before write. */
 inline ensureWriter(tid, o, ver) {
@@ -487,7 +487,7 @@ inline ensureWriter(tid, o, ver) {
 \label{fig:ensurewriter}
 \end{figure}
 \begin{figure}
-\fontsize{6.5}{8}
+\sis\fontsize{6.5}{8}
 \begin{verbatim}
 /* per-field, before write. */
 inline checkWriteField(o, f) {
@@ -711,9 +711,10 @@ may be referenced within an atomic method is overly limiting.
 \label{fig:multi-o}
 \end{figure}
 \begin{figure}[p]
-\renewcommand{\>}{~~}
-\newcommand{\com}[1]{\hfill [{\sl #1}]}
-\begin{tabular}{l}
+\sis%
+\renewcommand{\>}{~~}%
+\newcommand{\com}[1]{\hfill [{\sl #1}]}%
+\begin{tabular}{l}%
 $\funcname{Read}(o, f)$:\\
 begin\\
 retry:\\
@@ -761,9 +762,10 @@ end\\
 \end{figure}
 
 \begin{figure}[p]
-\renewcommand{\>}{~~}
-\newcommand{\com}[1]{\hfill [{\sl #1}]}
-\begin{tabular}{l}
+\sis%
+\renewcommand{\>}{~~}%
+\newcommand{\com}[1]{\hfill [{\sl #1}]}%
+\begin{tabular}{l}%
 $\funcname{Write}(o, f, v)$:\\
 begin\\
 retry:\\
@@ -892,12 +894,12 @@ constant time plus an invocation of \funcname{FA-Read} or
 \funcname{FA-Update}.
 
 \subsection{Lock-free functional arrays}\label{sec:large-obj}
-\begin{figure*}\centering
-\includegraphics[width=7in,clip=true]{Figures/chuang.eps}
+\begin{figure}\centering
+\includegraphics[width=6in,clip=true]{Figures/chuang.eps}
 \caption{Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
-\end{figure*}
+\end{figure}
 In this section we will present a lock-free implementation of functional
 arrays with $O(1)$ performance in the absence of contention.  This
 will complete our implementation of non-blocking \atomic methods for Java.
@@ -975,8 +977,8 @@ new root instead of performing a rotation.  This operation takes
 $O(n)$ time, so we amortize it over $n$ operations by randomly
 choosing to perform a cut with probability $1/n$.
 
-\begin{figure*}\centering
-\includegraphics[width=7in,clip=true]{Figures/funarr.eps}
+\begin{figure}\centering%
+\includegraphics[width=5.5in,clip=true]{Figures/funarr.eps}
 \caption[Atomic steps in $\funcname{FA-Rotate}(B)$.]%
  {Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.
@@ -984,12 +986,13 @@ choosing to perform a cut with probability $1/n$.
   Array $B$ has the almost the same contents as $A$, but
   $\funcname{FA-Read}(B, x)=y$.}
 \label{fig:funarr}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}\centering
-\renewcommand{\>}{~~}
-\newcommand{\com}[1]{\hfill [{\sl #1}]}
-\begin{tabular}{l}
+\begin{figure}\centering%
+\sis%
+\renewcommand{\>}{~~}%
+\newcommand{\com}[1]{\hfill [{\sl #1}]}%
+\begin{tabular}{l}%
 $\funcname{FA-Update}(A, i, v)$:\\
 begin\\
 \>$d \gets \text{new DiffNode}(i, v, A)$\\
@@ -1010,7 +1013,16 @@ retry:\\
 \>\>\funcname{FA-Rotate}(A)\\
 \>\>goto retry\\
 end\\
-\\
+\end{tabular}
+\caption{Implementation of lock-free functional array using shallow
+  binding and randomized cuts (part 1).}
+\label{fig:fun-impl1}
+\end{figure}
+\begin{figure}\centering%
+\sis%
+\renewcommand{\>}{~~}%
+\newcommand{\com}[1]{\hfill [{\sl #1}]}%
+\begin{tabular}{l}%
 $\funcname{FA-Rotate}(B)$:\\
 begin\\
 retry:\\
@@ -1051,9 +1063,9 @@ retry:\\
 end\\
 \end{tabular}
 \caption{Implementation of lock-free functional array using shallow
-  binding and randomized cuts.}
-\label{fig:fun-impl}
-\end{figure*}
+  binding and randomized cuts (part 2).}
+\label{fig:fun-impl2}
+\end{figure}
 
 Figure~\ref{fig:funarr} shows the data structures used for the
 functional array implementation, and the series of atomic steps used

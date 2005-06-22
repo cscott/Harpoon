@@ -46,40 +46,34 @@ Our model uses three basic Promela statements: selection, repetition,
 and {\tt atomic}.
 
 The selection statement,
-%\par{\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 if
 :: guard -> statements
 ...
 :: guard -> statements
 fi
-\end{verbatim}
-%}
+\end{inlinecode}
 selects one among its options and executes it.  An option can be
 selected iff its first statement (the guard) is enabled.  The
 special guard {\tt else} is enabled iff all other guards are not.
 
 The repetition statement,
-%\par{\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 do
 :: statements
 ...
 :: statements
 fi
-\end{verbatim}
-%}
+\end{inlinecode}
 is similar: one among its enabled statements is selected and executed,
 and then the process is repeated (with a different statement possibly
 being selected each time) until control is explicitly transfered out
 of the loop with a {\tt break} or {\tt goto}.
 
 Finally,
-%\par{\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 atomic { statements }
-\end{verbatim}
-%}
+\end{inlinecode}
 executes the given statements in one indivisible step.  For the
 purposes of this model, a {\tt d\_step} block is functionally identical.
 Outside {\tt atomic} or {\tt d\_step} blocks, Promela allows
