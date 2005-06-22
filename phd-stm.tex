@@ -1,10 +1,56 @@
+In this chapter we will specifically describe the implementation of
+our software transaction system.  We will first outline the design
+properties of the system, using quantitative data to validate our
+goals.  Then we will formally describe an implementation which meets those
+design goals, using the modelling language SPIN for concreteness.  We
+will evaluate the performance of the basic implementation, and point
+out some deficiencies.  By recasting the basic implementation as a
+``small object protocol'', we will show how to extend it to a ``large
+object protocol'', in the process addressing these performance
+problems.
+
 \section{Designing Efficient Transactions}\label{sec:efficient}
+
 In this section I briefly describe some desired properties of the
-software transaction system being designed for this thesis.
+software transaction system of this thesis.
+\note{Work on this transition.}
+
+\subsection{Object-oriented vs. flat TM}
+This transaction system, unlike all current proposals
+\cite{HarrisFr03,HerlihyMo93}\note{Include more} (including the
+hardware system presented in \charef{hardimpl}), uses an
+``object-oriented'' design.  Current research is focused on
+implementing a flat (transactional) memory abstraction in software,
+primarily because this solves some of the issues we will present in
+\charef{largeobj}.  However, the object-oriented approach offers
+several benefits:
+\begin{description}
+\item[Efficient execution of long-running transactions.]  As discussed
+  briefly in Chapter \ref{sec:efficiency} and \ref{sec:tm}, flat
+  word-oriented transaction schemes require overhead proportional to
+  the number of words read/written in the transaction, even if these
+  locations had been accessed before inside the transaction. Object-oriented
+  schemes impose a cost proportional to the number of \emph{objects}
+  touched by the transaction --- but once the cost of ``opening'' those
+  objects is paid, the transaction can continue to work indefinitely
+  upon those objects without paying any further penalty.
+  Object-oriented schemes are thus seen to be more efficient for
+  \emph{long-running transactions}.
+\item[Preservation of optimization opportunities.]  Furthermore,
+  transaction-local objects can be identified (statically or
+  dynamically) and creation/updates to these objects can be done
+  without any transaction tax at all.  Word oriented schemes discard
+  the high-level information required to implement these optimizations.
+%\item[Freedom from implementation restrictions.]
+% thinking of multi-version consistency here.
+\end{description}
+I believe that the problems with previous object-oriented schemes can
+be solved while preserving the inherent benefits of an object-oriented
+approach, and the current thesis presents one such solution.
 
 \epsfigput{bloat}{Application slowdown with increasing object bloat
 for the SPECjvm98 benchmark applications.}
-\subsection{Object expansion}
+\subsection{Tolerable limits for object expansion}
 I will need to add some additional information to each object to
 track transaction state.  I measured the slowdown caused by various
 amounts of object ``bloat'' to determine reasonable bounds on the
@@ -32,7 +78,7 @@ program & memory ops    & stores \% \\\hline
   SPECjvm98 benchmark suite, full input runs.}
 \label{fig:writepercent}
 \end{figure}
-\subsection{Reads vs. Writes}
+\subsection{Designing for Reads vs. Writes}
 \figref{writepercent} shows that transactional reads typically
 outnumber transactional writes by at least 4 to 1; in some cases reads
 outnumber writes by over 100 to 1.  It is worthwhile, therefore, to
@@ -58,18 +104,11 @@ that exceptional processing is necessary; all other non-transactional
 operations proceed as usual.
 
 Note that this technique explicitly allows safe access to fields
-involved in a transaction from non-transactional code.
-\punt{
-Ensuring that transactional updates remain atomic to non-transactional
-code eases ``transactification'' and 
-Key idea is to allow safe access by non-transactional code, so as to
-allow transactification.
-}
+involved in a transaction from non-transactional code, which is
+another design goal of the system.  This eases ``transactification''
+of legacy code (but see \charef{semantic}!).
 
-\section{Why Object-Oriented?} % answer: long-running xactions
-
-
-\section{Software Transaction Mechanism}
+\section{Specifying the mechanism}
 We now present an algorithm which has these desired properties.
 Our algorithms will be completely non-blocking, which allows good
 scaling and proper fault-tolerant behavior: one faulty or slow
@@ -90,9 +129,8 @@ We will describe our algorithms in the Promela modeling language
 which we used to allow mechanical model checking of the race-safety
 and correctness of the design.  Portions of the model have been
 abbreviated for this presentation;  the full Promela model is
-available from a URL given at the end of the paper.
-
-\appref{promela} provides a brief primer on Promela syntax and semantics.
+given in \appref{full-model}, along with a brief primer on Promela
+syntax and semantics.
 
 %\subsecput{interface}{Interface}
 \subsection{Object Structures}%datastruct
@@ -163,8 +201,8 @@ to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
 All possible races are confined to the copy-back procedure.
-\par {\footnotesize\samepage
-\begin{verbatim}
+
+\begin{inlinecode}
 inline readNT(o, f, v) {
   do
   :: v = object[o].field[f];
@@ -181,8 +219,7 @@ inline readNT(o, f, v) {
      fi
   od
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 \subsubsection{Write}
 The {\tt WriteNT} function does a non-transactional write of new value $nval$
@@ -205,8 +242,8 @@ simplest correct implementation is to treat this non-transactional
 write as a short transactional write, creating a new transaction for
 this one write, and attempting to commit it immediately after the
 write.  This is slow, but adequate for this uncommon case.
-\par {\footnotesize\samepage
-\begin{verbatim}
+
+\begin{inlinecode}
 inline writeNT(o, f, nval) {
   if
   :: (nval != FLAG) ->
@@ -231,8 +268,8 @@ inline writeNT(o, f, nval) {
      ...
   fi;
 }
-\end{verbatim}
-}
+\end{inlinecode}
+
 \subsubsection{Field Copy-Back}
 \begin{figure}
 \fontsize{6.5}{7.4}
@@ -346,8 +383,8 @@ object associated with our transaction (this will typically be at the
 head of the version list) and read the appropriate value from that
 version.  Note that the initial read-and-check can be omitted if we
 know that we have already written to this field inside this transaction.
-\par {\footnotesize\samepage
-\begin{verbatim}
+
+\begin{inlinecode}
 inline readT(tid, o, f, ver, result) {
   do
   ::
@@ -375,8 +412,7 @@ inline readT(tid, o, f, ver, result) {
      fi
   od
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 \begin{figure}
 \fontsize{6.5}{8}
@@ -539,18 +575,16 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
 
 Then, for each write, we simply write to the identified version.
-\par {\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 inline writeT(ver, f, nval) {
   /* easy enough: */
   version[ver].field[f] = nval;
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-\section{Arrays and large objects}
+\section{Arrays and large objects}\label{sec:largeobj}
 %% XXX
 
 \subsection{A simple implementation of functional arrays}

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.7 2005-06-21 23:17:16 cananian Exp $
+% $Id: phd-thesis.cls,v 1.8 2005-06-22 17:44:37 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -11,6 +11,7 @@
 \usepackage{epsfig}
 \usepackage{url}
 \usepackage{ifthen}
+\usepackage{verbatim}
 
 % Pass on other options.
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
@@ -61,6 +62,11 @@
 \label{fig:#2}%
 \end{figure}%
 }
+
+% similar to verbatim, except it changes the size/spacing/etc
+\newenvironment{inlinecode}%
+  {\par\footnotesize\samepage\sis\verbatim}%
+  {\endverbatim}
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}

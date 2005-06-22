@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.14 2005-06-21 23:17:16 cananian Exp $
+% $Id: phd-thesis.tex,v 1.15 2005-06-22 17:44:37 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 \usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.14 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.15 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.14 $ $}
+\date{\subdate \\ $ $Revision: 1.15 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -78,7 +78,7 @@ it.}{\textit{Alan Kay}}}
 
 \chapter{Conclusion}
 \appendix
-\chapter[Model-checking the implementation]{Model-checking the software implementation}
+\chapter[Model-checking the implementation]{Model-checking the software implementation}\label{sec:full-model}
 \input{phd-ver}
 
 \chapter{Formal equivalence proof of UTM/xstate}\label{sec:hw-proof}

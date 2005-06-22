@@ -143,8 +143,7 @@ stack using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
 Schorr and Waite \cite{SchorrWa67}.  The following code implements a
 pointer-reversal traversal of a simple singly-linked list:
- \par {\footnotesize\samepage\sis
-\begin{verbatim}
+\begin{inlinecode}
 // destructive list traversal.
 void traverse(List l) {
   List last = null, t;
@@ -162,8 +161,8 @@ void traverse(List l) {
     // now do again, backwards. (restoring links)
   }
 }
-\end{verbatim}
-}
+\end{inlinecode}
+
 This function traverses the list, visiting nodes in order and then
 reversing the {\tt next} pointer.  When the end of the list is
 reached, the reversed links are traversed to restore the list's original
@@ -189,15 +188,14 @@ is going to undo the list mutations.
 \note{Used to have a try/catch with explicit fail in here.}
 Instead, I can provide a non-deterministic choice operator,
 {\tt try}/{\tt else}, and write the recovery code at a higher-level as:
-\par {\footnotesize\samepage\sis
-\begin{verbatim}
+\begin{inlinecode}
 try {
   traverse(list);
 } else { // try-else construct
   throw new Error();
 }
-\end{verbatim}
-}\note{I'd prefer `fail t' here, but that raises the question of how
+\end{inlinecode}
+\note{I'd prefer `fail t' here, but that raises the question of how
   to export objects from transactional contexts.}
 
 The {\tt try}/{\tt else} block appears to make a non-deterministic
@@ -222,20 +220,17 @@ example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
 pushes flow across an edge by increasing the ``excess flow'' on one
 vertex and decreasing it by the same amount on another vertex.  One
 might see the following Java code:
-\par {\footnotesize\samepage\sis
-\begin{verbatim}
+\begin{inlinecode}
 void pushFlow(Vertex v1, Vertex v2, double flow) {
   v1.excess += flow; /* Move excess flow from v1 */
   v2.excess -= flow; /* to v2.                   */
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 To parallelize this code, one must preclude multiple threads from
 modifying the excess flow on those two vertices at the same time.
 Locks provide one way to enforce this mutual exclusion: 
-\par {\footnotesize\samepage\sis
-\begin{verbatim}
+\begin{inlinecode}
 void pushFlow(Vertex v1, Vertex v2, double f) {
   Object lock1, lock2;
   if (v1.id < v2.id) {       /* Avoid deadlock. */
@@ -250,8 +245,7 @@ void pushFlow(Vertex v1, Vertex v2, double f) {
     } /* unlock lock2 */
   } /* unlock lock1 */
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 This code is surprisingly complicated and slow compared to the
 original.  Space for each object's lock must be reserved.
@@ -278,16 +272,14 @@ Software transactions (and some language support) allow the
 programmer to parallelize the original code using an \texttt{atomic}
 keyword to indicate that the code block should appear to execute
 atomically: 
-\par {\footnotesize\samepage\sis
-\begin{verbatim}
+\begin{inlinecode}
 void pushFlow(Vertex v1, Vertex v2, double flow) {
   atomic { /* Transaction begin. */
     v1.excess += flow; /* Move excess flow from v1 */
     v2.excess -= flow; /* to v2.                   */
   } /* Transaction end. */
 }
-\end{verbatim}
-} 
+\end{inlinecode}
 
 This {\tt atomic} region can be implemented as a transaction, and
 with an appropriately non-blocking implementation, it
@@ -300,8 +292,7 @@ deadlock and races are to be avoided.
 
 Further, I can implement {\tt atomic} using the {\tt try}/{\tt else}
 exception-handling mechanism I've already introduced:
- \par {\footnotesize\samepage\sis
-\begin{verbatim}
+\begin{inlinecode}
 for (int b=0; ; b++) {
   try {
     // atomic actions
@@ -311,8 +302,8 @@ for (int b=0; ; b++) {
   }
   break; // success!
 }
-\end{verbatim}
-}
+\end{inlinecode}
+
 \note{How hard do I try to execute the {\tt try} block?}
 I non-deterministically choose to execute the body of the {\tt
   atomic} block if and only if it will be observed by all to execute
@@ -337,8 +328,7 @@ insufficiency with an
 actual bug they discovered in the Sun JDK 1.4.2 Java standard
 libraries.  The \texttt{java.lang.StringBuffer}\index{java.lang.StringBuffer@\texttt{java.lang.StringBuffer}} class,
 which implements a mutable string abstraction, is implemented as follows:
-\par {\footnotesize\samepage\sis
-\begin{verbatim}
+\begin{inlinecode}
 public final class StringBuffer ... {
   private char value[];
   private int count;
@@ -358,8 +348,8 @@ B:  sb.getChars(0, len, value, count);
   public synchronized int length() { return count; }
   public synchronized void getChars(...) { ... }
 }
-\end{verbatim}
-}
+\end{inlinecode}
+
 The library documentation indicates that the methods of this class are meant
 to execute atomically, and the {\tt synchronized} modifiers on the
 methods are meant to accomplish this.
@@ -721,9 +711,9 @@ be copied efficiently (in, say, $O(1)$ time).  He also presented a
 ``large object protocol'' which requires the programmer to
 manually break the object into small blocks, after which the small
 object protocol can be employed. 
-\punt{ This trouble with large objects is
+[This trouble with large objects is
 common to many non-blocking implementations; our solution is presented
-in \charef{proposal}.}
+in \charef{largeobj}.]
 
 Barnes provided the first universal non-blocking implementation
 method which avoids object copying \cite{Barnes93}.  He eliminates the
