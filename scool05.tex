@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.3 2005-08-05 21:04:37 cananian Exp $
+% $Id: scool05.tex,v 1.4 2005-08-05 21:55:32 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -12,9 +12,15 @@
 
 \usepackage{amstext}
 \usepackage{varioref} % \vref command
-\usepackage{support}
+%\usepackage{support} %%% TURN BACK ON FOR CAMERA-READY
+\usepackage{verbatim}
 \usepackage{xspace}
 \notesfalse
+
+% similar to verbatim, except it changes the size/spacing/etc
+\newenvironment{inlinecode}%
+  {\par\linespread{0.9}\footnotesize\samepage\verbatim}%
+  {\endverbatim}
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -37,7 +43,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.3 $ $}
+%\date{\today \\ $ $Revision: 1.4 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -76,7 +82,8 @@ Cambridge, MA 02139 \\
 \begin{document}
 %
 \maketitle
-\support{This research was supported by DARPA/AFRL Contract F33615-00-C-1692.}
+%%% XXX TURN BACK ON FOR CAMERA-READY
+%\support{This research was supported by DARPA/AFRL Contract F33615-00-C-1692.}
 %
 % abstract
 \begin{abstract}
@@ -377,7 +384,7 @@ program & memory ops    & stores \% \\\hline
 \figref{writepercent} shows that transactional reads typically
 outnumber transactional writes by 3 to 1; in some cases reads
 outnumber writes by over 100 to 1.  These properties closely match
-data-cache read/write ratios others have collected \cite[p105,379]{Hennessy96}.
+data-cache read/write ratios others have collected \cite[pp. 105, 379]{Hennessy96}.
 It is worthwhile, therefore, to
 make reads more efficient than writes.  In particular, since the
 flag-overwrite technique discussed in \secref{flagfield} requires us
@@ -390,7 +397,7 @@ reserving the extra allocation effort for transactional writes.
 See \secref{properties}.
 }
 \subsection{Cooperation with HTM}
-Although space does not permit a full discussion; it is desirable that
+Although space does not permit a full discussion, it is desirable that
 an STM system cooperate well with some HTM system, in order to obtain
 good performance for frequent small transactions (Quads I and II).
 Without presenting proof here, we will claim that our mechanism
@@ -490,8 +497,7 @@ to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
 All possible races are confined to the copy-back procedure.
-\par {\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 inline readNT(o, f, v) {
   do
   :: v = object[o].field[f];
@@ -508,8 +514,7 @@ inline readNT(o, f, v) {
      fi
   od
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 \subsubsection{Write}
 The {\tt WriteNT} function does a non-transactional write of new value $nval$
@@ -532,8 +537,7 @@ simplest correct implementation is to treat this non-transactional
 write as a short transactional write, creating a new transaction for
 this one write, and attempting to commit it immediately after the
 write.  This is slow, but adequate for this uncommon case.
-\par {\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 inline writeNT(o, f, nval) {
   if
   :: (nval != FLAG) ->
@@ -558,8 +562,8 @@ inline writeNT(o, f, nval) {
      ...
   fi;
 }
-\end{verbatim}
-}
+\end{inlinecode}
+
 \subsubsection{Field Copy-Back}
 \begin{figure}
 \fontsize{6.5}{7.4}
@@ -673,8 +677,7 @@ object associated with our transaction (this will typically be at the
 head of the version list) and read the appropriate value from that
 version.  Note that the initial read-and-check can be omitted if we
 know that we have already written to this field inside this transaction.
-\par {\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 inline readT(tid, o, f, ver, result) {
   do
   ::
@@ -702,8 +705,7 @@ inline readT(tid, o, f, ver, result) {
      fi
   od
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 \begin{figure}
 \fontsize{6.5}{8}
@@ -866,14 +868,12 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
 
 Then, for each write, we simply write to the identified version.
-\par {\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 inline writeT(ver, f, nval) {
   /* easy enough: */
   version[ver].field[f] = nval;
 }
-\end{verbatim}
-}
+\end{inlinecode}
 
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
@@ -1186,40 +1186,34 @@ Our model uses three basic Promela statements: selection, repetition,
 and {\tt atomic}.
 
 The selection statement,
-%\par{\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 if
 :: guard -> statements
 ...
 :: guard -> statements
 fi
-\end{verbatim}
-%}
+\end{inlinecode}
 selects one among its options and executes it.  An option can be
 selected iff its first statement (the guard) is enabled.  The
 special guard {\tt else} is enabled iff all other guards are not.
 
 The repetition statement,
-%\par{\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 do
 :: statements
 ...
 :: statements
 fi
-\end{verbatim}
-%}
+\end{inlinecode}
 is similar: one among its enabled statements is selected and executed,
 and then the process is repeated (with a different statement possibly
 being selected each time) until control is explicitly transfered out
 of the loop with a {\tt break} or {\tt goto}.
 
 Finally,
-%\par{\footnotesize\samepage
-\begin{verbatim}
+\begin{inlinecode}
 atomic { statements }
-\end{verbatim}
-%}
+\end{inlinecode}
 executes the given statements in one indivisible step.  For the
 purposes of this model, a {\tt d\_step} block is functionally identical.
 Outside {\tt atomic} or {\tt d\_step} blocks, Promela allows
