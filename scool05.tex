@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.2 2005-08-05 21:00:11 cananian Exp $
+% $Id: scool05.tex,v 1.3 2005-08-05 21:04:37 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.2 $ $}
+%\date{\today \\ $ $Revision: 1.3 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -148,119 +148,6 @@ The contributions of this paper include:
   transactions.
 }
 \end{itemize}
-
-\secput{example}{Example and Motivation}
-We present three examples in this section, illustrating how
-transactions can support fault-tolerance and back-tracking,
-simplify locking, and provide a more intuitive
-means for specifying thread-safety properties.
-We will first examine a destructive traversal algorithm, showing how a
-transaction implementation can be treated as an exception-handling
-mechanism.   We then, using a network flow example, show how this
-transaction mechanism can be used to simplify
-the locking discipline required when synchronizing concurrent
-modifications to multiple objects
-Finally, we show an existing race in the Java standard libraries (in 
-the class \texttt{java.lang.StringBuffer}).  ``Transactification'' of
-the existing class corrects this race.
-
-\subsecput{destruct}{Destructive traversal}
-Many recursive data structures can be traversed without the use of an
-stack using pointer reversal.  This technique is widely used in
-garbage collectors, and was first demonstrated in this context by
-Schorr and Waite \cite{SchorrWa67}.
-
-In normal execution, the data structure is left complete and intact
-after the operation.  But
-imagine that an exception or fault occurs
-at some point during the traversal: control may
-leave the traversal, but the data structure is left in
-shambles.  What is needed is some exception-handling procedure to
-restore the proper state of the list.  This can be manually coded with
-Java's existing {\tt try}/{\tt catch} construct, but the
-exception-handling code must be tightly-coupled to the traversal if it
-is going to undo the list mutations.
-
-\note{Used to have a try/catch with explicit fail in here.}
-Instead, we can provide a non-deterministic choice operator,
-{\tt try}/{\tt else}, and write the recovery code at a higher-level as:
-\par {\footnotesize\samepage
-\begin{verbatim}
-try {
-  traverse(list);
-} else { // try-else construct
-  throw new Error();
-}
-\end{verbatim}
-}\note{We'd prefer `fail t' here, but that raises the question of how
-  to export objects from transactional contexts.}
-
-The {\tt try}/{\tt else} block appears to make a non-deterministic
-choice between executing the {\tt try} or the {\tt else} clause,
-depending on whether the {\tt try} would succeed or not.
-We implement this with a transaction around the traversal,
-always initially attempting
-the {\tt try}.  Exceptions or faults cause the transaction to abort;
-when it does so all the
-heap side-effects of the {\tt try} block disappear.
-
-Introducing an explicit {\tt fail} statement allows us to use the same
-{\tt try}/{\tt else} for back-tracking search.
-
-\subsecput{flow}{Network flow}
-
-We'll turn our attention now to parallel codes.
-Consider a serial program for computing network flow (see, for
-example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
-pushes flow across an edge by increasing the ``excess flow'' on one
-vertex and decreasing it by the same amount on another vertex.
-
-Software transactions (and some language support) allow the
-programmer to parallelize the original code using an \texttt{atomic}
-keyword to indicate that the code block should appear to execute
-atomically: 
-\par {\footnotesize\samepage
-\begin{verbatim}
-void pushFlow(Vertex v1, Vertex v2, double flow) {
-  atomic { /* Transaction begin. */
-    v1.excess += flow; /* Move excess flow from v1 */
-    v2.excess -= flow; /* to v2.                   */
-  } /* Transaction end. */
-}
-\end{verbatim}
-} 
-
-This {\tt atomic} region can be implemented as a transaction, and
-with an appropriately non-blocking implementation, it
-will scale better and execute faster than the locking version
-\cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
-From the programmer's point of view, we've also eliminated the
-convoluted locking protocol, which must
-be observed rigorously everywhere the related fields are accessed if
-deadlock and races are to be avoided.
-
-Further, we can implement {\tt atomic} using the {\tt try}/{\tt else}
-exception-handling mechanism we've already introduced:
- \par {\footnotesize\samepage
-\begin{verbatim}
-for (int b=0; ; b++) {
-  try {
-    // atomic actions
-  } else {
-    backOff(b);
-    continue;
-  }
-  break; // success!
-}
-\end{verbatim}
-}
-\note{How hard do we try to execute the {\tt try} block?}
-We non-deterministically choose to execute the body of the {\tt
-  atomic} block if and only if it will be observed by all to execute
-atomically.  The same linguistic mechanism we introduced for
-fault-tolerance and back-tracking provides atomic regions for
-synchronization as well.
-\note{Mention optimistic parallelism here?}
 
 \secput{auto}{Creating transactions}
 One of the difficulties of proposing a novel language feature is the
@@ -1274,9 +1161,10 @@ available for download at
 \url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
 
 %\renewcommand{\baselinestretch}{1}
-\bibliographystyle{plain}
+\bibliographystyle{abbrv}
 \bibliography{xaction}
 
+\clearpage
 \appendix
 \secput{promela}{Promela Primer}
 A concise Promela reference is available at
