@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.1 2005-08-05 17:10:13 cananian Exp $
+% $Id: scool05.tex,v 1.2 2005-08-05 21:00:11 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass{csaacmconfbig} % 15 page limit
+\documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
 \usepackage{epsfig}
 %\usepackage{supertech}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.1 $ $}
+%\date{\today \\ $ $Revision: 1.2 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -87,22 +87,11 @@ Cambridge, MA 02139 \\
   to express synchronization and optimistic concurrency.  We use ideas
   from software distributed shared memory to efficiently implement
   transactions with little overhead for non-transactional code.
-
-%We also
-%show how functional arrays can be used to overcome object size
-%limitations for non-blocking synchronization based on Herlihy's
-%``small object'' scheme.
-%\note{Also, transactions are exception-handling?}
-  
-  A model for the software transaction implementation is given in
-  Promela, whose correctness has been mechanically verified using the
-  \textsc{Spin} model checker.  We present a detailed design of our
-  proposal, justifying the choices we make with empirical performance
-  results and describing compiler optimizations which greatly improve
-  the common-case efficiency for typical Java benchmarks.  We argue
-  that our transaction mechanism makes some racy existing code safe,
-  is easy to use for new code, and promises better scalability than
-  the existing mutual-exclusion--based synchronization methods.
+  Rather than emulating a flat transactional memory, our scheme is
+  object-based, which allows compiler optimizations to provide better
+  performance for long-running transactions.  A model for the software
+  transaction implementation is given in Promela, whose correctness
+  has been mechanically verified using the \textsc{Spin} model checker.
 \end{abstract}
 
 %
@@ -117,58 +106,35 @@ transactions.  If a transaction aborts, then none of its stores take
 effect and the transaction may be restarted, typically using a
 backoff algorithm to preclude live-lock.
 
-The transaction model is a natural means to express both desired
-atomicity and fault-tolerance properties.  In this paper we will also
-show how transactions can be used as a general exception-handling
-mechanism and to implement back-tracking.
-
+The transaction model is a natural means to express atomicity,
+fault-tolerance, exception-handling, and back-tracking.
 Although transactions can be implemented using mutual exclusion
 (locks), our algorithms will utilize non-blocking synchronization to
 exploit optimistic concurrency among transactions.
 Non-blocking synchronization offers a number of advantages; foremost
-for the concerns of this paper is fault-tolerance.
-A process which fails while holding a lock within a
-critical region can prevent all other non-failing processes from
-ever making progress.
-It is in general not possible to restore the
-locked data structures to a consistent state after such a failure.
-Non-blocking synchronization offers a graceful solution to this
-trouble, as non-progress or failure of any one thread will not
-affect the progress or consistency of other threads or the system.
+for the concerns of this paper is fault-tolerance: processes which
+fail in critical regions cannot prevent other processes from making
+progress.
 
-Implementing transactions using
-non-blocking synchronization offers performance benefits as well.
-Even in a failure-free system, page faults, cache misses, context
-switches, I/O, and other unpredictable events may result in delays to the
-entire system when mutual exclusion is used to guarantee the atomicity
-of operation sequences; non-blocking
-synchronization allows undelayed processes or processors to continue
-to make progress.
-Similarly, in real-time systems, the use of non-blocking
-synchronization can prevent \emph{priority inversion} in the system
-\cite{Jones97}.
+% XXXXXXx
 
-We will show how to integrate non-blocking transactions into an
-object-oriented language, ``transactifying'' existing code to fix
-existing concurrency bugs and using transactions for fault-tolerance,
-backtracking, exception-handling, and concurrency control in new
-programs.
+In this paper we will discuss the benefits and disadvantages of an
+object-oriented implementation of transactions, provide a
+mechanically-checked implementation and well as experimental data
+justifying its design, and briefly discuss the ``large object'' problem.
 
 \subsecput{contrib}{Contributions}
 The contributions of this paper include:
 \begin{itemize}
-\item A way to ``transactify'' existing Java programs, and a
-  description of the transaction properties of typical Java programs
-  transformed in such a way.
-\item A concrete language design to integrate transactions into Java
-  providing fault-tolerance, backtracking, and non-blocking
-  synchronization.
+\item Empirical data on transaction properties from ``transactified''
+  Java programs.
+%\item A minimal syntax to express transactions in a high-level manner
+%  to provide fault-tolerance, backtracking, and non-blocking 
+%  synchronization.
 %\note{This is \texttt{try \{\ldots\} else \{\ldots\}} syntax.}
-%\note{Omitting ``optimistic concurrency'' from this list for now.}
-\item An efficient implementation of this design which extends
-  race-protection to unsynchronized code.
-\item A mechanically-verified Promela model of the implementation.
-\item Empirical data to justify the design choices.
+\item A design for an ``object-oriented'' implementation of transactions.
+\item An efficient implementation of this design.
+\item A mechanically-checked Promela model of the implementation.
 \punt{
 \item Compiler optimizations to improve the speed of software
   transactions.
@@ -182,7 +148,6 @@ The contributions of this paper include:
   transactions.
 }
 \end{itemize}
-\note{Mention UTM relevance?}
 
 \secput{example}{Example and Motivation}
 We present three examples in this section, illustrating how
@@ -203,45 +168,13 @@ the existing class corrects this race.
 Many recursive data structures can be traversed without the use of an
 stack using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
-Schorr and Waite \cite{SchorrWa67}.  The following code implements a
-pointer-reversal traversal of a simple singly-linked list:
- \par {\footnotesize\samepage
-\begin{verbatim}
-// destructive list traversal.
-void traverse(List l) {
-  List last = null, t;
-  
-  /* zip through the list, reversing links */
-  for (int i=0; i<2; i++) {
-    do {
-      if (i==0) visit(l); // visit node
-      t = l.next;
-      l.next = last;
-      last = l;
-      l = t;
-    } while (l!=null);
-    l = last;
-    // now do again, backwards. (restoring links)
-  }
-}
-\end{verbatim}
-}
-This function traverses the list, visiting nodes in order and then
-reversing the {\tt next} pointer.  When the end of the list is
-reached, the reversed links are traversed to restore the list's original
-state.  
-
-Of course, we've chosen the simplest possible data structure here, but
-the technique works for trees and graphs---and the reader may mentally
-substitute their favorite hairy update on a complicated data
-structure.
+Schorr and Waite \cite{SchorrWa67}.
 
 In normal execution, the data structure is left complete and intact
 after the operation.  But
-imagine that an exception or fault occurs inside the {\tt visit()} method
-at some point during the traversal: an assertion fires, an exception
-occurs, the hardware hiccups, or a thread is killed.  Control may
-leave the {\tt traverse()} method, but the data structure is left in
+imagine that an exception or fault occurs
+at some point during the traversal: control may
+leave the traversal, but the data structure is left in
 shambles.  What is needed is some exception-handling procedure to
 restore the proper state of the list.  This can be manually coded with
 Java's existing {\tt try}/{\tt catch} construct, but the
@@ -280,58 +213,7 @@ We'll turn our attention now to parallel codes.
 Consider a serial program for computing network flow (see, for
 example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
 pushes flow across an edge by increasing the ``excess flow'' on one
-vertex and decreasing it by the same amount on another vertex.  One
-might see the following Java code: \par {\footnotesize\samepage
-\begin{verbatim}
-void pushFlow(Vertex v1, Vertex v2, double flow) {
-  v1.excess += flow; /* Move excess flow from v1 */
-  v2.excess -= flow; /* to v2.                   */
-}
-\end{verbatim}
-}
-
-To parallelize this code, one must preclude multiple threads from
-modifying the excess flow on those two vertices at the same time.
-Locks provide one way to enforce this mutual exclusion: 
-\par {\footnotesize\samepage
-\begin{verbatim}
-void pushFlow(Vertex v1, Vertex v2, double f) {
-  Object lock1, lock2;
-  if (v1.id < v2.id) {       /* Avoid deadlock. */
-    lock1 = v1; lock2 = v2;
-  } else {
-    lock1 = v2; lock2 = v1;
-  }
-  synchronized(lock1) {
-    synchronized(lock2) {
-      v1.excess += f; /* Move excess flow from v1 */
-      v2.excess -= f; /* to v2.                   */
-    } /* unlock lock2 */
-  } /* unlock lock1 */
-}
-\end{verbatim}
-}
-
-This code is surprisingly complicated and slow compared to the
-original.  Space for each object's lock must be reserved.
-To avoid deadlock, the code must acquire the locks in
-a consistent linear order, resulting in an unpredictable branch in the
-code.  In the code shown,
-we have required the programmer to insert an \texttt{id} field into
-each vertex object to maintain a total ordering.
-The time required to acquire the locks may be
-an order of magnitude larger than the time to
-modify the excess flow.
-\note{Using FLEX, the locking code is over 11x
-  slower than the no-locks code.  With Sun's JVM, this overhead falls
-  to about 1.7x, because Sun is wicked smart about their lock
-  implementations.}
-What's more, all of this overhead is rarely
-needed!  For a graph with thousands or millions of vertices, the
-number of threads operating on the graph is likely to be less than a
-hundred.  Consequently, the chances are quite small that two different
-threads actually conflict.  Without the locks to implement mutual
-exclusion, however, the program would occasionally fail.
+vertex and decreasing it by the same amount on another vertex.
 
 Software transactions (and some language support) allow the
 programmer to parallelize the original code using an \texttt{atomic}
@@ -380,113 +262,6 @@ fault-tolerance and back-tracking provides atomic regions for
 synchronization as well.
 \note{Mention optimistic parallelism here?}
 
-\subsecput{stringbuffer}{The \texttt{StringBuffer} class}
-The existing \defn{monitor synchronization} methodology for Java
-implicitly associates an 
-lock with each object.  As in Java's progenitor, Emerald
-\cite{BlackHuJuLe86,JulSt91}, data races are prevented by
-requiring a thread to acquire an
-object's lock before touching the object's shared fields.
-However, the lack of races is not sufficient to prevent unanticipated
-parallel behavior.
-
-Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this
-insufficiency with an
-actual bug they discovered in the Sun JDK 1.4.2 Java standard
-libraries.  The {\tt java.lang.StringBuffer} class,
-which implements a mutable string abstraction, is implemented as follows:
-\par {\footnotesize
-\samepage
-\begin{verbatim}
-public final class StringBuffer ... {
-  private char value[];
-  private int count;
-  ... 
-  public synchronized
-  StringBuffer append(StringBuffer sb) {
-    ...
-A:  int len = sb.length();
-    int newcount = count + len; 
-    if (newcount > value.length)
-      expandCapacity(newcount);
-    // next statement may use stale len
-B:  sb.getChars(0, len, value, count);
-    count = newcount;
-    return this;
-  }
-  public synchronized int length() { return count; }
-  public synchronized void getChars(...) { ... }
-}
-\end{verbatim}
-}
-The library documentation indicates that the methods of this class are meant
-to execute atomically, and the {\tt synchronized} modifiers on the
-methods are meant to accomplish this.
-
-However, the {\tt append()} method is \emph{not} atomic.  Another
-thread may change the length of the parameter \texttt{sb} (by adding
-or removing characters) between the call to \texttt{sb.length()} at
-label A and the call to \texttt{sb.getChars(\ldots)} at label B.
-This non-atomicity may cause incorrect data to be appended to the
-target or a \texttt{StringIndexOutOfBoundException} to be thrown. 
-Although the calls to
-\texttt{sb.length()} and \texttt{sb.getChars()} are individually
-atomic, but they do not compose to form an atomic implementation of
-\texttt{append()}.  
-%The simple monitor synchronization scheme breaks
-%down when operations touch multiple objects.
-
-Note however that replacing {\tt synchronized} with {\tt atomic} in
-this code gives us the semantics
-we desire: the atomicity of nested {\tt atomic} blocks is guaranteed
-by the atomicity of the outermost block, ensuring that the entire
-operation appears atomic.
-
-Both the network flow example and this {\tt StringBuffer} example require
-synchronization of
-changes to more than one object.
-Monitor synchronization is not
-well-suited to this task.  Atomic regions implemented with
-transactions can be used to simplify the locking discipline required
-to synchronize multi-object mutation
-and provide a more intuitive specification for the desired
-concurrent properties.  Further, the {\tt StringBuffer} example shows
-that simply replacing {\tt synchronized} with {\tt atomic} provides a
-alternative semantics which may in fact correct existing
-synchronization errors.
-For many Java programs, the
-semantics of {\tt atomic} and {\tt synchronized} are identical.
-\note{Can we make this rigorous?}
-
-\subsecput{xlimit}{Limitations}
-The transaction mechanism presented here is not a universal
-replacement for all synchronization.  In particular, transactions
-cannot replace blocking producer-consumer queues and mutual exclusion
-required to serialize I/O, although the needed locks can certainly be
-built with transactions.  Integrating I/O within a transactional
-context remains poorly understood.  However, large programs---the
-Linux kernel, for example---have been written such that locks are
-never held across context switches or I/O operations.  Transactions
-provide a complete solution for this limited synchronization.
-
-\vspace*{5mm}
-We have designed an implementation of software transactions which allows
-us to efficiently implement the {\tt try}/{\tt else} and {\tt atomic}
-constructs.  We have evaluated it by automatically
-``transactifying'' Java applications by replacing synchronization with
-{\tt atomic} blocks, and in \secref{properties} we present
-experimental results describing the
-transaction properties of programs so transformed.
-We then present our software transaction design, based on the
-properties we observed in our benchmarks.
-\punt{
-We present modelling results affirming the correctness of the design, and compiler
-optimizations to enhance its performance.  We also describe a variant
-on the scheme which uses some hardware support.  Finally, we present
-performance data for our pure-software and partially-hardware
-transaction implementations.
-}
-
 \secput{auto}{Creating transactions}
 One of the difficulties of proposing a novel language feature is the
 lack of benchmarks for its evaluation.  Although there is no body of
@@ -501,22 +276,10 @@ synchronized block, while such updates will never be visible to an
 {\tt atomic} block.  The proposed revision of the Java memory model
 \cite{MansonPu02} narrows the semantic gap, however we do not treat
 {\tt volatile} fields in this work.
-
+% cite ``debunking'' paper
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
-correctness of the benchmarks we've examined.  Moreover, as
-mentioned in \secref{stringbuffer}, it
-fixes the synchronization issue with {\tt java.lang.StringBuffer}.
-
-One goal of this work was to make such improperly synchronized
-applications correct and race-free, in effect fixing certain common
-synchronization errors.  To this effect, we needed to preserve the
-correct operation of {\tt atomic} even in the face of unsynchronized
-accesses from outside the {\tt atomic} block to the fields used within
-it.  Imagine unsynchronized code directly altering the length field of
-{\tt StringBuffer}.  This should not cause the {\tt atomic}
-{\tt StringBuffer.append()} method to appear non-atomic.
-\note{Compare w/ Harris and Fraser?}
+correctness of the benchmarks we examine.
 
 \subsecput{properties}{Properties of Transactions}
 This section examines the implications of exposing the transaction
@@ -568,7 +331,7 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
 \figput{tr-quad}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
-\figref{perfnums} shows the raw sizes and frequency of transactions in
+\figref{perfnums} (previously presented in \cite{AnanianAsKuLeLi04}) shows the raw sizes and frequency of transactions in
 the transactified SPECjvm98 suite.
 \figref{tr-quad} proposes a
 taxonomy for Java applications with transactions, grouping the SPECjvm98
@@ -628,15 +391,6 @@ large.  The size of this index is correlated in these benchmarks with
 the input size, but it need not be: a large input could still result
 in a small index, and (to some degree) vice-versa.
 
-A similar situation arises in the {\tt java.lang.StringBuffer} code
-shown in \secref{stringbuffer}:  a call to the synchronized
-\texttt{sb.getChars()} method means that
-the size of the transaction for this method will grow like the length
-of the parameter~\texttt{sb}.  In other words, the transaction can be
-made arbitrarily large by increasing the length of \texttt{sb}; or,
-equivalently, there is no bound on transaction size without a bound on
-the size of the string~\texttt{sb}.
-
 \epsfigput{tr-sz-all}{Distribution of transaction size in the
   SPECjvm98 benchmark suite.  Note that the x-axis uses a logarithmic
   scale.}
@@ -650,9 +404,7 @@ language mechanism.  \figref{tr-sz-all} restates this problem, by
 illustrating the distribution of transaction sizes in these
 applications on a semi-log scale.
 
-\punt{
-\vspace*{2mm}
-\begin{figure}
+\begin{figure*}
 \begin{center}
 \includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
 ~~~~~%
@@ -663,7 +415,7 @@ applications on a semi-log scale.
   portion of the relation shown in the left; note in particular that
   y-axis full-scale is only 10\% in the right-hand graph.}%
 \label{fig:tr-w}%
-\end{figure}%
+\end{figure*}%
 Our software transactions implementation clones objects on
 transactional writes, so that the previous state of the object can be
 restored if the transaction aborts.  With this in mind, we were
@@ -671,18 +423,11 @@ interested in the number of writes to \emph{large} objects, or,
 equivalently, on the object size distribution of transactional
 writes.  \figref{tr-w} shows this distribution for the SPECjvm98
 applications. 
-}
 
-\vspace*{5mm}
 
-Our Java studies show that real applications can be
-transactified with modest effort, yielding significant gains in
-concurrency.  In other work \cite{AnanianAsKuLeLi04} we have shown
-that a factor of 4 increase in concurrency can be obtained
-by doing nothing more than converting locks to transactions.  Since
-the transactified applications may contain large transactions,
-proposed hardware support for transactions is inadequate.
-
+%%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+%%% Justify by relatinh O-O properties target quads III and IV.
+%%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
 
 \secput{efficient}{Designing Efficient Transactions}
 In this section we briefly describe some desired properties of our
@@ -743,8 +488,10 @@ program & memory ops    & stores \% \\\hline
 \end{figure}
 \subsection{Reads vs. Writes}
 \figref{writepercent} shows that transactional reads typically
-outnumber transactional writes by at least 4 to 1; in some cases reads
-outnumber writes by over 100 to 1.  It is worthwhile, therefore, to
+outnumber transactional writes by 3 to 1; in some cases reads
+outnumber writes by over 100 to 1.  These properties closely match
+data-cache read/write ratios others have collected \cite[p105,379]{Hennessy96}.
+It is worthwhile, therefore, to
 make reads more efficient than writes.  In particular, since the
 flag-overwrite technique discussed in \secref{flagfield} requires us
 to allocate additional memory to store the ``real'' value of the
@@ -755,6 +502,13 @@ reserving the extra allocation effort for transactional writes.
 \subsection{Large objects}
 See \secref{properties}.
 }
+\subsection{Cooperation with HTM}
+Although space does not permit a full discussion; it is desirable that
+an STM system cooperate well with some HTM system, in order to obtain
+good performance for frequent small transactions (Quads I and II).
+Without presenting proof here, we will claim that our mechanism
+interacts well with a standard cache-based HTM, such as UTM or LTM
+\cite{AnanianAsKuLeLi04}.
 
 \secput{algo}{Software Transaction Mechanism}
 We now present an algorithm which has these desired properties.
@@ -1237,8 +991,8 @@ inline writeT(ver, f, nval) {
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
 checked with Spin version 4.1.0 and verified to operate correctly and
-without races.  The verification was done on an SGI 64-processor MIPS
-machine with 16G of memory.
+without races in the scenarios described below.  The verification was
+done on an SGI 64-processor MIPS machine with 16G of memory.
 
 Sequences of transactional and non-transactional load and store
 operations were checked using two concurrent processes, and all possible
@@ -1247,7 +1001,7 @@ the semantic atomicity of the transactions.  A number of subtle race
 conditions were discovered and corrected during this process.
 In particular, early versions of the algorithms sometimes allowed
 readers to escape being aborted while racing a writer in
-createVersion, and could allow inconsistent reads.
+\texttt{createVersion}, and could allow inconsistent reads.
 
 Spin is not particularly suited to checking models with dynamic
 allocation and deallocation.  In particular, it considers the
@@ -1258,124 +1012,17 @@ state space.  A great deal of effort was expended tweaking the
 model to approach a canonical allocation ordering.  A better solution
 to this problem would allow larger model instances to be checked.
 
-\punt{
-\secput{eval}{Evaluation}
-
-\begin{figure*}
-\footnotesize
-\begin{center}
-\begin{tabular}{lr|rr|rr}
-Benchmark                 &  Base       & Locks         & Trans              & Time                     & Overflow       \\
-                          &             & time          & time               & in trans              & overhead       \\
-                          &  (cycles)   & \multicolumn{2}{c|}{(\% of Base)}   & \multicolumn{2}{c}{(\% of Trans time)}                 \\ \hline
-\texttt{200\_check}       &   8,062,716 & 124.0\%       &  101.7\%           & 32.9\%           & 0.00366\%      \\
-\texttt{202\_jess}        &  75,012,964 & 140.9\%       &  107.1\%           & 59.3\%           & 0.00761\%      \\
-\texttt{209\_db}          &  11,784,220 & 142.4\%       &  105.1\%           & 53.9\%           & 0              \\
-\texttt{213\_javac}       &  30,688,574 & 169.9\%       & 1469.5\%           & 99.0\%           & 93.0\%         \\
-\texttt{222\_mpegaudio}&  98,961,244    & 100.3\%       &   99.6\%           & 0.817\%          & 0              \\
-\texttt{228\_jack}        & 261,441,564 & 175.3\%       &  104.4\%           & 32.2\%           & 0.00260\%      \\
-\end{tabular}
-\end{center}
-\caption{SPECjvm98 performance and overheads on a 1-processor UVSIM simulation. The {\em Base }
- time uses no synchronization.  The {\em Locks time} is the time using
- locks as a percentage of the base.  The {\em Trans time} is the time using BTM
- transactions as a percentage of the base. The
- {\em time in Trans} is the fraction of the {\em Trans time} actually
- spent running a transaction.  The {\em
- Overflow overhead} column is fraction of the {\em Trans time}
- spent handling overflows.}
-\label{fig:specperf}
-\end{figure*}
-}
-\punt{
-We found that using BTM transactions in the SPECjvm98 benchmarks
-results in very little overhead compared to using locks. We compiled
-the benchmarks to use BTM transactions using our modified Java
-compiler.  The \texttt{201\_compress} and \texttt{205\_raytrace}
-benchmarks were omitted due to unresolved bugs in the base UVSIM
-simulator, and similarly \texttt{libpthread} deficiencies prevented
-the execution of \texttt{227\_mtrt}.
-The remaining benchmarks were run on one processor in UVSIM to compare the
-performance overheads associated with BTM transactions compared to
-locks.  As shown in \figref{specperf}, there is a significant amount
-of overhead associated with locking (more than 75\% over the base case
-in {\texttt{228\_jack})}. %Put that {} around the texttt to prevent the jack from being separated from the )
-For BTM, there are two main sources of
-overhead: The transactions may abort, wasting the cycles spent
-computing, and also executing the branch to the abort handler.  For
-these Java programs, the transactions never abort because they are
-single-threaded programs.  The second overhead is the cost of handling
-overflows.
-
-The only application that has a significant transaction overhead is
-\texttt{javac}, which runs 14 times slower under BTM than without any
-mutual exclusion.  Virtually all of the overhead comes from handling
-overflows, which is not surprising since the entire compilation is
-enclosed in one large transaction.  The transaction touches 253,547
-cache lines, and there are only 16K cache lines in the L2 cache,
-meaning that the overflow memory contains at least 237K cache lines.
-So even though only 0.5\% of the xops miss, those few misses incur
-huge search costs, as the finite state machine looks through the
-linear array of overflowed cache lines.  We intend to look into using
-a better data structure, such as a hash table.  Though there is a
-significant performance decrease in this case, BTM still ensures the
-application runs correctly. Namely, the programmer wanted the entire
-compile process to occur as one atomic action so BTM will ensure that
-is the case.  It may be the case that \texttt{javac} really cannot be
-parallelized, in which case locks may be the best choice.  But if the
-programmer wishes to parallelize \texttt{javac}, she may be find it
-easier to break up the large transaction than to break up a locked
-block.
-}
 \secput{related}{Related work}
 A number of researchers have been investigating transactional memory
 systems.  This is the first paper to present a model-checked non-blocking
 object-oriented system which allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 
-\subsecput{nb-sync}{Non-blocking synchronization}
-
-Lamport presented the first alternative to synchronization via mutual
-exclusion in \cite{Lamport77}, for a limited situation involving a single
-writer and multiple readers.  Lamport's technique relies on reading
-guard elements in an order opposite to that in which they are written,
-guaranteeing that a consistent data snapshot can be recognized.  The
-writer always completes its part of the algorithm in a constant number
-of steps; readers are guaranteed to complete only in the absence of
-concurrent writes.
-
-Herlihy formalized \emph{wait-free} implementations of
-concurrent data objects in \cite{Herlihy88}.  A wait-free implementation
-guarantees that any process can complete any operation in a finite
-number of steps, regardless of the activities of other processes.
-Lamport's algorithm is not wait-free
-because readers can be delayed indefinitely.
-
-Massalin and Pu introduced the term \emph{lock-free} to describe 
-algorithms with weaker progress guarantees.
-A lock-free implementation guarantees only that \emph{some}
-process will complete in a finite number of steps
-\cite{MassalinPu91}.  Unlike a wait-free implementation,
-lock-freedom allows starvation.  Since other simple techniques can be
-layered to prevent starvation (for example, exponential backoff),
-simple lock-free implementations are usually seen as worthwhile practical
-alternatives to more complex wait-free implementations.
-
-An even weaker criterion, \emph{obstruction-freedom}, was introduced
-by Herlihy, Luchangco, and Moir in \cite{HerlihyLuMo03}.
-Obstruction-freedom only guarantees progress for threads executing in
-isolation; that is, although other threads may have partially
-completed operations, no other thread may take a step until the
-isolated thread completes.  Obstruction-freedom not only allows
-starvation of a particular thread, it allows contention among threads
-to halt all progress in all threads
-indefinitely.  External mechanisms are used to reduce contention
-(thus, achieve progress) including backoff, queueing, or timestamping.
-
-We will use the term \emph{non-blocking} to describe
+We use the term \emph{non-blocking} to describe
 generally any synchronization mechanism which doesn't rely on mutual
-exclusion or locking, including wait-free, lock-free,
-and obstruction-free implementations.
+exclusion or locking, including wait-free~\cite{Herlihy88},
+lock-free~\cite{MassalinPu91},
+and obstruction-free~\cite{HerlihyLuMo03} implementations.
 We will be concerned mainly with lock-free algorithms.%
 \footnote{Note that some authors use ``non-blocking'' and
   ``lock-free'' as synonyms, usually meaning what we here call
@@ -1431,37 +1078,6 @@ object protocol can be employed.
 common to many non-blocking implementations; our solution is presented
 in \secref{proposal}.}
 
-Barnes provided the first universal non-blocking implementation
-method which avoids object copying \cite{Barnes93}.  He eliminates the
-need to store ``old'' object
-state in case of operation failure by having all threads cooperate to
-apply operations.  For example, if the first processor begins an operation
-and then halts, another processor will complete the operation of the first
-before applying its own.  Barnes proposes to accomplish the
-cooperation by creating a parallel state machine for each operation,
-so that each thread can independently try to advance the machine from state
-to state and thus advance incomplete operations.%
-\footnote{It is interesting to note that Barnes' cooperative method
-  for non-blocking 
-  situation plays out in a real-time system very similarly to priority
-  inheritance for locking synchronization.}
-Although this avoids
-copying state, the lock-step cooperative process is extremely
-cumbersome and does not appear to have ever been implemented.
-Furthermore, it does not protect against errors in the implementation
-of the operations, which could cause \emph{every} thread to fail in turn
-as one by one they attempt to execute a buggy operation.
-
-Alemany and Felten \cite{AlemanyFe92} identified two factors hindering the
-performance of non-blocking algorithms to date: resources wasted by operations
-that fail, and the cost of data copying.  Unfortunately, they
-proceeded to
-``solve'' these problems by ignoring short delays and failures and
-using operating system support to handle delays caused by
-context switches, page faults, and
-I/O operations.  This works in some situations, but obviously suffers
-from a bootstrapping problem as the means to implement an operation system.
-
 Although lock-free implementations are usually assumed to be more
 efficient that wait-free implementations, LaMarca \cite{LaMarca94}
 showed experimental evidence that Herlihy's simple
@@ -1469,7 +1085,7 @@ wait-free protocol scales very well on parallel machines.
 When more than about twenty threads are involved, the wait-free
 protocol becomes
 faster than Herlihy's lock-free small-object protocol, three OS-aided
-protocols of LaMarca and Alemany and Felten, and a
+protocols of LaMarca and Alemany and Felten~\cite{AlemanyFe92}, and a
 \emph{test-and-Compare\&Swap} spin-lock.
 
 % Afek et al have a somewhat complicated improved wait-free method.
@@ -1652,12 +1268,6 @@ presented an efficient implementation of software transactions which
 has been verified with the Spin model checker to be correct and race
 free.
 
-\section*{Acknowledgments}
-Charles E. Leiserson suggested the ``network flow'' example in
-\secref{flow}.
-\punt{Sean Lie adapted the hardware simulator which
-provided the timings in \figref{hw-timings}.}
-
 \section*{Spin model for Software Transactions}
 The complete Spin 4.1.0 model for the FLEX software transaction system is
 available for download at
@@ -1667,7 +1277,6 @@ available for download at
 \bibliographystyle{plain}
 \bibliography{xaction}
 
-\clearpage
 \appendix
 \secput{promela}{Promela Primer}
 A concise Promela reference is available at
