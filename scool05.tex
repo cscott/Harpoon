@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.4 2005-08-05 21:55:32 cananian Exp $
+% $Id: scool05.tex,v 1.5 2005-08-05 22:04:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -43,7 +43,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.4 $ $}
+%\date{\today \\ $ $Revision: 1.5 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -88,15 +88,14 @@ Cambridge, MA 02139 \\
 % abstract
 \begin{abstract}
   This paper proposes an efficient object-based implementation of
-  non-blocking software transactions.  We integrate transactions into
-  Java to provide race-safety for certain types of improperly
-  synchronized code, to provide fault-tolerance and backtracking, and
-  to express synchronization and optimistic concurrency.  We use ideas
+  non-blocking software transactions.  We use ideas
   from software distributed shared memory to efficiently implement
   transactions with little overhead for non-transactional code.
   Rather than emulating a flat transactional memory, our scheme is
   object-based, which allows compiler optimizations to provide better
-  performance for long-running transactions.  A model for the software
+  performance for long-running transactions.  
+  We present empirical data on transaction properties to support the design.
+  A model for the software
   transaction implementation is given in Promela, whose correctness
   has been mechanically verified using the \textsc{Spin} model checker.
 \end{abstract}
@@ -118,8 +117,8 @@ fault-tolerance, exception-handling, and back-tracking.
 Although transactions can be implemented using mutual exclusion
 (locks), our algorithms will utilize non-blocking synchronization to
 exploit optimistic concurrency among transactions.
-Non-blocking synchronization offers a number of advantages; foremost
-for the concerns of this paper is fault-tolerance: processes which
+Non-blocking synchronization offers a number of advantages; among them
+fault-tolerance: processes which
 fail in critical regions cannot prevent other processes from making
 progress.
 
@@ -130,39 +129,16 @@ object-oriented implementation of transactions, provide a
 mechanically-checked implementation and well as experimental data
 justifying its design, and briefly discuss the ``large object'' problem.
 
-\subsecput{contrib}{Contributions}
-The contributions of this paper include:
-\begin{itemize}
-\item Empirical data on transaction properties from ``transactified''
-  Java programs.
-%\item A minimal syntax to express transactions in a high-level manner
-%  to provide fault-tolerance, backtracking, and non-blocking 
-%  synchronization.
-%\note{This is \texttt{try \{\ldots\} else \{\ldots\}} syntax.}
-\item A design for an ``object-oriented'' implementation of transactions.
-\item An efficient implementation of this design.
-\item A mechanically-checked Promela model of the implementation.
-\punt{
-\item Compiler optimizations to improve the speed of software
-  transactions.
-\item An application of fast functional arrays to solve the ``large
-  object'' problem with Herlihy's universal non-blocking protocol.
-  \note{Short section; cite my Area Exam as a Technical Report here
-  for more details. Omit this?}
-\item A variation of the implementation which leverages hardware
-  support for small transactions.  This allows hardware small
-  transactions to be bootstrapped to provide efficient large
-  transactions.
-}
-\end{itemize}
+\secput{why}{Why Object-Oriented Transactions?}
+XXXX xxx xXXXx.
 
 \secput{auto}{Creating transactions}
-One of the difficulties of proposing a novel language feature is the
-lack of benchmarks for its evaluation.  Although there is no body of
+One of the difficulties of evaluating transaction implementations is the
+lack of benchmarks.  Although there is no body of
 code yet using {\tt atomic} regions, there is a substantial body of
 code which uses Java (locking) synchronization.  We have implemented a
-compiler which substitutes {\tt atomic} blocks (methods) for {\tt
-  synchronized} blocks (method) in order to evaluate the properties
+compiler which substitutes {\tt atomic} blocks/methods for {\tt
+  synchronized} blocks/methods in order to evaluate the properties
 Java transactions are likely to have.  Note that the semantics are not
 precisely compatible: the existing Java memory model allows
 unsynchronized updates to shared fields to be observed within a
@@ -176,8 +152,6 @@ Despite the differences in semantics, the automatic substitution of
 correctness of the benchmarks we examine.
 
 \subsecput{properties}{Properties of Transactions}
-This section examines the implications of exposing the transaction
-mechanism to user-level code through a compiler.
 We compiled the SPECjvm98 benchmark suite with the FLEX Java compiler
 \cite{Flex},
 modified to turn synchronized blocks and methods into transactions,
@@ -235,9 +209,8 @@ require an efficient transaction implementation, because they contain
 many transactional operations.
 Quads III and IV contain at least some very large transactions, which
 pose difficulties for currently-proposed hardware transactional memory
-schemes.  We now
-examine the benchmarks in each quadrant to determine why its program
-logic caused it to be classified in that quadrant.
+schemes.
+%%%%%%%%%%%%55 XXXXX L4ME
 
 Quad I applications perform few (up to about 2000) small
 transactions.  These applications include \texttt{201\_compress}, an
@@ -291,10 +264,10 @@ in a small index, and (to some degree) vice-versa.
 
 Any scheme which allows the programmer free reign over specifying
 desired transaction and/or atomicity properties will inevitably result
-in some applications in each of these categories.  As existing
-hardware transactional memory schemes only handle applications in Quad
-I or II, they are not a good implementation technique for a general
-language mechanism.  \figref{tr-sz-all} restates this problem, by
+in some applications in each of these categories.  Existing
+hardware transactional memory schemes only efficiently handle
+applications in Quad 
+I or II. \figref{tr-sz-all} restates this problem, by
 illustrating the distribution of transaction sizes in these
 applications on a semi-log scale.
 
@@ -397,9 +370,9 @@ reserving the extra allocation effort for transactional writes.
 See \secref{properties}.
 }
 \subsection{Cooperation with HTM}
-Although space does not permit a full discussion, it is desirable that
+It is desirable that
 an STM system cooperate well with some HTM system, in order to obtain
-good performance for frequent small transactions (Quads I and II).
+good performance for small transactions (Quads I and II).
 Without presenting proof here, we will claim that our mechanism
 interacts well with a standard cache-based HTM, such as UTM or LTM
 \cite{AnanianAsKuLeLi04}.
@@ -883,7 +856,7 @@ done on an SGI 64-processor MIPS machine with 16G of memory.
 
 Sequences of transactional and non-transactional load and store
 operations were checked using two concurrent processes, and all possible
-interleavings were found to produce correct results consistent with
+interleavings were found to produce results consistent with
 the semantic atomicity of the transactions.  A number of subtle race
 conditions were discovered and corrected during this process.
 In particular, early versions of the algorithms sometimes allowed
@@ -1037,16 +1010,6 @@ code when it results in their code running more slowly on the uniprocessor
 and small-SMP systems which are most common today.
 \note{Segue into hardware transactions writeup?}
 
-Our SPECjvm98 and Linux case studies indicate that
-transactional memory operations can be extremely common when
-transactions are made easy to use and natural to express.  Programmers
-can be expected to use both very small and very large transactions
-when they are able, and transactions are used by the operating system
-and programming libraries to provide synchronization and safety
-properties.  Implementing transactional memory in hardware allows the
-overheads to be low\note{\textbf{cite figures here}}, which is appropriate
-when transactional operations are common.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \punt{
 Ideas:
@@ -1147,13 +1110,13 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 \secput{concl}{Conclusions}
 We have outlined a mechanism to integrate transactions into an object
 oriented language to provide fault-tolerance, back-tracking, and
-non-blocking synchronization.  We have also shown the potential for
-automatically ``transactifying'' existing Java programs, and presented
-empirical data on the properties of these transactified applications.
+non-blocking synchronization.  We have also 
+presented
+empirical data on the properties of ``transactified'' applications.
 We have
-presented an efficient implementation of software transactions which
+presented an efficient software transaction system design which
 has been verified with the Spin model checker to be correct and race
-free.
+free. This design has been implemented in the FLEX Java compiler.
 
 \section*{Spin model for Software Transactions}
 The complete Spin 4.1.0 model for the FLEX software transaction system is
@@ -1985,3 +1948,4 @@ problem. [although starvation may still occur.]
 
 % LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
 % LocalWords:  Touitou Okasaki Qadeer Promela backoff transactified SPECjvm
+% LocalWords:  transactional
