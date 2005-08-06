@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.5 2005-08-05 22:04:57 cananian Exp $
+% $Id: scool05.tex,v 1.6 2005-08-06 01:26:45 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -43,7 +43,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.5 $ $}
+%\date{\today \\ $ $Revision: 1.6 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -115,8 +115,22 @@ backoff algorithm to preclude live-lock.
 The transaction model is a natural means to express atomicity,
 fault-tolerance, exception-handling, and back-tracking.
 Although transactions can be implemented using mutual exclusion
-(locks), our algorithms will utilize non-blocking synchronization to
-exploit optimistic concurrency among transactions.
+(locks), our algorithms will utilize non-blocking synchronization%
+\footnote{We use the term \emph{non-blocking} to describe
+generally any synchronization mechanism which doesn't rely on mutual
+exclusion or locking, including wait-free~\cite{Herlihy88},
+lock-free~\cite{MassalinPu91},
+and obstruction-free~\cite{HerlihyLuMo03} implementations.
+Note that some authors use ``non-blocking'' and
+``lock-free'' as synonyms, usually meaning what we here call
+\emph{lock-free}.  Others exchange our definitions for ``lock-free''
+and ``non-blocking'', using lock-free as a generic term and non-blocking
+to describe a specific class of implementations.  As there is
+variation in the field, we choose to use the parallel construction
+\emph{wait-free}, \emph{lock-free}, and \emph{obstruction-free} for
+our three specific progress criteria, and the dissimilar
+\emph{non-blocking} for the general class.}
+to exploit optimistic concurrency among transactions.
 Non-blocking synchronization offers a number of advantages; among them
 fault-tolerance: processes which
 fail in critical regions cannot prevent other processes from making
@@ -129,10 +143,65 @@ object-oriented implementation of transactions, provide a
 mechanically-checked implementation and well as experimental data
 justifying its design, and briefly discuss the ``large object'' problem.
 
-\secput{why}{Why Object-Oriented Transactions?}
-XXXX xxx xXXXx.
+\secput{why}{Using Objects for Performance}
+Recent trends in lightweight transaction system design have followed
+the ``transactional memory'' abstraction.  The success of Hardware
+Transactional Memories (HTMs)
+\cite{Knight86,HerlihyMo92,HerlihyMo93,HammondWoCh04,AnanianAsKuLeLi04}
+with word- or cache-line--based abstractions matching the standard cache/memory system
+have inspired similar Software Transactional Memory (STM) systems,
+such as \cite{ShavitTo95,HarrisFr03}.  We suggest that the exclusive
+use of flat memory abstractions in designing a modern lightweight
+transaction system is a mistake.
 
-\secput{auto}{Creating transactions}
+There is no guarantee that the transactional data in an application
+will be matched to word, cache line, or page boundaries, leading to
+false sharing.  This false sharing may have semantic implications when
+transactions which ought to be able to commit in parallel are instead
+made exclusive become some piece of data is co-located.  To some
+degree authors of parallel code are already aware of these issues---locks
+are placed, for example, to minimize cache ping-pong on SMP
+systems.  But this is an unnecessary burden.
+
+More significantly, the flat memory model complicates basic and
+important optimizations.  An alternative, which we'll
+call ``clone and mutate'', performs transactional operations on copies
+of the objects involved, which are then atomically substituted for the
+originals at commit time.  Compile or JIT-time analysis can track
+objects that have already been cloned, and henceforth operate on them
+without any synchronization overhead.  The details can be subtle, but a smart
+compiler can emit transactional code which is asymptotically equal
+in performance with unsynchronized/non-transactional code.  In
+\secref{properties} we will show that common applications may contain
+large and long-running transactions for which this behavior is
+important.
+
+A number of ``clone and mutate'' transaction systems have been
+proposed, starting with Herlihy's ``small object protocol''
+\cite{Herlihy93}.  Shavit and Touitou's STM \cite{ShavitTo95} required that
+that all input and output locations touched by a transaction be known
+in advance.  Herlihy, Luchango, Moss, and Scherer's scheme
+\cite{HerlihyLuMoSc03} allows transactions to touch a dynamic set of
+memory locations; however the user still has to explicitly \emph{open}
+every object touched before it can be used in a transaction. Not
+including work necessary to copy objects involved in writes, this system
+required $O(R(R+W))$ work to open $R$ objects for reading and $W$
+objects for writing, which may be quadratic in the number of objects
+involved in the transaction.  The transaction system we will present
+in \secref{algo} does not require foreknowledge of the behavior of a
+transaction, and does not blow up on transactions touching a large
+number of objects.
+
+Large objects and arrays typically present problems for ``clone and
+mutate'' transaction systems.  Herlihy presented a ``large object
+protocol'' \cite{Herlihy93} which required the programmer to manually
+break up large objects; we present our own solution to this problem in
+\secref{large}.
+
+In the following section we will examine the properties of
+transactional code which motivate our design.
+
+\secput{properties}{Properties of Transactions}
 One of the difficulties of evaluating transaction implementations is the
 lack of benchmarks.  Although there is no body of
 code yet using {\tt atomic} regions, there is a substantial body of
@@ -151,7 +220,6 @@ Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
 correctness of the benchmarks we examine.
 
-\subsecput{properties}{Properties of Transactions}
 We compiled the SPECjvm98 benchmark suite with the FLEX Java compiler
 \cite{Flex},
 modified to turn synchronized blocks and methods into transactions,
@@ -365,10 +433,10 @@ to allocate additional memory to store the ``real'' value of the
 field, we wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
 
-\punt{
-\subsection{Large objects}
+\subsection{Large objects}\label{sec:large}
+%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 See \secref{properties}.
-}
+
 \subsection{Cooperation with HTM}
 It is desirable that
 an STM system cooperate well with some HTM system, in order to obtain
@@ -878,89 +946,6 @@ systems.  This is the first paper to present a model-checked non-blocking
 object-oriented system which allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 
-We use the term \emph{non-blocking} to describe
-generally any synchronization mechanism which doesn't rely on mutual
-exclusion or locking, including wait-free~\cite{Herlihy88},
-lock-free~\cite{MassalinPu91},
-and obstruction-free~\cite{HerlihyLuMo03} implementations.
-We will be concerned mainly with lock-free algorithms.%
-\footnote{Note that some authors use ``non-blocking'' and
-  ``lock-free'' as synonyms, usually meaning what we here call
-  \emph{lock-free}.  Others exchange our definitions for ``lock-free''
-  and ``non-blocking'', using lock-free as a generic term and non-blocking
-  to describe a specific class of implementations.  As there is
-  variation in the field, we choose to use the parallel construction
-  \emph{wait-free}, \emph{lock-free}, and \emph{obstruction-free} for
-  our three specific progress criteria, and the dissimilar
-  \emph{non-blocking} for the general class.}
-
-\subsecput{efficiency}{Efficiency}
-Herlihy presented the first \emph{universal} method for wait-free
-concurrent implementation of an arbitrary sequential object
-\cite{Herlihy88,Herlihy91}.  This original method was based on
-a \emph{fetch-and-cons} primitive, which atomically places
-an item on the head of a list and returns the list of items following
-it; all concurrent primitives capable of solving the
-$n$-process consensus problem---\emph{universal} primitives---were
-shown powerful enough to implement \emph{fetch-and-cons}.
-In Herlihy's method, 
-every sequential operation is translated into two steps.  In the first,
-\emph{fetch-and-cons} is used to place the name and arguments of the
-operation to be performed
-at the head of a list, returning the other operations on the list.
-Since the state
-of a deterministic object is completely determined by the history of
-operations performed on it, applying the operations returned
-in order from last to first is sufficient to locally reconstruct the
-object state 
-prior to our operation.
-We then use the prior state to compute the result of our operation
-without requiring further synchronization with the other processes.
-
-This first universal method was not very practical, a shortcoming
-which Herlihy soon addressed \cite{Herlihy93}.  In addition, his revised universal
-method can be made lock-free, rather than wait-free, resulting in
-improved performance.  In the lock-free version of this method,
-objects contain a shared variable
-holding a pointer to their current state.  Processes begin by loading
-the current state pointer and then copying the referenced state to a
-local copy.  The sequential operation is performed on the
-copy, and then if the object's shared state pointer is unchanged from
-its initial load it is atomically swung to point at the updated state.
-
-Herlihy called this the ``small object protocol'' because the object
-copying overhead is prohibitive unless the object is small enough to
-be copied efficiently (in, say, $O(1)$ time).  He also presented a
-``large object protocol'' which requires the programmer to
-manually break the object into small blocks, after which the small
-object protocol can be employed. 
-\punt{ This trouble with large objects is
-common to many non-blocking implementations; our solution is presented
-in \secref{proposal}.}
-
-Although lock-free implementations are usually assumed to be more
-efficient that wait-free implementations, LaMarca \cite{LaMarca94}
-showed experimental evidence that Herlihy's simple
-wait-free protocol scales very well on parallel machines.
-When more than about twenty threads are involved, the wait-free
-protocol becomes
-faster than Herlihy's lock-free small-object protocol, three OS-aided
-protocols of LaMarca and Alemany and Felten~\cite{AlemanyFe92}, and a
-\emph{test-and-Compare\&Swap} spin-lock.
-
-% Afek et al have a somewhat complicated improved wait-free method.
-
-% Transactional memories?
-\subsecput{tm}{Transactional Memory Systems}
-
-Several software transaction systems have been proposed.  Some constrain the
-programmer and make transactions difficult to use.  All have
-relatively high overheads, which make transactions unattractive for
-uniprocessor and small SMP systems. [Once the number of processors is
-large enough, the increased parallelism which can be provided by
-optimistic transactions may cancel out the performance penalty of
-their use.]
-
 The first proposal for software transactional memory was proposed by
 Shavit and Touitou \cite{ShavitTo95}; their system requires that all
 input and output locations touched by a transaction be known in
@@ -1004,11 +989,6 @@ concurrent non-transactional operations on locations involved in a
 transaction.  Java synchronization allows such concurrent operations,
 with semantics given by the Java memory model \cite{MansonPu02}.
 We support these operations safely using our FLAG mechanism.
-
-Programmers will be reluctant to use transactions to synchronize their
-code when it results in their code running more slowly on the uniprocessor
-and small-SMP systems which are most common today.
-\note{Segue into hardware transactions writeup?}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \punt{
@@ -1948,4 +1928,4 @@ problem. [although starvation may still occur.]
 
 % LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
 % LocalWords:  Touitou Okasaki Qadeer Promela backoff transactified SPECjvm
-% LocalWords:  transactional
+% LocalWords:  transactional Herlihy
