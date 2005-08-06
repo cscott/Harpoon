@@ -1940,14 +1940,9 @@ Architecture, and Compilation (MTEAC-5)}
  author = {Barbara Liskov and Dorothy Curtis and Paul Johnson and
                   Robert Scheifler},
  title = {Implementation of {A}rgus},
-booktitle = "Proceedings of the Eleventh ACM Symposium on Operating Systems Principles (SOSP)",
- month = nov,
- year = {1987},
- isbn = {0-89791-242-X},
+ crossref = {SOSP87},
  pages = {111--122},
- location = {Austin, Texas, United States},
  doi = {http://doi.acm.org/10.1145/41457.37514},
- publisher = {ACM Press},
  local = {p111-liskov.pdf},
  summary = { ``We begin by providing a brief overview of Argus to
                   provide a context
@@ -2677,9 +2672,7 @@ pages = "416--423"
 @inproceedings{SavageBuNe97,
 author = "Stefan Savage and Michael Burrows and Greg Nelson and Patric Sobalvarro and Thomas Anderson",
 title = "Eraser: A Dynamic Race Detector for Multi-Threaded Programs",
-booktitle = "Proceedings of the Sixteenth ACM Symposium on Operating Systems Principles (SOSP)",
-year = 1997,
-month = oct
+crossref = {SOSP97},
 }
 
 @InProceedings{ScalesGh97,
@@ -2687,14 +2680,9 @@ month = oct
  author = {Daniel J. Scales and Kourosh Gharachorloo},
  title = {Towards transparent and efficient software distributed
                   shared memory},
-booktitle = "Proceedings of the Sixteenth ACM Symposium on Operating Systems Principles (SOSP)",
- month = oct,
- year = 1997,
- isbn = {0-89791-916-5},
+ crossref = {SOSP97},
  pages = {157--169},
- location = {Saint Malo, France},
  doi = {http://doi.acm.org/10.1145/268998.266673},
- publisher = {ACM Press},
  local = {p157-scales.pdf},
 }
 
@@ -3139,6 +3127,15 @@ publisher = "Springer Verlag"
 
 @Conference{HPCA05,
   year = 	 2005,
+  booktitle =	 {HPCA-11},
+  address =	 {San Francisco, California},
+  month =	 feb,
+  day =          {12--16},
+  isbn =         {1530-0897},
+}
+
+@Conference{HPCA05-verbose,
+  year = 	 2005,
   booktitle =	 {Proceedings of the 11th International Symposium on High-Performance Computer Architecture (HPCA-11)},
   address =	 {San Francisco, California},
   month =	 feb,
@@ -3276,7 +3273,7 @@ publisher = "Springer Verlag"
  }
 
 @Proceedings{OOPSLA03
- ,booktitle    = {OOPSLA}
+ ,booktitle    = {OOPSLA '03}
  ,month	       = oct
  ,year	       = 2003
  ,address      = {Anaheim, California}
@@ -3428,6 +3425,32 @@ publisher = "Springer Verlag"
   month = 	 jan,
   year =	 1982,
   isbn =	 {0-89791-065-6},
+  publisher =	 {ACM Press},
+}
+
+@Conference{SOSP87,
+  booktitle =	 {Proceedings of the Eleventh {ACM} Symposium on Operating Systems Principles ({SOSP})},
+  location =	 {Austin, Texas, United States},
+  month = 	 nov,
+  year =	 1987,
+  isbn =	 {0-89791-242-X},
+  publisher =	 {ACM Press},
+}
+
+@Conference{SOSP97,
+  booktitle =	 {SOSP '97},
+  location =	 {Saint Malo, France},
+  month = 	 oct,
+  year =	 1997,
+  isbn =	 {0-89791-916-5},
+}
+
+@Conference{SOSP97-verbose,
+  booktitle =	 {Proceedings of the Sixteenth {ACM} Symposium on Operating Systems Principles ({SOSP})},
+  location =	 {Saint Malo, France},
+  month = 	 oct,
+  year =	 1997,
+  isbn =	 {0-89791-916-5},
   publisher =	 {ACM Press},
 }
 
