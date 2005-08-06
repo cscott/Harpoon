@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.6 2005-08-06 01:26:45 cananian Exp $
+% $Id: scool05.tex,v 1.7 2005-08-06 02:40:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -19,8 +19,11 @@
 
 % similar to verbatim, except it changes the size/spacing/etc
 \newenvironment{inlinecode}%
-  {\par\linespread{0.9}\footnotesize\samepage\verbatim}%
+  {\par\linespread{0.9}\footnotesize%\samepage
+\verbatim}%
   {\endverbatim}
+% tighten up captions
+\renewcommand{\figadjust}{\vspace{-1em}}
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -43,7 +46,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.6 $ $}
+%\date{\today \\ $ $Revision: 1.7 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -120,16 +123,7 @@ Although transactions can be implemented using mutual exclusion
 generally any synchronization mechanism which doesn't rely on mutual
 exclusion or locking, including wait-free~\cite{Herlihy88},
 lock-free~\cite{MassalinPu91},
-and obstruction-free~\cite{HerlihyLuMo03} implementations.
-Note that some authors use ``non-blocking'' and
-``lock-free'' as synonyms, usually meaning what we here call
-\emph{lock-free}.  Others exchange our definitions for ``lock-free''
-and ``non-blocking'', using lock-free as a generic term and non-blocking
-to describe a specific class of implementations.  As there is
-variation in the field, we choose to use the parallel construction
-\emph{wait-free}, \emph{lock-free}, and \emph{obstruction-free} for
-our three specific progress criteria, and the dissimilar
-\emph{non-blocking} for the general class.}
+and obstruction-free~\cite{HerlihyLuMo03} implementations.}
 to exploit optimistic concurrency among transactions.
 Non-blocking synchronization offers a number of advantages; among them
 fault-tolerance: processes which
@@ -259,6 +253,7 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
 {\tt 228\_jack} & 187,029,744 & 12,017,041 & 34.2\% & 14,266 \\
 \end{tabular}
 \end{center}
+\figadjust%
 \caption{Transactification of SPECjvm98 benchmark suite: resulting
   transaction counts and sizes, compared to total number of memory
   operations (loads and stores).  These are full input size runs.
@@ -339,18 +334,15 @@ I or II. \figref{tr-sz-all} restates this problem, by
 illustrating the distribution of transaction sizes in these
 applications on a semi-log scale.
 
-\begin{figure*}
+\begin{figure}
 \begin{center}
 \includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
-~~~~~%
-\includegraphics[width=2.25in,clip=true]{Figures/tr-w-ten.eps}%
 \end{center}%
+\figadjust%
 \caption{Proportion of transactional writes to objects equal to or
-  smaller than a given size.  The right-hand graph zooms in on a
-  portion of the relation shown in the left; note in particular that
-  y-axis full-scale is only 10\% in the right-hand graph.}%
+  smaller than a given size.}
 \label{fig:tr-w}%
-\end{figure*}%
+\end{figure}%
 Our software transactions implementation clones objects on
 transactional writes, so that the previous state of the object can be
 restored if the transaction aborts.  With this in mind, we were
@@ -417,6 +409,7 @@ program & memory ops    & stores \% \\\hline
 {\tt 228\_jack} & 63,912,386 & 17.0\% \\
 \end{tabular}
 \end{center}
+\figadjust%
 \caption{Comparison of loads and stores inside transactions for the
   SPECjvm98 benchmark suite, full input runs.}
 \label{fig:writepercent}
@@ -432,10 +425,6 @@ flag-overwrite technique discussed in \secref{flagfield} requires us
 to allocate additional memory to store the ``real'' value of the
 field, we wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
-
-\subsection{Large objects}\label{sec:large}
-%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-See \secref{properties}.
 
 \subsection{Cooperation with HTM}
 It is desirable that
@@ -693,6 +682,7 @@ inline copyBackField(o, f, mode, st) {
   /* done */
 }
 \end{verbatim}
+\figadjust%
 \caption{The field copy-back routine.}\label{fig:copyback}
 \end{figure}
 \figref{copyback} presents the field copy-back routine.  We create a
@@ -817,6 +807,7 @@ inline ensureWriter(tid, o, ver) {
   assert (_r==NIL);
 }
 \end{verbatim}
+\figadjust%
 \caption{The per-object version-setup routine for transactional writes.}
 \label{fig:ensurewriter}
 \end{figure}
@@ -890,6 +881,7 @@ inline checkWriteField(o, f) {
   moveVersion(_rr, NIL);
 }
 \end{verbatim}
+\figadjust%
 \caption{The per-field copy-through routine for transactional writes.}
 \label{fig:copythrough}
 \end{figure}
@@ -916,6 +908,10 @@ inline writeT(ver, f, nval) {
 }
 \end{inlinecode}
 
+\subsection{Large objects}\label{sec:large}
+%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+See \secref{properties}.
+
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
 checked with Spin version 4.1.0 and verified to operate correctly and
@@ -940,6 +936,7 @@ state space.  A great deal of effort was expended tweaking the
 model to approach a canonical allocation ordering.  A better solution
 to this problem would allow larger model instances to be checked.
 
+\punt{
 \secput{related}{Related work}
 A number of researchers have been investigating transactional memory
 systems.  This is the first paper to present a model-checked non-blocking
@@ -989,7 +986,7 @@ concurrent non-transactional operations on locations involved in a
 transaction.  Java synchronization allows such concurrent operations,
 with semantics given by the Java memory model \cite{MansonPu02}.
 We support these operations safely using our FLAG mechanism.
-
+}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \punt{
 Ideas:
@@ -1103,11 +1100,12 @@ The complete Spin 4.1.0 model for the FLEX software transaction system is
 available for download at
 \url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
 
-%\renewcommand{\baselinestretch}{1}
+\small
 \bibliographystyle{abbrv}
 \bibliography{xaction}
 
 \clearpage
+\normalsize
 \appendix
 \secput{promela}{Promela Primer}
 A concise Promela reference is available at
@@ -1201,6 +1199,7 @@ program  & input& total      & \% cache  & xactions    & oversized & xops       
                                 & 100 & \multicolumn{5}{c}{(\texttt{222\_mpegaudio}/100 simulation not yet complete)} \\
 \end{tabular}
 \end{center}
+\figadjust%
 \caption{Experimental results for transactifying the Linux kernel and
 Java.  For Java the \textit{input size} can be run in three ``sizes'':
 1\%, 10\%, and 100\% of the full input size.    For the percentages,
@@ -1242,6 +1241,7 @@ percentage, such as ``0.0\%,'' for small nonzero values.}
 {\bf end} oneEntryDirectory
 \end{tabular}
 }
+\figadjust%
 \caption{A directory object in Emerald, from \cite{BlackHuJuLe86},
   illustrating the use of monitor synchronization.}
 \label{fig:emerald-dir}
@@ -1275,6 +1275,7 @@ class Account \{\\
 \}\\
 \end{tabular}
 }\vspace{.2in}
+\figadjust%
 \caption{A simple bank account object, adapted from \cite{FlanaganQa03},
   illustrating the use of the \atomic modifier.}
 \label{fig:atomic}
@@ -1391,6 +1392,7 @@ never mutated after they are created.
 \subsection{A single-object protocol}
 \begin{figure}\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj.eps}
+\figadjust%
 \caption{Implementing non-blocking single-object concurrent operations
   with functional arrays.}
 \label{fig:single-o}
@@ -1456,6 +1458,7 @@ may be referenced within an atomic method is overly limiting.
 \subsection{Extension to multiple objects}
 \begin{figure}[t]\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
+\figadjust%
 \caption{Data structures to support non-blocking multi-object
   concurrent operations.  Objects point to a linked list of versions,
   which reference operation identifiers.  Versions created within the
@@ -1512,6 +1515,7 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
+\figadjust%
 \caption{\funcname{Read} and \funcname{ReadAtomic} implementations for the
   multi-object protocol.}\label{fig:reads}
 \end{figure}
@@ -1564,6 +1568,7 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
+\figadjust%
 \caption{\funcname{Write} and \funcname{WriteAtomic} implementations for the
   multi-object protocol.}\label{fig:writes}
 \end{figure}
@@ -1650,6 +1655,7 @@ constant time plus an invocation of \funcname{FA-Read} or
 \subsection{Lock-free functional arrays}\label{sec:large-obj}
 \begin{figure*}\centering
 \includegraphics[width=7in,clip=true]{Figures/chuang.eps}
+\figadjust%
 \caption{Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
@@ -1733,6 +1739,7 @@ choosing to perform a cut with probability $1/n$.
 
 \begin{figure*}\centering
 \includegraphics[width=7in,clip=true]{Figures/funarr.eps}
+\figadjust%
 \caption{Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.
   Array $A$ is a root node, and $\funcname{FA-Read}(A, x)=z$.
@@ -1805,6 +1812,7 @@ retry:\\
 \>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
 end\\
 \end{tabular}
+\figadjust%
 \caption{Implementation of lock-free functional array using shallow
   binding and randomized cuts.}
 \label{fig:fun-impl}
