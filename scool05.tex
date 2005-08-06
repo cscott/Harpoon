@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.9 2005-08-06 03:35:53 cananian Exp $
+% $Id: scool05.tex,v 1.10 2005-08-06 04:40:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -19,7 +19,7 @@
 
 % similar to verbatim, except it changes the size/spacing/etc
 \newenvironment{inlinecode}%
-  {\par\linespread{0.9}\footnotesize\samepage%
+  {\par\linespread{0.9}\footnotesize%\samepage%
 \verbatim}%
   {\endverbatim}
 % tighten up captions
@@ -46,7 +46,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.9 $ $}
+%\date{\today \\ $ $Revision: 1.10 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -436,7 +436,7 @@ procedure to commit or abort a transaction.
 
 We will present the other operations one-by-one.
 
-\subsubsection{Read}
+\subsubsection{Read}\label{sec:readnt}
 
 The {\tt ReadNT} function does a non-transactional read of field $f$ from
 object $o$, putting the result in $v$.
@@ -833,7 +833,6 @@ inline writeT(ver, f, nval) {
 \end{inlinecode}
 
 \subsection{Large objects}\label{sec:large}
-%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 \begin{figure}
 \begin{center}
 \includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
@@ -845,12 +844,27 @@ inline writeT(ver, f, nval) {
 \end{figure}%
 Our software transactions implementation clones objects on
 transactional writes, so that the previous state of the object can be
-restored if the transaction aborts.  With this in mind, we were
-interested in the number of writes to \emph{large} objects, or,
-equivalently, on the object size distribution of transactional
-writes.  \figref{tr-w} shows this distribution for the SPECjvm98
-applications. 
+restored if the transaction aborts.  \figref{tr-w} shows the object
+size distribution of transactional writes for SPECjvm98, and
+indicates that over 10\% of writes may be to large objects.
+Obviously the copying cost would be prohibitive.
 
+Our solution is to represent large objects as \defn{functional
+  arrays}.  O'Neill and Burton \cite{ONeillBu97} give a fairly
+inclusive overview of such algorithms; we've chosen Tyng-Ruey Chuang's
+version \cite{Chuang94} of \emph{shallow binding}, which uses
+randomized cuts to the version tree to limit the cost of a read to
+$O(n)$ in the worst case.  Single-threaded accesses to the array are
+$O(1)$.  Our use of functional arrays is single-threaded in the common
+case, when transactions do not abort.  Chuang's scheme is attractive
+because it limits the worst-case cost of an abort, with very little
+added complexity.
+
+Of course, Chuang's algorithm is not lock free.
+The crucial operation is a rotation of a \emph{difference node} with the
+main body of the array.  Elsewhere we present a lock-free version of
+Chuang's algorithm~\cite{Ananian05}; for the purposes of the present paper we
+can leverage some existing small-transaction HTM for a trivial implementation.
 
 \subsection{Hybrid STM/HTM}\label{sec:hybrid}
 \begin{figure}[t]\begin{center}%
@@ -862,6 +876,18 @@ applications.
   scheme (HSTM).}%
 \label{fig:hybrid}%
 \end{figure}
+It is worth considering if a low-level HTM can yield benefits other
+than efficient implementations of large-object operations.  In fact,
+\figref{hybrid} presents research showing that we can combine the
+strengths of our object-oriented software transaction system with a
+fast bounded-size HTM.  In the figure, combining the systems is done
+in the most simple-minded way: all transactions are begun in
+LTM~\cite{AnanianAsKuLeLi04},
+and after any abort the transaction is restarted in the
+object-oriented sofware system.  The field flag mechanism described in
+\secref{flagfield} ensures that software transactions properly abort
+conflicting hardware transactions; hardware transactions must perform
+the \texttt{ReadNT} and \texttt{WriteNT} algorithms for a slight overhead.
 
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
@@ -878,6 +904,7 @@ In particular, early versions of the algorithms sometimes allowed
 readers to escape being aborted while racing a writer in
 \texttt{createVersion}, and could allow inconsistent reads.
 
+\punt{
 Spin is not particularly suited to checking models with dynamic
 allocation and deallocation.  In particular, it considers the
 location of objects part of the state space, and allocating object
@@ -886,6 +913,7 @@ were allocated first.  This artificially enlarges the
 state space.  A great deal of effort was expended tweaking the
 model to approach a canonical allocation ordering.  A better solution
 to this problem would allow larger model instances to be checked.
+}
 
 \punt{
 \secput{related}{Related work}
@@ -1123,183 +1151,6 @@ they've been turned into macros so that reference counting
 can be performed.
 
 \punt{
-\secput{extra}{Text with nowhere else to go}
-
-\begin{figure*}
-\footnotesize
-\begin{center}
-\begin{tabular}{l@{}rrrrrrrrr}
-program  & input& total      & \% cache  & xactions    & oversized & xops        & xmiss & overflow & biggest \\ 
-         & size & memory ops & misses &             & xactions  &   \%        &   \%    & \% & xaction\\ \hline
-\texttt{make\_linux}  &  & 315,776,028 & 0.56\%  &  6,964,277  & 3368     & 41.0\%  &  0.017\%  &            &         8144   \\
-\texttt{dbench}      &  & 100,928,220 & 0.43\%  &  1,863,426  &   88     & 49.5\%  &  0.001\%  &            &         7047   \\
-
- \hline \texttt{201\_compress } &   1 & 229,332,212 &  0.10\% &        524 &   0 &  0.0\% &     0   &      0   &     1,335 \\
-                                &  10 & 264,389,092 &  0.10\% &        662 &   0 &  0.0\% &     0   &      0   &     1,335 \\
-                               & 100 & 2,981,777,890 &  0.10\% &      2,272 &   0 &  0.0\% &     0   &      0   &     1,352 \\
- \hline \texttt{202\_jess     } &   1 &   1,972,479 &  3.13\% &     82,103 &   0 & 43.3\% &     0   &      0   &     3,586 \\
-                                &  10 &  27,371,450 &  0.73\% &    104,636 &   0 &  3.4\% &     0   &      0   &     4,624 \\
-                                & 100 & 405,153,255 &  2.71\% &  4,892,829 &   0 &  9.1\% &     0   &      0   &     4,826 \\
- \hline \texttt{205\_raytrace } &   1 &  14,535,905 &  1.83\% &      1,125 &   1 & 49.6\% & 0.648\% & 0.0889\% &   875,925 \\
-                                &  10 &  36,655,846 &  1.33\% &      1,922 &   1 & 19.7\% & 0.257\% & 0.0520\% &   875,925 \\
-                                & 100 & 420,005,763 &  1.65\% &      4,177 &   1 &  1.7\% & 0.022\% & 0.0239\% &   875,925 \\
- \hline \texttt{209\_db       } &   1 &     393,455 &  2.01\% &     14,191 &   0 & 45.8\% &     0   &      0   &     5,112 \\
-                                &  10 &  15,814,285 &  5.66\% &    874,319 &   2 & 23.3\% & 0.060\% & 0.0001\% &    51,292 \\
-                                & 100 & 848,082,597 & 10.14\% & 45,222,742 & 288 & 23.0\% & 0.350\% & 0.0005\% &   148,374 \\
- \hline \texttt{213\_javac    } &   1 &   1,605,330 &  1.88\% &        460 &   1 & 89.5\% & 0.517\% & 0.2087\% &   253,547 \\
-                                &  10 &  14,968,130 &  1.65\% &        476 &   1 & 98.8\% & 1.403\% & 0.2101\% & 1,547,922 \\
-                                & 100 & 472,416,129 &  1.78\% &        668 &   4 & 99.9\% & 1.652\% & 0.5988\% & 8,928,356 \\
- \hline \texttt{222\_mpegaudio} &   1 &  26,551,440 &  0.03\% &      1,049 &   0 &  0.1\% &     0   &      0   &     1,340 \\
-                                &  10 & 282,263,132 &  0.00\% &      1,675 &   0 &  0.0\% &     0   &      0   &     1,339 \\
-                                & 100 & \multicolumn{5}{c}{(\texttt{222\_mpegaudio}/100 simulation not yet complete)} \\
-\end{tabular}
-\end{center}
-\figadjust%
-\caption{Experimental results for transactifying the Linux kernel and
-Java.  For Java the \textit{input size} can be run in three ``sizes'':
-1\%, 10\%, and 100\% of the full input size.    For the percentages,
-we write ``0'' for numbers that are exactly zero, and a ``zero''
-percentage, such as ``0.0\%,'' for small nonzero values.}
-\label{fig:perfnums}
-\end{figure*}
-
-\section{Analyses and Implementation}
-
-\secput{proposal}{A proposal for a non-blocking Java OS}
-\begin{figure}[t]
-{\it
-\begin{tabular}{l}
-{\bf const} myDirectory == {\bf object} oneEntryDirectory\\
-~~{\bf export} Store, Lookup\\
-~~{\bf monitor}\\
-~~~~{\bf var} name : String\\
-~~~~{\bf var} AnObject : Any\\
-\\
-~~~~{\bf operation} Store [ n : String, o : Any ]\\
-~~~~~~name $\gets$ n\\
-~~~~~~AnObject $\gets$ o\\
-~~~~{\bf end} Store
-\\
-~~~~{\bf function} Lookup [ n : String ] $\to$ [ o : Any ]\\
-~~~~~~{\bf if} n = name\\
-~~~~~~~~{\bf then} o $\gets$ AnObject\\
-~~~~~~~~{\bf else} o $\gets$ {\bf nil}\\
-~~~~~~{\bf end if}\\
-~~~~{\bf end} Lookup\\
-\\
-~~~~{\bf initially}\\
-~~~~~~name $\gets$ {\bf nil}\\
-~~~~~~AnObject $\gets$ {\bf nil}\\
-~~~~{\bf end initially}\\
-\\
-~~{\bf end monitor}\\
-{\bf end} oneEntryDirectory
-\end{tabular}
-}
-\figadjust%
-\caption{A directory object in Emerald, from \cite{BlackHuJuLe86},
-  illustrating the use of monitor synchronization.}
-\label{fig:emerald-dir}
-\end{figure}
-
-\begin{figure}[t]
-{\ttfamily\small\vspace{.25in}
-\begin{tabular}{l}
-class Account \{\\
-\\
-~~int balance = 0;\\
-\\
-~~{\bf atomic} int deposit(int amt) \{\\
-~~~~int t = this.balance;\\
-~~~~t = t + amt;\\
-~~~~this.balance = t;\\
-~~~~return t;\\
-~~\}\\
-\\
-~~{\bf atomic} int readBalance() \{\\
-~~~~return this.balance;\\
-~~\}\\
-\\
-~~{\bf atomic} int withdraw(int amt) \{\\
-~~~~int t = this.balance;\\
-~~~~t = t - amt;\\
-~~~~this.balance = t;\\
-~~~~return t;\\
-~~\}\\
-\\
-\}\\
-\end{tabular}
-}\vspace{.2in}
-\figadjust%
-\caption{A simple bank account object, adapted from \cite{FlanaganQa03},
-  illustrating the use of the \atomic modifier.}
-\label{fig:atomic}
-\end{figure}
-\subsection{Synchronization in the language}
-The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
-\emph{monitored objects} for synchronization.  Emerald code to
-implement a simple directory object is shown in
-Figure~\ref{fig:emerald-dir}.  Each object is associated with
-Hoare-style monitor, which provides mutual exclusion and process
-signalling.  Each Emerald object is divided into a monitored part and
-a non-monitored part.  Variables declared in the monitored part are
-shared, and access to them from methods in the non-monitored part is
-prohibited---although non-monitored methods may call monitored methods
-to effect the access.  Methods in the monitored part acquire the monitor lock
-associated with the receiver object before entry and release it on
-exit, providing for mutual exclusion and safe update of the shared
-variables.  Monitored objects naturally integrate synchronization into
-the object model.
-
-Unlike Emerald monitored objects, where methods can only acquire the
-monitor of their receiver and where restricted access to shared
-variables is enforced by the compiler, Java implements a loose
-variant where any monitor may be explicitly acquired and no shared
-variable protection exists.  As a default, however, Java methods
-declared with the {\tt synchronized} keyword behave like Emerald
-monitored methods,
-ensuring that the monitor lock of their receiver is held during execution.
-
-Java's synchronization primitives arguably allow for more efficient
-concurrent code than Emerald's---for example, Java objects can use
-multiple locks to
-protect disjoint sets of fields, and coarse-grain locks can be used
-which protect multiple objects---but Java is also more prone to programmer
-error.  However, even Emerald's restrictive
-monitored objects are not sufficient to prevent data races.  As a
-simple example, imagine that an object provided two monitored methods
-{\tt read} and {\tt write} which accessed a shared variable.
-Non-monitored code can call {\tt read}, increment the value returned,
-and then call {\tt write}, creating a classic race condition scenario.
-The atomicity of the parts is not sufficient to guarantee atomicity of
-the whole \cite{FlanaganQa03}.
-
-This suggests that a better model for synchronization in
-object-oriented systems is \emph{atomicity}.  Figure~\ref{fig:atomic}
-shows Java extended with an \atomic keyword to implement an
-object representing a bank account.  Rather than explicitly
-synchronizing on locks, we simply require that the methods marked
-\atomic execute atomically with respect to other threads in the
-system; that is, that every execution of the program computes the same
-result as some execution where all atomic methods were run \emph{in
-  isolation} at a certain point in time, called the
-\defn{linearization point}, between their invocation and return.
-Note that
-atomic methods invoked directly or indirectly from an atomic
-method are subsumed by it: if the outermost method appears atomic,
-then by definition all inner method invocations will also appear atomic.
-Flanagan and Qadeer provide a more formal semantics in \cite{FlanaganQa03}.
-Atomic methods can be analyzed using sequential reasoning techniques, which
-significantly simplifies reasoning about program correctness.
-
-Atomic methods can be implemented using locks.  A simple if inefficient
-implementation would simply acquire a single global lock during
-the execution of every atomic method.  Flanagan and Qadeer
-\cite{FlanaganQa03} present a more sophisticated technique which proves that
-a given implementation using standard Java monitors correctly
-guarantees method atomicity.
-We will use non-blocking synchronization to implement atomic methods.
-
 \subsection{A simple implementation of functional arrays}
 Our atomic method implementation will use \emph{functional arrays} as
 a building block.  Functional arrays are \emph{persistent}; that is,
