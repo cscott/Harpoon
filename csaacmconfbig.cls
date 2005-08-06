@@ -1,5 +1,5 @@
 % -*-latex-*-
-% $Id: csaacmconfbig.cls,v 1.2 2004-07-16 16:24:23 cananian Exp $
+% $Id: csaacmconfbig.cls,v 1.3 2005-08-06 01:51:14 cananian Exp $
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -139,11 +139,13 @@
 \newcommand{\secput}[2]{\section{#2}\label{sec:#1}}
 \newcommand{\subsecput}[2]{\subsection{#2}\label{sec:#1}}
 
+\newcommand{\figadjust}{}
 \newcommand{\figput}[2]{%
 \begin{figure}[t]%
  \begin{center}%
   \input{Figures/#1.pstex_t}%
  \end{center}%
+ \figadjust%
 %\caption{\mbox{\tt (#1.eps)} #2}%
  \caption{#2}%
  \label{fig:#1}%
@@ -155,6 +157,7 @@
  \begin{center}%
   \input{Figures/#1.pstex_t}%
  \end{center}%
+ \figadjust%
 %\caption{\mbox{\tt (#1.eps)} #2}%
  \caption{#2}%
  \label{fig:#1}%
@@ -166,6 +169,7 @@
 \begin{center}%
 \includegraphics[height=2.75in,clip=true]{Figures/#1.eps}%
 \end{center}%
+\figadjust%
 \caption{#2}%
 \label{fig:#1}%
 \end{figure}%
