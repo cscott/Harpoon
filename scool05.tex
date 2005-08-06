@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.7 2005-08-06 02:40:03 cananian Exp $
+% $Id: scool05.tex,v 1.8 2005-08-06 02:53:59 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -19,7 +19,7 @@
 
 % similar to verbatim, except it changes the size/spacing/etc
 \newenvironment{inlinecode}%
-  {\par\linespread{0.9}\footnotesize%\samepage
+  {\par\linespread{0.9}\footnotesize\samepage%
 \verbatim}%
   {\endverbatim}
 % tighten up captions
@@ -46,7 +46,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.7 $ $}
+%\date{\today \\ $ $Revision: 1.8 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -105,16 +105,6 @@ Cambridge, MA 02139 \\
 
 %
 \secput{intro}{Introduction}
-A transaction can be thought of as a sequence of loads and stores
-performed as part of a program which either
-\defn{commits} or \defn{aborts}.  If a transaction
-commits, then all of the loads and stores appear to have run
-atomically with respect to other transactions.  That is, the
-transaction's operations are not interleaved with those of other
-transactions.  If a transaction aborts, then none of its stores take
-effect and the transaction may be restarted, typically using a
-backoff algorithm to preclude live-lock.
-
 The transaction model is a natural means to express atomicity,
 fault-tolerance, exception-handling, and back-tracking.
 Although transactions can be implemented using mutual exclusion
@@ -130,21 +120,21 @@ fault-tolerance: processes which
 fail in critical regions cannot prevent other processes from making
 progress.
 
-% XXXXXXx
-
 In this paper we will discuss the benefits and disadvantages of an
-object-oriented implementation of transactions, provide a
-mechanically-checked implementation and well as experimental data
-justifying its design, and briefly discuss the ``large object'' problem.
+object-oriented transaction system. We will present a mechanically-checked
+non-blocking object-oriented implementation, and experimental
+measurements of transactional code justifying its design.  We will
+also provide one solution to the ``large object'' problem.
 
 \secput{why}{Using Objects for Performance}
-Recent trends in lightweight transaction system design have followed
-the ``transactional memory'' abstraction.  The success of Hardware
-Transactional Memories (HTMs)
-\cite{Knight86,HerlihyMo92,HerlihyMo93,HammondWoCh04,AnanianAsKuLeLi04}
-with word- or cache-line--based abstractions matching the standard cache/memory system
-have inspired similar Software Transactional Memory (STM) systems,
-such as \cite{ShavitTo95,HarrisFr03}.  We suggest that the exclusive
+Recent trends in lightweight transaction system design have used
+a \emph{transactional memory} abstraction.  The success of Hardware
+Transactional Memory (HTMs)
+\cite{Knight86,HerlihyMo92,HerlihyMo93,HammondWoCh04,AnanianAsKuLeLi04},
+with word- or cache-line--based abstractions to match the standard
+cache/memory system,
+have inspired similar Software Transactional Memory (STM) systems
+\cite{ShavitTo95,HarrisFr03}.  We suggest that the exclusive
 use of flat memory abstractions in designing a modern lightweight
 transaction system is a mistake.
 
@@ -153,17 +143,17 @@ will be matched to word, cache line, or page boundaries, leading to
 false sharing.  This false sharing may have semantic implications when
 transactions which ought to be able to commit in parallel are instead
 made exclusive become some piece of data is co-located.  To some
-degree authors of parallel code are already aware of these issues---locks
+degree authors of parallel code are already aware of these issues: locks
 are placed, for example, to minimize cache ping-pong on SMP
 systems.  But this is an unnecessary burden.
 
-More significantly, the flat memory model complicates basic and
+Moreover, the flat memory model complicates basic and
 important optimizations.  An alternative, which we'll
-call ``clone and mutate'', performs transactional operations on copies
-of the objects involved, which are then atomically substituted for the
-originals at commit time.  Compile or JIT-time analysis can track
+call ``clone and mutate,'' performs transactional operations on copies
+of the objects involved which are then atomically substituted for the
+originals at commit time.  Compile- or JIT-time analysis can track
 objects that have already been cloned, and henceforth operate on them
-without any synchronization overhead.  The details can be subtle, but a smart
+without any synchronization overhead.  The details can be subtle, but a
 compiler can emit transactional code which is asymptotically equal
 in performance with unsynchronized/non-transactional code.  In
 \secref{properties} we will show that common applications may contain
@@ -177,11 +167,10 @@ that all input and output locations touched by a transaction be known
 in advance.  Herlihy, Luchango, Moss, and Scherer's scheme
 \cite{HerlihyLuMoSc03} allows transactions to touch a dynamic set of
 memory locations; however the user still has to explicitly \emph{open}
-every object touched before it can be used in a transaction. Not
-including work necessary to copy objects involved in writes, this system
-required $O(R(R+W))$ work to open $R$ objects for reading and $W$
-objects for writing, which may be quadratic in the number of objects
-involved in the transaction.  The transaction system we will present
+every object touched before it can be used in a transaction, and the
+work required may be quadratic in the number of objects involved.%
+\footnote{$O(R(R+W))$ work to open $R$ objects for reading and $W$
+objects for writing.}  The transaction system we will present
 in \secref{algo} does not require foreknowledge of the behavior of a
 transaction, and does not blow up on transactions touching a large
 number of objects.
@@ -267,13 +256,7 @@ the transactified SPECjvm98 suite.
 \figref{tr-quad} proposes a
 taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
-transactions which they perform.  Applications in Quads II and IV
-require an efficient transaction implementation, because they contain
-many transactional operations.
-Quads III and IV contain at least some very large transactions, which
-pose difficulties for currently-proposed hardware transactional memory
-schemes.
-%%%%%%%%%%%%55 XXXXX L4ME
+transactions which they perform.
 
 Quad I applications perform few (up to about 2000) small
 transactions.  These applications include \texttt{201\_compress}, an
@@ -289,8 +272,7 @@ The expert system \texttt{202\_jess} falls in this category, as do
 small input sizes of \texttt{209\_db}, a database.  These benchmarks
 perform at least an order of magnitude more transactions than Quad
 I applications, and all of the transactions are small enough to 
-comfortably fit the known hardware transactional memory schemes, if
-one were to be implemented.
+comfortably fit the known hardware transactional memory schemes.
 
 Quad III includes \texttt{205\_raytrace}, a ray-tracing renderer.  A
 small number of transactions are performed, but they may grow very
@@ -303,9 +285,7 @@ Finally, Quad IV applications such as \texttt{209\_db} and the
 \texttt{213\_javac} Java compiler application perform a large number
 of transactional memory operations with at least a few large transactions.  
 
-The \texttt{213\_javac} Java compiler application and the large input
-size of the \texttt{209\_db} benchmark illustrate that some programs
-contain \emph{extremely} large transactions.  When \texttt{213\_javac}
+When \texttt{213\_javac}
 is run on its full input set, it contains 4 very large transactions,
 each of which contains over 118 million transactional memory
 operations.  Closer
@@ -313,19 +293,16 @@ examination reveals that the method \texttt{Javac.compile()}, which
 implements the entire compilation process, is marked as synchronized:
 the programmer has explicitly requested that the entire compilation
 occur atomically.
-
 The \texttt{209\_db} benchmark suffers from a similar problem: at one
 point the benchmark atomically scans an index vector and removes an
 element, creating a potentially large transaction if the index is
-large.  The size of this index is correlated in these benchmarks with
-the input size, but it need not be: a large input could still result
-in a small index, and (to some degree) vice-versa.
+large.
 
 \epsfigput{tr-sz-all}{Distribution of transaction size in the
   SPECjvm98 benchmark suite.  Note that the x-axis uses a logarithmic
   scale.}
 
-Any scheme which allows the programmer free reign over specifying
+Any scheme which allows the programmer free choice of
 desired transaction and/or atomicity properties will inevitably result
 in some applications in each of these categories.  Existing
 hardware transactional memory schemes only efficiently handle
@@ -333,24 +310,6 @@ applications in Quad
 I or II. \figref{tr-sz-all} restates this problem, by
 illustrating the distribution of transaction sizes in these
 applications on a semi-log scale.
-
-\begin{figure}
-\begin{center}
-\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
-\end{center}%
-\figadjust%
-\caption{Proportion of transactional writes to objects equal to or
-  smaller than a given size.}
-\label{fig:tr-w}%
-\end{figure}%
-Our software transactions implementation clones objects on
-transactional writes, so that the previous state of the object can be
-restored if the transaction aborts.  With this in mind, we were
-interested in the number of writes to \emph{large} objects, or,
-equivalently, on the object size distribution of transactional
-writes.  \figref{tr-w} shows this distribution for the SPECjvm98
-applications. 
-
 
 %%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 %%% Justify by relatinh O-O properties target quads III and IV.
@@ -417,8 +376,9 @@ program & memory ops    & stores \% \\\hline
 \subsection{Reads vs. Writes}
 \figref{writepercent} shows that transactional reads typically
 outnumber transactional writes by 3 to 1; in some cases reads
-outnumber writes by over 100 to 1.  These properties closely match
-data-cache read/write ratios others have collected \cite[pp. 105, 379]{Hennessy96}.
+outnumber writes by over 100 to 1.  The read/write ratios in
+transactions do not depart much from observed
+data-cache read/write ratios \cite[pp. 105, 379]{Hennessy96}.
 It is worthwhile, therefore, to
 make reads more efficient than writes.  In particular, since the
 flag-overwrite technique discussed in \secref{flagfield} requires us
@@ -910,7 +870,24 @@ inline writeT(ver, f, nval) {
 
 \subsection{Large objects}\label{sec:large}
 %% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-See \secref{properties}.
+\begin{figure}
+\begin{center}
+\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
+\end{center}%
+\figadjust%
+\caption{Proportion of transactional writes to objects equal to or
+  smaller than a given size.}
+\label{fig:tr-w}%
+\end{figure}%
+Our software transactions implementation clones objects on
+transactional writes, so that the previous state of the object can be
+restored if the transaction aborts.  With this in mind, we were
+interested in the number of writes to \emph{large} objects, or,
+equivalently, on the object size distribution of transactional
+writes.  \figref{tr-w} shows this distribution for the SPECjvm98
+applications. 
+
+
 
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
