@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.10 2005-08-06 04:40:03 cananian Exp $
+% $Id: scool05.tex,v 1.11 2005-08-06 04:53:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -19,11 +19,13 @@
 
 % similar to verbatim, except it changes the size/spacing/etc
 \newenvironment{inlinecode}%
-  {\par\linespread{0.9}\footnotesize%\samepage%
+  {\par\linespread{0.9}\footnotesize\samepage%
 \verbatim}%
   {\endverbatim}
 % tighten up captions
-\renewcommand{\figadjust}{\vspace{-1em}}
+\renewcommand{\figadjust}{\vspace{-1.5em}}
+% be sloppy
+\sloppy
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -46,7 +48,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.10 $ $}
+%\date{\today \\ $ $Revision: 1.11 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -1064,15 +1066,11 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 
 
 \secput{concl}{Conclusions}
-We have outlined a mechanism to integrate transactions into an object
-oriented language to provide fault-tolerance, back-tracking, and
-non-blocking synchronization.  We have also 
-presented
-empirical data on the properties of ``transactified'' applications.
-We have
-presented an efficient software transaction system design which
-has been verified with the Spin model checker to be correct and race
-free. This design has been implemented in the FLEX Java compiler.
+We have described an efficient object-based implementation of
+non-blocking software transactions, along with empirical data backing
+its design and extensions for large objects and HTM hybridization.
+The design has been checked with the Spin model checker, and
+implemented in the FLEX Java compiler.
 
 \section*{Spin model for Software Transactions}
 The complete Spin 4.1.0 model for the FLEX software transaction system is
