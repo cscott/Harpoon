@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.8 2005-08-06 02:53:59 cananian Exp $
+% $Id: scool05.tex,v 1.9 2005-08-06 03:35:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -46,7 +46,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.8 $ $}
+%\date{\today \\ $ $Revision: 1.9 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -134,7 +134,8 @@ Transactional Memory (HTMs)
 with word- or cache-line--based abstractions to match the standard
 cache/memory system,
 have inspired similar Software Transactional Memory (STM) systems
-\cite{ShavitTo95,HarrisFr03}.  We suggest that the exclusive
+\cite{ShavitTo95,HarrisFr03}.  We suggest that the
+exclusive\footnote{See \secref{hybrid}.}
 use of flat memory abstractions in designing a modern lightweight
 transaction system is a mistake.
 
@@ -258,46 +259,6 @@ taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
 transactions which they perform.
 
-Quad I applications perform few (up to about 2000) small
-transactions.  These applications include \texttt{201\_compress}, an
-implementation of gzip compression, and \texttt{222\_mpegaudio}, an
-MP3 decoder.  Both of these applications perform inherently serial
-tasks.  They perform quite well with locks, and would likely execute
-with acceptable performance even with a na\"\i{}ve software
-implementation of transactions, as long as the impact on
-non-transactional operations was minimal.
-
-Quad II applications perform a large number of small transactions.
-The expert system \texttt{202\_jess} falls in this category, as do
-small input sizes of \texttt{209\_db}, a database.  These benchmarks
-perform at least an order of magnitude more transactions than Quad
-I applications, and all of the transactions are small enough to 
-comfortably fit the known hardware transactional memory schemes.
-
-Quad III includes \texttt{205\_raytrace}, a ray-tracing renderer.  A
-small number of transactions are performed, but they may grow very
-large.  Existing bounded hardware transactional schemes will not
-suffice.  The large
-transactions may account for a large percentage of total memory
-operations, which may make software schemes impractical.
-
-Finally, Quad IV applications such as \texttt{209\_db} and the
-\texttt{213\_javac} Java compiler application perform a large number
-of transactional memory operations with at least a few large transactions.  
-
-When \texttt{213\_javac}
-is run on its full input set, it contains 4 very large transactions,
-each of which contains over 118 million transactional memory
-operations.  Closer
-examination reveals that the method \texttt{Javac.compile()}, which
-implements the entire compilation process, is marked as synchronized:
-the programmer has explicitly requested that the entire compilation
-occur atomically.
-The \texttt{209\_db} benchmark suffers from a similar problem: at one
-point the benchmark atomically scans an index vector and removes an
-element, creating a potentially large transaction if the index is
-large.
-
 \epsfigput{tr-sz-all}{Distribution of transaction size in the
   SPECjvm98 benchmark suite.  Note that the x-axis uses a logarithmic
   scale.}
@@ -306,18 +267,21 @@ Any scheme which allows the programmer free choice of
 desired transaction and/or atomicity properties will inevitably result
 in some applications in each of these categories.  Existing
 hardware transactional memory schemes only efficiently handle
-applications in Quad 
-I or II. \figref{tr-sz-all} restates this problem, by
-illustrating the distribution of transaction sizes in these
-applications on a semi-log scale.
+relatively short-lived and small transactions (Quad I or II),
+although for these they are very efficient.  Object-oriented
+transaction systems can asymptotically approach that efficiency for
+very long-lived transactions;  the existence of such is shown in
+\figref{tr-sz-all}, which plots
+the distribution of transaction sizes in SPECjvm98
+on a semi-log scale.
 
-%%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-%%% Justify by relatinh O-O properties target quads III and IV.
-%%% XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
+An ideal system would combine an HTM and an object-oriented
+transaction system to obtain the strengths of both; we will briefly
+describe such a system in \secref{hybrid}.
 
 \secput{efficient}{Designing Efficient Transactions}
 In this section we briefly describe some desired properties of our
-software transaction system.
+object-oriented software transaction system.
 
 \subsection{Field Flags}\label{sec:flagfield}
 \note{Missing: performance numbers for adding check.  Use ``no trans''
@@ -888,6 +852,16 @@ writes.  \figref{tr-w} shows this distribution for the SPECjvm98
 applications. 
 
 
+\subsection{Hybrid STM/HTM}\label{sec:hybrid}
+\begin{figure}[t]\begin{center}%
+\includegraphics[width=3.25in,clip=true]{Figures/sean_lie_6b.eps}%
+\end{center}\figadjust%
+\caption{Performance (in cycles per node push on a simple queue
+  benchmark) of LTM~\cite{AnanianAsKuLeLi04} (HTM), the
+  object-oriented system presented in this paper (STM) and a hybrid
+  scheme (HSTM).}%
+\label{fig:hybrid}%
+\end{figure}
 
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
@@ -1076,6 +1050,10 @@ free. This design has been implemented in the FLEX Java compiler.
 The complete Spin 4.1.0 model for the FLEX software transaction system is
 available for download at
 \url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
+
+\section*{Acknowledgments}
+The work described in \secref{hybrid} was joint with Sean Lie, who provided
+\figref{hybrid}.
 
 \small
 \bibliographystyle{abbrv}
