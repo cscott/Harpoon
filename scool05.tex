@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.11 2005-08-06 04:53:47 cananian Exp $
+% $Id: scool05.tex,v 1.12 2005-08-06 05:31:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt]{csaacmconfbig} % 10 page limit
 %\usepackage{times}
@@ -36,8 +36,7 @@
 %\renewcommand{\floatpagefraction}{0.8}
 %\renewcommand{\topfraction}{0.25}
 
-\title{Efficient Software Transactions for Object-Oriented Languages}
-%\titlerunning{Efficient Software Transactions}
+\title{Efficient Object-Based Software Transactions}
 
 \gdef\and{\hspace*{4em}}%Tight title with one line for authors
 \author{C.~Scott~Ananian \and Martin~Rinard \\
@@ -48,7 +47,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.11 $ $}
+%\date{\today \\ $ $Revision: 1.12 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -103,6 +102,8 @@ Cambridge, MA 02139 \\
   A model for the software
   transaction implementation is given in Promela, whose correctness
   has been mechanically verified using the \textsc{Spin} model checker.
+  The design presented cooperates well with an HTM providing support
+  for small short transactions.
 \end{abstract}
 
 %
@@ -123,10 +124,11 @@ fail in critical regions cannot prevent other processes from making
 progress.
 
 In this paper we will discuss the benefits and disadvantages of an
-object-oriented transaction system. We will present a mechanically-checked
-non-blocking object-oriented implementation, and experimental
+object-based transaction system. We will present a mechanically-checked
+non-blocking object-based implementation, and experimental
 measurements of transactional code justifying its design.  We will
-also provide one solution to the ``large object'' problem.
+provide one solution to the ``large object'' problem, and describe a
+hybrid hardware/software transaction system.
 
 \secput{why}{Using Objects for Performance}
 Recent trends in lightweight transaction system design have used
@@ -151,8 +153,9 @@ are placed, for example, to minimize cache ping-pong on SMP
 systems.  But this is an unnecessary burden.
 
 Moreover, the flat memory model complicates basic and
-important optimizations.  An alternative, which we'll
-call ``clone and mutate,'' performs transactional operations on copies
+important optimizations.  An alternative, ``clone and mutate'' or
+an \emph{object-based} transaction system, performs transactional
+operations on copies
 of the objects involved which are then atomically substituted for the
 originals at commit time.  Compile- or JIT-time analysis can track
 objects that have already been cloned, and henceforth operate on them
@@ -163,7 +166,7 @@ in performance with unsynchronized/non-transactional code.  In
 large and long-running transactions for which this behavior is
 important.
 
-A number of ``clone and mutate'' transaction systems have been
+A number of object-based transaction systems have been
 proposed, starting with Herlihy's ``small object protocol''
 \cite{Herlihy93}.  Shavit and Touitou's STM \cite{ShavitTo95} required that
 that all input and output locations touched by a transaction be known
@@ -178,8 +181,8 @@ in \secref{algo} does not require foreknowledge of the behavior of a
 transaction, and does not blow up on transactions touching a large
 number of objects.
 
-Large objects and arrays typically present problems for ``clone and
-mutate'' transaction systems.  Herlihy presented a ``large object
+Large objects and arrays typically present problems for object-based
+transaction systems.  Herlihy presented a ``large object
 protocol'' \cite{Herlihy93} which required the programmer to manually
 break up large objects; we present our own solution to this problem in
 \secref{large}.
@@ -270,20 +273,20 @@ desired transaction and/or atomicity properties will inevitably result
 in some applications in each of these categories.  Existing
 hardware transactional memory schemes only efficiently handle
 relatively short-lived and small transactions (Quad I or II),
-although for these they are very efficient.  Object-oriented
+although for these they are very efficient.  Object-based
 transaction systems can asymptotically approach that efficiency for
 very long-lived transactions;  the existence of such is shown in
 \figref{tr-sz-all}, which plots
 the distribution of transaction sizes in SPECjvm98
 on a semi-log scale.
 
-An ideal system would combine an HTM and an object-oriented
+An ideal system would combine an HTM and an object-based
 transaction system to obtain the strengths of both; we will briefly
 describe such a system in \secref{hybrid}.
 
 \secput{efficient}{Designing Efficient Transactions}
 In this section we briefly describe some desired properties of our
-object-oriented software transaction system.
+object-based software transaction system.
 
 \subsection{Field Flags}\label{sec:flagfield}
 \note{Missing: performance numbers for adding check.  Use ``no trans''
@@ -351,14 +354,6 @@ flag-overwrite technique discussed in \secref{flagfield} requires us
 to allocate additional memory to store the ``real'' value of the
 field, we wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
-
-\subsection{Cooperation with HTM}
-It is desirable that
-an STM system cooperate well with some HTM system, in order to obtain
-good performance for small transactions (Quads I and II).
-Without presenting proof here, we will claim that our mechanism
-interacts well with a standard cache-based HTM, such as UTM or LTM
-\cite{AnanianAsKuLeLi04}.
 
 \secput{algo}{Software Transaction Mechanism}
 We now present an algorithm which has these desired properties.
@@ -866,7 +861,8 @@ Of course, Chuang's algorithm is not lock free.
 The crucial operation is a rotation of a \emph{difference node} with the
 main body of the array.  Elsewhere we present a lock-free version of
 Chuang's algorithm~\cite{Ananian05}; for the purposes of the present paper we
-can leverage some existing small-transaction HTM for a trivial implementation.
+can obtain a trivial implementation using some
+existing small-transaction HTM.
 
 \subsection{Hybrid STM/HTM}\label{sec:hybrid}
 \begin{figure}[t]\begin{center}%
@@ -874,22 +870,23 @@ can leverage some existing small-transaction HTM for a trivial implementation.
 \end{center}\figadjust%
 \caption{Performance (in cycles per node push on a simple queue
   benchmark) of LTM~\cite{AnanianAsKuLeLi04} (HTM), the
-  object-oriented system presented in this paper (STM) and a hybrid
+  object-based system presented in this paper (STM) and a hybrid
   scheme (HSTM).}%
 \label{fig:hybrid}%
 \end{figure}
 It is worth considering if a low-level HTM can yield benefits other
 than efficient implementations of large-object operations.  In fact,
 \figref{hybrid} presents research showing that we can combine the
-strengths of our object-oriented software transaction system with a
+strengths of our object-based software transaction system with a
 fast bounded-size HTM.  In the figure, combining the systems is done
 in the most simple-minded way: all transactions are begun in
 LTM~\cite{AnanianAsKuLeLi04},
 and after any abort the transaction is restarted in the
-object-oriented sofware system.  The field flag mechanism described in
+object-based software system.  The field flag mechanism described in
 \secref{flagfield} ensures that software transactions properly abort
 conflicting hardware transactions; hardware transactions must perform
-the \texttt{ReadNT} and \texttt{WriteNT} algorithms for a slight overhead.
+the \texttt{ReadNT} and \texttt{WriteNT} algorithms for a slight
+overhead (as shown in the figure).
 
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
@@ -898,7 +895,16 @@ without races in the scenarios described below.  The verification was
 done on an SGI 64-processor MIPS machine with 16G of memory.
 
 Sequences of transactional and non-transactional load and store
-operations were checked using two concurrent processes, and all possible
+operations were checked using two concurrent processes,
+\punt{
+\footnote{Spin is not particularly suited to checking models with dynamic
+allocation and deallocation.  In particular, the order of allocation
+artificially enlarges the state space.
+A great deal of effort was expended tweaking the
+model to approach a canonical allocation ordering.  A better solution
+to this problem would allow larger model instances to be checked.}
+}
+and all possible
 interleavings were found to produce results consistent with
 the semantic atomicity of the transactions.  A number of subtle race
 conditions were discovered and corrected during this process.
@@ -907,21 +913,10 @@ readers to escape being aborted while racing a writer in
 \texttt{createVersion}, and could allow inconsistent reads.
 
 \punt{
-Spin is not particularly suited to checking models with dynamic
-allocation and deallocation.  In particular, it considers the
-location of objects part of the state space, and allocating object
-A before object B produces a different state than if object B
-were allocated first.  This artificially enlarges the
-state space.  A great deal of effort was expended tweaking the
-model to approach a canonical allocation ordering.  A better solution
-to this problem would allow larger model instances to be checked.
-}
-
-\punt{
 \secput{related}{Related work}
 A number of researchers have been investigating transactional memory
 systems.  This is the first paper to present a model-checked non-blocking
-object-oriented system which allows co-existence of non-transactional and
+object-based system which allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 
 The first proposal for software transactional memory was proposed by
