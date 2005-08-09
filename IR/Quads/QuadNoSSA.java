@@ -18,7 +18,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.3 2002-09-01 07:47:20 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.4 2005-08-09 20:19:17 salcianu Exp $
  * @see QuadWithTry
  * @see QuadSSI
  */
@@ -52,9 +52,10 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 	    Prune.prune(this);
 	    this.typeMap = null;
 	} else if (qcode.getName().equals(QuadRSSx.codename)) {
-	    RSSxToNoSSA translate = new RSSxToNoSSA(this.qf, qcode);
-	    this.quads=translate.getQuads();
+	    RSSxToNoSSA translator = new RSSxToNoSSA(this.qf, qcode);
+	    this.quads = translator.getQuads();
 	    this.typeMap = null;
+	    setAllocationInformation(translator.getAllocationInformation());
 	} else if (qcode.getName().equals(QuadSSI.codename)) {
 	    ToNoSSA translator = new ToNoSSA(this.qf, qcode, tm);
 	    this.quads = translator.getQuads();
@@ -114,7 +115,7 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
-		    return (c==null) ? null :
+		    return (c == null) ? null :
 			new QuadNoSSA((Code)c, null, false);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
