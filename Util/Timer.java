@@ -30,6 +30,7 @@ public class Timer {
     public Timer() {
 	timeElapsed = 0;
 	timerStart = -1;
+	this.start();
     }
 
     /** Ask if the timer is currently running. */
@@ -41,7 +42,6 @@ public class Timer {
     /** Start the timer running. */
 
     public void start() {
-	assert timerStart == -1 : "Two Timer.start() without Timer.stop()";
 	timerStart = System.currentTimeMillis();
     }
 
@@ -62,18 +62,15 @@ public class Timer {
     }
 
     /** Return a string representing the current state of the timer. */
-
     public String toString() {
-	StringBuffer sb = new StringBuffer("Timer ");
+	StringBuffer sb = new StringBuffer();
 	if (timerStart != -1) {
-	    sb.append("running: ");
 	    sb.append(((System.currentTimeMillis() - 
-			timerStart + timeElapsed) / 1000.0));
-	    sb.append(" s elapsed.");
+			timerStart + timeElapsed)));
+	    sb.append(" ms");
 	} else {
-	    sb.append("stopped: ");
-	    sb.append(timeElapsed / 1000.0); 
-	    sb.append(" s elapsed.");
+	    sb.append(timeElapsed); 
+	    sb.append(" ms");
 	}
 	return sb.toString();
     }
