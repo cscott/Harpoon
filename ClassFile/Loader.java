@@ -34,9 +34,10 @@ import net.cscott.jutil.UnmodifiableIterator;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.17 2004-02-08 03:21:10 cananian Exp $
+ * @version $Id: Loader.java,v 1.18 2005-08-09 21:06:49 salcianu Exp $
  */
 public abstract class Loader {
+  public static boolean VERBOSE = false;
   static abstract class ClasspathElement {
     /** Open a stream to read the given resource, or return 
      *  <code>null</code> if resource cannot be found. */
@@ -177,7 +178,9 @@ public abstract class Loader {
       ClasspathElement cpe = (ClasspathElement) cpeO;
       InputStream is = cpe.getResourceAsStream(name);
       if (is!=null) {
-	//System.err.println("[LOADING "+new File(cpe.toString(),name)+"]");
+	if(VERBOSE) {
+	  System.err.println("[LOADING "+new File(cpe.toString(),name)+"]");
+	}
 	return is; // return stream if found.
       }
     }
