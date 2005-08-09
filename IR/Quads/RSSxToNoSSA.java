@@ -26,130 +26,117 @@ import java.util.Map;
  * phi or sigma functions.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RSSxToNoSSA.java,v 1.3 2004-02-08 01:55:25 cananian Exp $
+ * @version $Id: RSSxToNoSSA.java,v 1.4 2005-08-09 20:06:34 salcianu Exp $
  */
 public class RSSxToNoSSA {
     QuadFactory newQF;
     Code code;
     private CloningTempMap ctm;
-    private Quad header;
-    AllocationInformationMap newai;
-    AllocationInformation oldai;
-    HashMap quadmap;
-    HashMap newtempmap;
+    private final Quad header;
+    private final AllocationInformationMap newai;
+    private final Map<Quad,Quad> quadMap;
+    private final Map<Temp,Temp> newTempMap;
 
     
     /** Creates a <code>RSSxToNoSSA</code>. */
     public RSSxToNoSSA(QuadFactory newQF, Code code) {
-        this.newQF=newQF;
-	this.code=code;
-	ctm=new CloningTempMap(code.qf.tempFactory(),newQF.tempFactory());
-	this.oldai=code.getAllocationInformation();
-	if (oldai!=null)
-	    this.newai=new AllocationInformationMap();
-	else
-	    this.newai=null;
-	this.newtempmap=new HashMap();
-	this.header=translate();
+        this.newQF = newQF;
+	this.code  = code;
+
+	ctm = new CloningTempMap(code.qf.tempFactory(),newQF.tempFactory());
+	AllocationInformation oldai = code.getAllocationInformation();
+	this.newai = (oldai == null) ? null : new AllocationInformationMap();
+
+	this.newTempMap = new HashMap<Temp,Temp>();
+	this.quadMap = new HashMap<Quad,Quad>();
+	this.header = translate(oldai);
     }
     public Quad getQuads() { return header; }
 
-    public AllocationInformation getAllocationInfo() {return newai;}
+    public AllocationInformation getAllocationInformation() { return newai; }
 
-    public TempMap tempMap() {
-	return ctm;
-    }
+    public TempMap tempMap() { return ctm; }
 
-    public Map quadMap() {
-	return quadmap;
-    }
+    public Map quadMap() { return quadMap; }
 
-    public Map newTempMap() {
-	return newtempmap;
-    }
+    public Map newTempMap() { return newTempMap; }
 
-    private Quad translate() {
-	quadmap=new HashMap();
-	for (Iterator qiter=code.getElementsI();
-	     qiter.hasNext();) {
-	    Quad q=(Quad)qiter.next();
-	    try {
-		Quad qc=(Quad)q.clone(newQF,ctm);
-		if ((newai!=null)&&((q instanceof harpoon.IR.Quads.NEW)||
-		(q instanceof harpoon.IR.Quads.ANEW))) {
-		    newai.transfer(qc,q,ctm, oldai);
-		}
-		quadmap.put(q, qc);
-	    } catch (Exception e) {
-		e.printStackTrace();
-		System.out.println(((CALL)q).method());
-		System.out.println(q);
-		System.out.println(newQF);
-		System.exit(1);
+
+    private Quad translate(AllocationInformation oldai) {
+	for (Quad q : code.getElements()) {
+	    Quad qc = (Quad) q.clone(newQF, ctm);
+	    if ((newai != null) &&
+		((q instanceof harpoon.IR.Quads.NEW) ||
+		 (q instanceof harpoon.IR.Quads.ANEW))) {
+		newai.transfer(qc, q, ctm, oldai);
+	    }
+	    quadMap.put(q, qc);
+	}
+	for (Quad q : code.getElements()) {
+	    for (int i = 0; i < q.nextLength(); i++) {
+		Quad.addEdge((Quad)quadMap.get(q),
+			     i,
+			     (Quad)quadMap.get(q.next(i)),
+			     q.nextEdge(i).which_pred());
 	    }
 	}
-	for (Iterator qiter=code.getElementsI();
-	     qiter.hasNext();) {
-	    Quad q=(Quad)qiter.next();
-	    for (int i=0;i<q.nextLength();i++) {
-		Quad.addEdge((Quad)quadmap.get(q),i,
-			     (Quad)quadmap.get(q.next(i)),q.nextEdge(i).which_pred());
-	    }
-	}
-	Quad newRoot=(Quad)quadmap.get(code.getRootElement());
-	WorkSet todo=new WorkSet(),done=new WorkSet();
+	Quad newRoot = quadMap.get(code.getRootElement());
+	WorkSet todo = new WorkSet();
+	WorkSet done = new WorkSet();
 	todo.push(newRoot);
-	Remover v=new Remover(done,newtempmap);
-	while (!todo.isEmpty()) {
-	    Quad q=(Quad)todo.pop();
+	Remover v = new Remover(done);
+	while(!todo.isEmpty()) {
+	    Quad q = (Quad) todo.pop();
 	    done.add(q);
-	    for(int i=0;i<q.nextLength();i++)
-		if (!done.contains(q.next(i)))
+	    for(int i = 0; i < q.nextLength(); i++)
+		if(!done.contains(q.next(i)))
 		    todo.push(q.next(i));
 	    q.accept(v);
 	}
 	return newRoot;
     }
-    static class Remover extends LowQuadVisitor {
+
+
+    private class Remover extends LowQuadVisitor {
 	Set done;
-	Map newtempmap;
-	public Remover(Set done, Map newtempmap) {
+	public Remover(Set done) {
 	    super(false/*non-strict*/);
-	    this.done=done;
-	    this.newtempmap=newtempmap;
+	    this.done = done;
 	}
 
+	private Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
 
-	private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
-	private static Edge addAt(Edge e,
-				  int which_pred, Quad q, int which_succ) {
+	private Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
 	    Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
 	    Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
 	    Quad.addEdge(frm, frm_succ, q, which_pred);
 	    Quad.addEdge(q, which_succ, to, to_pred);
 	    return to.prevEdge(to_pred);
 	}
-	private Edge addMoveAt(Edge e, Quad source, Temp dst, Temp src)
-	{
+
+	private Edge addMoveAt(Edge e, Quad source, Temp dst, Temp src) {
 	    MOVE m = new MOVE(source.getFactory(), source, dst, src);
 	    done.add(m);
 	    return addAt(e, m);
 	}
+
 	public void fixsigma(SIGMA q) {
 	    for (int i=0;i<q.numSigmas();i++)
 		for (int j=0;j<q.arity();j++)
 		    // XXX: can there be conflicts in sigma functions?
 		    addMoveAt(q.nextEdge(j), q, q.dst(i,j), q.src(i));
 	}
+
 	public void fixphi(PHI q) {
 	    for (int i=0;i<q.numPhis();i++) {
 		Temp Tt = new Temp(q.dst(i));
-		newtempmap.put(Tt, q.dst(i));
+		newTempMap.put(Tt, q.dst(i));
 		addMoveAt(q.nextEdge(0), q, q.dst(i), Tt);
 		for (int j=0;j<q.arity();j++)
 		    addMoveAt(q.prevEdge(j), q, Tt, q.src(i, j));
 	    }
 	}
+
 	public void visit(Quad q) {}
 	
 	public void visit(CALL q) {
