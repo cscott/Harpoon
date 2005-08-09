@@ -23,7 +23,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ContCodeNoSSA.java,v 1.2 2002-02-25 20:57:01 cananian Exp $
+ * @version $Id: ContCodeNoSSA.java,v 1.3 2005-08-09 20:51:53 salcianu Exp $
  */
 public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
 
@@ -41,7 +41,7 @@ public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
 	super(qsa.getMethod(),null);
         RSSxToNoSSA translate = new RSSxToNoSSA(this.qf, qsa);
         this.quads=translate.getQuads();
-	this.setAllocationInformation(translate.getAllocationInfo());
+	this.setAllocationInformation(translate.getAllocationInformation());
     }
     
     /**
