@@ -1,17 +1,26 @@
 <HTML>
-<!-- $Id: package.html,v 1.1 2005-08-09 22:40:35 salcianu Exp $ -->
+<!-- $Id: package.html,v 1.2 2005-08-09 22:44:42 salcianu Exp $ -->
 <BODY>
 This package contains code that perform inlining.  There are two
 classes that contain static methods that perform inlining:
 
 <ul>
 
-<li>{@link OneLevelInliner} - inlines call paths of length 1
-
 <li>{@link DeepInliner} - inlines sets of arbitrary-length call paths.
 Each call path is modeled by a {@link InlineChain} object.
 
+<li>{@link OneLevelInliner} - inlines call paths of length 1.  This
+class is used internally by {@link DeepInliner}, but can also be used
+independently.
+
 </ul>
+
+Both classes perform inlining by mutating the caller code from a
+caching code factory.  A more elegant alternative would have been to
+construct an {@link HCodeFactory} that produces the transformed code
+on demand.  Still, the complications attached to the arbitrary-length
+inlining prevented us from such an elegant solution; the current,
+simple solution also has the advantage of being easier to debug.
 
 @author Alex Salcianu - salcianu@alum.mit.edu
 </BODY>
