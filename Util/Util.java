@@ -4,6 +4,9 @@
 package harpoon.Util;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
+
+import harpoon.IR.Quads.Quad;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -20,7 +23,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.21 2004-02-08 01:56:15 cananian Exp $
+ * @version $Id: Util.java,v 1.22 2005-08-09 20:55:05 salcianu Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -338,6 +341,10 @@ public abstract class Util {
     if(q == null) return "(null)";
     return
       getLine(q)  + " " + q;
+  }
+
+  public static HMethod quad2method(Quad q) {
+    return q.getFactory().getMethod();
   }
   
   /** Returns the string representation of the proportion a/b.  The
