@@ -26,17 +26,32 @@ import harpoon.Analysis.PA2.InterProcAnalysisResult;
 import harpoon.Analysis.PA2.PointerAnalysis;
 import harpoon.Analysis.PA2.AnalysisPolicy;
 import harpoon.Analysis.PA2.Flags;
+import harpoon.Analysis.PA2.WPPointerAnalysisCompStage;
 
-
-
+import jpaul.Misc.Predicate;
 
 /**
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.1 2005-08-10 03:03:16 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.2 2005-08-10 03:25:37 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
+
+    public static CompilerStage getFullStage() {
+	final WPAllocSyncCompStage wpSaSr = new WPAllocSyncCompStage();
+	final WPPointerAnalysisCompStage wpPa= 
+	    new WPPointerAnalysisCompStage
+	    (new Predicate() { 
+		public boolean check(Object obj) {
+		    return wpSaSr.enabled();
+		}});
+	return new CompStagePipeline(wpPa, wpSaSr) {
+	    public boolean enabled() {
+		return wpSaSr.enabled();
+	    }
+	};
+    }
 
     public WPAllocSyncCompStage() { super("pa2:sa-sr"); }
 
