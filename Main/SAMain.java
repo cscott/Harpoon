@@ -70,7 +70,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.63 2005-08-10 03:19:26 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.64 2005-08-10 03:27:11 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -308,6 +308,9 @@ public class SAMain extends harpoon.IR.Registration {
 			    ("Compiling with precise gc for multiple threads.");
 		    }
 		},
+		new Option("verbose-load", "Show where each class is loaded from") {
+		    public void action() { harpoon.ClassFile.Loader.VERBOSE = true; }
+		}
 	    });
     }
 
