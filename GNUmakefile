@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.105 2004-04-21 23:30:49 cananian Exp $
+# $Id: GNUmakefile,v 1.106 2005-08-10 02:45:06 salcianu Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -57,6 +57,8 @@ JDOCFLAGS += \
 
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/jasmin.jar \
 	   Support/jutil.jar \
+	   Support/RegExps.jar \
+	   Support/jpaul.jar \
 	   Support/minilib.jar Support/cpvm.jar Support/reflect-thunk.jar \
 	   $(wildcard SupportNP/ref.jar) $(wildcard SupportNP/collections.jar)
 SUPPORTP := $(filter-out SupportNP/%,$(SUPPORT))
