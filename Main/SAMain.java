@@ -39,6 +39,9 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
 import harpoon.Analysis.PointerAnalysis.PointerAnalysisCompStage;
 import harpoon.Analysis.PointerAnalysis.AllocSyncOptCompStage;
 
+import harpoon.Analysis.PA2.WPPointerAnalysisCompStage;
+import harpoon.Analysis.PA2.AllocSync.WPAllocSyncCompStage;
+
 import harpoon.Util.Options.Option;
 
 import java.lang.reflect.Modifier;
@@ -67,7 +70,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.62 2004-02-08 03:21:38 cananian Exp $
+ * @version $Id: SAMain.java,v 1.63 2005-08-10 03:19:26 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -144,6 +147,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void buildQuadFormPipeline() {
+	// Pointer Analysis v2 + Stack allocation
+	addStage(WPAllocSyncCompStage.getFullStage());
+
 	// adds a stage that does pointer analysis and uses its
 	// results for memory allocation, sync removal, and/or RTJ
 	// programs debug and optimization
