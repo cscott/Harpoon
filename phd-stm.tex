@@ -586,7 +586,40 @@ inline writeT(ver, f, nval) {
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 \section{Performance of the basic implementation}
 %% XXX
+
 \section{Arrays and large objects}\label{sec:largeobj}
+\begin{figure}
+\begin{center}
+\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
+\end{center}%
+\caption{Proportion of transactional writes to objects equal to or
+  smaller than a given size.}
+\label{fig:tr-w}%
+\end{figure}%
+Our software transactions implementation clones objects on
+transactional writes, so that the previous state of the object can be
+restored if the transaction aborts.  \figref{tr-w} shows the object
+size distribution of transactional writes for SPECjvm98, and
+indicates that over 10\% of writes may be to large objects.
+Obviously the copying cost would be prohibitive.
+
+Our solution is to represent large objects as \defn{functional
+  arrays}.  O'Neill and Burton \cite{ONeillBu97} give a fairly
+inclusive overview of such algorithms; we've chosen Tyng-Ruey Chuang's
+version \cite{Chuang94} of \emph{shallow binding}, which uses
+randomized cuts to the version tree to limit the cost of a read to
+$O(n)$ in the worst case.  Single-threaded accesses to the array are
+$O(1)$.  Our use of functional arrays is single-threaded in the common
+case, when transactions do not abort.  Chuang's scheme is attractive
+because it limits the worst-case cost of an abort, with very little
+added complexity.
+
+Of course, Chuang's algorithm is not lock free.
+The crucial operation is a rotation of a \emph{difference node} with the
+main body of the array.  Elsewhere we present a lock-free version of
+Chuang's algorithm~\cite{Ananian05}; for the purposes of the present paper we
+can obtain a trivial implementation using some
+existing small-transaction HTM.
 %% XXX
 
 \subsection{A simple implementation of functional arrays}

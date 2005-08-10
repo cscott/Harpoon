@@ -568,35 +568,16 @@ the size of the string~\texttt{sb}.
 
 Any scheme which allows the programmer free reign over specifying
 desired transaction and/or atomicity properties will inevitably result
-in some applications in each of these categories.  As existing
-hardware transactional memory schemes only handle applications in Quad
-I or II, they are not a good implementation technique for a general
-language mechanism.  \figref{tr-sz-all} restates this problem, by
-illustrating the distribution of transaction sizes in these
-applications on a semi-log scale.
+in some applications in each of these categories.  Existing
+hardware transactional memory schemes only efficiently handle
+relatively short-lived and small transactions (Quad I or II),
+although for these they are very efficient.  Object-based
+transaction systems can asymptotically approach that efficiency for
+very long-lived transactions;  the existence of such is shown in
+\figref{tr-sz-all}, which plots
+the distribution of transaction sizes in SPECjvm98
+on a semi-log scale.
 
-\punt{
-\vspace*{2mm}
-\begin{figure}\sis%
-\begin{center}
-\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
-~~~~~%
-\includegraphics[width=2.25in,clip=true]{Figures/tr-w-ten.eps}%
-\end{center}%
-\caption{Proportion of transactional writes to objects equal to or
-  smaller than a given size.  The right-hand graph zooms in on a
-  portion of the relation shown in the left; note in particular that
-  y-axis full-scale is only 10\% in the right-hand graph.}%
-\label{fig:tr-w}%
-\end{figure}%
-Our software transactions implementation clones objects on
-transactional writes, so that the previous state of the object can be
-restored if the transaction aborts.  With this in mind, I was
-interested in the number of writes to \emph{large} objects, or,
-equivalently, on the object size distribution of transactional
-writes.  \figref{tr-w} shows this distribution for the SPECjvm98
-applications. 
-}
 
 \vspace*{5mm}
 
