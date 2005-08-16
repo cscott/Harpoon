@@ -22,22 +22,22 @@ import harpoon.Analysis.MetaMethods.GenType;
 import jpaul.Constraints.Var;
 import jpaul.Constraints.SolAccessor;
 import jpaul.Constraints.Constraint;
+
 import jpaul.DataStructs.Relation;
 import jpaul.DataStructs.DSUtil;
+import jpaul.DataStructs.DisjointSet;
 
 import jpaul.Misc.Function;
 import jpaul.Misc.Predicate;
 import jpaul.Misc.SetMembership;
 
-import net.cscott.jutil.DisjointSet;
-
 /**
  * <code>CloneCallConstraint</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: CloneCallConstraint.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: CloneCallConstraint.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
-public class CloneCallConstraint implements Constraint {
+class CloneCallConstraint extends Constraint {
 
     public CloneCallConstraint(CALL cs,
 			       LVar vres,

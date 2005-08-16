@@ -57,7 +57,6 @@ import jpaul.Constraints.CtConstraint;
 
 import jpaul.Graphs.DiGraph;
 
-import jpaul.DataStructs.UColl;
 import jpaul.DataStructs.SetFactory;
 import jpaul.DataStructs.DSUtil;
 
@@ -69,7 +68,7 @@ import harpoon.Util.Util;
  * <code>IntraProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IntraProc.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: IntraProc.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
 public class IntraProc {
     

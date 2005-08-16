@@ -21,26 +21,24 @@ import harpoon.ClassFile.HField;
 import jpaul.Constraints.Var;
 import jpaul.Constraints.SolAccessor;
 import jpaul.Constraints.Constraint;
+
 import jpaul.DataStructs.Relation;
 import jpaul.DataStructs.DSUtil;
-
 import jpaul.DataStructs.WorkSet;
 import jpaul.DataStructs.VerboseWorkSet;
 import jpaul.DataStructs.WorkList;
-
-import jpaul.Misc.BoolMCell;
+import jpaul.DataStructs.DisjointSet;
 
 import jpaul.Graphs.DiGraph;
 
-import net.cscott.jutil.DisjointSet;
 
 /**
  * <code>CallConstraint</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: CallConstraint.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: CallConstraint.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
-public class CallConstraint implements Constraint {
+class CallConstraint extends Constraint {
 
     public CallConstraint(CALL cs,
 			  HMethod callee,

@@ -48,23 +48,25 @@ import harpoon.Util.Util;
  * <code>AllocSyncOneMethod</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: AllocSyncOneMethod.java,v 1.1 2005-08-10 03:03:16 salcianu Exp $
+ * @version $Id: AllocSyncOneMethod.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
-public class AllocSyncOneMethod {
+class AllocSyncOneMethod {
 
     /** 
 
 	@param hm 
 	
      */
-    public AllocSyncOneMethod(PointerAnalysis pa, HMethod hm,
-			      CachingCodeFactory ccf,
-			      LoopDetector loopDet,
-			      int MAX_SA_INLINE_LEVEL,
-			      boolean SA_IN_LOOPS) {
+    AllocSyncOneMethod(PointerAnalysis pa, HMethod hm,
+		       CachingCodeFactory ccf,
+		       LoopDetector loopDet,
+		       AllCallers allCallers,
+		       int MAX_SA_INLINE_LEVEL,
+		       boolean SA_IN_LOOPS) {
 	this.pa  = pa;
 	this.ccf = ccf;
 	this.loopDet = loopDet;
+	this.allCallers = allCallers;
 	this.MAX_SA_INLINE_LEVEL = MAX_SA_INLINE_LEVEL;
 	this.SA_IN_LOOPS = SA_IN_LOOPS;
 
@@ -91,13 +93,15 @@ public class AllocSyncOneMethod {
     private final CachingCodeFactory ccf;
     // auxiliary object that detects whether a quad is in a loop
     private final LoopDetector loopDet;
+    // auxiliary object to navigate the call graph backwards
+    private final AllCallers allCallers;
 
     private final int MAX_SA_INLINE_LEVEL;
     private final boolean SA_IN_LOOPS;
 
     // will store the generated inlining chains
     private final List<InlineChain> ics = new LinkedList<InlineChain>();
-    public Collection<InlineChain> getICS() { return ics; }
+    Collection<InlineChain> getICS() { return ics; }
 
     // get all allocation sites from the code of hm (ccf.convert(hm))
     private Collection<Quad> getAllAllocs(HMethod hm, CachingCodeFactory ccf) {
@@ -156,10 +160,12 @@ public class AllocSyncOneMethod {
 	    buffOld = buff; buff += " "; 
 	}
 	// enumerate call sites that may invoke hm
-	for(HMethod caller : pa.getCallGraph().getNavigator().prev(hm)) {
+	for(HMethod caller : allCallers.getCallers(hm)) {
 	    // exceptions are seldom called, so inlining through them is a waste of time
 	    if(PAUtil.isException(caller.getDeclaringClass())) continue;
-	    for(CALL cs : getCALLs(caller, hm)) {
+	    for(CALL cs : allCallers.getCALLs(caller, hm)) {
+		// do not inline calls with multiple possible callees
+		if(!allCallers.monoCALL(cs)) continue;
 		if(!pa.hasAnalyzedCALL(caller, cs, hm)) continue;
 		if(!SA_IN_LOOPS && loopDet.inLoop(cs)) {
 		    if(ASFlags.VERBOSE) {
@@ -410,25 +416,8 @@ public class AllocSyncOneMethod {
 	}
     }
 
-
-    private Collection<CALL> getCALLs(HMethod caller, HMethod callee) {	
-	Collection<CALL> calls = new HashSet<CALL>();
-	for(HCodeElement hce : ccf.convert(caller).getElements()) {
-	    if(!(hce instanceof CALL)) continue;
-	    CALL cs = (CALL) hce;
-	    HMethod[] callees = pa.getCallGraph().calls(caller, cs);
-	    // TODO: add additional conditions for inlining
-	    // (e.g., not in loops)
-	    if((callees.length == 1) && (callees[0].equals(callee))) {
-		calls.add(cs);
-	    }
-	}
-	return calls;
-    }
-
     private static boolean isAlloc(Quad q) {
-	return
-	    (q instanceof NEW) || (q instanceof ANEW);
+	return (q instanceof NEW) || (q instanceof ANEW);
     }
 
     private static AllocationProperties getAP(AllocationInformation ai, Quad q) {

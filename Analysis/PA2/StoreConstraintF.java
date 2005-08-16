@@ -14,15 +14,15 @@ import jpaul.Constraints.Var;
 import jpaul.Constraints.SolAccessor;
 import jpaul.Constraints.Constraint;
 
-import net.cscott.jutil.DisjointSet;
+import jpaul.DataStructs.DisjointSet;
 
 /**
  * <code>StoreConstraintF</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: StoreConstraintF.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: StoreConstraintF.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
-public class StoreConstraintF implements Constraint {
+class StoreConstraintF extends Constraint {
 
     public StoreConstraintF(LVar vs, LVar vd, IVar preI, FVar preF, FVar postF) {
 	this((NodeSetVar) vs, (NodeSetVar) vd, (EdgeSetVar) preI, (NodeSetVar) preF, (NodeSetVar) postF);

@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.HashMap;
 
 import jpaul.Graphs.DiGraph;
-import jpaul.DataStructs.UColl;
 import jpaul.DataStructs.CompoundIterable;
 import jpaul.DataStructs.DSUtil;
 
@@ -28,7 +27,7 @@ import harpoon.ClassFile.HField;
  * <code>GraphOptimizations</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: GraphOptimizations.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: GraphOptimizations.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
 public class GraphOptimizations {
 
@@ -171,7 +170,7 @@ public class GraphOptimizations {
 
 
     private static Set<PANode> getReachable(InterProcAnalysisResult ar, Collection<PANode> paramNodes) {
-	Collection<PANode> roots = new UColl(ar.ret(), ar.ex(), paramNodes);
+	Collection<PANode> roots = DSUtil.unionColl(ar.ret(), ar.ex(), paramNodes);
 	return DiGraph.union(ar.eomI(), ar.eomO()).transitiveSucc(roots);
 	// ^ beautiful and clear! compare with commented code below :)
 

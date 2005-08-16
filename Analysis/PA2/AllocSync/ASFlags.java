@@ -7,11 +7,9 @@ package harpoon.Analysis.PA2.AllocSync;
  * <code>ASFlags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: ASFlags.java,v 1.1 2005-08-10 03:03:16 salcianu Exp $
+ * @version $Id: ASFlags.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
 public abstract class ASFlags {
-
-    public static int MAX_SA_INLINE_LEVEL = 3;
 
     public static boolean VERBOSE = false;
 

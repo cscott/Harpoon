@@ -32,8 +32,6 @@ import jpaul.Constraints.*;
 
 import jpaul.Misc.Predicate;
 
-import harpoon.Analysis.PA2.AllocSync.AllocSyncOneMethod;
-import harpoon.Analysis.PA2.AllocSync.LoopDetector;
 import harpoon.Analysis.Quads.DeepInliner.DeepInliner;
 import harpoon.Analysis.Quads.DeepInliner.InlineChain;
 
@@ -44,7 +42,7 @@ import harpoon.Util.Options.Option;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 

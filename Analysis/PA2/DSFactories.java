@@ -13,7 +13,6 @@ import jpaul.DataStructs.COWSetFactory;
 
 import jpaul.DataStructs.TreeMapFactory;
 import jpaul.DataStructs.HashMapFactory;
-import jpaul.DataStructs.SharedTreeMapFactory;
 
 import jpaul.DataStructs.Relation;
 import jpaul.DataStructs.RelationFactory;
@@ -27,7 +26,7 @@ import harpoon.ClassFile.HField;
  * <code>DSFactories</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: DSFactories.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: DSFactories.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
 public class DSFactories {
 

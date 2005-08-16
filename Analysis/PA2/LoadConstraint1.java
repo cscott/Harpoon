@@ -14,15 +14,15 @@ import jpaul.Constraints.Var;
 import jpaul.Constraints.SolAccessor;
 import jpaul.Constraints.Constraint;
 
-import net.cscott.jutil.DisjointSet;
+import jpaul.DataStructs.DisjointSet;
 
 /**
  * <code>LoadConstraint1</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: LoadConstraint1.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: LoadConstraint1.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
-public class LoadConstraint1 implements Constraint {
+class LoadConstraint1 extends Constraint {
 
     public LoadConstraint1(LVar vd, LVar vs, HField hf, IVar preI) {
 	this((NodeSetVar) vd, (NodeSetVar) vs, hf, (EdgeSetVar) preI);

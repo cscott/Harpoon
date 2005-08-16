@@ -14,15 +14,15 @@ import jpaul.Constraints.Var;
 import jpaul.Constraints.SolAccessor;
 import jpaul.Constraints.Constraint;
 
-import net.cscott.jutil.DisjointSet;
+import jpaul.DataStructs.DisjointSet;
 
 /**
  * <code>TypeFilterConstraint</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: TypeFilterConstraint.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: TypeFilterConstraint.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
  */
-public class TypeFilterConstraint implements Constraint {
+class TypeFilterConstraint extends Constraint {
 
     public TypeFilterConstraint(LVar vs, HClass hClass, LVar vd) {
 	this((NodeSetVar) vs, hClass, (NodeSetVar) vd);

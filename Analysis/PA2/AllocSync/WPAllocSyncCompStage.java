@@ -34,7 +34,7 @@ import jpaul.Misc.Predicate;
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.2 2005-08-10 03:25:37 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.3 2005-08-16 22:41:57 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
 
@@ -116,7 +116,7 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	System.out.println("SSA IR GENERATION TOTAL TIME: " + timer);
 
 	System.out.println("\n1. WHOLE PROGRAM POINTER ANALYSIS");
-	timer = new Timer();
+	timer.start();
 	pa.getInterProcResult(mainM, ap);
 	for(Object hm : cg.transitiveSucc(mainM)) {
 	    if(pa.isAnalyzable((HMethod) hm)) {
@@ -126,26 +126,44 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	}
 	System.out.println("WHOLE PROGRAM POINTER ANALYSIS TOTAL TIME: " + timer);
 
+	
 
 	// inlining depth 0 is not bad: it means doing just direct stack allocation
 	System.out.println("\n2. GENERATE INLINING CHAINS OF DEPTH <= " + MAX_SA_INLINE_LEVEL);
-	timer = new Timer();
+	timer.start();
+	AllCallers allCallers = new AllCallersImpl(classHierarchy, pa.getCallGraph());
+	System.out.println("AllCallers GENERATION TIME: " + timer);
 	List<InlineChain> ics = new LinkedList<InlineChain>();	
 	LoopDetector loopDet = new LoopDetector(ccf);
 	for(Object hm : cg.transitiveSucc(mainM)) {
 	    if(pa.isAnalyzable((HMethod) hm)) {
-		ics.addAll((new AllocSyncOneMethod(pa, (HMethod) hm, ccf, loopDet,
+		ics.addAll((new AllocSyncOneMethod(pa, (HMethod) hm, ccf,
+						   loopDet,
+						   allCallers,
 						   MAX_SA_INLINE_LEVEL,
 						   SA_IN_LOOPS)).getICS());
 	    }
 	}
-	System.out.println("INLINING CHAIN GENERATION TOTAL TIME: " + timer);
-
+	int[] icCount = getIcCount(ics);
+	System.out.print("INLINING CHAIN GENERATION TOTAL TIME: " + timer + "; " + ics.size() + " chains: ");
+	for(int i = 1; i <= MAX_SA_INLINE_LEVEL; i++) {
+	    System.out.print(i + "-" + icCount[i] + " ");
+	}
+	System.out.println();
 	
 	System.out.println("\n3. PERFORM THE INLINING:");
-	timer = new Timer();
+	timer.start();
 	DeepInliner.inline(ccf, ics, pa.getCallGraph());	
 	System.out.println("INLINING TOTAL TIME: " + timer);
+    }
+
+
+    private int[] getIcCount(List<InlineChain> ics) {
+	int[] icCount = new int[MAX_SA_INLINE_LEVEL+1];
+	for(InlineChain ic : ics) {
+	    icCount[ic.calls().size()]++;
+	}
+	return icCount;
     }
 
 }
