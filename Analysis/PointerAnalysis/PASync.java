@@ -12,13 +12,12 @@ import java.util.Collections;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Util.DataStructs.Relation;
 
 /**
  * <code>PASync</code> models a <code>sync</code> action.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PASync.java,v 1.3 2004-02-08 03:20:03 cananian Exp $
+ * @version $Id: PASync.java,v 1.4 2005-08-17 23:34:01 salcianu Exp $
  */
 public class PASync implements java.io.Serializable {
     /** The node on which the <code>sync</code> is performed on. */

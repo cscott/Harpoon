@@ -68,15 +68,11 @@ import harpoon.IR.Quads.QuadVisitor;
 import jpaul.Graphs.SCComponent;
 import jpaul.Graphs.TopSortedCompDiGraph;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-
-
 /**
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.23 2005-08-17 17:33:42 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.24 2005-08-17 23:34:00 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 

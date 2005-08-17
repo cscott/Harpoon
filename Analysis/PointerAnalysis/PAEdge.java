@@ -8,14 +8,11 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-
 /**
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdge.java,v 1.3 2004-02-08 03:20:03 cananian Exp $
+ * @version $Id: PAEdge.java,v 1.4 2005-08-17 23:34:01 salcianu Exp $
  */
 public class PAEdge implements java.io.Serializable {
 

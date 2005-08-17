@@ -5,8 +5,6 @@ package harpoon.Analysis.PointerAnalysis;
 
 import harpoon.IR.Quads.CALL;
 import harpoon.Temp.Temp;
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.Util;
 
 import harpoon.Analysis.MetaMethods.GenType;
@@ -22,7 +20,7 @@ import java.util.Iterator;
    comments around that method for more info.
  
    @author  Alexandru Salcianu <salcianu@MIT.EDU>
-   @version $Id: ComputeInterProcMuClosure.java,v 1.6 2004-02-08 03:20:02 cananian Exp $ */
+   @version $Id: ComputeInterProcMuClosure.java,v 1.7 2005-08-17 23:34:00 salcianu Exp $ */
 public class ComputeInterProcMuClosure {
 
     static boolean DEBUG = false;

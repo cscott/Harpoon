@@ -16,7 +16,6 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
 import net.cscott.jutil.LinearSet;
-import harpoon.Util.DataStructs.Relation;
 
 /**
  * <code>PointsToGraph</code> models the memory, as specified by the 
@@ -27,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.10 2005-08-17 17:51:03 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.11 2005-08-17 23:34:01 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 

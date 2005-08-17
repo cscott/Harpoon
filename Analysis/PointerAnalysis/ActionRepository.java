@@ -19,9 +19,6 @@ import harpoon.ClassFile.HCodeElement;
 import net.cscott.jutil.FilterIterator;
 
 import harpoon.Util.PredicateWrapper;
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 import harpoon.Util.Util;
 
@@ -44,7 +41,7 @@ import harpoon.Util.Util;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ActionRepository.java,v 1.6 2004-02-08 05:09:36 cananian Exp $
+ * @version $Id: ActionRepository.java,v 1.7 2005-08-17 23:34:00 salcianu Exp $
  */
 public class ActionRepository implements java.io.Serializable {
     

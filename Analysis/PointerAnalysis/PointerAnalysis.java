@@ -71,9 +71,6 @@ import jpaul.Graphs.TopSortedCompDiGraph;
 import harpoon.Util.UComp;
 import net.cscott.jutil.LinearSet;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-
 import harpoon.Util.Util;
 
 /**
@@ -83,7 +80,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.22 2005-08-17 17:33:42 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.23 2005-08-17 23:34:01 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;

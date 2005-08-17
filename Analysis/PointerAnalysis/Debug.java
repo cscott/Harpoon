@@ -24,13 +24,11 @@ import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import jpaul.Graphs.SCComponent;
 import harpoon.ClassFile.HCodeElement;
 
-import harpoon.Util.DataStructs.Relation;
-
 /**
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.11 2005-08-17 17:33:41 salcianu Exp $
+ * @version $Id: Debug.java,v 1.12 2005-08-17 23:34:00 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -79,21 +77,6 @@ public abstract class Debug implements java.io.Serializable {
 	}
 
 	return buffer.toString();
-    }
-
-    /** Displays a <i>split</i> relation (see the MetaCallGraph stuff). */
-    public static void show_split(Relation split){
-	for(Object hmO : split.keys()){
-	    HMethod hm = (HMethod) hmO;
-	    System.out.print(hm);
-	    System.out.println("  (" + split.getValues(hm).size() +
-			       " specialization(s))");
-	    Iterator itmm = split.getValues(hm).iterator();
-	    while(itmm.hasNext()) {
-		System.out.print("  ");
-		System.out.println((MetaMethod)itmm.next());
-	    }
-	}
     }
 
 

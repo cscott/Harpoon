@@ -9,8 +9,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import harpoon.Util.DataStructs.Relation;
-
 import harpoon.Temp.Temp;
 
 
@@ -18,7 +16,7 @@ import harpoon.Temp.Temp;
  * <code>PAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdgeSet.java,v 1.4 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.5 2005-08-17 23:34:01 salcianu Exp $
  */
 public interface PAEdgeSet {
     

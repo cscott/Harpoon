@@ -9,21 +9,20 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.LightMap;
 import harpoon.Util.PredicateWrapper;
 
 import harpoon.Util.Util;
 
 import harpoon.Temp.Temp;
 
+import net.cscott.jutil.LinearSet;
+import jpaul.DataStructs.NoCompTreeMap;
 
 /**
  * <code>LightPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightPAEdgeSet.java,v 1.8 2004-02-08 03:20:02 cananian Exp $
+ * @version $Id: LightPAEdgeSet.java,v 1.9 2005-08-17 23:34:00 salcianu Exp $
  */
 public class LightPAEdgeSet extends AbstrPAEdgeSet
     implements java.io.Serializable {
@@ -35,7 +34,7 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
     /** Creates a <code>LightPAEdgeSet</code>. */
     public LightPAEdgeSet() {
         var_edges  = new LightRelation();
-	node_edges = new LightMap();
+	node_edges = new NoCompTreeMap();
     }
 
 
@@ -146,7 +145,7 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 	Relation rel = (Relation) node_edges.get(node);
 	if(rel == null)
 	    return Collections.EMPTY_SET;
-	return rel.values();
+	return new LinearSet(rel.values());
     }
 
 
@@ -284,7 +283,7 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 	newes.var_edges = 
 	    (LightRelation) var_edges.clone();
 	
-	LightMap new_nes = (LightMap) ((LightMap) node_edges).clone();
+	NoCompTreeMap new_nes = (NoCompTreeMap) ((NoCompTreeMap) node_edges).clone();
 	for(Object entryO : new_nes.entrySet()) {
 	    Map.Entry entry = (Map.Entry) entryO;
 	    LightRelation rel = 

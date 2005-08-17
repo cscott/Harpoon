@@ -12,10 +12,6 @@ import java.util.Collections;
 import harpoon.ClassFile.HMethod;
 
 import harpoon.Util.PredicateWrapper;
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
-
 
 /**
  * <code>PAEscapeFunc</code> models the escape information.
@@ -24,7 +20,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.6 2004-02-08 03:20:03 cananian Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.7 2005-08-17 23:34:01 salcianu Exp $
  */
 public class PAEscapeFunc implements java.io.Serializable {
 

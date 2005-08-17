@@ -40,10 +40,6 @@ import harpoon.Util.TypeInference.ExactTemp;
 import harpoon.Util.TypeInference.TypeInference;
 import harpoon.IR.Quads.QuadFactory;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
-
 import harpoon.Util.Util;
 
 /**
@@ -58,7 +54,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.13 2005-08-17 17:33:41 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.14 2005-08-17 23:34:00 salcianu Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -846,7 +842,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 				 final PAEdgeSet calleeO,
 				 final Relation mu){
 
-	eo_callee.forAllEntries(new RelationEntryVisitor(){
+	eo_callee.forAllEntries(new RelationEntryVisitor() {
 		public void visit(Object key, Object value){
 		    PAEdge eo = (PAEdge) key;
 		    PAEdge ei = (PAEdge) value;

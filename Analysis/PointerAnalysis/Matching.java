@@ -8,9 +8,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
-
 import harpoon.Util.Util;
 
 /**
@@ -42,7 +39,7 @@ import harpoon.Util.Util;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Matching.java,v 1.4 2004-02-08 03:20:02 cananian Exp $
+ * @version $Id: Matching.java,v 1.5 2005-08-17 23:34:01 salcianu Exp $
  */
 abstract class Matching implements java.io.Serializable {
 

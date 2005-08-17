@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
-
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
@@ -19,19 +18,13 @@ import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Util.Util;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
-
-
 /**
  * <code>ParIntGraph</code> models a Parallel Interaction Graph data
  structure. Most of its fields retain the original name from the paper
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.11 2004-03-20 02:25:23 cananian Exp $
+ * @version $Id: ParIntGraph.java,v 1.12 2005-08-17 23:34:01 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable, Cloneable {
 

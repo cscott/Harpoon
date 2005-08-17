@@ -22,12 +22,6 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.GenType;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
-
-
 /**
  * <code>InterThreadPA</code> groups together the functions related to the
  * inter-thread analysis. Normally, this should be a part of the 
@@ -41,7 +35,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterThreadPA.java,v 1.7 2004-02-08 03:20:02 cananian Exp $
+ * @version $Id: InterThreadPA.java,v 1.8 2005-08-17 23:34:00 salcianu Exp $
  */
 public abstract class InterThreadPA implements java.io.Serializable {
 

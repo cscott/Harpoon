@@ -13,10 +13,6 @@ import java.util.Enumeration;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.PredicateWrapper;
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
-
 
 /**
  * <code>EdgeOrdering</code> models the ordering relation between the 
@@ -35,7 +31,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: EdgeOrdering.java,v 1.3 2004-02-08 03:20:02 cananian Exp $
+ * @version $Id: EdgeOrdering.java,v 1.4 2005-08-17 23:34:00 salcianu Exp $
  */
 public class EdgeOrdering implements java.io.Serializable {
 
