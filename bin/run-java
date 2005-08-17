@@ -36,7 +36,13 @@ fi
 if [ -n "$USE_SUN_JDK" ]; then
     # use sun jdk in SupportNP.
     javaopts="-Dharpoon.runtime1.sunjdk=true $javaopts"
-    FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/cpmath.jar ${FLEX_DIR}/Support/cpzip.jar ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip"
+
+## There used to be a time when all these .jar's where necessary.
+## Most of the mare no longer necessary: Flex handles JDK 1.1
+## classes.zip fine.  If you need to go beyond 1.1, you should use
+## Classpath instead.  The next line is preserved for reference only
+##    FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/cpmath.jar ${FLEX_DIR}/Support/cpzip.jar ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip"
+    FLEX_SUPPORT_FILES="${FLEX_DIR}/SupportNP/classes.zip"
 elif [ -n "$USE_MINILIB" ]; then
     javaopts="-Dharpoon.runtime1.minilib=true $javaopts"
     FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} Support/minilib.jar"
@@ -83,4 +89,4 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=$defjava -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"
+${JAVA:=$defjava -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar:$FLEX_DIR/Support/RegExps.jar:$FLEX_DIR/Support/jpaul.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"
