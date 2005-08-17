@@ -14,7 +14,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
-import harpoon.Util.DataStructs.Relation;
+import jpaul.DataStructs.Relation;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -41,7 +41,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.4 2004-02-08 03:19:30 cananian Exp $
+ * @version $Id: ToAsync.java,v 1.5 2005-08-17 23:40:51 salcianu Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;

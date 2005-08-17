@@ -66,9 +66,8 @@ import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Util.Util;
 import harpoon.Util.UComp;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
+import jpaul.DataStructs.Relation;
+import jpaul.DataStructs.MapSetRelation;
 
 
 /**
@@ -83,7 +82,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.16 2005-08-17 17:51:03 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.17 2005-08-17 23:40:52 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -302,7 +301,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     // Relation<MetaMethod, MetaMethod>  stores the association between
     //  the caller and its callees
-    private Relation callees1 = new RelationImpl();
+    private Relation callees1 = new MapSetRelation();
 
     // Map<MetaMethod,Relation<CALL,MetaMethod>> stores the association
     // between the caller and its calees at a specific call site
@@ -428,7 +427,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	callees1.add(mcaller,mcallee);
 	Relation rel = (Relation) callees2.get(mcaller);
 	if(rel == null)
-	    callees2.put(mcaller,rel = new RelationImpl());
+	    callees2.put(mcaller,rel = new MapSetRelation());
 	rel.add(cs,mcallee);
     }
 
@@ -1696,7 +1695,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// successors are not put into the ExactTemps, but into a separate
 	// relation - "next_rel" - as they are gradually discovered.
 	// ReachingDefs gives us the prev part.
-	Relation next_rel = new RelationImpl();
+	Relation next_rel = new MapSetRelation();
 	Set already_visited = new HashSet();
 	PAWorkList W = new PAWorkList();
 

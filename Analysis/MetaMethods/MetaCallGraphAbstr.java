@@ -16,16 +16,15 @@ import java.io.PrintStream;
 import harpoon.IR.Quads.CALL;
 import harpoon.ClassFile.HCodeElement;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
+import jpaul.DataStructs.Relation;
+import jpaul.DataStructs.MapSetRelation;
 
 /**
  * <code>MetaCallGraphAbstr</code> Map based abstract
  * <code>MetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphAbstr.java,v 1.7 2004-02-08 03:19:57 cananian Exp $ */
+ * @version $Id: MetaCallGraphAbstr.java,v 1.8 2005-08-17 23:40:52 salcianu Exp $ */
 public abstract class MetaCallGraphAbstr extends MetaCallGraph {
     // Map<MetaMethod,MetaMethod[]>
     protected final Map callees1_cmpct = new HashMap();
@@ -84,7 +83,7 @@ public abstract class MetaCallGraphAbstr extends MetaCallGraph {
 	<code>MetaMethod</code>s specialized from it. */
     public Relation getSplitRelation(){
 	if(split != null) return split;
-	split = new RelationImpl();
+	split = new MapSetRelation();
 	for(Object mmO : getAllMetaMethods()){
 	    MetaMethod mm = (MetaMethod) mmO;
 	    split.add(mm.getHMethod(), mm);

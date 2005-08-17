@@ -6,6 +6,8 @@ package harpoon.Util.TypeInference;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Collection;
 
 import java.lang.reflect.Modifier;
 
@@ -14,8 +16,8 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
+import jpaul.DataStructs.Relation;
+import jpaul.DataStructs.NoCompTreeMap;
 
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -40,6 +42,8 @@ import harpoon.IR.Quads.ALENGTH;
 import harpoon.IR.Quads.TYPECAST;
 import harpoon.IR.Quads.CONST;
 
+import net.cscott.jutil.LinearSet;
+
 /**
  * <code>TypeInference</code> is a very simple type inference module.
  It was written to satisfy some immediate needs in the Pointer Analysis
@@ -51,7 +55,7 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: TypeInference.java,v 1.5 2004-02-08 03:22:00 cananian Exp $
+ * @version $Id: TypeInference.java,v 1.6 2005-08-17 23:40:52 salcianu Exp $
  */
 public class TypeInference implements java.io.Serializable {
     // switch on the debug messages
@@ -379,4 +383,44 @@ public class TypeInference implements java.io.Serializable {
 	types = types2;
     }
 
+
+    private static class LightRelation<K,V> extends jpaul.DataStructs.MapSetRelation<K,V> {
+	
+	public LightRelation() {
+	    super(new NoCompTreeMapFactory<K,Set<V>>(),
+		  new LinearSetFactory<V>());
+	}
+
+    }
+
+    private static class NoCompTreeMapFactory<K,V> extends jpaul.DataStructs.MapFactory<K,V> {
+    	public Map<K,V> create() {
+	    return new NoCompTreeMap<K,V>();
+	}
+	
+	public Map<K,V> create(Map<K,V> m) {
+	    if(m instanceof NoCompTreeMap/*<K,V>*/) {
+		return (NoCompTreeMap<K,V>) (((NoCompTreeMap<K,V>) m).clone());
+	    }
+	    else {
+		return new NoCompTreeMap<K,V>(m);
+	    }
+	}
+    }
+    
+    private static class LinearSetFactory<T> extends jpaul.DataStructs.SetFactory<T> {
+	public Set<T> create() {
+	    return new LinearSet<T>();
+	}
+	
+	public Set<T> newColl(Collection<T> c) {
+	    if(c instanceof LinearSet/*<T>*/) {
+		return (Set<T>) (((LinearSet<T>) c).clone());
+	    }
+	    else {
+		return new LinearSet<T>(c);
+	    }
+	}
+
+    }
 }

@@ -19,8 +19,8 @@ import harpoon.IR.Quads.CALL;
 
 import harpoon.Util.Util;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
+import jpaul.DataStructs.Relation;
+import jpaul.DataStructs.MapSetRelation;
 
 /** <code>SmartCallGraph</code> is an improved call graph produced by
     compressing a meta call graph, ie, all metamethods are shrinked
@@ -36,7 +36,7 @@ import harpoon.Util.DataStructs.RelationImpl;
     connected component in the call graph) decreased from 53 to 8.
 
     @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
-    @version $Id: SmartCallGraph.java,v 1.9 2004-02-08 03:19:57 cananian Exp $
+    @version $Id: SmartCallGraph.java,v 1.10 2005-08-17 23:40:52 salcianu Exp $
 */
 public class SmartCallGraph extends CallGraph {
     
@@ -140,7 +140,7 @@ public class SmartCallGraph extends CallGraph {
 	    Set ac = new HashSet();
 	    // rel stores associations cs -> callees(cs)
 	    // where cs is a call site from hm
-	    Relation rel = new RelationImpl();
+	    Relation rel = new MapSetRelation();
 
 	    // iterate over all metamethods corresponding to hm
 	    for(Object mmO : split.getValues(hm)) {

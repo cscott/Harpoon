@@ -17,8 +17,8 @@ import java.io.PrintWriter;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
+import jpaul.DataStructs.Relation;
+import jpaul.DataStructs.MapSetRelation;
 
 import harpoon.IR.Quads.Quad;
 import harpoon.ClassFile.HMethod;
@@ -35,7 +35,7 @@ import harpoon.IR.Quads.Code;
  * <i>textualized</i> to/from an ASCII file.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AllocationNumberingStub.java,v 1.4 2004-02-08 03:21:32 cananian Exp $
+ * @version $Id: AllocationNumberingStub.java,v 1.5 2005-08-17 23:40:52 salcianu Exp $
  */
 public class AllocationNumberingStub implements AllocationNumberingInterf {
 
@@ -193,7 +193,7 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
 
     // produce a relation method m -> allocations sites inside m
     private static Relation getMethod2Allocs(AllocationNumbering an) {
-	Relation method2allocs = new RelationImpl();
+	Relation method2allocs = new MapSetRelation();
 	for(Object quadO : an.getAllocs()) {
 	    Quad quad = (Quad) quadO;
 	    HMethod hm = quad.getFactory().getMethod();

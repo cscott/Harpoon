@@ -25,7 +25,7 @@ import net.cscott.jutil.HashEnvironment;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import net.cscott.jutil.WorkSet;
-import harpoon.Util.DataStructs.RelationImpl;
+import jpaul.DataStructs.MapSetRelation;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,7 +46,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.6 2004-02-08 03:21:24 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.7 2005-08-17 23:39:36 salcianu Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;
@@ -363,7 +363,7 @@ public class SSIRename {
 
 	void fixPhiSigDeriv(HCode<Quad> c) {
 	    WorkSet functionSet=new WorkSet();
-	    RelationImpl rel=new RelationImpl();
+	    MapSetRelation rel=new MapSetRelation();
 	    HashSet phisig=new HashSet();
 	    //Add Phi's and Sigmas to function set
 

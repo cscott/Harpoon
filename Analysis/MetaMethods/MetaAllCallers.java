@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.HashMap;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
+import jpaul.DataStructs.Relation;
+import jpaul.DataStructs.MapSetRelation;
 
 import harpoon.Util.Util;
 
@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  precomputed graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaAllCallers.java,v 1.5 2004-02-08 03:19:57 cananian Exp $
+ * @version $Id: MetaAllCallers.java,v 1.6 2005-08-17 23:40:52 salcianu Exp $
  */
 public class MetaAllCallers implements java.io.Serializable {
 
@@ -69,7 +69,7 @@ public class MetaAllCallers implements java.io.Serializable {
     private void process(MetaCallGraph mcg){
 	// keeps the callers of each meta-method
 	// Relation<MetaMethod mm_callee, MetaMethod mm_caller>.
-	Relation callers = new LightRelation();
+	Relation callers = new MapSetRelation();
 
 	for (Object mm_callerO : mcg.getAllMetaMethods()){
 	    MetaMethod mm_caller = (MetaMethod) mm_callerO;

@@ -11,9 +11,7 @@ import java.io.PrintStream;
 
 import harpoon.IR.Quads.CALL;
 
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.LightRelation;
-import harpoon.Util.DataStructs.RelationEntryVisitor;
+import jpaul.DataStructs.Relation;
 
 import jpaul.Graphs.Navigator;
 import jpaul.Graphs.ForwardNavigator;
@@ -25,7 +23,7 @@ import jpaul.Graphs.DiGraph;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.8 2005-08-17 17:51:03 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.9 2005-08-17 23:40:52 salcianu Exp $
  */
 
 public abstract class MetaCallGraph extends DiGraph<MetaMethod>
