@@ -44,9 +44,6 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
-import harpoon.Util.Graphs.DiGraph;
-import harpoon.Util.Graphs.ForwardNavigator;
-
 import harpoon.Util.Util;
 
 /**
@@ -61,7 +58,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.12 2004-02-08 03:20:02 cananian Exp $
+ * @version $Id: InterProcPA.java,v 1.13 2005-08-17 17:33:41 salcianu Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 

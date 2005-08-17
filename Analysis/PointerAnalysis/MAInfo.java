@@ -64,9 +64,9 @@ import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.IR.Quads.QuadVisitor;
-import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
+
+import jpaul.Graphs.SCComponent;
+import jpaul.Graphs.TopSortedCompDiGraph;
 
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.22 2004-03-06 21:52:23 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.23 2005-08-17 17:33:42 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -377,10 +377,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Map/*<HMethod,Integer>*/hm2rang = new HashMap/*<HMethod,Integer>*/();
 	int counter = 0;
 
-	for(SCComponent scc : 
+	for(SCComponent<MetaMethod> scc : 
 		(new TopSortedCompDiGraph<MetaMethod>(mcg)).incrOrder()) {
-	    for(Object hm0 : scc.nodes()) {
-		HMethod hm = ((MetaMethod) hm0).getHMethod();
+	    for(MetaMethod mm : scc.nodes()) {
+		HMethod hm = mm.getHMethod();
 		if(DEBUG_IC)
 		    System.out.println(hm + " -> " + counter);
 		hm2rang.put(hm, new Integer(counter));
@@ -1064,7 +1064,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     private void extend_quad2scc(HMethod hm) {
 	for(SCComponent scc : 
-		caching_scc_lbb_factory.computeSCCLBB(hm).decrOrder()) {    
+		caching_scc_lbb_factory.computeSCCLBB(hm).decrOrder()) {
 	    for(Object lbb0 : scc.nodes()) {
 		LightBasicBlock lbb = (LightBasicBlock) lbb0;
 		for(HCodeElement hce : lbb.getElements())

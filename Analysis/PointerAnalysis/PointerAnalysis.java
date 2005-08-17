@@ -63,11 +63,11 @@ import harpoon.Analysis.MetaMethods.GenType;
 
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
-import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.DiGraph;
-import harpoon.Util.Graphs.ForwardNavigator;
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
+import jpaul.Graphs.SCComponent;
+import jpaul.Graphs.Navigator;
+import jpaul.Graphs.DiGraph;
+import jpaul.Graphs.ForwardNavigator;
+import jpaul.Graphs.TopSortedCompDiGraph;
 import harpoon.Util.UComp;
 import net.cscott.jutil.LinearSet;
 
@@ -83,7 +83,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.21 2004-03-06 21:52:24 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.22 2005-08-17 17:33:42 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -493,17 +493,17 @@ public class PointerAnalysis implements java.io.Serializable {
     // Navigator for the mmethod SCC building phase. The code is complicated
     // by the fact that we are interested only in yet unexplored methods
     // (i.e. whose parallel interaction graphs are not yet in the cache).
-    class MM_Navigator implements Navigator, java.io.Serializable {
-	public Object[] next(Object node){
-	    MetaMethod[] mms  = mcg.getCallees((MetaMethod) node);
+    class MM_Navigator implements Navigator<MetaMethod>, java.io.Serializable {
+	public List<MetaMethod> next(MetaMethod mm) {
+	    MetaMethod[] mms  = mcg.getCallees(mm);
 	    MetaMethod[] mms2 = get_new_mmethods(mms);
-	    return mms2;
+	    return Arrays.<MetaMethod>asList(mms2);
 	}
 	
-	public Object[] prev(Object node){
-	    MetaMethod[] mms  = mac.getCallers((MetaMethod) node);
+	public List<MetaMethod> prev(MetaMethod mm) {
+	    MetaMethod[] mms  = mac.getCallers(mm);
 	    MetaMethod[] mms2 = get_new_mmethods(mms);
-	    return mms2;
+	    return Arrays.<MetaMethod>asList(mms2);
 	}
 	
 	// selects only the (yet) unanalyzed methods
@@ -527,7 +527,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
     };
 
-    private Navigator mm_navigator = new MM_Navigator();
+    private Navigator<MetaMethod> mm_navigator = new MM_Navigator();
 
     
 
@@ -547,13 +547,15 @@ public class PointerAnalysis implements java.io.Serializable {
 	// topologically sorted groups of mutually recursive methods
 	// (the edges model the caller-callee interaction).
 	TopSortedCompDiGraph<MetaMethod> ts_mmethods = 
-	    new TopSortedCompDiGraph(Collections.singleton(mm), mm_navigator);
+	    new TopSortedCompDiGraph(DiGraph.<MetaMethod>diGraph
+				     (Collections.singleton(mm),
+				      mm_navigator));
 
 	if(DEBUG_SCC || TIMING)
 	    Debug.display_mm_sccs(ts_mmethods, mcg,
 				  System.currentTimeMillis() - begin_time);
 
-	for(SCComponent scc : ts_mmethods.incrOrder()) {
+	for(SCComponent<MetaMethod> scc : ts_mmethods.incrOrder()) {
 	    analyze_inter_proc_scc(scc);
 
 	    if(SAVE_MEMORY) {
@@ -568,7 +570,7 @@ public class PointerAnalysis implements java.io.Serializable {
     }
 
     // inter-procedural analysis of a group of mutually recursive methods
-    private void analyze_inter_proc_scc(SCComponent scc) {
+    private void analyze_inter_proc_scc(SCComponent<MetaMethod> scc) {
 	if(TIMING || DEBUG) {
 	    System.out.print("SCC" + scc.getId() + 
 			     "\t (" + scc.size() + " meta-method(s)){");
@@ -591,8 +593,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	// add only the "exit" methods to the worklist (methods that
 	// call methods from outside their SCC); the other methods
 	// will be eventually added by the fixed point alg.
-	if(scc.exits().length != 0) {
-	    for(Object exit : scc.exits())
+	if(scc.exits().size() != 0) {
+	    for(MetaMethod exit : scc.exits())
 		W_inter_proc.add(exit);
 	}
 	else // special case: leaf SCC -> add all
@@ -709,7 +711,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	// construct the ParIntGraph at the beginning of the method 
 	initial_pig = get_mmethod_initial_pig(mm, ts_sccs);
 	// propagate the information down the CFG
-	for(SCComponent scc : ts_sccs.decrOrder())
+	for(SCComponent<LightBasicBlock> scc : ts_sccs.decrOrder())
 	    analyze_intra_proc_scc(scc);
 
 	if(FINE_TIMING) show_fine_timing(b_time);
@@ -759,7 +761,7 @@ public class PointerAnalysis implements java.io.Serializable {
 
     // Intra-procedural analysis of a strongly connected component of
     // basic blocks.
-    private void analyze_intra_proc_scc(SCComponent scc){
+    private void analyze_intra_proc_scc(SCComponent<LightBasicBlock> scc){
 	if(MEGA_DEBUG) {
 	    lbb2passes = new HashMap();
 	    for(Object lbb : scc.nodes())
@@ -770,8 +772,8 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	// add only the entry nodes to the worklist; the other basic
 	// blocks will be eventually added too by the fixed point alg.
-	if(scc.entries().length > 0) {
-	    for(Object entry : scc.entries())
+	if(scc.entries().size() > 0) {
+	    for(LightBasicBlock entry : scc.entries())
 		W_intra_proc.add(entry);
 	}
 	else // special case: top SCC; no entries -> add all nodes
@@ -1769,17 +1771,17 @@ public class PointerAnalysis implements java.io.Serializable {
 	return false;
     }
     
-    static Set/*<HClass>*/ getAllConcreteClasses(GenType gt) {
+    static Set<HClass> getAllConcreteClasses(GenType gt) {
 	if(gt.isPOLY())
 	    return
-		DiGraph.reachableVertices
-		(Collections.singleton(gt.getHClass()),
-		 new ForwardNavigator() {
-		    public Object[] next(Object node) {
-			Set sons = ch.children((HClass) node);
-			return sons.toArray(new HClass[sons.size()]);
+		DiGraph.diGraph
+		(Collections.<HClass>singleton(gt.getHClass()),
+		 new ForwardNavigator<HClass>() {
+		    public List<HClass> next(HClass hClass) {
+			Set<HClass> sons = ch.children(hClass);
+			return new LinkedList<HClass>(sons);
 		    }
-		});
+		}).vertices();
 	else
 	    return Collections.singleton(gt.getHClass());
     }

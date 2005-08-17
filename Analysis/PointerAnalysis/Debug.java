@@ -11,7 +11,7 @@ import java.util.Collection;
 
 import harpoon.Util.UComp;
 
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
+import jpaul.Graphs.TopSortedCompDiGraph;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HClass;
@@ -21,7 +21,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
 
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
-import harpoon.Util.Graphs.SCComponent;
+import jpaul.Graphs.SCComponent;
 import harpoon.ClassFile.HCodeElement;
 
 import harpoon.Util.DataStructs.Relation;
@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.10 2004-03-06 21:52:23 salcianu Exp $
+ * @version $Id: Debug.java,v 1.11 2005-08-17 17:33:41 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -148,38 +148,37 @@ public abstract class Debug implements java.io.Serializable {
     }
 
     /** Pretty print debug function for SCC's of <code>MetaMethod</code>s. */
-    public static String sccToString(SCComponent scc, MetaCallGraph mcg) {
+    public static String sccToString(SCComponent<MetaMethod> scc, MetaCallGraph mcg) {
 	StringBuffer buffer = new StringBuffer();
 
 	buffer.append("SCC" + scc.getId() + " (size " + scc.size() + ") {\n");
 
-	for(Object o : scc.nodes()) {
-	    buffer.append(" ").append(o).append("\n");
+	for(MetaMethod mm : scc.nodes()) {
+	    buffer.append(" ").append(mm).append("\n");
 	    int k = 0;
-	    for(Object next : mcg.getCallees((MetaMethod) o))
-		if(scc.contains(next)) {
-		    buffer.append("   ").append(next).append("\n");
+	    for(MetaMethod callee : mcg.getCallees(mm)) {
+		if(scc.contains(callee)) {
+		    buffer.append("   ").append(callee).append("\n");
 		    k++;
 		}
+	    }
 	    if(k > 0)
 		buffer.append("\n");
 	}
 	buffer.append("}\n");
 
-	int nb_prev = scc.prevLength();
-	if(nb_prev > 0) {
+	if(scc.prev().size() > 0) {
 	    buffer.append("Prev:");
-	    for(int i = 0; i < nb_prev ; i++) {
-		buffer.append(" SCC" + scc.prev(i).getId());
+	    for(SCComponent<MetaMethod> prev : scc.prev()) {
+		buffer.append(" SCC" + prev.getId());
 	    }
 	    buffer.append("\n");
 	}
-
-	int nb_next = scc.nextLength();
-	if(nb_next > 0) {
+	
+	if(scc.next().size() > 0) {
 	    buffer.append("Next:");
-	    for(int i = 0; i < nb_next ; i++) {
-		buffer.append(" SCC" + scc.next(i).getId());
+	    for(SCComponent<MetaMethod> next : scc.next()) {
+		buffer.append(" SCC" + next.getId());
 	    }
 	    buffer.append("\n");
 	}

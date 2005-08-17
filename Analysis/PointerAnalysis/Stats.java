@@ -11,8 +11,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
-import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
+import jpaul.Graphs.SCComponent;
+import jpaul.Graphs.TopSortedCompDiGraph;
 
 import harpoon.Util.Util;
 
@@ -29,7 +29,7 @@ import java.util.Comparator;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: Stats.java,v 1.10 2004-03-06 21:52:24 salcianu Exp $
+ * @version $Id: Stats.java,v 1.11 2005-08-17 17:33:43 salcianu Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
