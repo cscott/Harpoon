@@ -55,10 +55,11 @@ import harpoon.IR.Quads.Qop;
 
 import harpoon.Temp.Temp;
 
-import harpoon.Util.Graphs.DiGraph;
-import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
+import jpaul.Graphs.DiGraph;
+import jpaul.Graphs.SCComponent;
+import jpaul.Graphs.Navigator;
+import jpaul.Graphs.TopSortedCompDiGraph;
+
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Analysis.PointerAnalysis.Debug;
 
@@ -82,7 +83,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.15 2004-03-06 21:52:21 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.16 2005-08-17 17:51:03 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -406,9 +407,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// they can be shared by many meta-methods derived from the same
 	// HMethod. Of course, I don't want the next analyzed meta-method
 	// to use the types computed for this one.
-	for(SCComponent scc : md.sccs)
-	    for(Object ets0 : scc.nodes())
-		((ExactTemp) ets0).clearTypeSet();
+	for(SCComponent<ExactTemp> scc : md.sccs)
+	    for(ExactTemp et : scc.nodes())
+		et.clearTypeSet();
     }
 
 
@@ -1002,9 +1003,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	System.out.println("\n\nDATA FOR " + mm_work + ":");
 	System.out.println(md);
 	System.out.println("\nCOMPUTED TYPES:");
-	for(SCComponent scc : md.sccs) {
-	    for(Object etO : scc.nodes()) {
-		ExactTemp et = (ExactTemp) etO;
+	for(SCComponent<ExactTemp> scc : md.sccs) {
+	    for(ExactTemp et : scc.nodes()) {
 		System.out.println("< " + et.t + ", " + 
 				   ((et.ud == ExactTemp.USE) ? "USE" : "DEF") +
 				   ", " + Util.code2str(et.q) +
@@ -1174,13 +1174,13 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // Data attached to a method
     private class MethodData {
 	// The SCCs (in decreasing topological order)
-	List<SCComponent/*<??>*/> sccs;
+	List<SCComponent<ExactTemp>> sccs;
 	// The ets2et map for this method (see the comments around ets2et)
 	Map ets2et;
 	// The set of CALL quads occuring in the code of the method
 	Collection calls;
 
-	MethodData(List<SCComponent/*<>*/> sccs,
+	MethodData(List<SCComponent<ExactTemp>> sccs,
 		   Map ets2et, Collection calls) {
 	    this.sccs     = sccs;
 	    this.ets2et   = ets2et;
@@ -1689,7 +1689,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // components containing the definitions of the "interesting" temps.
     // The edges between this nodes models the relation
     // "the type of ExactType x influences the type of the ExactType y"
-    private List<SCComponent> compute_sccs
+    private List<SCComponent<ExactTemp>> compute_sccs
 	(Set initial_set, ReachingDefs rdef) {
 	// 1. Compute the graph: ExactTemps, successors and predecessors.
 	// predecessors are put into the prev field of the ExactTemps;
@@ -1730,17 +1730,17 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// Navigator into the graph of ExactTemps. prev returns the ExactTemps
 	// whose types influence the type of "node" ExactTemp; next returns
 	// the ExactTemps whose types are affected by the type of node.  
-	Navigator et_navigator = new Navigator() {
-	    public Object[] next(Object node){
-		return ((ExactTemp) node).next;
+	Navigator<ExactTemp> et_navigator = new Navigator<ExactTemp>() {
+	    public List<ExactTemp> next(ExactTemp et){
+		return Arrays.<ExactTemp>asList(et.next);
 	    }
-	    public Object[] prev(Object node){
-		return ((ExactTemp) node).prev;
+	    public List<ExactTemp> prev(ExactTemp et){
+		return Arrays.<ExactTemp>asList(et.prev);
 	    }
 	};
 	
 	return 
-	    (new TopSortedCompDiGraph
+	    (new TopSortedCompDiGraph<ExactTemp>
 	     (DiGraph.diGraph(already_visited, et_navigator))).
 	    decrOrder();
     }
@@ -1762,7 +1762,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     // computes the types of the interesting ExactTemps, starting 
     // with those in the strongly connected component "scc".
-    private void compute_types(List<SCComponent> sccs) {
+    private void compute_types(List<SCComponent<ExactTemp>> sccs) {
 	try {
 	    for(SCComponent scc : sccs)
 		process_scc(scc);

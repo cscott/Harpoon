@@ -3,13 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
+import java.util.Set;
+import java.util.List;
+import java.util.Arrays;
+
 import harpoon.ClassFile.HMethod;
 
-import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.ForwardNavigator;
-import harpoon.Util.Graphs.DiGraph;
+import jpaul.Graphs.Navigator;
+import jpaul.Graphs.ForwardNavigator;
+import jpaul.Graphs.DiGraph;
 
-import java.util.Set;
 
 /**
  * <code>CallGraph</code> is a general IR-independant interface that
@@ -18,7 +21,7 @@ import java.util.Set;
  * call-site information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.6 2004-03-04 22:31:44 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.7 2005-08-17 17:51:02 salcianu Exp $
  */
 public abstract class CallGraph extends DiGraph {
     /** Returns an array containing all possible methods called by
@@ -51,11 +54,11 @@ public abstract class CallGraph extends DiGraph {
 	if(navigator == null) {
 	    final AllCallers ac = new AllCallers(this);
 	    navigator = new Navigator<HMethod>() {
-		public HMethod[] next(HMethod node) {
-		    return calls(node);
+		public List<HMethod> next(HMethod node) {
+		    return Arrays.<HMethod>asList(calls(node));
 		}  
-		public HMethod[] prev(HMethod node) {
-		    return ac.directCallers(node);
+		public List<HMethod> prev(HMethod node) {
+		    return Arrays.<HMethod>asList(ac.directCallers(node));
 		}
 	    };
 	}
@@ -69,8 +72,8 @@ public abstract class CallGraph extends DiGraph {
         <code>this</code> callgraph. */
     public ForwardNavigator<HMethod> getForwardNavigator() {
 	return new ForwardNavigator<HMethod>() {
-	    public HMethod[] next(HMethod node) {
-		return calls(node);
+	    public List<HMethod> next(HMethod node) {
+		return Arrays.<HMethod>asList(calls(node));
 	    }
 	};
     }

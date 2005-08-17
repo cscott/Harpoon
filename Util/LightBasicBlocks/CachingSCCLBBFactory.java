@@ -6,7 +6,7 @@ package harpoon.Util.LightBasicBlocks;
 import java.util.Map;
 import java.util.HashMap;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
+import jpaul.Graphs.TopSortedCompDiGraph;
 
 
 /**
@@ -14,7 +14,7 @@ import harpoon.Util.Graphs.TopSortedCompDiGraph;
  <code>SCCLBBFactory</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CachingSCCLBBFactory.java,v 1.4 2004-03-05 15:38:16 salcianu Exp $
+ * @version $Id: CachingSCCLBBFactory.java,v 1.5 2005-08-17 17:51:03 salcianu Exp $
  */
 public class CachingSCCLBBFactory extends SCCLBBFactory
     implements java.io.Serializable {

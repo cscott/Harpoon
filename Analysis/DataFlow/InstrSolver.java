@@ -5,7 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Util.Collections.WorkSet;
-import harpoon.Util.Graphs.SCComponent;
+import jpaul.Graphs.SCComponent;
 import harpoon.Analysis.BasicBlockInterf;
 
 import java.util.Set;
@@ -15,7 +15,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.5 2004-03-06 21:51:53 salcianu Exp $
+ * @version $Id: InstrSolver.java,v 1.6 2005-08-17 17:51:02 salcianu Exp $
  */
 public final class InstrSolver  {
     

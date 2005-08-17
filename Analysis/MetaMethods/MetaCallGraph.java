@@ -4,6 +4,8 @@
 package harpoon.Analysis.MetaMethods;
 
 import java.util.Set;
+import java.util.List;
+import java.util.Arrays;
 
 import java.io.PrintStream;
 
@@ -13,10 +15,9 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
-import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.ForwardNavigator;
-import harpoon.Util.Graphs.DiGraph;
+import jpaul.Graphs.Navigator;
+import jpaul.Graphs.ForwardNavigator;
+import jpaul.Graphs.DiGraph;
 
 /**
  * <code>MetaCallGraph</code> is for meta methods what <code>callGraph</code>
@@ -24,10 +25,10 @@ import harpoon.Util.Graphs.DiGraph;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.7 2004-03-04 22:32:15 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.8 2005-08-17 17:51:03 salcianu Exp $
  */
 
-public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
+public abstract class MetaCallGraph extends DiGraph<MetaMethod>
     implements java.io.Serializable {
     
     /** Returns the meta methods that can be called by <code>mm</code>. */
@@ -72,29 +73,29 @@ public abstract class MetaCallGraph extends DiGraph/*<MetaMethod>*/
 	<code>this</code> meta-callgraph.  Complexity: BIG; at least
 	linear in the number of nodes and edges in the call graph.
 	Therefore, we cache its result internally. */
-    public Navigator/*<MetaMethod>*/ getNavigator() {
+    public Navigator<MetaMethod> getNavigator() {
 	if(navigator == null) {
 	    final MetaAllCallers mac = new MetaAllCallers(this);   
-	    navigator = new Navigator/*<MetaMethod>*/() {
-		public Object[] next(Object node) {
-		    return getCallees((MetaMethod) node);
+	    navigator = new Navigator<MetaMethod>() {
+		public List<MetaMethod> next(MetaMethod mm) {
+		    return Arrays.<MetaMethod>asList(getCallees(mm));
 		}  
-		public Object[] prev(Object node) {
-		    return mac.getCallers((MetaMethod) node);
+		public List<MetaMethod> prev(MetaMethod mm) {
+		    return Arrays.<MetaMethod>asList(mac.getCallers(mm));
 		}
 	    };
 	}
 	return navigator;
     }
-    protected Navigator navigator = null;
+    protected Navigator<MetaMethod> navigator = null;
 
 
     /** Returns a forward-only navigator through <code>this</code>
         meta-callgraph.  Complexity: O(1).*/
-    public ForwardNavigator/*<MetaMethod>*/ getForwardNavigator() {
-	return new ForwardNavigator/*<MetaMethod>*/() {
-	    public Object[] next(Object node) {
-		return getCallees((MetaMethod) node);
+    public ForwardNavigator<MetaMethod> getForwardNavigator() {
+	return new ForwardNavigator<MetaMethod>() {
+	    public List<MetaMethod> next(MetaMethod mm) {
+		return Arrays.<MetaMethod>asList(getCallees(mm));
 	    }  
 	};
     }

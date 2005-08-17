@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.Arrays;
+import java.util.List;
 
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
@@ -21,17 +23,17 @@ import harpoon.Analysis.ClassHierarchy;
 
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 
-import harpoon.Util.Graphs.DiGraph;
-import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
-import harpoon.Util.Graphs.Navigator;
+import jpaul.Graphs.DiGraph;
+import jpaul.Graphs.SCComponent;
+import jpaul.Graphs.TopSortedCompDiGraph;
+import jpaul.Graphs.Navigator;
 
 
 /**
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.13 2004-03-06 21:52:18 salcianu Exp $
+ * @version $Id: Util.java,v 1.14 2005-08-17 17:51:03 salcianu Exp $
  */
 public abstract class Util {
 
@@ -71,12 +73,12 @@ public abstract class Util {
 	// 1. construct the SCCs of the subgraph rooted in entry
 	final AllCallers ac = new AllCallers(cg);
 
-	Navigator nav = new Navigator() {
-	    public Object[] next(Object node) {
-		return cg.calls((HMethod) node);
+	Navigator<HMethod> nav = new Navigator<HMethod>() {
+	    public List<HMethod> next(HMethod hm) {
+		return Arrays.<HMethod>asList(cg.calls(hm));
 	    }
-	    public Object[] prev(Object node) {
-		return ac.directCallers((HMethod) node);
+	    public List<HMethod> prev(HMethod hm) {
+		return Arrays.<HMethod>asList(ac.directCallers(hm));
 	    }
 	};
 	

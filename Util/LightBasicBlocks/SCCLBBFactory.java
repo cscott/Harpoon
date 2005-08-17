@@ -4,12 +4,16 @@
 package harpoon.Util.LightBasicBlocks;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Arrays;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
-import harpoon.Util.Graphs.SCComponent;
-import harpoon.Util.Graphs.Navigator;
-import harpoon.Util.Graphs.TopSortedCompDiGraph;
+
+import jpaul.Graphs.DiGraph;
+import jpaul.Graphs.SCComponent;
+import jpaul.Graphs.Navigator;
+import jpaul.Graphs.TopSortedCompDiGraph;
 
 
 /**
@@ -17,7 +21,7 @@ import harpoon.Util.Graphs.TopSortedCompDiGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCLBBFactory.java,v 1.5 2004-03-05 15:38:16 salcianu Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.6 2005-08-17 17:51:04 salcianu Exp $
  */
 public class SCCLBBFactory implements java.io.Serializable {
 
@@ -39,11 +43,11 @@ public class SCCLBBFactory implements java.io.Serializable {
 
     private static final Navigator<LightBasicBlock> navigator = 
 	new Navigator<LightBasicBlock>() {
-		public LightBasicBlock[] next(LightBasicBlock node) {
-		    return node.getNextLBBs();
+		public List<LightBasicBlock> next(LightBasicBlock node) {
+		    return Arrays.<LightBasicBlock>asList(node.getNextLBBs());
 		}
-		public LightBasicBlock[] prev(LightBasicBlock node) {
-		    return node.getPrevLBBs();
+		public List<LightBasicBlock> prev(LightBasicBlock node) {
+		    return Arrays.<LightBasicBlock>asList(node.getPrevLBBs());
 		}
 	    };
 
@@ -58,7 +62,8 @@ public class SCCLBBFactory implements java.io.Serializable {
         LightBasicBlock rootLBB = lbbconv.convert2lbb(hm).getRoot();
 	return 
 	    new TopSortedCompDiGraph<LightBasicBlock>
-	    (Collections.singleton(rootLBB), navigator);
+	    (DiGraph.<LightBasicBlock>diGraph
+	     (Collections.singleton(rootLBB), navigator));
     }
 
 }
