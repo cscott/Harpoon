@@ -5,20 +5,15 @@ package harpoon.Analysis.PA2;
 
 import java.util.Set;
 
-import jpaul.DataStructs.Factory;
-
-import jpaul.DataStructs.HashSetFactory;
-import jpaul.DataStructs.TreeSetFactory;
-import jpaul.DataStructs.COWSetFactory;
-
-import jpaul.DataStructs.TreeMapFactory;
-import jpaul.DataStructs.HashMapFactory;
-
 import jpaul.DataStructs.Relation;
-import jpaul.DataStructs.RelationFactory;
+
+import jpaul.DataStructs.Factory;
 import jpaul.DataStructs.SetFactory;
-import jpaul.DataStructs.MapSetRelationFactory;
-import jpaul.DataStructs.COWRelationFactory;
+import jpaul.DataStructs.RelationFactory;
+
+import jpaul.DataStructs.SetFacts;
+import jpaul.DataStructs.MapFacts;
+import jpaul.DataStructs.RelFacts;
 
 import harpoon.ClassFile.HField;
 
@@ -26,7 +21,7 @@ import harpoon.ClassFile.HField;
  * <code>DSFactories</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: DSFactories.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
+ * @version $Id: DSFactories.java,v 1.3 2005-08-18 21:35:36 salcianu Exp $
  */
 public class DSFactories {
 
@@ -40,12 +35,12 @@ public class DSFactories {
     /** Factory used to generate all set of edges (inside and outside). */
     public static final Factory<PAEdgeSet> edgeSetFactory = 
 	new MapRelEdgeSetFactory
-	(new TreeMapFactory<PANode,Relation<HField,PANode>>(PAUtil.nodeComparator),
-	 new COWRelationFactory<HField,PANode>
-	 (new MapSetRelationFactory<HField,PANode>
-	  (new TreeMapFactory<HField,Set<PANode>>(PAUtil.fieldComparator),
-	   new COWSetFactory<PANode>
-	   (new TreeSetFactory<PANode>(PAUtil.nodeComparator)))));
+	(MapFacts.<PANode,Relation<HField,PANode>>tree(PAUtil.nodeComparator),
+	 RelFacts.<HField,PANode>cow
+	 (RelFacts.<HField,PANode>mapSet
+	  (MapFacts.<HField,Set<PANode>>tree(PAUtil.fieldComparator),
+	   SetFacts.<PANode>cow
+	   (SetFacts.<PANode>tree(PAUtil.nodeComparator)))));
 
     /*
     public static final SetFactory<PANode> nodeSetFactory =
@@ -56,8 +51,8 @@ public class DSFactories {
     /** Factory used to generate all set of nodes (returned/thrown
         nodes, escaped nodes etc.) */
     public static final SetFactory<PANode> nodeSetFactory =
-	new COWSetFactory<PANode>
-	(new TreeSetFactory<PANode>(PAUtil.nodeComparator));
+	SetFacts.<PANode>cow
+	(SetFacts.<PANode>tree(PAUtil.nodeComparator));
 
     /*
     public static final RelationFactory<PANode,PANode> mappingFactory =
@@ -68,8 +63,8 @@ public class DSFactories {
 
 
     public static final RelationFactory<PANode,PANode> mappingFactory =
-	new MapSetRelationFactory<PANode,PANode>
-	(new TreeMapFactory<PANode,Set<PANode>>(PAUtil.nodeComparator),
-	 new TreeSetFactory<PANode>(PAUtil.nodeComparator));
+	RelFacts.<PANode,PANode>mapSet
+	(MapFacts.<PANode,Set<PANode>>tree(PAUtil.nodeComparator),
+	 SetFacts.<PANode>tree(PAUtil.nodeComparator));
     
 }

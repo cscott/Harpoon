@@ -28,7 +28,7 @@ import jpaul.Graphs.DiGraph;
  * <code>MapRelPAEdgeSet</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MapRelPAEdgeSet.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: MapRelPAEdgeSet.java,v 1.2 2005-08-18 21:35:36 salcianu Exp $
  */
 public class MapRelPAEdgeSet extends PAEdgeSet {
 
@@ -231,6 +231,19 @@ public class MapRelPAEdgeSet extends PAEdgeSet {
 		};
 	    }
 	};
+    }
+
+
+    public void print(PrintWriter pw, String indentStr) {
+	for(PANode node : sources()) {
+	    pw.print("\n");
+	    pw.print(indentStr);
+	    pw.print(node);
+	    pw.print(" --> ");
+	    Relation<HField,PANode> rel = map.get(node);
+	    pw.println(rel);
+	}
+	pw.flush();
     }
 
 }
