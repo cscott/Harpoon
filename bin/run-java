@@ -89,4 +89,4 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=$defjava -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar:$FLEX_DIR/Support/RegExps.jar:$FLEX_DIR/Support/jpaul.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"
+${JAVA:=$defjava -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar:$FLEX_DIR/Support/jpaul.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"

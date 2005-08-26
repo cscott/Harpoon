@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.AbstractList;
 import java.util.Iterator;
 
+import java.io.PrintWriter;
 
 import harpoon.ClassFile.HField;
 
@@ -28,7 +29,7 @@ import jpaul.Graphs.DiGraph;
  * <code>MapRelPAEdgeSet</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MapRelPAEdgeSet.java,v 1.2 2005-08-18 21:35:36 salcianu Exp $
+ * @version $Id: MapRelPAEdgeSet.java,v 1.3 2005-08-26 15:43:34 salcianu Exp $
  */
 public class MapRelPAEdgeSet extends PAEdgeSet {
 
@@ -240,7 +241,7 @@ public class MapRelPAEdgeSet extends PAEdgeSet {
 	    pw.print(indentStr);
 	    pw.print(node);
 	    pw.print(" --> ");
-	    Relation<HField,PANode> rel = map.get(node);
+	    Relation<HField,PANode> rel = node2env.get(node);
 	    pw.println(rel);
 	}
 	pw.flush();
