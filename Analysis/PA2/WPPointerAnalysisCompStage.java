@@ -28,8 +28,6 @@ import harpoon.Analysis.ClassHierarchy;
 
 import harpoon.Analysis.Quads.CallGraph;
 
-import jpaul.Constraints.*;
-
 import jpaul.Misc.Predicate;
 
 import harpoon.Analysis.Quads.DeepInliner.DeepInliner;
@@ -42,7 +40,7 @@ import harpoon.Util.Options.Option;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.3 2005-08-29 16:13:35 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -93,11 +91,20 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
 
     protected void real_action() {
-	CachingCodeFactory ccf = new CachingCodeFactory(QuadRSSx.codeFactory(QuadSSA.codeFactory(hcf)));
-	hcf = ccf;
+	CachingCodeFactory ccf;
+	if(!(hcf instanceof CachingCodeFactory) || !hcf.getCodeName().equals(QuadRSSx.codename)) {
+	    ccf = new CachingCodeFactory(QuadRSSx.codeFactory(QuadSSA.codeFactory(hcf)));
+	    hcf = ccf;	
+	}
+	else { 
+	    ccf = (CachingCodeFactory) hcf;
+	}
 	
 	CallGraph cg = new harpoon.Analysis.Quads.CallGraphImpl(classHierarchy, ccf);
-	WPPointerAnalysis pa = new WPPointerAnalysis(ccf, cg, linker, classHierarchy);
+	WPPointerAnalysis pa = 
+	    new WPPointerAnalysis(ccf, cg, linker, classHierarchy,
+				  Collections.<HMethod>singleton(mainM),
+				  Flags.MAX_INTRA_SCC_ITER);
 	
 	attribs = attribs.put("pa", pa);
 
@@ -105,7 +112,7 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 	    for(String method : methodsToAnalyze) {
 		displayInfo(method, pa);
 	    }
-	    System.out.println("pa2: Stopping compiler after analysis");
+	    System.out.println("pa2: Stop compiler after analysis");
 	    System.exit(1);
 	}
 
@@ -260,6 +267,8 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 	// new IntraProc has the side effect of printing the constraints
 	new IntraProc(hm, ap.flowSensitivity, pa);
 	Flags.SHOW_INTRA_PROC_CONSTRAINTS = oldShowIntraProcConstraints;
+
+	System.out.println("\n-----------\n");
 
 	boolean oldShowIntraProcResults = Flags.SHOW_INTRA_PROC_RESULTS;
 	Flags.SHOW_INTRA_PROC_RESULTS = true;

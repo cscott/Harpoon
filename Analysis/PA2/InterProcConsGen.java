@@ -17,6 +17,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HConstructor;
 
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 
 import harpoon.IR.Quads.CALL;
 
@@ -26,7 +27,7 @@ import harpoon.Analysis.Quads.CallGraph;
  * <code>InterProcConsGen</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcConsGen.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: InterProcConsGen.java,v 1.2 2005-08-29 16:13:35 salcianu Exp $
  */
 class InterProcConsGen {
 
@@ -65,19 +66,19 @@ class InterProcConsGen {
 	
 	HMethod[] callees = pa.getCallGraph().calls(PAUtil.getMethod(cs), cs);
 
+	if(SpecialInterProc.modelCALL(cs, paramVars, intraProc, newCons)) {
+	    return newCons;
+	}
+
 	// Deal with calls to unanalyzable calls
 	// almost all exceptions escape -> do not waste any precision on them.
-	if(PAUtil.exceptionInitializerCall(cs) || containsUnanalyzable(callees)) {
+	if(unanalyzableCALL(cs, callees)) {
 	    treatUnanalyzableCALL(cs, paramVars);
 	    return newCons;
 	}
 
 	newCons.add(new LtConstraint(intraProc.preIVar(cs), intraProc.postIVar(cs)));
 	newCons.add(new LtConstraint(intraProc.preFVar(cs), intraProc.postFVar(cs)));
-
-	if(SpecialInterProc.modelCALL(cs, paramVars, intraProc, newCons)) {
-	    return newCons;
-	}
 
 	for(HMethod callee : callees) {
 	    // System.out.println("callee = " + callee);
@@ -93,6 +94,37 @@ class InterProcConsGen {
     private Collection<Constraint> newCons;
 
 
+
+    private boolean unanalyzableCALL(CALL cs, HMethod[] callees) {
+	if(PAUtil.exceptionInitializerCall(cs))
+	    return true;
+
+	// pretty intuitive: that's what unanalyzable CALL usually means!
+	if(containsUnanalyzable(callees))
+	    return true;
+
+	// For very large SCCs, the analysis sets the fix-point
+	// iteration limit to 0; in that case, we know that we
+	// should not analyze calls to same-SCC methods.
+	if(callees.length > Flags.MAX_CALLEES_PER_ANALYZABLE_SITE) {
+	    //if(Flags.VERBOSE_CALL)
+		System.out.println("Too many callees (" + callees.length + ") for cs = " + Util.code2str(cs));
+	    return true;
+	}
+
+	if(pa.shouldSkipDueToFPLimit(cs, null)) {
+	    if(Flags.VERBOSE_CALL) {
+		System.out.println("Should skip due to FPLimit cs = " + Util.code2str(cs));
+	    }
+	    return true;
+	}
+
+	return false;
+    }
+
+
+
+    /** generate constraints for an unanalyzable call */
     private void treatUnanalyzableCALL(CALL cs, List<LVar> paramVars) {
 	// all inside edges continue to exist
 	newCons.add(new LtConstraint(intraProc.preIVar(cs), intraProc.postIVar(cs)));

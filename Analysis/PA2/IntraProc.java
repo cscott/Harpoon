@@ -60,6 +60,8 @@ import jpaul.Graphs.DiGraph;
 import jpaul.DataStructs.SetFactory;
 import jpaul.DataStructs.DSUtil;
 
+import jpaul.Misc.MCell;
+
 import net.cscott.jutil.DisjointSet;
 
 import harpoon.Util.Util;
@@ -68,7 +70,7 @@ import harpoon.Util.Util;
  * <code>IntraProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IntraProc.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
+ * @version $Id: IntraProc.java,v 1.3 2005-08-29 16:13:35 salcianu Exp $
  */
 public class IntraProc {
     
@@ -113,7 +115,6 @@ public class IntraProc {
 	}
 	
 	this.cs = new ConstraintSystem(cons);
-	this.debugUniqueVars = this.cs.debugUniqueVars();
     }
 
     private final InterProcConsGen interProcConsGen;
@@ -196,8 +197,6 @@ public class IntraProc {
     private final boolean          flowSensitivity;
 
     public  final ConstraintSystem cs;
-
-    public Collection<Var> debugUniqueVars;
 
     NodeRepository getNodeRep() { return nodeRep; }
     Linker getLinker() { return hm.getDeclaringClass().getLinker(); }
@@ -505,8 +504,12 @@ public class IntraProc {
     
 
     private void debug(final PrintWriter pw, final FullAnalysisResult far) {
+	uf = cs.debugGetVarUnification();
 	pw.println("IntraProc analysis results for \"" + hm + "\"");
 	final HCode hcode = hcf.convert(hm);
+
+	final MCell<EdgeSetVar> lastIVar = new MCell<EdgeSetVar>(null);
+	final MCell<NodeSetVar> lastFVar = new MCell<NodeSetVar>(null);
 
 	hcode.print
 	    (pw,
@@ -518,19 +521,19 @@ public class IntraProc {
 		    if(printedBefore && !far.preEsc(q).isEmpty() && !far.preI(q).isEmpty())
 			pw.println();
 		    if(flowSensitivity) {
-			printSet(pw, "  preEsc = ", preFVar(q), far.preEsc(q));
-			printEdges(pw, preIVar(q), far.preI(q), "  ");
+			printSet(pw, "  preEsc = ", preFVar(q), far.preEsc(q), lastFVar);
+			printEdges(pw, preIVar(q), far.preI(q), "  ", lastIVar);
 		    }		    
 		}
 		public void printAfter(PrintWriter pw, HCodeElement hce) {
 		    Quad q = (Quad) hce;
 		    printedBefore = false;
 		    for(Temp t : q.def()) {
-			printedBefore |= printSet(pw, "  " + t + " --> ", null, far.lv(t));
+			printedBefore |= printSet(pw, "  " + t + " --> ", null, far.lv(t), null);
 		    }
 		    if(flowSensitivity) {
-			printedBefore |= printSet(pw, "  postEsc = ", postFVar(q), far.postEsc(q));
-			printedBefore |= printEdges(pw, postIVar(q), far.postI(q), "  ");
+			printedBefore |= printSet(pw, "  postEsc = ", postFVar(q), far.postEsc(q), lastFVar);
+			printedBefore |= printEdges(pw, postIVar(q), far.postI(q), "  ", lastIVar);
 		    }
 		}
 	    });
@@ -538,24 +541,35 @@ public class IntraProc {
 	// For flow-insensitive analysis, it is pointless to print the result after each instruction;
 	// Instead, we print it once, at the end of the method.
 	if(!flowSensitivity) {
-	    printSet(pw, "(Flow-insensitive) Esc = ", null, far.postEsc(footer));
-	    printEdges(pw, "(Flow-insensitive) set of inside edges:", null, far.postI(footer), "");
+	    printSet(pw, "(Flow-insensitive) Esc = ", null, far.postEsc(footer), null);
+	    printEdges(pw, "(Flow-insensitive) set of inside edges:", null, far.postI(footer), "", null);
 	}
 
-	printEdges(pw, "Full (flow-insensitive) set of outside edges:", null, far.eomO(), "O: ");
-	printSet(pw, "returned nodes  = ", null, far.ret());
-	printSet(pw, "thrown nodes    = ", null, far.ex());
-	printSet(pw, "AllGblEsc nodes = ", null, far.eomAllGblEsc());
+	printEdges(pw, "Full (flow-insensitive) set of outside edges:", null, far.eomO(), "O: ", null);
+	printSet(pw, "returned nodes  = ", null, far.ret(), null);
+	printSet(pw, "thrown nodes    = ", null, far.ex(), null);
+	printSet(pw, "AllGblEsc nodes = ", null, far.eomAllGblEsc(), null);
 	pw.println();
 	pw.flush();
+	uf = null;
     }
 
-    private boolean printEdges(PrintWriter pw, EdgeSetVar v, PAEdgeSet edges, String indent) {
-	return printEdges(pw, null, v, edges, indent);
+    private Map<Var,Var> uf;
+
+    private boolean printEdges(PrintWriter pw, EdgeSetVar v, PAEdgeSet edges, String indent,
+			       MCell<EdgeSetVar> lastPrintedVar) {
+	return printEdges(pw, null, v, edges, indent, lastPrintedVar);
     }
 
-    private boolean printEdges(PrintWriter pw, String preText, EdgeSetVar v, PAEdgeSet edges, String indent) {
-	if((v != null) && !debugUniqueVars.contains(v)) return false;
+    private boolean printEdges(PrintWriter pw, String preText, EdgeSetVar v, PAEdgeSet edges, String indent,
+			       MCell<EdgeSetVar> lastPrintedVar) {
+	if((v != null) && (lastPrintedVar != null)) {
+	    EdgeSetVar reprOfV = uf.containsKey(v) ? ((EdgeSetVar) uf.get(v)) : v;
+	    if((lastPrintedVar.value != null) && (lastPrintedVar.value.equals(reprOfV)))
+		return false;
+	    lastPrintedVar.value = reprOfV;
+	}
+
 	if(!edges.isEmpty()) {
 	    if(preText != null) pw.println(preText);
 	    edges.print(pw, indent);
@@ -565,8 +579,14 @@ public class IntraProc {
 	return false;
     }
 
-    private boolean printSet(PrintWriter pw, String preText, NodeSetVar v, Set set) {
-	if((v != null) && !debugUniqueVars.contains(v)) return false;
+    private boolean printSet(PrintWriter pw, String preText, NodeSetVar v, Set set, MCell<NodeSetVar> lastPrintedFVar) {
+	if((v != null) && (lastPrintedFVar != null)) {
+	    NodeSetVar reprOfV = uf.containsKey(v) ? ((NodeSetVar) uf.get(v)) : v;
+	    if((lastPrintedFVar.value != null) && (lastPrintedFVar.value.equals(reprOfV)))
+		return false;
+	    lastPrintedFVar.value = reprOfV;
+	}
+
 	if(!set.isEmpty()) {
 	    pw.print(preText);
 	    pw.println(set);

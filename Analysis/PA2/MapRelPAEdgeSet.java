@@ -29,7 +29,7 @@ import jpaul.Graphs.DiGraph;
  * <code>MapRelPAEdgeSet</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MapRelPAEdgeSet.java,v 1.3 2005-08-26 15:43:34 salcianu Exp $
+ * @version $Id: MapRelPAEdgeSet.java,v 1.4 2005-08-29 16:13:35 salcianu Exp $
  */
 public class MapRelPAEdgeSet extends PAEdgeSet {
 
@@ -237,12 +237,12 @@ public class MapRelPAEdgeSet extends PAEdgeSet {
 
     public void print(PrintWriter pw, String indentStr) {
 	for(PANode node : sources()) {
-	    pw.print("\n");
+	    //pw.print("\n");
 	    pw.print(indentStr);
 	    pw.print(node);
 	    pw.print(" --> ");
 	    Relation<HField,PANode> rel = node2env.get(node);
-	    pw.println(rel);
+	    pw.print(rel);
 	}
 	pw.flush();
     }

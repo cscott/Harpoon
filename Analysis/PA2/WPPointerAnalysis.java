@@ -4,6 +4,7 @@
 package harpoon.Analysis.PA2;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -22,11 +23,16 @@ import jpaul.Graphs.TopSortedCompDiGraph;
 import jpaul.DataStructs.WorkSet;
 import jpaul.DataStructs.WorkStack;
 import jpaul.DataStructs.WorkList;
+import jpaul.DataStructs.Pair;
+import jpaul.DataStructs.DSUtil;
+
+import jpaul.Misc.Predicate;
 
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HCodeElement;
 
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.ClassHierarchy;
@@ -47,18 +53,21 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.2 2005-08-29 16:13:35 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
 
-    public WPPointerAnalysis(CachingCodeFactory hcf, CallGraph cg, Linker linker, ClassHierarchy classHierarchy) {
+    public WPPointerAnalysis(CachingCodeFactory hcf, CallGraph cg, Linker linker, ClassHierarchy classHierarchy,
+			     Collection<HMethod> roots, int fpMaxIter) {
 	this.hcf     = hcf;
 	this.nodeRep = new NodeRepository(linker);
 	this.cg      = cg;
 	this.linker  = linker;
 
 	TypeFilter.initClassHierarchy(classHierarchy);
+
+	findNoFPCgSCC(roots, fpMaxIter);
     }
 
     private final CachingCodeFactory hcf;
@@ -69,6 +78,62 @@ public class WPPointerAnalysis extends PointerAnalysis {
     public CallGraph getCallGraph() { return cg; }
     public CachingCodeFactory getCodeFactory() { return hcf; }
     public NodeRepository getNodeRep() { return nodeRep; }
+
+
+    // set of call graph SCCs that are so big that we do not run to
+    // compute a precise fix-point; instead, we use a special kind of
+    // widening: we consider unanalyzable all calls to methods from
+    // the same SCC.
+    private final Set<SCComponent<HMethod>> noFPCgSCCs = new HashSet<SCComponent<HMethod>>();
+    // map method -> call graph SCC it belongs to
+    private final Map<HMethod,SCComponent<HMethod>> hm2CgSCC = new HashMap<HMethod, SCComponent<HMethod>>();
+    // The above two structures will be used when computing the
+    // dependency graph for the yet-unanalyzed callees of a given
+    // method.
+
+    
+    private void findNoFPCgSCC(Collection<HMethod> roots, int fpMaxIter) {
+	Timer timer = new Timer();
+	System.out.println("findNoFPCgSCC(" + roots + ")");
+	// Find out inter-proc dependencies
+	DiGraph<HMethod> methodDepDiGraph =
+	    DiGraph.<HMethod>diGraph(roots, cgNav);
+	TopSortedCompDiGraph<HMethod> tsCompDiGraph = 
+	    new TopSortedCompDiGraph<HMethod>(methodDepDiGraph);
+
+	// identify SCCs for which no fixed-point will be performed
+	for(SCComponent<HMethod> scc : tsCompDiGraph.incrOrder()) {
+	    if(maxIntraSccIter(scc, fpMaxIter) == 0) {
+		noFPCgSCCs.add(scc);
+		// for such SCCs, calls to same-scc methods won't be analyzed
+		addUnanalyzedIntraSCCCalls(scc);
+	    }
+	}
+
+	hm2CgSCC.putAll(tsCompDiGraph.getVertex2SccMap());
+	System.out.println("findNoFPCgSCC TOTAL TIME = " + timer);
+    }
+
+
+    private final ForwardNavigator<HMethod> cgNav = new ForwardNavigator<HMethod>() {
+	public List<HMethod> next(HMethod hm) {
+	    List<HMethod> next = new LinkedList<HMethod>();
+	    for(HMethod callee : cg.calls(hm)) {
+		if(PAUtil.isAbstract(callee)) {
+		    if(VERBOSE) System.out.println("Warning: abstract! " + callee);
+		    continue;
+		}
+
+		// consider only unanalyzed method
+		if(!SpecialInterProc.canModel(callee)) {
+		    next.add(callee);
+		}
+	    }
+	    return next;
+	}
+    };
+
+
 
     // used by CallConstraint
     InterProcAnalysisResult getCurrentInterProcResult(HMethod hm) {
@@ -115,14 +180,12 @@ public class WPPointerAnalysis extends PointerAnalysis {
     private InterProcAnalysisResult computeResult(HMethod hm, AnalysisPolicy ap) {
 	Timer timer = new Timer();
 
-	// 1. find all unanalyzed callees, compute dependencies between them
-	// + find the dependency strongly connected components (SCCs).
-	DiGraph<HMethod> methodDiGraph = 
-	    DiGraph.<HMethod>diGraph(Collections.<HMethod>singleton(hm),
-				     methodFwdNavigator);
-	calleeNavigator = methodDiGraph.getNavigator();
-	TopSortedCompDiGraph<HMethod> tsCompDiGraph = 
-	    new TopSortedCompDiGraph<HMethod>(methodDiGraph);
+	// 1. find all unanalyzed callees, compute dependencies
+	// between them + find the strongly connected components
+	// (SCCs) of the dependency relation.
+	Pair<Navigator<HMethod>,TopSortedCompDiGraph<HMethod>> pair = computeMethodSCCs(hm, ap);
+	interProcDepNav = pair.left;
+	TopSortedCompDiGraph<HMethod> tsCompDiGraph = pair.right;
 	List<SCComponent<HMethod>> methodSCCs = tsCompDiGraph.incrOrder();
 
 	if(Flags.SHOW_METHOD_SCC) {
@@ -138,7 +201,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	System.out.println("ANALYSIS TIME " + timer);
 
 	// enable some GC
-	this.calleeNavigator = null;
+	this.interProcDepNav = null;
 
 	// 3. extract result and return
 	InterProcAnalysisResult res = hm2result.get(hm);
@@ -146,29 +209,94 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	return res;
     }
 
-    private final PrintWriter pwStdOut = new PrintWriter(System.out, true);
 
-    private Navigator<HMethod> calleeNavigator;
 
-    private final ForwardNavigator<HMethod> methodFwdNavigator = new ForwardNavigator<HMethod>() {
-	public List<HMethod> next(HMethod hm) {
-	    HMethod[] callees = cg.calls(hm);
-	    List<HMethod> next = new LinkedList<HMethod>();
-	    for(HMethod callee : callees) {
-		if(PAUtil.isAbstract(callee)) {
-		    if(VERBOSE) System.out.println("Warning: abstract! " + callee);
-		    continue;
-		}
+    private Pair<Navigator<HMethod>,TopSortedCompDiGraph<HMethod>> computeMethodSCCs(final HMethod root, AnalysisPolicy ap) {
+	// methodDepDiGraph = directed graph of dependecies between analysis of different methods
+	SCComponent<HMethod> scc_root = hm2CgSCC.get(root);
+	if(scc_root == null) {
+	    findNoFPCgSCC(Collections.<HMethod>singleton(root), ap.fpMaxIter);
+	}
 
-		// consider only unanalyzed method
-		if((hm2result.get(callee) == null) &&
-		   !SpecialInterProc.canModel(callee)) {
-		    next.add(callee);
+	// Compute dependencies between methods; exclude skipped calls
+	// and calls to already analyzed methods.  These dependencies
+	// are affected by the previously analyzed methods - the
+	// reason to have two steps is that we want the set of skipped
+	// calls from too-large SCCs to not depend on the previous
+	// analysis invocations.
+	ForwardNavigator<HMethod> specFwdNavigator = new ForwardNavigator<HMethod>() {
+	    public List<HMethod> next(HMethod hm) {
+		final SCComponent<HMethod> hm_scc = hm2CgSCC.get(hm);
+		assert hm_scc != null : " problem with " + hm + " root = " + root;
+		final boolean shouldCheckNoFPCgSCC = (hm_scc != null) && noFPCgSCCs.contains(hm_scc);
+		return 
+		(List<HMethod>)
+		DSUtil.<HMethod>filterColl
+		(cgNav.next(hm),
+		 new Predicate<HMethod>() {
+		     public boolean check(HMethod callee) {
+			 SCComponent<HMethod> callee_scc = hm2CgSCC.get(callee);
+			 assert callee_scc != null;
+			 // for no FP SCCs, no dependencies on same-scc methods
+			 if(shouldCheckNoFPCgSCC && (callee_scc == hm_scc)) return false;
+			 // no dependency on already-analyzed callees
+			 if(hm2result.get(callee) != null) return false;
+			 return true;
+		     }
+		 },
+		 new LinkedList<HMethod>());
+	    }
+	};
+	
+	DiGraph<HMethod> methodDepDiGraph =
+	    DiGraph.<HMethod>diGraph(Collections.<HMethod>singleton(root),
+						 specFwdNavigator);
+	TopSortedCompDiGraph<HMethod> tsCompDiGraph = 
+	    new TopSortedCompDiGraph<HMethod>(methodDepDiGraph);
+	
+	return 
+	    new Pair<Navigator<HMethod>,TopSortedCompDiGraph<HMethod>>
+	    (methodDepDiGraph.getNavigator(),
+	     tsCompDiGraph);
+    }
+
+
+    // Add to the set of unanalyzable CALLs all CALLs from scc-methods
+    // that may invoke a method from scc.
+    private void addUnanalyzedIntraSCCCalls(SCComponent<HMethod> scc) {
+	System.out.println("SCC with unanalyzed intra-SCC CALLs");
+	printMethodSCC(pwStdOut, scc, null);
+	for(HMethod hm : scc.nodes()) {
+	    for(HCodeElement hce : hcf.convert(hm).getElements()) {
+		if(hce instanceof CALL) {
+		    CALL cs = (CALL) hce;
+		    if(anyCalleeInScc(cs, scc)) {
+			unanalyzedIntraSCCCalls.add(cs);
+		    }
 		}
 	    }
-	    return next;
 	}
-    };
+    }
+    private boolean anyCalleeInScc(CALL cs, SCComponent<HMethod> scc) {
+	for(HMethod callee : getCallGraph().calls(Util.quad2method(cs), cs)) {
+	    if(scc.nodes().contains(callee)) return true;
+	}
+	return false;
+    }
+    
+    // Set of CALLs that we treat as unanalyzable because they invoke
+    // callees from the same, too big SCC
+    private Set<CALL> unanalyzedIntraSCCCalls = new HashSet<CALL>();
+
+    boolean shouldSkipDueToFPLimit(CALL cs, HMethod callee) {
+	return unanalyzedIntraSCCCalls.contains(cs);
+    }
+
+
+    private final PrintWriter pwStdOut = new PrintWriter(System.out, true);
+
+    private Navigator<HMethod> interProcDepNav;
+
 
     private static class MethodData {
 	public MethodData(IntraProc intraProc, AnalysisPolicy ap) {
@@ -202,20 +330,28 @@ public class WPPointerAnalysis extends PointerAnalysis {
     private int maxIntraSccIter(SCComponent<HMethod> scc, int fpMaxIter) {
 	int s = scc.size();
 	int k = (s <= 5) ? 8 : (s <= 10) ? 4 : (s <= 15) ? 2 : (s <= 30) ? 1 : 0;
+	// there seems to be good to iterate more over some special
+	// nests of mutually-recursive methods.
+	for(HMethod hm : scc.nodes()) {
+	    if(hm.getName().equals("write") || hm.getName().equals("read")) {
+		k *= 2;
+		break;
+	    }
+	}
 	return k * fpMaxIter * scc.size();
     }
 
     private void _analyzeSCC(SCComponent<HMethod> scc, AnalysisPolicy ap) {
 	// refuze to analyze native methods
-	if(PAUtil.isNative(scc.nodes().iterator().next()))
+	if(PAUtil.isNative(DSUtil.getFirst(scc.nodes())))
 	    return;
 
-	this.scc = scc;
-	skipSameSccCalls = false;
+	//this.scc = scc;
+	boolean skipSameSccCalls = false;
 
 	for(HMethod hm : scc.nodes()) {
 	    hm2md.put(hm, (new MethodData(new IntraProc(hm, ap.flowSensitivity, this), ap)));
-	    hm2scc.put(hm, scc);
+	    assert hm2result.get(hm) == null;
 	}
 
 	if(!scc.exits().isEmpty()) {
@@ -227,6 +363,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 	boolean mustCheck = scc.isLoop();
 	int nbIter = 0;
+	int maxIter = maxIntraSccIter(scc, ap.fpMaxIter);
 
 	while(!workSet.isEmpty()) {
 	    HMethod hm = workSet.extract();
@@ -234,10 +371,10 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 	    if(mustCheck) {
 		if(!skipSameSccCalls) {
-		    if(nbIter > maxIntraSccIter(scc, ap.fpMaxIter)) {
+		    if(nbIter >= maxIter) {
 			System.out.println("Too many intra-scc iterations -> skip all calls to same SCC methods");
 			skipSameSccCalls = true;
-			sccWithSkippedIntraCalls.add(scc);
+			addUnanalyzedIntraSCCCalls(scc);
 			// cancel out the previous results
 			for(HMethod hm2 : scc.nodes()) {
 			    hm2result.remove(hm2);
@@ -253,7 +390,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 		}
 	    }
 
-	    //// flow sensitivity -> insens.  However, worse performances: flow insensitivity
+	    //// flow sens. -> insens.  However, worse performances: flow insensitivity
 	    //// increases a lot the sets of mutually dependent constraints ...
  	    // degradePrecision(hm, md);
 	    md.iterCount++;  // for stats only
@@ -261,7 +398,8 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    InterProcAnalysisResult result = analyzeMethod(hm, md);
 	    if(mustCheck) {
 		if(newResult(hm, result) && !skipSameSccCalls) {
-		    for(HMethod caller : calleeNavigator.prev(hm)) {
+		    System.out.println("CHANGED");
+		    for(HMethod caller : interProcDepNav.prev(hm)) {
 			if(scc.contains(caller)) {
 			    workSet.add(caller);
 			}
@@ -292,26 +430,11 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    hm2result.put(hm, ipar);
 	}
 	
-	this.scc = null;
+	//this.scc = null;
     }
 
-    private SCComponent<HMethod> scc;
-    private boolean skipSameSccCalls = false;
+    //private SCComponent<HMethod> scc;
 
-    boolean shouldSkipDueToFPLimit(CALL cs, HMethod callee) {
-	if(!skipSameSccCalls) return false;
-	// if skipSameSccCalls, treat as unanalizable (skip) all calls
-	// that may invoke methods from same SCC
-	return anyCalleeInScc(cs, scc);
-    }
-
-    private boolean anyCalleeInScc(CALL cs, SCComponent<HMethod> scc) {
-	for(HMethod callee : getCallGraph().calls(Util.quad2method(cs), cs)) {
-	    if(scc.nodes().contains(callee)) return true;
-	}
-	return false;
-    }
-    
     private InterProcAnalysisResult analyzeMethod(HMethod hm, MethodData md) {
 	System.out.println("Analyze (" + md.iterCount + ") \"" + hm + "\"" + "; " + hm.getDescriptor());
 	Timer timerSolve = new Timer();
@@ -434,13 +557,6 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    oldRes.invalidateCaches();
 	}
 
-	if(newResult) {
-	    System.out.println("CHANGED");
-	}
-	else {
-	    System.out.println("UNCHANGED!");
-	}
-
 	System.out.println("\t\t" + PAUtil.graphSizeStats(oldRes, true));
 
 	return newResult;
@@ -481,21 +597,22 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	pw.flush();
     }
 
-    public boolean hasAnalyzedCALL(HMethod caller, CALL cs, HMethod callee) {
-	// calls to exception initializers were considered unanalyzable (for efficiency)
-	if(PAUtil.exceptionInitializerCall(cs)) return false;
-	if(SpecialInterProc.canModel(callee)) return false;
 
-	SCComponent<HMethod> scc1 = hm2scc.get(caller);
-	SCComponent<HMethod> scc2 = hm2scc.get(callee);
-	if((scc1 == null) || (scc2 == null))
-	    return false;
-	return
-	    !(sccWithSkippedIntraCalls.contains(scc1) &&
-	      anyCalleeInScc(cs, scc1));
+    public boolean hasAnalyzedCALL(HMethod caller, CALL cs, HMethod callee) {
+	// 0. Take care against un-analyzed callers -> in that case,
+	// the CALL was definitely not analyzed
+	if(!hm2result.containsKey(caller)) return false;
+	// 1. For very-large SCCs of mutually-recursive methods, we skip calls to same-scc methods.
+	if(unanalyzedIntraSCCCalls.contains(cs)) return false;
+	// 2. Calls to exception initializers were considered unanalyzable (for efficiency).
+	if(PAUtil.exceptionInitializerCall(cs)) return false;
+	// 3. Calls to certain callees are specially modeled.
+	if(SpecialInterProc.canModel(callee)) return false;
+	// Note: 2 & 3 were actually modeled by the analysis somehow.
+	// Still, they were not properly analyzed, and this fact is
+	// important for several optimizations.  Let them know this.
+	return true;
     }
-    private Set<SCComponent<HMethod>> sccWithSkippedIntraCalls = new HashSet<SCComponent<HMethod>>();
-    private Map<HMethod,SCComponent<HMethod>> hm2scc = new HashMap<HMethod,SCComponent<HMethod>>();
 
 
     protected void finalize() {

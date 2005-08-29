@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: Flags.java,v 1.2 2005-08-29 16:13:35 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -38,6 +38,8 @@ public abstract class Flags {
     public static boolean FLOW_SENSITIVITY = true;
 
     static boolean USE_FRESHEN_TRICK = false;
+
+    static int MAX_CALLEES_PER_ANALYZABLE_SITE = 15;
 
     static List<Option> getOptions() {
 	List<Option> opts = new LinkedList<Option>();
@@ -78,6 +80,11 @@ public abstract class Flags {
 	    public void action() {
 		MAX_INTRA_SCC_ITER = Integer.parseInt(getArg(0));
 		System.out.println("MAX_INTRA_SCC_ITER set to " + MAX_INTRA_SCC_ITER);
+	    }});
+	opts.add(new Option("pa2:max-callees-per-site", "<number>", "The pointer analysis does not analyze CALLs with too many callees (default 15)") {
+	    public void action() {
+		MAX_CALLEES_PER_ANALYZABLE_SITE = Integer.parseInt(getArg(0));
+		System.out.println("MAX_CALLEES_PER_ANALYZABLE_SITE set to " + MAX_INTRA_SCC_ITER);
 	    }});
 	opts.add(new Option("pa2:flow-insensitive", "Turn off the default pointer analysis flow sensitivity") {
 	    public void action() {

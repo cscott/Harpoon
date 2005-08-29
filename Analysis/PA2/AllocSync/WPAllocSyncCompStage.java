@@ -5,9 +5,13 @@ package harpoon.Analysis.PA2.AllocSync;
 
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Arrays;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.CachingCodeFactory;
+
+import harpoon.IR.Quads.QuadRSSx;
+import harpoon.IR.Quads.QuadSSA;
 
 import harpoon.Main.CompilerStage;
 import harpoon.Main.CompilerStageEZ;
@@ -34,19 +38,34 @@ import jpaul.Misc.Predicate;
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.3 2005-08-16 22:41:57 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.4 2005-08-29 16:13:35 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
 
     public static CompilerStage getFullStage() {
 	final WPAllocSyncCompStage wpSaSr = new WPAllocSyncCompStage();
-	final WPPointerAnalysisCompStage wpPa= 
+	final WPPointerAnalysisCompStage wpPa = 
 	    new WPPointerAnalysisCompStage
 	    (new Predicate() { 
 		public boolean check(Object obj) {
 		    return wpSaSr.enabled();
 		}});
-	return new CompStagePipeline(wpPa, wpSaSr) {
+	// we use this stage just to time the IR generation before the creation of the WP PA object
+	final CompilerStageEZ timeCodeGen = new CompilerStageEZ("timeCodeGen") {
+	    public boolean enabled() { return true; }
+	    protected void real_action() {
+		System.out.println("\nWHOLE PROGRAM STACK ALLOCATION");
+
+		System.out.println("\n0. SSA IR GENERATION");
+		hcf = new CachingCodeFactory(QuadRSSx.codeFactory(QuadSSA.codeFactory(hcf)));
+		Timer timer = new Timer();
+		for(HMethod hm : classHierarchy.callableMethods()) {
+		    hcf.convert(hm);
+		}
+		System.out.println("SSA IR GENERATION TOTAL TIME: " + timer);
+	    }
+	};
+	return new CompStagePipeline(Arrays.<CompilerStage>asList(timeCodeGen, wpPa, wpSaSr)) {
 	    public boolean enabled() {
 		return wpSaSr.enabled();
 	    }
@@ -104,19 +123,9 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	CallGraph cg = pa.getCallGraph();
 	AnalysisPolicy ap = new AnalysisPolicy(Flags.FLOW_SENSITIVITY, -1, Flags.MAX_INTRA_SCC_ITER);
 
-	System.out.println("\nWHOLE PROGRAM STACK ALLOCATION");
-
-	System.out.println("\n0. SSA IR GENERATION");
-	Timer timer = new Timer();
-	for(Object hm : cg.transitiveSucc(mainM)) {
-	    if(pa.isAnalyzable((HMethod) hm)) {
-		ccf.convert((HMethod) hm);
-	    }
-	}
-	System.out.println("SSA IR GENERATION TOTAL TIME: " + timer);
 
 	System.out.println("\n1. WHOLE PROGRAM POINTER ANALYSIS");
-	timer.start();
+	Timer timer = new Timer();
 	pa.getInterProcResult(mainM, ap);
 	for(Object hm : cg.transitiveSucc(mainM)) {
 	    if(pa.isAnalyzable((HMethod) hm)) {
