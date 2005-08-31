@@ -36,7 +36,7 @@ import harpoon.IR.Quads.CALL;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.2 2005-08-31 02:37:54 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -353,6 +353,18 @@ public abstract class PAUtil {
 	    (method instanceof HConstructor) && 
 	    hclass.getName().startsWith("java.") &&
 	    PAUtil.isException(hclass);
+    }
+
+
+    static boolean isOldAndMutable(PANode node) {
+	switch(node.kind) {
+	case PARAM:
+	case LOAD:
+	case GBL:
+	    return true;
+	default:
+	    return false;
+	}
     }
 
 }

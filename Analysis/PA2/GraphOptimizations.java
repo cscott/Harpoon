@@ -13,6 +13,7 @@ import java.util.HashMap;
 import jpaul.Graphs.DiGraph;
 import jpaul.DataStructs.CompoundIterable;
 import jpaul.DataStructs.DSUtil;
+import jpaul.DataStructs.Pair;
 
 import jpaul.Misc.Function;
 import jpaul.Misc.Predicate;
@@ -27,7 +28,7 @@ import harpoon.ClassFile.HField;
  * <code>GraphOptimizations</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: GraphOptimizations.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
+ * @version $Id: GraphOptimizations.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $
  */
 public class GraphOptimizations {
 
@@ -61,7 +62,8 @@ public class GraphOptimizations {
 	     compressNodes(ar.eomDirGblEsc(), nodeConv),
 	     compressNodes(ar.eomAllGblEsc(), nodeConv),
 	     compressNodes(ar.ret(), nodeConv),
-	     compressNodes(ar.ex(),  nodeConv));
+	     compressNodes(ar.ex(),  nodeConv),
+	     compressAbstractFields(ar.eomWrites(), nodeConv));
     }
 
 
@@ -104,7 +106,7 @@ public class GraphOptimizations {
 
 
     private static Function<PANode,PANode> getNodeConverter(final DisjointSet<PANode> uf) {
-	// For each equivalence class (modeled by a (node) representative),
+	// For each equivalence class (modeled by a (node representative),
 	// compute the load node with the smallest hashcode.
 
 	// TODO: maybe use a map factory here
@@ -138,6 +140,17 @@ public class GraphOptimizations {
 	return newSet;
     }
 
+    static Set<Pair<PANode,HField>> compressAbstractFields(Set<Pair<PANode,HField>> writes, Function<PANode,PANode> nodeConv) {
+	if(!Flags.RECORD_WRITES) return writes;
+
+	Set<Pair<PANode,HField>> newWrites = DSFactories.abstractFieldSetFactory.create();
+	for(Pair<PANode,HField> abstractField : writes) {
+	    newWrites.add(new Pair<PANode,HField>(nodeConv.f(abstractField.left),
+						  abstractField.right));
+	}
+	return newWrites;
+    }
+
 
     /* // it refuses to compile for some unknown reasons
     private static <T> Set<T> mapSet(Set<T> set, DisjointSet<T> uf, SetFactory<T> setFactory) {
@@ -165,7 +178,8 @@ public class GraphOptimizations {
 			       filterSet(ar.eomDirGblEsc(), reachPred),
 			       ar.eomAllGblEsc(),  // this component should not be trimmed
 			       ar.ret(),   // all of these nodes are reachable from callee
-			       ar.ex());   // all of these nodes are reachable from callee
+			       ar.ex(),    // all of these nodes are reachable from callee
+			       filterAbstractFields(ar.eomWrites(), reachPred));
     }
 
 
@@ -207,33 +221,42 @@ public class GraphOptimizations {
 	for(PANode node : edges.sources()) {
 	    if(!pred.check(node)) continue;
 	    for(HField hf : edges.fields(node)) {
-		Collection<PANode> dest2 =filterColl(edges.pointedNodes(node, hf), pred);
+		Collection<PANode> dest2 = 
+		    DSUtil.<PANode>filterColl(edges.pointedNodes(node, hf),
+					      pred,
+					      new LinkedList<PANode>());
 		edges2.addEdges(node, hf, dest2, true);
 	    }
 	}
 	return edges2;
     }
 
-    private static Collection<PANode> filterColl(Collection<PANode> nodes, Predicate<PANode> pred) {
-	Collection<PANode> res = new LinkedList<PANode>();
-	for(PANode node : nodes) {
-	    if(pred.check(node)) {
-		res.add(node);
-	    }
-	}
-	return res;
-    }
-    
 
     private static Set<PANode> filterSet(Set<PANode> nodes, Predicate<PANode> pred) {
-	Set<PANode> res = DSFactories.nodeSetFactory.create();
-	for(PANode node : nodes) {
-	    if(pred.check(node)) {
-		res.add(node);
-	    }
-	}
-	return res;
+	return 
+	    (Set<PANode>)
+	    DSUtil.<PANode>filterColl(nodes,
+				      pred,
+				      DSFactories.nodeSetFactory.create());
     }
+
+    
+    private static Set<Pair<PANode,HField>> filterAbstractFields(Set<Pair<PANode,HField>> abstrFields, final Predicate<PANode> pred) {
+	if(!Flags.RECORD_WRITES) return abstrFields;
+
+	return
+	    (Set<Pair<PANode,HField>>)
+	    DSUtil.filterColl
+	    (abstrFields,
+	     new Predicate<Pair<PANode,HField>>() {
+		public boolean check(Pair<PANode,HField> abstrField) {
+		    PANode node = abstrField.left;
+		    return (node == null) || (pred.check(node));
+		}
+	     },
+	     DSFactories.abstractFieldSetFactory.create());
+    }
+
 
 
     // TRIM UNAFFECTED: TO BE CALLED AT THE END OF THE ANALYSIS OF EACH METHOD
@@ -243,17 +266,27 @@ public class GraphOptimizations {
 	// path leading to a load node that is returned from the
 	// method, globally lost, or is involved (source or target) in
 	// a newly created reference (inside edge).
+	// If we are interested in MUTATION, then all mutated nodes are ESSENTIAL too.
+	Iterable<PANode> affectedRoots = 
+	    DSUtil.<PANode>unionIterable
+	    (Arrays.<Iterable<PANode>>asList(ar.ret(),
+					     ar.ex(),
+					     ar.eomI().allNodes(),
+					     ar.eomAllGblEsc()));
+    
+	if(Flags.RECORD_WRITES) {
+	    // for mutation analysis, mutated nodes are essential too
+	    affectedRoots = 
+		DSUtil.<PANode>unionIterable
+		(affectedRoots,
+		 DSUtil.<Pair<PANode,HField>,PANode>mapIterable
+		 (ar.eomWrites(), Pair.<PANode,HField>leftProj()));
+	}
 
-	Collection<PANode> affectedRoots = 
-	    DSUtil.<PANode>iterable2coll
-	    (DSUtil.<PANode>unionIterable
-	     (Arrays.<Iterable<PANode>>asList(ar.ret(),
-					      ar.ex(),
-					      ar.eomI().allNodes(),
-					      ar.eomAllGblEsc())));
 	// an over-approximation of the essential load nodes (e.g., it
 	// may also contains inside nodes).
-	final Set<PANode> essentialLoads = ar.eomO().transitivePred(affectedRoots);
+	final Set<PANode> essentialLoads = 
+	    ar.eomO().transitivePred(DSUtil.<PANode>iterable2coll(affectedRoots));
 
 	if(essentialLoads.containsAll(DSUtil.<PANode>iterable2coll(ar.eomO().allNodes()))) {
 	    if(VERBOSE) System.out.println("No point to do any trimming!");
@@ -277,7 +310,8 @@ public class GraphOptimizations {
 			       filterSet(ar.eomDirGblEsc(), essPred),
 			       ar.eomAllGblEsc(),
 			       ar.ret(),
-			       ar.ex());
+			       ar.ex(),
+			       ar.eomWrites());
 
 	if(VERBOSE) System.out.println("after trimUnaffected:\n" + ipResult);
 
@@ -311,7 +345,8 @@ public class GraphOptimizations {
 	     compressNodes(ar.eomDirGblEsc(), compactor),
 	     ar.eomAllGblEsc(),
 	     compressNodes(ar.ret(), compactor),
-	     compressNodes(ar.ex(),  compactor));
+	     compressNodes(ar.ex(),  compactor),
+	     compressAbstractFields(ar.eomWrites(), compactor));
     }
 
 
@@ -347,7 +382,8 @@ public class GraphOptimizations {
 	     compressNodes(ar.eomDirGblEsc(), map),
 	     compressNodes(ar.eomAllGblEsc(), map),
 	     compressNodes(ar.ret(), map),
-	     compressNodes(ar.ex(), map));
+	     compressNodes(ar.ex(), map),
+	     compressAbstractFields(ar.eomWrites(), map));
     }
 
 }

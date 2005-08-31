@@ -15,13 +15,15 @@ import jpaul.DataStructs.SetFacts;
 import jpaul.DataStructs.MapFacts;
 import jpaul.DataStructs.RelFacts;
 
+import jpaul.DataStructs.Pair;
+
 import harpoon.ClassFile.HField;
 
 /**
  * <code>DSFactories</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: DSFactories.java,v 1.3 2005-08-18 21:35:36 salcianu Exp $
+ * @version $Id: DSFactories.java,v 1.4 2005-08-31 02:37:54 salcianu Exp $
  */
 public class DSFactories {
 
@@ -66,5 +68,10 @@ public class DSFactories {
 	RelFacts.<PANode,PANode>mapSet
 	(MapFacts.<PANode,Set<PANode>>tree(PAUtil.nodeComparator),
 	 SetFacts.<PANode>tree(PAUtil.nodeComparator));
-    
+
+
+    /** Factory used to generate the sets of mutated abstract fields. */
+    public static final SetFactory<Pair<PANode,HField>> abstractFieldSetFactory =
+	SetFacts.<Pair<PANode,HField>>hash();
+
 }

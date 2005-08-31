@@ -53,7 +53,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.2 2005-08-29 16:13:35 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -190,7 +190,8 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 	if(Flags.SHOW_METHOD_SCC) {
 	    printMethodSCCs(pwStdOut, methodSCCs, hm,
-			    tsCompDiGraph.getVertex2SccMap());
+			    tsCompDiGraph.getVertex2SccMap(),
+			    cg);
 	}
 
 	// 2. analyze each scc in topological order
@@ -265,14 +266,11 @@ public class WPPointerAnalysis extends PointerAnalysis {
     // that may invoke a method from scc.
     private void addUnanalyzedIntraSCCCalls(SCComponent<HMethod> scc) {
 	System.out.println("SCC with unanalyzed intra-SCC CALLs");
-	printMethodSCC(pwStdOut, scc, null);
+	printMethodSCC(pwStdOut, scc, null, null);
 	for(HMethod hm : scc.nodes()) {
-	    for(HCodeElement hce : hcf.convert(hm).getElements()) {
-		if(hce instanceof CALL) {
-		    CALL cs = (CALL) hce;
-		    if(anyCalleeInScc(cs, scc)) {
-			unanalyzedIntraSCCCalls.add(cs);
-		    }
+	    for(CALL cs : cg.getCallSites(hm)) {
+		if(anyCalleeInScc(cs, scc)) {
+		    unanalyzedIntraSCCCalls.add(cs);
 		}
 	    }
 	}
@@ -317,7 +315,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
     // to add timing and debug printing.  I have to agree that an
     // aspect would be cleaner here.
     private void analyzeSCC(SCComponent<HMethod> scc, AnalysisPolicy ap) {
-	printMethodSCC(pwStdOut, scc, null);
+	printMethodSCC(pwStdOut, scc, null, null);
 	Timer timer = new Timer();
 	
 	_analyzeSCC(scc, ap);
@@ -346,7 +344,6 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	if(PAUtil.isNative(DSUtil.getFirst(scc.nodes())))
 	    return;
 
-	//this.scc = scc;
 	boolean skipSameSccCalls = false;
 
 	for(HMethod hm : scc.nodes()) {
@@ -429,54 +426,44 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    ipar = GraphOptimizations.unifyLoads(ipar);
 	    hm2result.put(hm, ipar);
 	}
-	
-	//this.scc = null;
     }
 
-    //private SCComponent<HMethod> scc;
 
     private InterProcAnalysisResult analyzeMethod(HMethod hm, MethodData md) {
 	System.out.println("Analyze (" + md.iterCount + ") \"" + hm + "\"" + "; " + hm.getDescriptor());
+	
 	Timer timerSolve = new Timer();
 	FullAnalysisResult far = md.intraProc.fullSolve();
 	timerSolve.stop();
 
 	Timer timerSimplify = new Timer();
 	InterProcAnalysisResult res = far;
-
-	if(Flags.SHOW_TRIM_STATS)
-	    System.out.println("\t\t" + PAUtil.graphSizeStats(far) + " --trimUnreachable-> ");
+	displayStats(res, " --trimUnreachable-> ");
 
 	res = GraphOptimizations.trimUnreachable(far, nodeRep.getParamNodes(hm));
-
-	if(Flags.SHOW_TRIM_STATS)
-	    System.out.println("\t\t" + PAUtil.graphSizeStats(res) + " --trimUnaffected--> ");
+	displayStats(res, " --trimUnaffected--> ");
 
 	res = GraphOptimizations.trimUnaffected(res);
-
-	if(Flags.SHOW_TRIM_STATS)
-	    System.out.println("\t\t" + PAUtil.graphSizeStats(res) + " --unifyLoads------> ");
+	displayStats(res, " --unifyLoads------> ");
 
 	res = GraphOptimizations.unifyLoads(res);
-
-	if(Flags.SHOW_TRIM_STATS)
-	    System.out.println("\t\t" + PAUtil.graphSizeStats(res) + " --unifyGblEsc-----> ");
+	displayStats(res, " --unifyGblEsc-----> ");
 
 	res = GraphOptimizations.unifyGblEsc(res, nodeRep);
-
-	if(Flags.SHOW_TRIM_STATS)
-	    System.out.println("\t\t" + PAUtil.graphSizeStats(res));
+	displayStats(res, "");
 
 	if(Flags.USE_FRESHEN_TRICK) {
 	    res = GraphOptimizations.freshen(res);
 	}
 
-	timerSimplify.stop();
-
 	System.out.println("\tMethod analysis time: " + timerSolve + " + " + timerSimplify);
 	return res;
     }
 
+    private void displayStats(InterProcAnalysisResult res, String suffix) {
+	if(Flags.SHOW_TRIM_STATS)
+	    System.out.println("\t\t" + PAUtil.graphSizeStats(res) + suffix);
+    }
 
     private AnalysisPolicy lessPrecise(AnalysisPolicy ap) {
 	if(ap.flowSensitivity) {
@@ -498,10 +485,6 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    hm2result.put(hm, res);
 	    return true;
 	}
-
-	// IT IS ESSENTIAL TO USE "|" instead of "||": "|" forces the
-	// evaluation of each subexpression, even if the result of teh
-	// big logical expression is already known.
 
 	boolean newResult = false;
 
@@ -563,18 +546,20 @@ public class WPPointerAnalysis extends PointerAnalysis {
     }
 
 
-    private void printMethodSCCs(PrintWriter pw, List<SCComponent<HMethod>> listSCCs, HMethod hmRoot,
-				 Map<HMethod,SCComponent<HMethod>> hm2scc) {
+    private static void printMethodSCCs(PrintWriter pw, List<SCComponent<HMethod>> listSCCs, HMethod hmRoot,
+					Map<HMethod,SCComponent<HMethod>> hm2scc,
+					CallGraph cg) {
 	pw.println("SCC of methods for the analysis of " + hmRoot);
 	for(SCComponent<HMethod> scc : listSCCs) {
-	    printMethodSCC(pw, scc, hm2scc);
+	    printMethodSCC(pw, scc, hm2scc, cg);
 	}
 	pw.flush();
     }
 
-    private void printMethodSCC(PrintWriter pw,
-				SCComponent<HMethod> scc,
-				Map<HMethod,SCComponent<HMethod>> hm2scc) {
+    private static void printMethodSCC(PrintWriter pw,
+				       SCComponent<HMethod> scc,
+				       Map<HMethod,SCComponent<HMethod>> hm2scc,
+				       CallGraph cg) {
 	pw.print("SCC" + scc.getId() + " (" + scc.size() + " method(s)");
 	if(scc.isLoop()) pw.print(" - loop");
 	pw.println(") {");

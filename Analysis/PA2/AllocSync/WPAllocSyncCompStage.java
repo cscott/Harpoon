@@ -38,7 +38,7 @@ import jpaul.Misc.Predicate;
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.4 2005-08-29 16:13:35 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.5 2005-08-31 02:37:55 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
 
@@ -50,22 +50,7 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 		public boolean check(Object obj) {
 		    return wpSaSr.enabled();
 		}});
-	// we use this stage just to time the IR generation before the creation of the WP PA object
-	final CompilerStageEZ timeCodeGen = new CompilerStageEZ("timeCodeGen") {
-	    public boolean enabled() { return true; }
-	    protected void real_action() {
-		System.out.println("\nWHOLE PROGRAM STACK ALLOCATION");
-
-		System.out.println("\n0. SSA IR GENERATION");
-		hcf = new CachingCodeFactory(QuadRSSx.codeFactory(QuadSSA.codeFactory(hcf)));
-		Timer timer = new Timer();
-		for(HMethod hm : classHierarchy.callableMethods()) {
-		    hcf.convert(hm);
-		}
-		System.out.println("SSA IR GENERATION TOTAL TIME: " + timer);
-	    }
-	};
-	return new CompStagePipeline(Arrays.<CompilerStage>asList(timeCodeGen, wpPa, wpSaSr)) {
+	return new CompStagePipeline(Arrays.<CompilerStage>asList(wpPa, wpSaSr)) {
 	    public boolean enabled() {
 		return wpSaSr.enabled();
 	    }
@@ -90,6 +75,7 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	opts.add(new Option("pa2:sa", "<maxInlineLevel>", "inLoops",
 			    "Stack allocation using pointer analysis") {
 	    public void action() {
+		Flags.TIME_PREANALYSIS = true;
 		STACK_ALLOCATION = true;
 		MAX_SA_INLINE_LEVEL = Integer.parseInt(getArg(0));
 		if(getOptionalArg(0) != null) {

@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.2 2005-08-29 16:13:35 salcianu Exp $
+ * @version $Id: Flags.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -40,6 +40,14 @@ public abstract class Flags {
     static boolean USE_FRESHEN_TRICK = false;
 
     static int MAX_CALLEES_PER_ANALYZABLE_SITE = 15;
+
+    public static boolean RECORD_WRITES = true;
+
+    /** If true, the whole-program analysis will eagerly execute and
+        time all the pre-analysis: IR construction, call graph, etc.
+        This allows the separation between pre-analysis and analysis
+        time. */
+    public static boolean TIME_PREANALYSIS = false;
 
     static List<Option> getOptions() {
 	List<Option> opts = new LinkedList<Option>();

@@ -58,6 +58,7 @@ import jpaul.Constraints.CtConstraint;
 import jpaul.Graphs.DiGraph;
 
 import jpaul.DataStructs.SetFactory;
+import jpaul.DataStructs.Pair;
 import jpaul.DataStructs.DSUtil;
 
 import jpaul.Misc.MCell;
@@ -70,7 +71,7 @@ import harpoon.Util.Util;
  * <code>IntraProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IntraProc.java,v 1.3 2005-08-29 16:13:35 salcianu Exp $
+ * @version $Id: IntraProc.java,v 1.4 2005-08-31 02:37:54 salcianu Exp $
  */
 public class IntraProc {
     
@@ -184,6 +185,15 @@ public class IntraProc {
 	    public Set<PANode> ex()  {
 		return PAUtil.fixNullM((Set<PANode>) sr.get(vEx));
 	    }
+
+	    public Set<Pair<PANode,HField>> eomWrites() {
+		Set<Pair<PANode,HField>> writes = (Set<Pair<PANode,HField>>) sr.get(vWrites());
+		return 
+		(writes == null) ?
+		Collections.<Pair<PANode,HField>>emptySet() :
+		writes;
+	    }
+
 	};
 
 	if(Flags.SHOW_INTRA_PROC_RESULTS)
@@ -251,22 +261,20 @@ public class IntraProc {
 	}
     }
 
-    private OVar O;
-    private EVar E;
-    private LVar vRet;
-    private LVar vEx;
+    private OVar O = new OVar();
+    private EVar E = new EVar();
+    private LVar vRet = new LVar();
+    private LVar vEx  = new LVar();
 
     OVar oVar() { assert O != null; return O; }
     EVar eVar() { assert E != null; return E; }
 
 
+    private WVar vWrites = new WVar();
+    WVar vWrites() { return vWrites; }
+
+
     private void createVars(HCode hcode) {
-	O = new OVar();
-	E = new EVar();
-
-	vRet = new LVar();
-	vEx  = new LVar();
-
 	if(flowSensitivity) {
 	    quad2preIVar  = new HashMap<Quad,IVar>();
 	    quad2postIVar = new HashMap<Quad,IVar>();
@@ -292,9 +300,7 @@ public class IntraProc {
 		quad2postFVar.put(q, new FVar());
 	    }
 	}
-
     }
-
 
 
     private final Collection<Constraint> newCons = new LinkedList<Constraint>();
@@ -356,7 +362,11 @@ public class IntraProc {
 	}
 
 	public void visit(SET q) {
-	    // assignments to primitive fields (e.g., ints) are irrelevant
+	    if(Flags.RECORD_WRITES) {
+		recordWrites(q.objectref(), PAUtil.getUniqueField(q.field()));
+	    }
+	    
+	    // assignments to primitive fields (e.g., ints) are irrelevant for the pointer analysis
 	    if(q.field().getType().isPrimitive()) return;
 
 	    HField hf = PAUtil.getUniqueField(q.field());
@@ -369,7 +379,24 @@ public class IntraProc {
 	    }
 	}
 
+	private void recordWrites(Temp dst, HField hf) {
+	    LVar vd = (dst == null) ? null : lVar(dst);
+	    if((vd != null) && (hf.getDeclaringClass() != null)) {
+		// for instance fields, filter out the nodes whose
+		// type prevent them from having hf as a field
+		LVar vdFiltered = new LVar();
+		newCons.add(new TypeFilterConstraint(vd, hf.getDeclaringClass(), vdFiltered));
+		vd = vdFiltered;
+	    }
+	    newCons.add(new WriteConstraint(vd, hf, vWrites()));
+	}
+
+
 	public void visit(ASET q) {
+	    if(Flags.RECORD_WRITES) {
+		recordWrites(q.src(),
+			     PAUtil.getArrayField(PAUtil.getLinker(q)));
+	    }
 	    // arrays of primitives (e.g., ints) are irrelevant
 	    if(!q.type().isPrimitive()) {
 		Linker linker = PAUtil.getLinker(q);
@@ -549,6 +576,11 @@ public class IntraProc {
 	printSet(pw, "returned nodes  = ", null, far.ret(), null);
 	printSet(pw, "thrown nodes    = ", null, far.ex(), null);
 	printSet(pw, "AllGblEsc nodes = ", null, far.eomAllGblEsc(), null);
+
+	if(Flags.RECORD_WRITES) {
+	    System.out.println("Mutated abstract nodes:" + far.eomWrites());
+	}
+
 	pw.println();
 	pw.flush();
 	uf = null;

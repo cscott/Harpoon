@@ -22,6 +22,8 @@ import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadRSSx;
 
+import harpoon.IR.Quads.CALL;
+
 import harpoon.Util.BasicBlocks.BBConverter;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
@@ -34,13 +36,13 @@ import harpoon.Analysis.Quads.DeepInliner.DeepInliner;
 import harpoon.Analysis.Quads.DeepInliner.InlineChain;
 
 import harpoon.Util.Options.Option;
-
+import harpoon.Util.Timer;
 
 /**
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.3 2005-08-29 16:13:35 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.4 2005-08-31 02:37:54 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -101,6 +103,10 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 	}
 	
 	CallGraph cg = new harpoon.Analysis.Quads.CallGraphImpl(classHierarchy, ccf);
+
+	if(Flags.TIME_PREANALYSIS)
+	    timePreanalysis(ccf, cg);
+
 	WPPointerAnalysis pa = 
 	    new WPPointerAnalysis(ccf, cg, linker, classHierarchy,
 				  Collections.<HMethod>singleton(mainM),
@@ -138,26 +144,30 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 		displayInfo(method, pa);
 	    }
 	}
-
-	/*
-	pa.getInterProcResult(mainM, new AnalysisPolicy(true, -1, Flags.MAX_INTRA_SCC_ITER));
-
-	LoopDetector loopDet = new LoopDetector(ccf);
-	List<InlineChain> ics = new LinkedList<InlineChain>();
-	for(Object hm : cg.transitiveSucc(mainM)) {
-	    ics.addAll((new AllocSyncOneMethod(pa, (HMethod) hm, ccf, loopDet)).getICS());
-	}
-
-	DeepInliner.inline(ccf, ics, pa.getCallGraph());
-	*/
-
-	/*
-	examineAllMethods();
-	System.exit(1);
-
-
-	*/
     }
+
+
+    private void timePreanalysis(CachingCodeFactory ccf, CallGraph cg) {
+	System.out.println("\nSSA IR GENERATION");
+	Timer timer = new Timer();
+	for(HMethod hm : classHierarchy.callableMethods()) {
+	    ccf.convert(hm);
+	}
+	System.out.println("SSA IR GENERATION TOTAL TIME: " + timer);
+
+	System.out.println("\nCALL GRAPH CONSTRUCTION");
+	timer = new Timer();
+	for(HMethod hm : classHierarchy.callableMethods()) {
+	    HCode hcode = ccf.convert(hm);
+	    if(hm == null) continue;
+	    for(CALL call : cg.getCallSites(hm)) {
+		HMethod[] callees = cg.calls(hm, call);
+	    }
+	    HMethod[] callees = cg.calls(hm);
+	}
+	System.out.println("CALL GRAPH CONSTRUCTION TOTAL TIME: " + timer);
+    }
+
 
     //private NodeRepository nodeRep;
     //nodeRep = new NodeRepository(linker);
@@ -170,7 +180,6 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
 
     /*
-
     private void examineAllMethods() {
 	all_ivars = 0;
 	all_evars = 0;

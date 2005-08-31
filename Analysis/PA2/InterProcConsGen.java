@@ -27,7 +27,7 @@ import harpoon.Analysis.Quads.CallGraph;
  * <code>InterProcConsGen</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcConsGen.java,v 1.2 2005-08-29 16:13:35 salcianu Exp $
+ * @version $Id: InterProcConsGen.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $
  */
 class InterProcConsGen {
 
@@ -190,7 +190,8 @@ class InterProcConsGen {
 				       intraProc.postFVar(cs),
 				       intraProc.oVar(),
 				       intraProc.eVar(),
-				       pa));
+				       pa,
+				       intraProc.vWrites()));
     }
 
 }

@@ -7,6 +7,9 @@ import java.util.Set;
 import java.util.Arrays;
 
 import jpaul.DataStructs.DSUtil;
+import jpaul.DataStructs.Pair;
+
+import harpoon.ClassFile.HField;
 
 /**
  * <code>InterProcAnalysisResult</code> models the analysis result
@@ -17,7 +20,7 @@ import jpaul.DataStructs.DSUtil;
  * pointer analysis.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcAnalysisResult.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $ */
+ * @version $Id: InterProcAnalysisResult.java,v 1.2 2005-08-31 02:37:54 salcianu Exp $ */
 public abstract class InterProcAnalysisResult {
 
     /** Inside edges at the end of the method. */
@@ -110,6 +113,10 @@ public abstract class InterProcAnalysisResult {
 	    buff.append("\nAllEsc = ");
 	    buff.append(eomAllEsc());
 	}
+	if(Flags.RECORD_WRITES && !eomWrites().isEmpty()) {
+	    buff.append("\nMutated abstract field(s) = ");
+	    buff.append(eomWrites());
+	}
 	return buff.toString();
     }
 
@@ -124,4 +131,13 @@ public abstract class InterProcAnalysisResult {
 	      ex(),
 	      eomDirGblEsc()));
     }
+
+
+    /** Abstract fields written by the method and its transitive
+        callees.  Relevant only if <code>Flags.RECORD_WRITES</code> is
+        turned on.  */
+    public Set<Pair<PANode,HField>> eomWrites() {
+	throw new Error("unimplemented");
+    }
+
 }

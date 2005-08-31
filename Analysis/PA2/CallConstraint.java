@@ -29,6 +29,8 @@ import jpaul.DataStructs.VerboseWorkSet;
 import jpaul.DataStructs.WorkList;
 import jpaul.DataStructs.DisjointSet;
 
+import jpaul.DataStructs.Pair;
+
 import jpaul.Graphs.DiGraph;
 
 
@@ -36,7 +38,7 @@ import jpaul.Graphs.DiGraph;
  * <code>CallConstraint</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: CallConstraint.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
+ * @version $Id: CallConstraint.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $
  */
 class CallConstraint extends Constraint {
 
@@ -50,7 +52,8 @@ class CallConstraint extends Constraint {
 			  FVar v_postF,
 			  OVar v_O,
 			  EVar v_E,
-			  PointerAnalysis pa) {
+			  PointerAnalysis pa,
+			  WVar v_Writes) {
 
 	this(cs,
 	     callee,
@@ -62,7 +65,8 @@ class CallConstraint extends Constraint {
 	     (NodeSetVar) v_postF,
 	     (EdgeSetVar) v_O,
 	     (NodeSetVar) v_E,
-	     pa);
+	     pa,
+	     v_Writes);
     }
 
     private static final List<NodeSetVar> convertTypes(List<LVar> v_args) {
@@ -83,7 +87,8 @@ class CallConstraint extends Constraint {
 			  NodeSetVar v_postF,
 			  EdgeSetVar v_O,
 			  NodeSetVar v_E,
-			  PointerAnalysis pa) {
+			  PointerAnalysis pa,
+			  WVar v_Writes) {
 	
 	this.cs = cs;
 	this.callee = callee;
@@ -97,6 +102,7 @@ class CallConstraint extends Constraint {
 	this.v_O = v_O;
 	this.v_E = v_E;
 	this.pa = pa;
+	this.v_Writes = v_Writes;
 
 	in = new ArrayList<Var>();
 	in.addAll(v_args);
@@ -113,6 +119,9 @@ class CallConstraint extends Constraint {
 	out.add(v_postF);
 	out.add(v_O);
 	out.add(v_E);
+
+	if(v_Writes != null)
+	    out.add(v_Writes);
     }
 
 
@@ -129,6 +138,8 @@ class CallConstraint extends Constraint {
     private final NodeSetVar v_E;
 
     private final PointerAnalysis pa;
+
+    private final WVar v_Writes;
 
     private final Collection<Var> in;
     private final Collection<Var> out;
@@ -155,14 +166,16 @@ class CallConstraint extends Constraint {
 			       (NodeSetVar) uf.find(v_postF),
 			       (EdgeSetVar) uf.find(v_O),
 			       (NodeSetVar) uf.find(v_E),
-			       pa);
+			       pa,
+			       v_Writes);
     }
     
     public String toString() {
 	return 
 	    "\n<" + v_res + "," + v_ex + "> := call(" + v_args + 
 	    ")\n\t" + callee + "\n\tinsd: " + v_preI + " -> " + v_postI + 
-	    ";  outsd: " + v_O + ";  escpd: " + v_preF + " -> " + v_postF;
+	    ";  outsd: " + v_O + ";  escpd: " + v_preF + " -> " + v_postF + 
+	    "\n\tadd mutated abstract fields to " + v_Writes;
     }
 
     public int cost() { return Constraint.HIGH_COST; }
@@ -195,7 +208,7 @@ class CallConstraint extends Constraint {
     }
     
     public void action(SolAccessor sa) {
-
+	/*
 	Flags.VERBOSE_CALL = false;
 	if(Flags.SHOW_INTRA_PROC_RESULTS &&
 	   callee.getDeclaringClass().getName().equals("java.lang.String") &&
@@ -206,6 +219,7 @@ class CallConstraint extends Constraint {
 	    Flags.VERBOSE_CALL = true;
 
 	}
+	*/
 
 	if(pa.shouldSkipDueToFPLimit(cs, callee)) {
 	    treatAsUnanalyzable(sa);
@@ -214,7 +228,7 @@ class CallConstraint extends Constraint {
 	if(!cs.isStatic()) {
 	    Set<PANode> receivers = (Set<PANode>) sa.get(v_args.get(0));
 	    // this method was not invoked during program execution
-	    // (imprecission in the call graph)
+	    // (imprecision in the call graph)
 	    if((receivers == null) || receivers.isEmpty()) return;
 	}
 
@@ -276,6 +290,8 @@ class CallConstraint extends Constraint {
 	    sa.join(v_ex,    adjust(exNodes));
 	}
 
+	propagateWrites(sa, calleeRes, mu);
+
 	// enable GC
 	this.sa = null;
 	this.mu = null;
@@ -333,17 +349,29 @@ class CallConstraint extends Constraint {
 	(WorkSet<PANode>) (new VerboseWorkSet<PANode>(new WorkList<PANode>(), "workQueue: ")) :
 	(WorkSet<PANode>) (new WorkList<PANode>());
 
-    /*
-    private static class NewInfo {
-	public final PANode node;
-	public final Collection<PANode> newMappings;
-	
-	public NewInfo(PANode node, Collection<PANode> newMappings) {
-	    this.node = node;
-	    this.newMappings = newMappings;
+
+    public void propagateWrites(SolAccessor sa, InterProcAnalysisResult calleeRes, Relation<PANode,PANode> mu) {
+	if(!Flags.RECORD_WRITES) return;
+
+	Set<Pair<PANode,HField>> deltaWrites = DSFactories.abstractFieldSetFactory.create();
+
+	for(Pair<PANode,HField> abstractField : calleeRes.eomWrites()) {
+	    PANode node = abstractField.left;
+
+	    if(node == null) {
+		deltaWrites.add(abstractField);
+		continue;
+	    }
+
+	    for(PANode projNode : mu.getValues(node)) {
+		if(PAUtil.isOldAndMutable(projNode)) {
+		    deltaWrites.add(new Pair<PANode,HField>(projNode, abstractField.right));
+		}
+	    }
 	}
+
+	sa.join(v_Writes, deltaWrites);
     }
-    */
 
     
     private void initMu() {
