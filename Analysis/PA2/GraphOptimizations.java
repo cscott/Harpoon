@@ -28,7 +28,7 @@ import harpoon.ClassFile.HField;
  * <code>GraphOptimizations</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: GraphOptimizations.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $
+ * @version $Id: GraphOptimizations.java,v 1.4 2005-09-01 00:01:43 salcianu Exp $
  */
 public class GraphOptimizations {
 
@@ -145,8 +145,13 @@ public class GraphOptimizations {
 
 	Set<Pair<PANode,HField>> newWrites = DSFactories.abstractFieldSetFactory.create();
 	for(Pair<PANode,HField> abstractField : writes) {
-	    newWrites.add(new Pair<PANode,HField>(nodeConv.f(abstractField.left),
-						  abstractField.right));
+	    if(abstractField.left == null) {
+		newWrites.add(abstractField);
+	    }
+	    else {
+		newWrites.add(new Pair<PANode,HField>(nodeConv.f(abstractField.left),
+						      abstractField.right));
+	    }
 	}
 	return newWrites;
     }

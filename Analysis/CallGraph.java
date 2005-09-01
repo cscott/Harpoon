@@ -21,9 +21,9 @@ import jpaul.Graphs.DiGraph;
  * call-site information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.7 2005-08-17 17:51:02 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.8 2005-09-01 00:01:42 salcianu Exp $
  */
-public abstract class CallGraph extends DiGraph {
+public abstract class CallGraph extends DiGraph<HMethod> {
     /** Returns an array containing all possible methods called by
 	method <code>m</code>. If <code>hm</code> doesn't call any 
 	method, return an array of length <code>0</code>. */

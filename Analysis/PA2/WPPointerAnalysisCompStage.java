@@ -29,6 +29,8 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
 
 import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.Quads.CallGraphImpl;
+import harpoon.Analysis.Quads.CachingCallGraph;
 
 import jpaul.Misc.Predicate;
 
@@ -42,7 +44,7 @@ import harpoon.Util.Timer;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.4 2005-08-31 02:37:54 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.5 2005-09-01 00:01:43 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -102,7 +104,7 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 	    ccf = (CachingCodeFactory) hcf;
 	}
 	
-	CallGraph cg = new harpoon.Analysis.Quads.CallGraphImpl(classHierarchy, ccf);
+	CallGraph cg = new CachingCallGraph(new CallGraphImpl(classHierarchy, ccf));
 
 	if(Flags.TIME_PREANALYSIS)
 	    timePreanalysis(ccf, cg);

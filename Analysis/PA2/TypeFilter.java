@@ -26,7 +26,7 @@ import harpoon.Analysis.ClassHierarchy;
  * <code>TypeFilter</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: TypeFilter.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: TypeFilter.java,v 1.2 2005-09-01 00:01:43 salcianu Exp $
  */
 public abstract class TypeFilter {
 
@@ -64,6 +64,10 @@ public abstract class TypeFilter {
 	if(node.type.isPOLY()) {
 	    HClass nodeClass = node.type.getHClass();
 	    if(isObject(nodeClass)) {
+		return true;
+	    }
+
+	    if(nodeClass.equals(hClass)) {
 		return true;
 	    }
 

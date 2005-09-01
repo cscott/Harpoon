@@ -27,11 +27,25 @@ import harpoon.ClassFile.HField;
  * <code>SpecialInterProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SpecialInterProc.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: SpecialInterProc.java,v 1.2 2005-09-01 00:01:43 salcianu Exp $
  */
 public class SpecialInterProc {
 
     // IDEA: parse these method names from a file
+
+    // Harmless native methods.
+
+    // These methods ado not create any externally visible aliasing to
+    // the objects reachable from their parameters (e.g., do not store
+    // any parameter in a static field, do not return objects
+    // reachable from params etc.)  Therefore, the analysis can ignore
+    // the effects of these methods on their params (instead of
+    // marking params as escaped).  If these methods return objects,
+    // then they are newly allocated ones: we can introduce inside
+    // nodes for them.
+    // 
+    // NOTE: these methods may still mutate a non-object field of
+    // their params.  The mutation analysis should model this.
     private static String[][] hna = new String[][] {
 	{"java.lang.Object", "hashCode", "()I"},
 	{"java.lang.Object", "equals",   "(Ljava/lang/Object;)Z"},
@@ -59,11 +73,15 @@ public class SpecialInterProc {
 	{"java.io.FileInputStream",  "open",       "(Ljava/lang/String;)V"},
 	{"java.io.FileInputStream",  "available",  "()I"},
 	{"java.io.FileInputStream",  "read",       "()I"},
+	{"java.io.FileInputStream",  "read",       "([B)I"},
 	{"java.io.FileInputStream",  "readBytes",  "([BII)I"},
+	{"java.io.FileInputStream",  "skip",       "(J)J"},
 	{"java.io.FileInputStream",  "close",      "()V"},
 
 	{"java.io.FileOutputStream", "open",       "(Ljava/lang/String;)V"},
-	{"java.io.FileOutputStream", "close",      "()V"}, 
+	{"java.io.FileOutputStream", "close",      "()V"},
+	{"java.io.FileOutputStream", "write",      "(I)V"},
+	{"java.io.FileOutputStream", "write",      "([B)V"},
 	{"java.io.FileOutputStream", "writeBytes", "([BII)V"},
 
 	{"java.lang.System",   "currentTimeMillis",  "()J"},
@@ -75,7 +93,7 @@ public class SpecialInterProc {
 
 	{"java.lang.Throwable", "printStackTrace0",  "(Ljava/lang/Object;)V"},
 
-	{"java.lang.Runtime",  "exitInternal",       "(I)V"}
+	{"java.lang.Runtime",   "exitInternal",      "(I)V"}
     };
 
     private static Set<HMethod> harmlessNatives = null;
@@ -139,13 +157,14 @@ public class SpecialInterProc {
 			     List<LVar> paramVars,
 			     IntraProc intraProc,
 			     Collection<Constraint> newCons) {
-	// TODO: this is a kind of very optimistic
 	return
 	    model(cs,
+		  // TODO: this is a kind of very optimistic
 		  cs.method(),
 		  paramVars,
 		  intraProc,
 		  newCons);
+	// we assume that all overriders of one an unharmful native are also unharmful
     }
 
 
@@ -157,10 +176,10 @@ public class SpecialInterProc {
 			 List<LVar> paramVars,
 			 IntraProc intraProc,
 			 Collection<Constraint> newCons) {
-	if(modelHarmlessNative(cs, callee, intraProc, newCons))
+	if(modelHarmlessNative(cs, callee, paramVars, intraProc, newCons))
 	    return true;
 
-	if(modelSpecialMethod(cs, callee, intraProc, newCons))
+	if(modelSpecialMethod(cs, callee, paramVars, intraProc, newCons))
 	    return true;
 
 	if(modelArrayCopy(cs, callee, paramVars, intraProc, newCons))
@@ -174,6 +193,7 @@ public class SpecialInterProc {
 
     private static boolean modelHarmlessNative(CALL cs,
 					       HMethod callee,
+					       List<LVar> paramVars,
 					       IntraProc intraProc,
 					       Collection<Constraint> newCons) {
 	if(harmlessNatives == null)
@@ -182,7 +202,7 @@ public class SpecialInterProc {
 
 	// System.out.println("Harmless native: " + callee);
 
-	modelSafeMethod(cs, callee, intraProc, newCons);
+	modelSafeMethod(cs, callee, paramVars, intraProc, newCons);
 
 	return true;
     }
@@ -190,17 +210,19 @@ public class SpecialInterProc {
 
     private static boolean modelSpecialMethod(CALL cs,
 					      HMethod callee,
+					      List<LVar> paramVars,					      
 					      IntraProc intraProc,
 					      Collection<Constraint> newCons) {
 	if(!isSpecial(callee))
 	    return false;
-	modelSafeMethod(cs, callee, intraProc, newCons);
+	modelSafeMethod(cs, callee, paramVars, intraProc, newCons);
 	return true;
     }
 
 
     private static void modelSafeMethod(CALL cs,
 					HMethod callee,
+					List<LVar> paramVars,
 					IntraProc intraProc,
 					Collection<Constraint> newCons) {
 
@@ -233,7 +255,44 @@ public class SpecialInterProc {
 	    newCons.add(new CtConstraint(Collections.singleton(head),
 					 intraProc.lVar(cs.retval())));
 	}
+
+	if(Flags.RECORD_WRITES) {
+	    addMutationConstraints4SafeMethod(cs, callee, paramVars, intraProc, newCons);
+	}
     }
+
+
+    private static void addMutationConstraints4SafeMethod(CALL cs,
+							  HMethod callee,
+							  List<LVar> paramVars,
+							  IntraProc intraProc,
+							  Collection<Constraint> newCons) {
+	if(callee.getDeclaringClass().getName().equals("java.io.FileInputStream")) {
+	    if(callee.getName().equals("available")) return;
+	    assert !callee.isStatic();
+
+	    // the state of input file stream is mutated
+	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));
+
+	    // input stream methods that take an array as first argument, write its elements
+	    List<HClass> types = PAUtil.getParamTypes(callee);
+	    if(types.size() >= 2) {
+		HClass firstParamType = types.get(1);
+		if(firstParamType.isArray()) {
+		    newCons.add(new WriteConstraint(paramVars.get(1),
+						    PAUtil.getArrayField(firstParamType.getLinker()),
+						    intraProc.vWrites()));
+		}
+	    }
+	}
+
+	if(callee.getDeclaringClass().getName().equals("java.io.FileOutputStream")) {
+	    // the state of input file stream is mutated
+	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));	    
+	}
+
+    }
+
 
 
     static PANode constructRetStruct(HClass hClass, CALL cs, IntraProc intraProc, PAEdgeSet newEdges,
