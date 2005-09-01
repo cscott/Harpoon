@@ -23,7 +23,7 @@ import harpoon.Analysis.MetaMethods.GenType;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.2 2005-09-01 22:45:21 salcianu Exp $
  */
 public class NodeRepository {
 
@@ -233,7 +233,7 @@ public class NodeRepository {
 	return pnodes;
     }
 
-    List<PANode> getParamNodes(HMethod hm) {
+    public List<PANode> getParamNodes(HMethod hm) {
 	List<PANode> params = hm2params.get(hm);
 	assert params != null : "no params found for " + hm;
 	return params;

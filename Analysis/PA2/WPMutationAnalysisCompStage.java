@@ -16,11 +16,13 @@ import harpoon.Util.Options.Option;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 
+import harpoon.Analysis.PA2.Mutation.MutationNFA;
+
 /**
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.1 2005-09-01 00:01:43 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.2 2005-09-01 22:45:21 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -74,6 +76,11 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	}
 	else {
 	    System.out.println(mutatedAbstrFields);
+	    System.out.print("RegExp = \n  ");
+	    MutationNFA nfa = new MutationNFA(hm, ipar, pa);
+	    System.out.println("nfa = " + nfa);
+	    System.out.println("nfa states = " + nfa.states());
+	    System.out.println(nfa.toRegExp());
 	}
 	
 	System.out.println();

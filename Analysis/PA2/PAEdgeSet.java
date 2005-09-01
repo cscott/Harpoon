@@ -22,7 +22,7 @@ import harpoon.ClassFile.HField;
  * <code>PAEdgeSet</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAEdgeSet.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.2 2005-09-01 22:45:21 salcianu Exp $
  */
 public abstract class PAEdgeSet extends DiGraph<PANode> implements Cloneable {
 
@@ -130,7 +130,7 @@ public abstract class PAEdgeSet extends DiGraph<PANode> implements Cloneable {
     }
 
 
-    interface EdgeAction {
+    public interface EdgeAction {
 	public void action(PANode n1, HField hf, PANode n2);
     }
 

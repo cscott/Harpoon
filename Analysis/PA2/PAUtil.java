@@ -12,13 +12,13 @@ import java.util.LinkedList;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 import jpaul.DataStructs.WorkSet;
 import jpaul.DataStructs.WorkList;
 import jpaul.DataStructs.DSUtil;
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.ForwardNavigator;
-
 
 import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HField;
@@ -28,15 +28,21 @@ import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HType;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.CachingCodeFactory;
 
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.METHOD;
+
+import harpoon.Temp.Temp;
 
 /**
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.2 2005-08-31 02:37:54 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.3 2005-09-01 22:45:21 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -184,7 +190,7 @@ public abstract class PAUtil {
 
 
     // return a list with the types of all arguments of hm (including this, for a non-static method)
-    static List<HClass> getParamTypes(HMethod hm) {
+    public static List<HClass> getParamTypes(HMethod hm) {
 	LinkedList<HClass> pTypes = new LinkedList<HClass>();
 	if(!hm.isStatic()) {
 	    pTypes.add(hm.getDeclaringClass());
@@ -195,6 +201,25 @@ public abstract class PAUtil {
 	    pTypes.add(type);
 	}
 	return pTypes;
+    }
+
+
+    public static List<Temp> getParamTemps(HMethod hm, CachingCodeFactory ccf) {
+	HCode hcode = ccf.convert(hm);
+	METHOD method = ((HEADER) ccf.convert(hm).getRootElement()).method();
+	return Arrays.asList(method.params());
+    }
+
+
+    public static List<String> getParamNames(HMethod hm) {
+	List<String> paramNames = new LinkedList<String>();
+	if(!hm.isStatic()) {
+	    paramNames.add("this");
+	}
+	for(String paramName : hm.getParameterNames()) {
+	    paramNames.add(paramName);
+	}
+	return paramNames;
     }
 
 
@@ -218,7 +243,7 @@ public abstract class PAUtil {
 		}
 		private HClass declaringClass;
 		    
-		public String getName()   { return "[*]"; }
+		public String getName()   { return "[]"; }
 		public int getModifiers() { return 0; }
 		public HClass getType()   { return objClass; }
 		    
