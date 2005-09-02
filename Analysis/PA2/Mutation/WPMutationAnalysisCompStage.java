@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import jpaul.DataStructs.Pair;
+import jpaul.Misc.BoolMCell;
 
 import harpoon.Main.CompilerStageEZ;
 import harpoon.Util.Options.Option;
@@ -16,20 +17,26 @@ import harpoon.Util.Options.Option;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 
-import harpoon.Analysis.PA2.Mutation.MutationNFA;
+import harpoon.Analysis.PA2.InterProcAnalysisResult;
+import harpoon.Analysis.PA2.PointerAnalysis;
+import harpoon.Analysis.PA2.AnalysisPolicy;
+import harpoon.Analysis.PA2.PANode;
+import harpoon.Analysis.PA2.Flags;
 
 /**
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.1 2005-09-02 19:22:52 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.2 2005-09-02 19:54:58 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
-    public WPMutationAnalysisCompStage() {
+    public WPMutationAnalysisCompStage(BoolMCell paEnabler) {
 	super("wp-mutation");
+	this.paEnabler = paEnabler;
     }
 
+    private final BoolMCell paEnabler;
 
     public List<Option> getOptions() {
 	List<Option> opts = new LinkedList<Option>();
@@ -48,7 +55,6 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	return WP_MUTATION_ANALYSIS;
     }
 
-
     private PointerAnalysis pa;
     
     public void real_action() {
@@ -64,8 +70,6 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    
 	    displayInfo(hm, ipar);
 	}
-
-	System.exit(1);
     }
 
 

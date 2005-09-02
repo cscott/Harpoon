@@ -33,6 +33,7 @@ import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.CachingCallGraph;
 
 import jpaul.Misc.Predicate;
+import jpaul.Misc.BoolMCell;
 
 import harpoon.Analysis.Quads.DeepInliner.DeepInliner;
 import harpoon.Analysis.Quads.DeepInliner.InlineChain;
@@ -44,26 +45,24 @@ import harpoon.Util.Timer;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.5 2005-09-01 00:01:43 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.6 2005-09-02 19:54:21 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
-    public WPPointerAnalysisCompStage() { 
-	this(new Predicate() {
-	    public boolean check(Object obj) { return false; }
-	});
+    public WPPointerAnalysisCompStage() {
+	this(new BoolMCell(false));
     }
 
-    public WPPointerAnalysisCompStage(Predicate externalEnabler) { 
+    public WPPointerAnalysisCompStage(BoolMCell extEnabler) { 
 	super("pa2");
-	this.externalEnabler = externalEnabler;
+	this.extEnabler = extEnabler;	
     }
 
-    private final Predicate externalEnabler;
+    private final BoolMCell extEnabler;
 
     public boolean enabled() { 
 	return 
-	    externalEnabler.check(null) ||
+	    extEnabler.value ||
 	    DO_ANALYSIS ||
 	    INTERACTIVE_ANALYSIS;
     }

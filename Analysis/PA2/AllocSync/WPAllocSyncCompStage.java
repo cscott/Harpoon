@@ -32,32 +32,22 @@ import harpoon.Analysis.PA2.AnalysisPolicy;
 import harpoon.Analysis.PA2.Flags;
 import harpoon.Analysis.PA2.WPPointerAnalysisCompStage;
 
-import jpaul.Misc.Predicate;
+import jpaul.Misc.BoolMCell;
 
 /**
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.5 2005-08-31 02:37:55 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.6 2005-09-02 19:54:58 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
 
-    public static CompilerStage getFullStage() {
-	final WPAllocSyncCompStage wpSaSr = new WPAllocSyncCompStage();
-	final WPPointerAnalysisCompStage wpPa = 
-	    new WPPointerAnalysisCompStage
-	    (new Predicate() { 
-		public boolean check(Object obj) {
-		    return wpSaSr.enabled();
-		}});
-	return new CompStagePipeline(Arrays.<CompilerStage>asList(wpPa, wpSaSr)) {
-	    public boolean enabled() {
-		return wpSaSr.enabled();
-	    }
-	};
+    public WPAllocSyncCompStage(BoolMCell paEnabler) { 
+	super("pa2:sa-sr"); 
+	this.paEnabler = paEnabler;
     }
 
-    public WPAllocSyncCompStage() { super("pa2:sa-sr"); }
+    private final BoolMCell paEnabler;
 
     public boolean enabled() {
 	return STACK_ALLOCATION || SYNC_REMOVAL;
@@ -77,6 +67,8 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	    public void action() {
 		Flags.TIME_PREANALYSIS = true;
 		STACK_ALLOCATION = true;
+		// turn on the pointer analysis
+		paEnabler.value = true;
 		MAX_SA_INLINE_LEVEL = Integer.parseInt(getArg(0));
 		if(getOptionalArg(0) != null) {
 		    SA_IN_LOOPS = true;
@@ -90,7 +82,7 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	    }
 	});
 
-	opts.add(new Option("pa2:sa-range", "<min> <max>", "") {
+	opts.add(new Option("pa2:sa-range", "<min> <max>", "Debug: stack allocate only allocs with line #s in [min,max]") {
 	    public void action() {
 		ASFlags.SA_MIN_LINE = Integer.parseInt(getArg(0));
 		ASFlags.SA_MAX_LINE = Integer.parseInt(getArg(1));

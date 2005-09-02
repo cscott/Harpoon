@@ -54,7 +54,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.4 2005-09-02 19:22:52 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.5 2005-09-02 19:54:21 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -537,12 +537,6 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    newResult = true;
 	}
 
-	for(Pair<PANode,HField> af : res.eomWrites()) {
-	    HField hf = af.right;
-	    if((hf != null) && hf.getName().equals("b5p")) {
-		throw new Error("found" + af.left);
-	    }
-	}
 	if(oldRes.eomWrites().addAll(res.eomWrites())) {
 	    System.out.print("eomWrites : ");
 	    newResult = true;
