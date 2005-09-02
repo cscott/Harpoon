@@ -41,7 +41,7 @@ import harpoon.Analysis.PointerAnalysis.AllocSyncOptCompStage;
 
 import harpoon.Analysis.PA2.WPPointerAnalysisCompStage;
 import harpoon.Analysis.PA2.AllocSync.WPAllocSyncCompStage;
-import harpoon.Analysis.PA2.WPMutationAnalysisCompStage;
+import harpoon.Analysis.PA2.Mutation.WPMutationAnalysisCompStage;
 
 import harpoon.Util.Options.Option;
 
@@ -65,13 +65,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 
+import jpaul.Misc.BoolMCell;
+
 /**
  * <code>SAMain</code> is a program to compile java classes to some
  * approximation of StrongARM assembly.  It is for development testing
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.65 2005-09-01 00:01:43 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.66 2005-09-02 19:53:25 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -148,9 +150,14 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void buildQuadFormPipeline() {
-	// Pointer Analysis v2 + Stack allocation
-	addStage(WPAllocSyncCompStage.getFullStage());
-	addStage(new WPMutationAnalysisCompStage());
+	// Pointer Analysis v2
+	// detail: boolean flag to enable the pointer analysis
+	BoolMCell paEnabled = new BoolMCell(false);
+	addStage(new WPPointerAnalysisCompStage(paEnabled));
+	// + Stack allocation
+	addStage(new WPAllocSyncCompStage(paEnabled));
+	// + Mutation analysis
+	addStage(new WPMutationAnalysisCompStage(paEnabled));
 
 	// adds a stage that does pointer analysis and uses its
 	// results for memory allocation, sync removal, and/or RTJ

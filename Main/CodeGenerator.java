@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.11 2004-02-08 01:58:13 cananian Exp $
+ * @version $Id: CodeGenerator.java,v 1.12 2005-09-02 19:53:25 salcianu Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
@@ -77,6 +77,10 @@ public class CodeGenerator extends CompilerStage {
 
 	if(Boolean.getBoolean("debug.reg-alloc"))
 	    add_debug_options(opts);
+
+	opts.add(new Option("no-code-gen", "Skip code generator - useful if you only want to run an analysis") {
+	    public void action() { ENABLED = false; }
+	});
 
 	opts.add(new Option("L", "Outputs Local Register Allocated Instr IR") {
 	    public void action() { REG_ALLOC = LOCAL_REG_ALLOC = true; }
@@ -173,7 +177,11 @@ public class CodeGenerator extends CompilerStage {
     private static RegAlloc.Factory regAllocFactory;
 
     /** @return <code>true</code> */
-    public boolean enabled() { return true; }
+    public boolean enabled() { return ENABLED; }
+
+    /** Tells whether the code generator stage is enabled.  Default is
+        <code>true</code>. */
+    public boolean ENABLED = true;
 
     public CompilerState action(CompilerState cs) {
 	// always enabled; unpack cs and go to work!
