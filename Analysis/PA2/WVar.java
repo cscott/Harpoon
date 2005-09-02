@@ -14,7 +14,7 @@ import harpoon.ClassFile.HField;
  * <code>WVar</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WVar.java,v 1.1 2005-09-01 22:45:21 salcianu Exp $
+ * @version $Id: WVar.java,v 1.2 2005-09-02 19:22:52 salcianu Exp $
  */
 public class WVar extends Var {
 
@@ -24,6 +24,13 @@ public class WVar extends Var {
     
     public boolean join(Object x, Object y) {
  	Set<Pair<PANode,HField>> esx = (Set<Pair<PANode,HField>>) x;
+
+	for(Pair<PANode,HField> af : esx) {
+	    PANode node = af.left;
+	    if(node == null) continue;
+	    if(node.isFresh()) throw new Error("why fresh?" + node);
+	}
+
  	Set<Pair<PANode,HField>> esy = (Set<Pair<PANode,HField>>) y;
 	return esx.addAll(esy);
     }

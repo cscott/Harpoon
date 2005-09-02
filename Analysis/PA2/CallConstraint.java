@@ -38,7 +38,7 @@ import jpaul.Graphs.DiGraph;
  * <code>CallConstraint</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: CallConstraint.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $
+ * @version $Id: CallConstraint.java,v 1.4 2005-09-02 19:22:52 salcianu Exp $
  */
 class CallConstraint extends Constraint {
 
@@ -364,6 +364,9 @@ class CallConstraint extends Constraint {
 	    }
 
 	    for(PANode projNode : mu.getValues(node)) {
+		if(Flags.USE_FRESHEN_TRICK) {
+		    projNode = GraphOptimizations.unFreshConv.f(projNode);
+		}
 		if(PAUtil.isOldAndMutable(projNode)) {
 		    deltaWrites.add(new Pair<PANode,HField>(projNode, abstractField.right));
 		}

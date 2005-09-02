@@ -17,6 +17,7 @@ import jpaul.DataStructs.MapWithDefault;
 
 import jpaul.Graphs.LDiGraph.LForwardNavigator;
 import jpaul.RegExps.NFA;
+import jpaul.RegExps.RegExp;
 
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
@@ -34,61 +35,10 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationNFA</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationNFA.java,v 1.1 2005-09-01 22:45:24 salcianu Exp $
+ * @version $Id: MutationNFA.java,v 1.2 2005-09-02 19:22:52 salcianu Exp $
  */
-public class MutationNFA extends NFA<PANode,MutationNFA.MLabel> {
+public class MutationNFA extends NFA<PANode,MLabel> {
     
-    public static class MLabel {}
-
-    public static class FieldMLabel extends MLabel {
-	FieldMLabel(HField hf) {
-	    this.hf = hf;
-	}
-	public final HField hf;
-	public String toString() {
-	    if(hf.isStatic()) {
-		return hf.getDeclaringClass().getName() + "." + hf.getName();
-	    }
-	    return hf.getName();
-	}
-    }
-
-    public static class ReachMLabel extends MLabel {
-	public String toString() {
-	    return "REACH";
-	}
-    }
-
-    private MLabel field2mlabel(HField hf) {
-	// hf == null means that all reachable objects may be mutated
-	// special label "REACH"
-	if(hf == null) return reachMLabel;
-
-	MLabel mlabel = hf2mlabel.get(hf);
-	if(mlabel == null) {
-	    mlabel = new FieldMLabel(hf);
-	    hf2mlabel.put(hf, mlabel);
-	}
-	return mlabel;
-    }
-    private final MLabel reachMLabel = new ReachMLabel();
-    private final Map<HField,MLabel> hf2mlabel = new HashMap<HField,MLabel>();
-
-
-    public static class ParamMLabel extends MLabel {
-	ParamMLabel(Temp temp, String name) {
-	    this.temp = temp;
-	    if(name == null) name = temp.toString();
-	    this.name = name;
-	}
-	public final Temp temp;
-	public final String name;
-	public String toString() { return name; }
-    }
-
-    
-
-
     public MutationNFA(HMethod hm, InterProcAnalysisResult ipar, PointerAnalysis pa) {
 	final Map<PANode,List<Pair<PANode,MLabel>>> state2trans = 
 	    new MapWithDefault(new LinkedListFactory<Pair<PANode,MLabel>>(), true);
@@ -97,7 +47,7 @@ public class MutationNFA extends NFA<PANode,MutationNFA.MLabel> {
 
 	addOutsideEdgesTrans(state2trans, ipar);
 
-	addMutationTrans(state2trans, ipar);
+	addMutationTrans(state2trans, ipar, pa);
 
 	addGblEscTrans(state2trans, ipar);
 
@@ -127,7 +77,7 @@ public class MutationNFA extends NFA<PANode,MutationNFA.MLabel> {
 	    PANode paramNode = itParamNodes.next();
 	    state2trans.get(startState).add
 		(new Pair<PANode,MLabel>(paramNode,
-					 new ParamMLabel(paramTemp, paramName))); 
+					 new MLabel.Param(paramTemp, paramName))); 
 	}
     }
 
@@ -136,18 +86,33 @@ public class MutationNFA extends NFA<PANode,MutationNFA.MLabel> {
 				      InterProcAnalysisResult ipar) {
 	ipar.eomO().forAllEdges(new PAEdgeSet.EdgeAction() {
 	    public void action(PANode src, HField hf, PANode dst) {
-		state2trans.get(src).add(new Pair<PANode,MLabel>(dst, field2mlabel(hf)));
+		state2trans.get(src).add(new Pair<PANode,MLabel>
+					 (dst,
+					  MLabel.field2mlabel(hf)));
 	    }
 	});
     }
 
 
     private void addMutationTrans(Map<PANode,List<Pair<PANode,MLabel>>> state2trans,
-				  InterProcAnalysisResult ipar) {
+				  InterProcAnalysisResult ipar,
+				  PointerAnalysis pa) {
+	boolean addedGBL = false;
+
 	for(Pair<PANode,HField> abstrField : ipar.eomWrites()) {
 	    PANode node = abstrField.left;
 	    HField hf   = abstrField.right;
 	    assert !((node == null) && (hf == null));
+
+	    if((node != null) && (node.kind == PANode.Kind.GBL)) {
+		if(!addedGBL) {
+		    addedGBL = true;
+		    state2trans.get(startState).
+			add(new Pair<PANode,MLabel>
+			    (node,
+			     MLabel.reachFromStat));
+		}
+	    }
 
 	    PANode state = 
 		// for mutated static fields, the transition starts in the startState
@@ -156,15 +121,21 @@ public class MutationNFA extends NFA<PANode,MutationNFA.MLabel> {
 		// for instance fields, it starts in the corresponding PANode
 		node;
 
-	    state2trans.get(state).add(new Pair<PANode,MLabel>(acceptState, field2mlabel(hf)));
-	}
+	    state2trans.get(state).add(new Pair<PANode,MLabel>
+				       (acceptState,
+					MLabel.field2mlabel(hf)));
+	}	
     }
 
 
     private void addGblEscTrans(Map<PANode,List<Pair<PANode,MLabel>>> state2trans,
 				InterProcAnalysisResult ipar) {
 	for(PANode node : ipar.eomAllGblEsc()) {
-	    state2trans.get(node).add(new Pair<PANode,MLabel>(node, new ReachMLabel()));
+	    // the fact that GBL escapes globally is not that
+	    // interesting; we are interested only in the normal nodes
+	    // tat were compressed into GBL
+	    if(node.kind == PANode.Kind.GBL) continue;
+	    state2trans.get(node).add(new Pair<PANode,MLabel>(node, MLabel.field2mlabel(null)));
 	}
     }
 
@@ -195,5 +166,12 @@ public class MutationNFA extends NFA<PANode,MutationNFA.MLabel> {
     private static class LinkedListFactory<E> implements Factory<List<E>> {
 	public List<E> create() { return new LinkedList<E>(); }
 	public List<E> create(List<E> list) { return new LinkedList<E>(list); }
+    }
+
+
+    public RegExp<MLabel> toRegExp() {
+	RegExp<MLabel> regExp = this.simplify().toRegExp();
+	// TODO: simplifications: REACH | f = REACH, etc.
+	return regExp;
     }
 }

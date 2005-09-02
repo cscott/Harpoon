@@ -28,7 +28,7 @@ import harpoon.ClassFile.HField;
  * <code>GraphOptimizations</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: GraphOptimizations.java,v 1.4 2005-09-01 00:01:43 salcianu Exp $
+ * @version $Id: GraphOptimizations.java,v 1.5 2005-09-02 19:22:52 salcianu Exp $
  */
 public class GraphOptimizations {
 
@@ -140,7 +140,8 @@ public class GraphOptimizations {
 	return newSet;
     }
 
-    static Set<Pair<PANode,HField>> compressAbstractFields(Set<Pair<PANode,HField>> writes, Function<PANode,PANode> nodeConv) {
+    static Set<Pair<PANode,HField>> compressAbstractFields(Set<Pair<PANode,HField>> writes,
+							   Function<PANode,PANode> nodeConv) {
 	if(!Flags.RECORD_WRITES) return writes;
 
 	Set<Pair<PANode,HField>> newWrites = DSFactories.abstractFieldSetFactory.create();
@@ -246,7 +247,8 @@ public class GraphOptimizations {
     }
 
     
-    private static Set<Pair<PANode,HField>> filterAbstractFields(Set<Pair<PANode,HField>> abstrFields, final Predicate<PANode> pred) {
+    private static Set<Pair<PANode,HField>> filterAbstractFields(Set<Pair<PANode,HField>> abstrFields,
+								 final Predicate<PANode> pred) {
 	if(!Flags.RECORD_WRITES) return abstrFields;
 
 	return
@@ -256,7 +258,7 @@ public class GraphOptimizations {
 	     new Predicate<Pair<PANode,HField>>() {
 		public boolean check(Pair<PANode,HField> abstrField) {
 		    PANode node = abstrField.left;
-		    return (node == null) || (pred.check(node));
+		    return (node == null) || (node.kind == PANode.Kind.GBL) || (pred.check(node));
 		}
 	     },
 	     DSFactories.abstractFieldSetFactory.create());

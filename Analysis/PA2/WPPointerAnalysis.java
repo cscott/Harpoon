@@ -32,6 +32,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCodeElement;
 
 import harpoon.Analysis.Quads.CallGraph;
@@ -53,7 +54,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.3 2005-08-31 02:37:54 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.4 2005-09-02 19:22:52 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -533,6 +534,17 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 	if(oldRes.ex().addAll(res.ex())) {
 	    System.out.print("ex : ");
+	    newResult = true;
+	}
+
+	for(Pair<PANode,HField> af : res.eomWrites()) {
+	    HField hf = af.right;
+	    if((hf != null) && hf.getName().equals("b5p")) {
+		throw new Error("found" + af.left);
+	    }
+	}
+	if(oldRes.eomWrites().addAll(res.eomWrites())) {
+	    System.out.print("eomWrites : ");
 	    newResult = true;
 	}
 	

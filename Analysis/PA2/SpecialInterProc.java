@@ -27,14 +27,14 @@ import harpoon.ClassFile.HField;
  * <code>SpecialInterProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SpecialInterProc.java,v 1.2 2005-09-01 00:01:43 salcianu Exp $
+ * @version $Id: SpecialInterProc.java,v 1.3 2005-09-02 19:22:52 salcianu Exp $
  */
 public class SpecialInterProc {
 
     // IDEA: parse these method names from a file
-
+    //
     // Harmless native methods.
-
+    //
     // These methods ado not create any externally visible aliasing to
     // the objects reachable from their parameters (e.g., do not store
     // any parameter in a static field, do not return objects
@@ -164,7 +164,7 @@ public class SpecialInterProc {
 		  paramVars,
 		  intraProc,
 		  newCons);
-	// we assume that all overriders of one an unharmful native are also unharmful
+	// we assume that all overriders of an unharmful native are also unharmful
     }
 
 
@@ -290,9 +290,7 @@ public class SpecialInterProc {
 	    // the state of input file stream is mutated
 	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));	    
 	}
-
     }
-
 
 
     static PANode constructRetStruct(HClass hClass, CALL cs, IntraProc intraProc, PAEdgeSet newEdges,
