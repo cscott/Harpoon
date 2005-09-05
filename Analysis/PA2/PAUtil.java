@@ -38,11 +38,13 @@ import harpoon.IR.Quads.METHOD;
 
 import harpoon.Temp.Temp;
 
+import harpoon.Util.Util;
+
 /**
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.4 2005-09-05 16:47:19 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.5 2005-09-05 21:30:58 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -351,13 +353,22 @@ public abstract class PAUtil {
 	    " OE:" + ar.eomO().size().right.longValue() + ")";
     }
 
+    static boolean exceptionInitializer(HMethod hm) {
+	return 
+	    (hm instanceof HConstructor) && 
+	    PAUtil.isException(hm.getDeclaringClass());
+    }
+
     static boolean exceptionInitializerCall(CALL cs) {
 	HMethod method = cs.method();
 	HClass hclass = method.getDeclaringClass();
 	return 
-	    (method instanceof HConstructor) && 
+	    exceptionInitializer(method) &&
 	    hclass.getName().startsWith("java.") &&
-	    PAUtil.isException(hclass);
+	    // to improve the mutation analysis, we decide to still
+	    // analyze calls to exception constructors, if they occur
+	    // inside other exception initializers
+	    !exceptionInitializer(Util.quad2method(cs));
     }
 
 

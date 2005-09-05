@@ -33,7 +33,7 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationAnalysis</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationAnalysis.java,v 1.2 2005-09-05 16:38:57 salcianu Exp $
+ * @version $Id: MutationAnalysis.java,v 1.3 2005-09-05 21:30:58 salcianu Exp $
  */
 public class MutationAnalysis {
 
@@ -69,8 +69,11 @@ public class MutationAnalysis {
 	return ipar.eomWrites();
     }
 
-
     private InterProcAnalysisResult getIPAR(HMethod hm) throws NoAnalysisResultException {
+	return getIPAR(hm, Flags.IGNORE_CONSTR_MUTATION_ON_THIS);
+    }    
+
+    private InterProcAnalysisResult getIPAR(HMethod hm, boolean IGNORE_CONSTR_MUTATION_ON_THIS) throws NoAnalysisResultException {
 	InterProcAnalysisResult ipar = pa.getInterProcResult(hm, ap);
 	if(ipar == null) throw new NoAnalysisResultException();
 
@@ -83,7 +86,7 @@ public class MutationAnalysis {
 	final Set<Pair<PANode,HField>> adjustedWrites = new HashSet<Pair<PANode,HField>>();
 	for(Pair<PANode,HField> af : ipar.eomWrites()) {
 	    // for constructors, ignore mutations on the "this" parameter
-	    if(Flags.IGNORE_CONSTR_MUTATION_ON_THIS && 
+	    if(IGNORE_CONSTR_MUTATION_ON_THIS && 
 	       isConstructor && (af.left == thisNode)) continue;
 	    // ignore mutation on certain fields
 	    if(Flags.IGNORE_CERTAIN_MUTATIONS && canIgnore(af)) continue;
@@ -123,8 +126,8 @@ public class MutationAnalysis {
 
 
 
-    public List<ParamInfo> getSafeParams(HMethod hm) throws NoAnalysisResultException {
-	InterProcAnalysisResult ipar = getIPAR(hm);
+    public List<Integer> getSafeParamIndices(HMethod hm) throws NoAnalysisResultException {
+	InterProcAnalysisResult ipar = getIPAR(hm, false);
 
 	// nonSafe is the set of nodes that (1) are mutated, (2)
 	// escape globally, or (3) a new, externally visible, inside
@@ -145,17 +148,25 @@ public class MutationAnalysis {
 	nonSafe.addAll(ipar.ret());
 	nonSafe.addAll(ipar.ex());
 
-	List<ParamInfo> safeParams = new LinkedList<ParamInfo>();
+	List<Integer> safeParamIndices = new LinkedList<Integer>();
+	int index = 0;
 	for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
-	    if(pi.type().isPrimitive()) continue;
-	
-	    Set<PANode> reachable = ipar.eomI().transitiveSucc(pi.node());
-	    if(DSUtil.disjoint(reachable, nonSafe)) {
-		safeParams.add(pi);
+	    if(!pi.type().isPrimitive()) {	
+		Set<PANode> reachable = ipar.eomO().transitiveSucc(pi.node());
+		if(DSUtil.disjoint(reachable, nonSafe)) {
+		    safeParamIndices.add(new Integer(index));
+		}
 	    }
+	    index++;
 	}
+	return safeParamIndices;
+    }
 
-	return safeParams;
-    }    
+
+    public List<ParamInfo> getSafeParams(HMethod hm) throws NoAnalysisResultException {
+	return DSUtil.<ParamInfo>select(MAUtil.getParamInfo(hm, pa),
+					getSafeParamIndices(hm),
+					new LinkedList<ParamInfo>());
+    }
 
 }

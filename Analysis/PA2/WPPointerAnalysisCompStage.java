@@ -45,7 +45,7 @@ import harpoon.Util.Timer;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.6 2005-09-02 19:54:21 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.7 2005-09-05 21:30:58 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -268,6 +268,11 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
 
     private void displayInfo(HMethod hm, WPPointerAnalysis pa) {
+	if(PAUtil.isAbstract(hm) || PAUtil.isNative(hm)) {
+	    System.out.println("Cannot analyze native/abstract method \"" + hm + "\"");
+	    return;
+	}
+
 	AnalysisPolicy ap = new AnalysisPolicy(true, -1, Flags.MAX_INTRA_SCC_ITER);
 	// make sure the inter-proc fixed-points are solved
 	pa.getInterProcResult(hm, ap);

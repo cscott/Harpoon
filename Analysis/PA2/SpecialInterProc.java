@@ -27,7 +27,7 @@ import harpoon.ClassFile.HField;
  * <code>SpecialInterProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SpecialInterProc.java,v 1.3 2005-09-02 19:22:52 salcianu Exp $
+ * @version $Id: SpecialInterProc.java,v 1.4 2005-09-05 21:30:58 salcianu Exp $
  */
 public class SpecialInterProc {
 
@@ -77,6 +77,8 @@ public class SpecialInterProc {
 	{"java.io.FileInputStream",  "readBytes",  "([BII)I"},
 	{"java.io.FileInputStream",  "skip",       "(J)J"},
 	{"java.io.FileInputStream",  "close",      "()V"},
+
+	{"java.io.File",  "length0",  "()J"},
 
 	{"java.io.FileOutputStream", "open",       "(Ljava/lang/String;)V"},
 	{"java.io.FileOutputStream", "close",      "()V"},

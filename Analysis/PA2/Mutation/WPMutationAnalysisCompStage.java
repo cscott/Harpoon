@@ -9,25 +9,32 @@ import java.util.Collections;
 import java.util.Set;
 
 import jpaul.DataStructs.Pair;
+import jpaul.DataStructs.Relation;
+import jpaul.DataStructs.MapSetRelation;
 import jpaul.Misc.BoolMCell;
+import jpaul.Misc.Predicate;
 
 import harpoon.Main.CompilerStageEZ;
 import harpoon.Util.Options.Option;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HClass;
 
 import harpoon.Analysis.PA2.InterProcAnalysisResult;
 import harpoon.Analysis.PA2.PointerAnalysis;
 import harpoon.Analysis.PA2.AnalysisPolicy;
 import harpoon.Analysis.PA2.PANode;
 import harpoon.Analysis.PA2.Flags;
+import harpoon.Analysis.PA2.PAUtil;
+
+import harpoon.Util.Util;
 
 /**
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.4 2005-09-05 16:38:57 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.5 2005-09-05 21:30:58 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -63,44 +70,126 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	assert pa != null : "cannot find the pointer analysis";
 	ma = new MutationAnalysis(pa);
 
+	Relation<HClass,HMethod> class2methods = new MapSetRelation<HClass,HMethod>();
+
 	for(HMethod hm : pa.getCallGraph().transitiveSucc(Collections.<HMethod>singleton(mainM))) {
 	    if(hcf.convert(hm) == null) continue;
-	    displayInfo(hm);
-	    System.out.println();
+	    if(hm.getDeclaringClass().isArray()) continue;
+	    class2methods.add(hm.getDeclaringClass(), hm);
 	}
+	
+	Stat sLib  = displayInfo("LIBRARY", class2methods, isLibClass);
+	Stat sUser = displayInfo("USER", class2methods, Predicate.NOT(isLibClass));
+
+	System.out.println("\nMUTATION STATISTICS:");
+	System.out.println("LIB. CODE: " + sLib);
+	System.out.println("USER CODE: " + sUser);
+	System.out.println("TOTAL:     " + Stat.sum(sLib, sUser));
+	System.out.println();
+
+	// enable some GC
+	pa = null;
+	ma = null;
+    }
+
+    private static final String[] libPackageNames = new String[] {
+	"java",
+	"sun"
+    };
+    Predicate<HClass> isLibClass = new Predicate<HClass>() {
+	public boolean check(HClass hclass) {
+	    String className = hclass.getName();
+	    for(String libPackageName : libPackageNames) {
+		if(className.startsWith(libPackageName)) {
+		    return true;
+		}
+	    }
+	    return false;
+	}
+    };
+
+
+    private static class Stat {
+	int nbMethods = 0;
+	int nbPureMethods = 0;
+	int nbParams = 0;
+	int nbSafeParams = 0;
+
+	public String toString() {
+	    return 
+		"Pure methods: " + prop(nbPureMethods, nbMethods) +
+		" ;\tSafe params: " + prop(nbSafeParams, nbParams);
+	}
+
+	private String prop(int nbProp, int nbAll) {
+	    return 
+		nbProp + " / " + nbAll + " = " +
+		Util.percentage((double) nbProp, (double) nbAll);
+	}
+
+	static Stat sum(Stat s1, Stat s2) {
+	    Stat sum = new Stat();
+	    sum.nbMethods = s1.nbMethods + s2.nbMethods;
+	    sum.nbPureMethods = s1.nbPureMethods + s2.nbPureMethods;
+	    sum.nbParams  = s1.nbParams + s2.nbParams;
+	    sum.nbSafeParams = s1.nbSafeParams + s2.nbSafeParams;
+	    return sum;
+	}
+
     }
 
 
-    private void displayInfo(HMethod hm) {
-	System.out.println(hm);
+    private Stat displayInfo(String tag, Relation<HClass,HMethod> class2methods, Predicate<HClass> pred) {
+	Stat stat = new Stat();
+	System.out.println("\n\n" + tag + " CLASSES");
+	for(HClass hClass : class2methods.keys()) {
+	    if(!pred.check(hClass)) continue;
+
+	    System.out.println(hClass.getName() + " ");
+	    for(HMethod hm : class2methods.getValues(hClass)) {
+		displayInfo(hm, "  ", stat);
+		System.out.println();
+	    }
+	    System.out.println("}\n");
+	}
+	return stat;
+    }
+
+
+    private void displayInfo(HMethod hm, String indent, Stat stat) {
+	stat.nbMethods++;
+	System.out.println(indent + hm);
 	try {
 	    if(ma.isPure(hm)) {
-		System.out.println("PURE");
+		System.out.println(indent + "PURE");
+		stat.nbPureMethods++;
 	    }
 	    else {
-		System.out.println("Mutated fields = " + ma.getMutatedAbstrFields(hm));
-		System.out.println("RegExp = " + ma.getMutationRegExp(hm));
+		System.out.println(indent + "NOT PURE");
+		System.out.println(indent + "Mutated fields = " + ma.getMutatedAbstrFields(hm));
+		System.out.println(indent + "RegExp = " + ma.getMutationRegExp(hm));
 	    }
 
 	    List<ParamInfo> safeParams = ma.getSafeParams(hm);
-	    //if(!safeParams.isEmpty()) {
-		System.out.print("PARAMS: ");
-		boolean first = true;
-		for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
-		    if(!first) {
-			System.out.print(", ");
-		    }
-		    if(safeParams.contains(pi)) {
-			System.out.print("[safe] ");
-		    }
-		    System.out.print(pi.type().getName() + " " + pi.declName());
-		    first = false;
+	    System.out.print(indent + "PARAMS: ");
+	    boolean first = true;
+	    for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
+		stat.nbParams++;
+		if(!first) {
+		    System.out.print(", ");
 		}
-		System.out.println();
-		//}
+		if(safeParams.contains(pi)) {
+		    System.out.print("[safe] ");
+		    stat.nbSafeParams++;
+		}
+		System.out.print(pi.type().getName() + " " + pi.declName());
+		first = false;
+	    }
+	    System.out.println();
 	}
 	catch(NoAnalysisResultException e) {
-	    System.out.println("Unanalyzed");
+	    System.out.println(indent + "WARNING: UNANALYZED");
+	    stat.nbParams += PAUtil.getParamTypes(hm).size();
 	}
     }
 
