@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.4 2005-09-01 00:01:43 salcianu Exp $
+ * @version $Id: Flags.java,v 1.5 2005-09-05 16:47:19 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -42,6 +42,8 @@ public abstract class Flags {
     static int MAX_CALLEES_PER_ANALYZABLE_SITE = 15;
 
     public static boolean RECORD_WRITES = false;
+    public static boolean IGNORE_CERTAIN_MUTATIONS = true;
+    public static boolean IGNORE_CONSTR_MUTATION_ON_THIS = true;
 
     /** If true, the whole-program analysis will eagerly execute and
         time all the pre-analysis: IR construction, call graph, etc.

@@ -42,7 +42,7 @@ import harpoon.Temp.Temp;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.3 2005-09-01 22:45:21 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.4 2005-09-05 16:47:19 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -202,26 +202,6 @@ public abstract class PAUtil {
 	}
 	return pTypes;
     }
-
-
-    public static List<Temp> getParamTemps(HMethod hm, CachingCodeFactory ccf) {
-	HCode hcode = ccf.convert(hm);
-	METHOD method = ((HEADER) ccf.convert(hm).getRootElement()).method();
-	return Arrays.asList(method.params());
-    }
-
-
-    public static List<String> getParamNames(HMethod hm) {
-	List<String> paramNames = new LinkedList<String>();
-	if(!hm.isStatic()) {
-	    paramNames.add("this");
-	}
-	for(String paramName : hm.getParameterNames()) {
-	    paramNames.add(paramName);
-	}
-	return paramNames;
-    }
-
 
     static synchronized HField getArrayField(final Linker linker) {
 	if(arrayField == null) {

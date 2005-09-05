@@ -20,7 +20,7 @@ import harpoon.ClassFile.HField;
  * pointer analysis.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcAnalysisResult.java,v 1.2 2005-08-31 02:37:54 salcianu Exp $ */
+ * @version $Id: InterProcAnalysisResult.java,v 1.3 2005-09-05 16:47:19 salcianu Exp $ */
 public abstract class InterProcAnalysisResult {
 
     /** Inside edges at the end of the method. */
@@ -138,6 +138,34 @@ public abstract class InterProcAnalysisResult {
         turned on.  */
     public Set<Pair<PANode,HField>> eomWrites() {
 	throw new Error("unimplemented");
+    }
+
+
+
+    public static class Chained extends InterProcAnalysisResult {
+	public Chained(InterProcAnalysisResult ipar) {
+	    this.ipar = ipar;
+	}
+	private final InterProcAnalysisResult ipar;
+
+	public PAEdgeSet eomI() { return ipar.eomI(); }
+	
+	public void invalidateCaches() { ipar.invalidateCaches(); }
+
+	public PAEdgeSet eomO() { return ipar.eomO(); }
+
+	public Set<PANode> eomDirGblEsc() { return ipar.eomDirGblEsc(); }
+
+	public Set<PANode> eomAllGblEsc() { return ipar.eomAllGblEsc(); }
+	
+	public Set<PANode> eomAllEsc() { return ipar.eomAllEsc(); }
+
+	public Set<PANode> ret() { return ipar.ret(); }
+    
+	public Set<PANode> ex()  { return ipar.ex(); }
+
+	public Set<Pair<PANode,HField>> eomWrites() { return ipar.eomWrites(); }
+
     }
 
 }

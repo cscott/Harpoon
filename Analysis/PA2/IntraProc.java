@@ -67,11 +67,13 @@ import net.cscott.jutil.DisjointSet;
 
 import harpoon.Util.Util;
 
+import harpoon.Analysis.PA2.Mutation.MutationAnalysis;
+
 /**
  * <code>IntraProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IntraProc.java,v 1.4 2005-08-31 02:37:54 salcianu Exp $
+ * @version $Id: IntraProc.java,v 1.5 2005-09-05 16:47:19 salcianu Exp $
  */
 public class IntraProc {
     
@@ -188,6 +190,7 @@ public class IntraProc {
 
 	    public Set<Pair<PANode,HField>> eomWrites() {
 		Set<Pair<PANode,HField>> writes = (Set<Pair<PANode,HField>>) sr.get(vWrites());
+
 		return 
 		(writes == null) ?
 		Collections.<Pair<PANode,HField>>emptySet() :
