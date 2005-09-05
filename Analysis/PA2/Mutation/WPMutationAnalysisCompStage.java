@@ -27,7 +27,7 @@ import harpoon.Analysis.PA2.Flags;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.2 2005-09-02 19:54:58 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.3 2005-09-05 15:02:43 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -56,42 +56,35 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
     }
 
     private PointerAnalysis pa;
+    private MutationAnalysis ma;
     
     public void real_action() {
 	pa = (PointerAnalysis) attribs.get("pa");
-	AnalysisPolicy  ap = null;  // = the best currently available result
+	assert pa != null : "cannot find the pointer analysis";
+	ma = new MutationAnalysis(pa);
+
 	for(HMethod hm : pa.getCallGraph().transitiveSucc(Collections.<HMethod>singleton(mainM))) {
-	    InterProcAnalysisResult ipar = pa.getInterProcResult(hm, ap);
-	    if(ipar == null) {
-		//System.out.println("WARNING: no analysis result for " + hm);
-		//System.out.println();
-		continue;
-	    }
-	    
-	    displayInfo(hm, ipar);
+	    if(hcf.convert(hm) == null) continue;
+	    displayInfo(hm);
+	    System.out.println();
 	}
     }
 
 
-    private void displayInfo(HMethod hm, InterProcAnalysisResult ipar) {
-	Set<Pair<PANode,HField>> mutatedAbstrFields = ipar.eomWrites();
-
+    private void displayInfo(HMethod hm) {
 	System.out.println(hm);
-	if(mutatedAbstrFields.isEmpty()) {
-	    System.out.println("PURE");
+	try {
+	    if(ma.isPure(hm)) {
+		System.out.println("PURE");
+	    }
+	    else {
+		System.out.println("Mutated fields = " + ma.getMutatedAbstrFields(hm));
+		System.out.println("RegExp = " + ma.getMutationRegExp(hm));
+	    }
 	}
-	else {
-	    System.out.println(mutatedAbstrFields);
-	    System.out.print("RegExp = ");
-	    MutationNFA nfa = new MutationNFA(hm, ipar, pa);
-	    //System.out.println("nfa = " + nfa);
-	    //System.out.println("nfa states = " + nfa.states());
-	    //System.out.println("Unsimplified = " + nfa.toRegExp());
-	    //System.out.println("  Simplified = " + nfa.simplify().toRegExp());
-	    System.out.println(nfa.simplify().toRegExp());
+	catch(NoAnalysisResultException e) {
+	    System.out.println("Unanalyzed");
 	}
-	
-	System.out.println();
     }
 
 }
