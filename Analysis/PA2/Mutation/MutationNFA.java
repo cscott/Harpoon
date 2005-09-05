@@ -35,7 +35,7 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationNFA</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationNFA.java,v 1.2 2005-09-02 19:22:52 salcianu Exp $
+ * @version $Id: MutationNFA.java,v 1.3 2005-09-05 16:38:57 salcianu Exp $
  */
 public class MutationNFA extends NFA<PANode,MLabel> {
     
@@ -63,21 +63,13 @@ public class MutationNFA extends NFA<PANode,MLabel> {
 			       HMethod hm,
 			       InterProcAnalysisResult ipar,
 			       PointerAnalysis pa) {
-	Iterator<HClass> itParamTypes = PAUtil.getParamTypes(hm).iterator();
-	Iterator<Temp>   itParamTemps = PAUtil.getParamTemps(hm, pa.getCodeFactory()).iterator();
-	Iterator<PANode> itParamNodes = pa.getNodeRep().getParamNodes(hm).iterator();
-	Iterator<String> itParamNames = PAUtil.getParamNames(hm).iterator();
+	for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
+	    if(pi.type().isPrimitive()) continue;
 
-	while(itParamTypes.hasNext()) {
-	    HClass paramType = itParamTypes.next();
-	    Temp   paramTemp = itParamTemps.next();
-	    String paramName = itParamNames.next();
-	    if(paramType.isPrimitive()) continue;
-
-	    PANode paramNode = itParamNodes.next();
+	    assert pi.node() != null;
 	    state2trans.get(startState).add
-		(new Pair<PANode,MLabel>(paramNode,
-					 new MLabel.Param(paramTemp, paramName))); 
+		(new Pair<PANode,MLabel>(pi.node(),
+					 new MLabel.Param(pi.temp(), pi.declName())));
 	}
     }
 

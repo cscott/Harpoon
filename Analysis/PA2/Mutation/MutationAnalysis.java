@@ -6,8 +6,11 @@ package harpoon.Analysis.PA2.Mutation;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collection;
+import java.util.List;
+import java.util.LinkedList;
 
 import jpaul.DataStructs.Pair;
+import jpaul.DataStructs.DSUtil;
 
 import jpaul.RegExps.RegExp;
 
@@ -15,18 +18,22 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HClass;
+
+import harpoon.Temp.Temp;
 
 import harpoon.Analysis.PA2.PANode;
 import harpoon.Analysis.PA2.PointerAnalysis;
 import harpoon.Analysis.PA2.AnalysisPolicy;
 import harpoon.Analysis.PA2.InterProcAnalysisResult;
 import harpoon.Analysis.PA2.Flags;
+import harpoon.Analysis.PA2.PAEdgeSet;
 
 /**
  * <code>MutationAnalysis</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationAnalysis.java,v 1.1 2005-09-05 15:02:43 salcianu Exp $
+ * @version $Id: MutationAnalysis.java,v 1.2 2005-09-05 16:38:57 salcianu Exp $
  */
 public class MutationAnalysis {
 
@@ -113,5 +120,42 @@ public class MutationAnalysis {
     private final String[][] amfArray = {
 	{"java.lang.FloatingDecimal", "b5p"}
     };
+
+
+
+    public List<ParamInfo> getSafeParams(HMethod hm) throws NoAnalysisResultException {
+	InterProcAnalysisResult ipar = getIPAR(hm);
+
+	// nonSafe is the set of nodes that (1) are mutated, (2)
+	// escape globally, or (3) a new, externally visible, inside
+	// edge is created toward them.
+	final Set<PANode> nonSafe = new HashSet<PANode>();
+	for(Pair<PANode,HField> af : ipar.eomWrites()) {
+	    if(af.left != null) {
+		nonSafe.add(af.left);
+	    }
+	}
+	nonSafe.addAll(ipar.eomAllGblEsc());
+	ipar.eomI().forAllEdges(new PAEdgeSet.EdgeAction() {
+	    public void action(PANode src, HField hf, PANode dst) {
+		nonSafe.add(dst);
+	    }
+	});
+	// returning / throwing a node creates new externally visible aliasing to it
+	nonSafe.addAll(ipar.ret());
+	nonSafe.addAll(ipar.ex());
+
+	List<ParamInfo> safeParams = new LinkedList<ParamInfo>();
+	for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
+	    if(pi.type().isPrimitive()) continue;
 	
+	    Set<PANode> reachable = ipar.eomI().transitiveSucc(pi.node());
+	    if(DSUtil.disjoint(reachable, nonSafe)) {
+		safeParams.add(pi);
+	    }
+	}
+
+	return safeParams;
+    }    
+
 }

@@ -27,7 +27,7 @@ import harpoon.Analysis.PA2.Flags;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.3 2005-09-05 15:02:43 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.4 2005-09-05 16:38:57 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -81,6 +81,23 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		System.out.println("Mutated fields = " + ma.getMutatedAbstrFields(hm));
 		System.out.println("RegExp = " + ma.getMutationRegExp(hm));
 	    }
+
+	    List<ParamInfo> safeParams = ma.getSafeParams(hm);
+	    //if(!safeParams.isEmpty()) {
+		System.out.print("PARAMS: ");
+		boolean first = true;
+		for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
+		    if(!first) {
+			System.out.print(", ");
+		    }
+		    if(safeParams.contains(pi)) {
+			System.out.print("[safe] ");
+		    }
+		    System.out.print(pi.type().getName() + " " + pi.declName());
+		    first = false;
+		}
+		System.out.println();
+		//}
 	}
 	catch(NoAnalysisResultException e) {
 	    System.out.println("Unanalyzed");
