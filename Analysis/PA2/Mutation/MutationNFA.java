@@ -35,7 +35,7 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationNFA</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationNFA.java,v 1.3 2005-09-05 16:38:57 salcianu Exp $
+ * @version $Id: MutationNFA.java,v 1.4 2005-09-06 04:39:05 salcianu Exp $
  */
 public class MutationNFA extends NFA<PANode,MLabel> {
     
@@ -163,7 +163,8 @@ public class MutationNFA extends NFA<PANode,MLabel> {
 
     public RegExp<MLabel> toRegExp() {
 	RegExp<MLabel> regExp = this.simplify().toRegExp();
-	// TODO: simplifications: REACH | f = REACH, etc.
+	//System.out.println("regExp = " + regExp);
+	regExp = MutRegExpSimplifier.simplify(regExp);
 	return regExp;
     }
 }

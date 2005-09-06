@@ -34,7 +34,7 @@ import harpoon.Util.Util;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.5 2005-09-05 21:30:58 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.6 2005-09-06 04:39:05 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -166,8 +166,8 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    }
 	    else {
 		System.out.println(indent + "NOT PURE");
-		System.out.println(indent + "Mutated fields = " + ma.getMutatedAbstrFields(hm));
-		System.out.println(indent + "RegExp = " + ma.getMutationRegExp(hm));
+		//System.out.println(indent + "Mutated fields = " + ma.getMutatedAbstrFields(hm));
+		System.out.println(indent + "MutRegExp = " + ma.getMutationRegExp(hm));
 	    }
 
 	    List<ParamInfo> safeParams = ma.getSafeParams(hm);

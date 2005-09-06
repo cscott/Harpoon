@@ -33,7 +33,7 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationAnalysis</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationAnalysis.java,v 1.3 2005-09-05 21:30:58 salcianu Exp $
+ * @version $Id: MutationAnalysis.java,v 1.4 2005-09-06 04:39:05 salcianu Exp $
  */
 public class MutationAnalysis {
 
@@ -61,7 +61,7 @@ public class MutationAnalysis {
     public RegExp<MLabel> getMutationRegExp(HMethod hm) throws NoAnalysisResultException {
 	InterProcAnalysisResult ipar = getIPAR(hm);
 	MutationNFA nfa = new MutationNFA(hm, ipar, pa);
-	return nfa.simplify().toRegExp();
+	return nfa.toRegExp();
     }
 
     public Collection<Pair<PANode,HField>> getMutatedAbstrFields(HMethod hm) throws NoAnalysisResultException {
