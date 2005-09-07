@@ -26,7 +26,7 @@ import harpoon.Analysis.PA2.PAUtil;
  * <code>MAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MAUtil.java,v 1.1 2005-09-05 16:38:57 salcianu Exp $
+ * @version $Id: MAUtil.java,v 1.2 2005-09-07 20:36:50 salcianu Exp $
  */
 abstract class MAUtil {
 
@@ -67,6 +67,14 @@ abstract class MAUtil {
 	}
   	
 	return paramInfo;
+    }
+
+
+    static String polishedName(HClass hClass) {
+	if(hClass.isArray()) {
+	    return polishedName(hClass.getComponentType()) + "[]";
+	}
+	return hClass.getName();
     }
 
 }

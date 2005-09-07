@@ -16,7 +16,7 @@ import harpoon.Temp.Temp;
  * mutated locations.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MLabel.java,v 1.1 2005-09-05 15:02:43 salcianu Exp $ */
+ * @version $Id: MLabel.java,v 1.2 2005-09-07 20:36:50 salcianu Exp $ */
 public abstract class MLabel {
 
     public static class Field extends MLabel {
@@ -50,7 +50,7 @@ public abstract class MLabel {
 	}
 	return mlabel;
     }
-    private final static MLabel reach = new Reach();
+    public final static MLabel reach = new Reach();
     private final static Map<HField,MLabel> hf2mlabel = new HashMap<HField,MLabel>();
     
     

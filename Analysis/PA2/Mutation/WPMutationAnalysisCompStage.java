@@ -28,13 +28,15 @@ import harpoon.Analysis.PA2.PANode;
 import harpoon.Analysis.PA2.Flags;
 import harpoon.Analysis.PA2.PAUtil;
 
+import harpoon.Analysis.IOEffectAnalysis;
+
 import harpoon.Util.Util;
 
 /**
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.6 2005-09-06 04:39:05 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.7 2005-09-07 20:36:50 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -64,11 +66,13 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
     private PointerAnalysis pa;
     private MutationAnalysis ma;
+    private IOEffectAnalysis io;
     
     public void real_action() {
 	pa = (PointerAnalysis) attribs.get("pa");
 	assert pa != null : "cannot find the pointer analysis";
 	ma = new MutationAnalysis(pa);
+	io = new IOEffectAnalysis(pa.getCallGraph());
 
 	Relation<HClass,HMethod> class2methods = new MapSetRelation<HClass,HMethod>();
 
@@ -90,6 +94,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	// enable some GC
 	pa = null;
 	ma = null;
+	io = null;
     }
 
     private static final String[] libPackageNames = new String[] {
@@ -135,7 +140,6 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    sum.nbSafeParams = s1.nbSafeParams + s2.nbSafeParams;
 	    return sum;
 	}
-
     }
 
 
@@ -161,13 +165,22 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	System.out.println(indent + hm);
 	try {
 	    if(ma.isPure(hm)) {
-		System.out.println(indent + "PURE");
-		stat.nbPureMethods++;
+		if(!io.doesIO(hm)) {
+		    System.out.println(indent + "PURE");
+		    stat.nbPureMethods++;
+		}
+		else {
+		    System.out.println(indent + "HEAP PURE BUT DOES IO");
+		}
 	    }
 	    else {
-		System.out.println(indent + "NOT PURE");
+		System.out.print(indent + "NOT HEAP PURE");
+		if(io.doesIO(hm)) {
+		    System.out.print("; ALSO DOES IO");
+		}
+		System.out.println();
 		//System.out.println(indent + "Mutated fields = " + ma.getMutatedAbstrFields(hm));
-		System.out.println(indent + "MutRegExp = " + ma.getMutationRegExp(hm));
+		System.out.println(indent + "MutRegExp = " + ma.getMutationRegExp(hm));		
 	    }
 
 	    List<ParamInfo> safeParams = ma.getSafeParams(hm);
@@ -182,7 +195,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		    System.out.print("[safe] ");
 		    stat.nbSafeParams++;
 		}
-		System.out.print(pi.type().getName() + " " + pi.declName());
+		System.out.print(MAUtil.polishedName(pi.type()) + " " + pi.declName());
 		first = false;
 	    }
 	    System.out.println();

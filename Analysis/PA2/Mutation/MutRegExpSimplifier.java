@@ -5,18 +5,27 @@ package harpoon.Analysis.PA2.Mutation;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.ListIterator;
+import java.util.Iterator;
 
 import jpaul.RegExps.RegExp;
 
 import jpaul.Misc.IdentityWrapper;
+import jpaul.Misc.Function;
+
+import jpaul.DataStructs.DSUtil;
 
 /**
  * <code>MutRegExpSimplifier</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutRegExpSimplifier.java,v 1.1 2005-09-06 04:39:05 salcianu Exp $
+ * @version $Id: MutRegExpSimplifier.java,v 1.2 2005-09-07 20:36:50 salcianu Exp $
  */
 class MutRegExpSimplifier {
+
+    private static boolean DEBUG = false;
 
     private MutRegExpSimplifier() {}
 
@@ -35,17 +44,6 @@ class MutRegExpSimplifier {
 
     private RegExp<MLabel> _simp(RegExp<MLabel> regExp) {
 	return regExp.accept(new RegExp.Visitor<MLabel,RegExp<MLabel>>() {
-	    
-	    // TODO: more simplif:
-
-	    // 1. in jpaul.RegExps.RegExp - Union should not contain
-	    // duplicates a|b|c|a = a|b|c - Get all terms of a
-	    // (possibly nested) Union; put them in a set (no
-	    // duplicates), and next built a new Union from the disjoint elems.
-
-	    // 2. In this file: linearize nested concats; next
-	    // transform each ocurrence of (foo)*.REACH into REACH
-
 	    public RegExp<MLabel> visit(RegExp.Union<MLabel> ure) {
 		RegExp<MLabel> left  = simp(ure.left);
 		if(isReach(left))
@@ -64,14 +62,90 @@ class MutRegExpSimplifier {
 		return new RegExp.Star<MLabel>(starred);
 	    }
 
-	    private boolean isReach(RegExp<MLabel> regExp) {
+	    private boolean isAtomic(RegExp<MLabel> regExp, MLabel mLabel) {
 		if(!(regExp instanceof RegExp.Atomic/*<MLabel>*/)) return false;
-		return ((RegExp.Atomic<MLabel>) regExp).a instanceof MLabel.Reach;
+		return ((RegExp.Atomic<MLabel>) regExp).a.equals(mLabel);
+	    }
+
+	    private boolean isReach(RegExp<MLabel> regExp) {
+		return isAtomic(regExp, MLabel.reach);
+	    }
+
+	    private boolean isStar(RegExp<MLabel> regExp) {
+		return regExp instanceof RegExp.Star/*<MLabel>*/;
 	    }
 
 	    public RegExp<MLabel> visit(RegExp.Concat<MLabel> cre) {
-		return
-		    new RegExp.Concat<MLabel>(simp(cre.left), simp(cre.right));
+		List<RegExp<MLabel>> concatTerms = 
+		    (List<RegExp<MLabel>>) DSUtil.mapColl
+		    (cre.allTransTerms(),
+		     new Function<RegExp<MLabel>,RegExp<MLabel>>() {
+			 public RegExp<MLabel> f(RegExp<MLabel> re) {
+			     return _simp(re);
+			 }
+		     },
+		     new LinkedList<RegExp<MLabel>>());
+
+		simplifyConcatTerms(concatTerms);
+
+		return RegExp.<MLabel>buildConcat(concatTerms);
+	    }
+
+
+	    private void simplifyConcatTerms(List<RegExp<MLabel>> concatTerms) {
+		//System.out.println("Original terms = " + concatTerms);
+		
+		boolean changed = false;
+		for(ListIterator<RegExp<MLabel>> li = concatTerms.listIterator(); li.hasNext(); ) {
+		    RegExp<MLabel> term = li.next();
+		    if(isReach(term)) {
+			// 1. remove previous star/reach expressions (if any)
+			li.previous();
+			while(li.hasPrevious()) {
+			    RegExp<MLabel> prev = li.previous();
+			    if(isReach(prev) || isStar(prev)) {
+				li.remove();
+				changed = true;
+			    }
+			    else {
+				li.next();
+				break;
+			    }
+			}
+			li.next();
+			// 2. remove next star/reach expressions (if any)
+			while(li.hasNext()) {
+			    RegExp<MLabel> next = li.next();
+			    if(isReach(next) || isStar(next)) {
+				li.remove();
+				changed = true;
+				}
+			    else {
+				li.previous();
+				break;
+			    }
+			}
+		    }
+		}
+		
+		//if(changed) System.out.println("Simplified terms = " + concatTerms);
+
+		// REACHfromSTAT.REACH -> REACHfromSTAT
+		// REACHfromSTAT.(foo)* -> REACHfromSTAT
+		if(concatTerms.size() >= 2) {
+		    Iterator<RegExp<MLabel>> it = concatTerms.iterator();
+		    RegExp<MLabel> first  = it.next();
+		    RegExp<MLabel> second = it.next();
+		    if(isAtomic(first, MLabel.reachFromStat)) {
+			if(isAtomic(second, MLabel.reach) || isStar(second)) {
+			    // remove the REACH / (foo)* element
+			    concatTerms.remove(1);
+			    changed = true;
+			    //System.out.println("Simplified terms (2) = " + concatTerms);
+			}
+		    }
+		}
+
 	    }
 
 	    // default visitor: don't do any simplification
@@ -81,7 +155,6 @@ class MutRegExpSimplifier {
 	    }
 	});
     }
-
 
     static RegExp<MLabel> simplify(RegExp<MLabel> regExp) {
 	return (new MutRegExpSimplifier()).simp(regExp);

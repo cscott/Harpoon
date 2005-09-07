@@ -33,7 +33,7 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationAnalysis</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationAnalysis.java,v 1.4 2005-09-06 04:39:05 salcianu Exp $
+ * @version $Id: MutationAnalysis.java,v 1.5 2005-09-07 20:36:50 salcianu Exp $
  */
 public class MutationAnalysis {
 
@@ -52,7 +52,14 @@ public class MutationAnalysis {
     private final AnalysisPolicy ap = null; // = the best currently available result
 
     /** Checks whether <code>hm</code> is a pure methods, according to
-        the JML definition. */
+        the JML definition.  A method is pure if it mutates only
+        objects that did not exist when the method was invoked; in
+        addition, pure constructors are allowed to mutate the
+        <code>this</code> object.  The JML purity definition also
+        precludes pure methods from doing I/O.  However, we separate
+        heap mutation and I/O operations.  This analysis deals only
+        with heap mutations.  <code>IOEffectAnalysis</code> is an
+        orthogonal analysis that handles I/O mutation. */
     public boolean isPure(HMethod hm) throws NoAnalysisResultException {
 	InterProcAnalysisResult ipar = getIPAR(hm);
 	return ipar.eomWrites().isEmpty();
