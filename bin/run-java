@@ -38,7 +38,7 @@ if [ -n "$USE_SUN_JDK" ]; then
     javaopts="-Dharpoon.runtime1.sunjdk=true $javaopts"
 
 ## There used to be a time when all these .jar's where necessary.
-## Most of the mare no longer necessary: Flex handles JDK 1.1
+## Most of them are no longer necessary: Flex handles JDK 1.1
 ## classes.zip fine.  If you need to go beyond 1.1, you should use
 ## Classpath instead.  The next line is preserved for reference only
 ##    FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/cpmath.jar ${FLEX_DIR}/Support/cpzip.jar ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip"
@@ -49,15 +49,25 @@ elif [ -n "$USE_MINILIB" ]; then
 else
     # use GNU classpath.  First look for the CLASSPATH_HOME variable, which
     # should specify a classpath CVS pull.
-    if [ -n "$CLASSPATH_HOME" -a -f "$CLASSPATH_HOME/share/classpath/glibj.zip" ]; then
+
+    # - first, if CLASSPATH_HOME is undefined, check a sibling directory
+    if [ -z "$CLASSPATH_HOME" ]; then
+	export CLASSPATH_HOME=${FLEX_DIR}/../classpath-install
+    fi
+    if [ -f "$CLASSPATH_HOME/share/classpath/glibj.zip" ]; then
 	FLEX_SUPPORT_FILES="$CLASSPATH_HOME/share/classpath/glibj.zip"
-    # Otherwise look for the classpath-config script on your path.
+    # - second, look for the classpath-config script on your path.
     elif [ -n "$(which classpath-config)" ]; then
 	FLEX_SUPPORT_FILES="$(classpath-config --classpath)"
-    # okay, assume this is the debian 'classpath' package, then.
-    else
+    # - third, check if this is the debian 'classpath' package
+    elif [ -f "/usr/share/classpath/glibj.zip" ]; then
 	FLEX_SUPPORT_FILES="/usr/share/classpath/glibj.zip"
+    else
+    # - what more can we do?  Just fail
+	echo Cannot find Classpath glibj.zip; set the env. var CLASSPATH_HOME
+	exit 1;
     fi
+    
     for f in src/classpath/cpvm.jar src/java.lang.reflect/reflect-thunk.jar; do
 	if [ -f ${RUNTIME_DIR}/$f ]; then
 	    FLEX_SUPPORT_FILES="$RUNTIME_DIR/$f $FLEX_SUPPORT_FILES"
@@ -88,5 +98,9 @@ harpoonpath=${FLEXPATH}${FLEXPATH:+:}.${SUPP_FILES_PATH}
 if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
+
+echo
+echo run-java COMMAND: ${JAVA:=$defjava -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar:$FLEX_DIR/Support/jpaul.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"
+echo
 
 ${JAVA:=$defjava -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar:$FLEX_DIR/Support/jpaul.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"
