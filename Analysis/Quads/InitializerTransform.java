@@ -60,7 +60,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.7 2005-09-08 22:33:21 salcianu Exp $
+ * @version $Id: InitializerTransform.java,v 1.8 2005-09-12 14:43:23 salcianu Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -398,40 +398,33 @@ public class InitializerTransform
 	final Map result = new HashMap();
 	try {
 	    ParseUtil.readResource(resourceName, new ParseUtil.StringParser() {
-		public void parseString(String s)
-		    throws ParseUtil.BadLineException {
-		    try {
-			int equals = s.indexOf('=');
-			String mname = (equals<0)? s:s.substring(0, equals).trim();
-			HMethod hm = ParseUtil.parseMethod(linker, mname);
-			final Set dep = new HashSet();
-			String depstr = (equals<0) ? "" : s.substring(equals+1);
-			ParseUtil.parseSet(depstr, new ParseUtil.StringParser() {
-			    public void parseString(String ss)
-				throws ParseUtil.BadLineException {
-				HClass hc = ParseUtil.parseClass(linker, ss);
+		public void parseString(String s) throws ParseUtil.BadLineException {
+		    int equals = s.indexOf('=');
+		    String mname = (equals<0)? s:s.substring(0, equals).trim();
+		    HMethod hm = ParseUtil.parseMethod(linker, mname);
+		    final Set dep = new HashSet();
+		    String depstr = (equals<0) ? "" : s.substring(equals+1);
+		    ParseUtil.parseSet(depstr, new ParseUtil.StringParser() {
+			public void parseString(String ss)
+			    throws ParseUtil.BadLineException {
+			    HClass hc = ParseUtil.parseClass(linker, ss);
 				// FIXME: SHOULD ADD ALL SUPERCLASS/INTERFACE INITIALIZERS
 				// of hc to map, too, and 'dep' should be a *ordered list*
 				// not just a set.
-				HInitializer hi = hc.getClassInitializer();
-				if (hi!=null) dep.add(hi);
-			    }
-			});
-			// if no dependencies, then it's a safe method.
-			// (optimize for space by using a canonical EMPTY_SET)
-			if (dep.size()==0) result.put(hm, Collections.EMPTY_SET);
-			// otherwise, add set to dependent methods map.
-			else result.put(hm, dep);
-			// yay!
-		    } catch (ParseUtil.BadLineException ex) {
-			System.err.println("ERROR READING PROPERTIES, SKIPPING ONE LINE from " + resourceName);
-			System.err.println(ex.toString());
-		    }
+			    HInitializer hi = hc.getClassInitializer();
+			    if (hi!=null) dep.add(hi);
+			}
+		    });
+		    // if no dependencies, then it's a safe method.
+		    // (optimize for space by using a canonical EMPTY_SET)
+		    if (dep.size()==0) result.put(hm, Collections.EMPTY_SET);
+		    // otherwise, add set to dependent methods map.
+		    else result.put(hm, dep);
+		    // yay!
 		}
 	    });
-	}  catch (java.io.IOException ex) {
-	    System.err.println("ERROR READING PROPERTIES, SKIPPING REST OF THE FILE " + resourceName);
-	    System.err.println(ex.toString());
+	} catch(java.io.IOException ex) {
+	    throw new RuntimeException("FATAL: ERROR READING PROPERTIES FROM " + resourceName, ex);
 	}
 	// done.
 	return result;
