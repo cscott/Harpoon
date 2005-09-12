@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.12 2005-09-02 19:53:25 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.13 2005-09-12 18:22:30 salcianu Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
@@ -289,13 +289,11 @@ public class CodeGenerator extends CompilerStage {
 	Iterator<HMethod> hms = hmset.iterator();
 	if (ONLY_COMPILE_MAIN)
 	    hms = Default.singletonIterator(mainM);
-	message("\t");
 	while(hms.hasNext()) {
 	    HMethod m = hms.next();
-	    message(m.getName());
+	    messageln("\t" + m);
 	    if (!Modifier.isAbstract(m.getModifiers()))
 		outputMethod(m, hcf, sahcf, out);
-	    if (hms.hasNext()) message(", ");
 	}
 	messageln("");
 	
