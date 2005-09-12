@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.162 $)dnl
+AC_REVISION($Revision: 1.163 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -183,6 +183,7 @@ AC_ARG_WITH(classpath,
 with_classpath="$withval", with_classpath="no")
 dnl try to add classpath natives to LIBS; define CLASSPATH_VERSION
 if test "$with_classpath" = "yes" ; then
+  dnl case 1: --with-classpath=yes
   AC_PATH_PROG(CLASSPATH_CONFIG, classpath-config, /usr/bin/classpath-config)
   if test -x $CLASSPATH_CONFIG ; then
      LIBS="$LIBS $($CLASSPATH_CONFIG --libs)"
@@ -199,6 +200,14 @@ if test "$with_classpath" = "yes" ; then
         AC_MSG_WARN([using jikes-classpath as java compiler])
 	JAVAC="$JAVACCP"
      fi
+  fi
+elif test "$with_classpath" != "no" ; then
+  dnl case 2: --with-classpath=PATH
+  dnl make sure $JAVAC uses the classpath glibj.zip as bootclasspath
+  if test -f ${with_classpath}/../../share/classpath/glibj.zip ; then
+    JAVAC="$JAVAC -bootclasspath ${with_classpath}/../../share/classpath/glibj.zip"
+  else
+    AC_MSG_ERROR([cannot find ${with_classpath}/../../share/classpath/glibj.zip], 1)
   fi
 fi
 case "$with_classpath" in
