@@ -33,7 +33,7 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationAnalysis</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationAnalysis.java,v 1.5 2005-09-07 20:36:50 salcianu Exp $
+ * @version $Id: MutationAnalysis.java,v 1.6 2005-09-13 19:16:27 salcianu Exp $
  */
 public class MutationAnalysis {
 
@@ -119,7 +119,16 @@ public class MutationAnalysis {
 	    for(int i = 0; i < amfArray.length; i++) {
 		String className = amfArray[i][0];
 		String fieldName = amfArray[i][1];
-		allowedMutatedFields.add(linker.forName(className).getField(fieldName));
+		try {
+		    allowedMutatedFields.add(linker.forName(className).getField(fieldName));
+		}
+		catch(harpoon.ClassFile.NoSuchClassException e) {
+		    System.err.println("canIgnore: warning: unknown class " + className);
+		} 
+		catch(java.lang.NoSuchFieldError e) {
+		    System.err.println("canIgnore: warning: unknown field " + className + "." + fieldName);
+		} 
+		
 	    }
 	}
 

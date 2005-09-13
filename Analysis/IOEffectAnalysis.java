@@ -21,7 +21,7 @@ import harpoon.Analysis.CallGraph;
  * by a method, or by one of its transitive callees.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IOEffectAnalysis.java,v 1.1 2005-09-07 20:36:50 salcianu Exp $ */
+ * @version $Id: IOEffectAnalysis.java,v 1.2 2005-09-13 19:16:27 salcianu Exp $ */
 public class IOEffectAnalysis {
 
     /** Creates a <code>IOEffectAnalysis</code> object.
@@ -99,10 +99,20 @@ public class IOEffectAnalysis {
 	for(int i = 0; i < methods.length; i++) {
 	    String className  = methods[i][0];
 	    String methodName = methods[i][1];
-	    for(HMethod hm : linker.forName(className).getMethods()) {
-		if(hm.getName().equals(methodName)) {
-		    ioMethods.add(hm);
+	    try {
+		boolean found = false;
+		for(HMethod hm : linker.forName(className).getMethods()) {
+		    if(hm.getName().equals(methodName)) {
+			ioMethods.add(hm);
+			found = true;
+		    }
 		}
+		if(!found) {
+		    System.err.println("initIOMethods: warning: unknown method " + className + "." + methodName);
+		}
+	    } catch(harpoon.ClassFile.NoSuchClassException e) {
+		System.out.println("initIOMethods: warning: unknown class " + className);
+		// ignore: it simply means that class ie never instantiated in the current application
 	    }
 	}
     }
