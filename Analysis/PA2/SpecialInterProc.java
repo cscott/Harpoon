@@ -27,7 +27,7 @@ import harpoon.ClassFile.HField;
  * <code>SpecialInterProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SpecialInterProc.java,v 1.4 2005-09-05 21:30:58 salcianu Exp $
+ * @version $Id: SpecialInterProc.java,v 1.5 2005-09-13 19:21:43 salcianu Exp $
  */
 public class SpecialInterProc {
 
@@ -103,13 +103,24 @@ public class SpecialInterProc {
     static void initHarmlessNatives(Linker linker) {
 	harmlessNatives = new HashSet<HMethod>();
 	for(int i = 0; i < hna.length; i++) {
-	    HClass  hClass  = linker.forName(hna[i][0]);
-	    assert hClass != null : 
-		"Class " + hna[i][0] + " not found";
-	    HMethod hMethod = hClass.getDeclaredMethod(hna[i][1], hna[i][2]);
-	    assert hMethod != null : 
-		"Method " + hna[i][0] + "." + 
-		hna[i][1] + hna[i][2] + " not found";
+	    HClass hClass = null;
+	    try {
+		hClass  = linker.forName(hna[i][0]);
+	    } catch(harpoon.ClassFile.NoSuchClassException e) {
+		System.err.println("WARNING: Class " + hna[i][0] + " not found");
+		continue;
+	    }
+
+	    HMethod hMethod = null;
+	    try {
+		hMethod = hClass.getDeclaredMethod(hna[i][1], hna[i][2]);
+	    } catch(java.lang.NoSuchMethodError e) {
+		System.err.println
+		    ("WARNING: Method " + hna[i][0] + "." + 
+		     hna[i][1] + hna[i][2] + " not found");
+		continue;
+	    }
+
 	    harmlessNatives.add(hMethod);
 	}
     }
