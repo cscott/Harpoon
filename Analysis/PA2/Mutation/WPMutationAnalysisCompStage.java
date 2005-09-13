@@ -36,7 +36,7 @@ import harpoon.Util.Util;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.7 2005-09-07 20:36:50 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.8 2005-09-13 19:22:35 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -99,7 +99,8 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
     private static final String[] libPackageNames = new String[] {
 	"java",
-	"sun"
+	"sun",
+	"gnu"
     };
     Predicate<HClass> isLibClass = new Predicate<HClass>() {
 	public boolean check(HClass hclass) {
@@ -118,12 +119,14 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	int nbMethods = 0;
 	int nbPureMethods = 0;
 	int nbParams = 0;
+	int nbObjParams = 0;
 	int nbSafeParams = 0;
 
 	public String toString() {
 	    return 
 		"Pure methods: " + prop(nbPureMethods, nbMethods) +
-		" ;\tSafe params: " + prop(nbSafeParams, nbParams);
+		" ;\tSafe obj. params: " + prop(nbSafeParams, nbObjParams) +
+		" (" + nbParams + " total params)";
 	}
 
 	private String prop(int nbProp, int nbAll) {
@@ -137,6 +140,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    sum.nbMethods = s1.nbMethods + s2.nbMethods;
 	    sum.nbPureMethods = s1.nbPureMethods + s2.nbPureMethods;
 	    sum.nbParams  = s1.nbParams + s2.nbParams;
+	    sum.nbObjParams  = s1.nbObjParams  + s2.nbObjParams;
 	    sum.nbSafeParams = s1.nbSafeParams + s2.nbSafeParams;
 	    return sum;
 	}
@@ -188,6 +192,8 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    boolean first = true;
 	    for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
 		stat.nbParams++;
+		if(pi.type().isPrimitive()) continue;
+		stat.nbObjParams++;
 		if(!first) {
 		    System.out.print(", ");
 		}
@@ -202,7 +208,10 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	}
 	catch(NoAnalysisResultException e) {
 	    System.out.println(indent + "WARNING: UNANALYZED");
-	    stat.nbParams += PAUtil.getParamTypes(hm).size();
+	    for(HClass hClass : PAUtil.getParamTypes(hm)) {
+		stat.nbParams++;
+		if(!hClass.isPrimitive()) stat.nbObjParams++;
+	    }
 	}
     }
 
