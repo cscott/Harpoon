@@ -27,7 +27,7 @@ import harpoon.Analysis.Quads.CallGraph;
  * <code>InterProcConsGen</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcConsGen.java,v 1.4 2005-09-05 21:30:58 salcianu Exp $
+ * @version $Id: InterProcConsGen.java,v 1.5 2005-09-13 19:13:54 salcianu Exp $
  */
 class InterProcConsGen {
 
@@ -134,12 +134,27 @@ class InterProcConsGen {
 	newCons.add(new LtConstraint(intraProc.preIVar(cs), intraProc.postIVar(cs)));
 	// all nodes that escape before the call, still escape
 	newCons.add(new LtConstraint(intraProc.preFVar(cs), intraProc.postFVar(cs)));
+
+	// This FVar collects all nodes that escape directly into this call.
+	// NOTE: for technical reasons we use an LVar (it's anyway a NodeSetVar like FVar)
+	// (o.w., the call to the constructor of StaticStoreConstraintF below would not typecheck)
+	LVar dirGblEscHere = new LVar();
 	
 	// in addition, all nodes pointed-to by parameters escape irremediably
 	for(LVar v : paramVars) {
-	    newCons.add(new LtConstraint(v, intraProc.eVar()));
+	    newCons.add(new LtConstraint(v, dirGblEscHere));
 	    newCons.add(new LtConstraint(v, intraProc.postFVar(cs)));
 	}
+
+	// dirGblEscHere nodes are added to intraProc.
+	newCons.add(new LtConstraint(dirGblEscHere, intraProc.eVar()));
+
+	// in addition, all nodes reachable from them are marked as escaped
+	// (we shamelessly use the StaticStoreConstraintF that does the same thing)
+	newCons.add(new StaticStoreConstraintF(dirGblEscHere,
+					       intraProc.preIVar(cs),
+					       intraProc.preFVar(cs),
+					       intraProc.postFVar(cs)));
 	
 	// an unanalyzable method may return anything
 	makeItPoint(cs.retval(), intraProc.getNodeRep().getGlobalNode());
