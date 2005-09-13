@@ -73,7 +73,7 @@ import harpoon.Analysis.PA2.Mutation.MutationAnalysis;
  * <code>IntraProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IntraProc.java,v 1.5 2005-09-05 16:47:19 salcianu Exp $
+ * @version $Id: IntraProc.java,v 1.6 2005-09-13 19:26:28 salcianu Exp $
  */
 public class IntraProc {
     
@@ -147,14 +147,18 @@ public class IntraProc {
 
 	final PAEdgeSet eomI = PAUtil.fixNullM((PAEdgeSet) sr.get(preIVar(footer)));
 	final PAEdgeSet eomO = PAUtil.fixNullM((PAEdgeSet) sr.get(O));
-	final Set<PANode> eomDirGblEsc = PAUtil.fixNullM((Set<PANode>) sr.get(E));
+	Set<PANode> preEomDirGblEsc = PAUtil.fixNullM((Set<PANode>) sr.get(eVar()));
 
 	final Set<PANode> eomAllGblEsc = 
-	    DiGraph.union(eomI, eomO).
-	    transitiveSucc(DSUtil.iterable2coll
-			   (DSUtil.unionIterable
-			    (eomDirGblEsc,
-			     Collections.<PANode>singleton(nodeRep.getGlobalNode()))));
+	    DSFactories.nodeSetFactory.create
+	    (DiGraph.union(eomI, eomO).
+	     transitiveSucc(DSUtil.iterable2coll
+			    (DSUtil.unionIterable
+			     (preEomDirGblEsc,
+			      Collections.<PANode>singleton(nodeRep.getGlobalNode())))));
+
+	final Set<PANode> eomDirGblEsc = DSFactories.nodeSetFactory.create(eomAllGblEsc);
+	//System.out.println("eVar() = " + eVar() + " has value " + eomDirGblEsc);
 
 	FullAnalysisResult far = new FullAnalysisResult() {
 	    public PAEdgeSet preI(Quad q)  {
@@ -409,7 +413,7 @@ public class IntraProc {
 	}
 
 	private void processStaticStore(Quad q, Temp vd, HField hf) {
-	    newCons.add(new LtConstraint(lVar(vd), E));
+	    newCons.add(new LtConstraint(lVar(vd), eVar()));
 	    newCons.add(new LtConstraint(preFVar(q), postFVar(q)));
 
 	    // preFVar(q) should be a special input: dependencies, but no re-computation
@@ -578,6 +582,7 @@ public class IntraProc {
 	printEdges(pw, "Full (flow-insensitive) set of outside edges:", null, far.eomO(), "O: ", null);
 	printSet(pw, "returned nodes  = ", null, far.ret(), null);
 	printSet(pw, "thrown nodes    = ", null, far.ex(), null);
+	printSet(pw, "DirGblEsc nodes = ", null, far.eomAllGblEsc(), null);
 	printSet(pw, "AllGblEsc nodes = ", null, far.eomAllGblEsc(), null);
 
 	if(Flags.RECORD_WRITES) {
