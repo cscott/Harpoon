@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.5 2005-09-05 16:47:19 salcianu Exp $
+ * @version $Id: Flags.java,v 1.6 2005-09-15 03:49:43 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -33,11 +33,11 @@ public abstract class Flags {
 
     static boolean VERBOSE_CALL = false;
 
-    public static int     MAX_INTRA_SCC_ITER = 1000;
+    public static int MAX_INTRA_SCC_ITER = 1;
 
     public static boolean FLOW_SENSITIVITY = true;
 
-    static boolean USE_FRESHEN_TRICK = false;
+    static boolean USE_FRESHEN_TRICK = true;
 
     static int MAX_CALLEES_PER_ANALYZABLE_SITE = 15;
 
@@ -86,10 +86,12 @@ public abstract class Flags {
 		VERBOSE_CALL = true;
 		System.out.println("VERBOSE_CALL");
 	    }});
-	opts.add(new Option("pa2:max-intra-scc-iter", "<number>", "") {
+	opts.add(new Option("pa2:max-intra-scc-iter", "<number>", "Coeficient used to compute the maximal number of iterations over a set of mutually recursive methods (an SCC in the call graph); after that number, we use an aggressive form of widening: we analyze each method from that SCC under the condition that all calls to same-SCC method is unanalyzable") {
 	    public void action() {
+		int old = MAX_INTRA_SCC_ITER;
 		MAX_INTRA_SCC_ITER = Integer.parseInt(getArg(0));
-		System.out.println("MAX_INTRA_SCC_ITER set to " + MAX_INTRA_SCC_ITER);
+		System.out.println("MAX_INTRA_SCC_ITER set to " + MAX_INTRA_SCC_ITER +
+				   "; it was " + old);
 	    }});
 	opts.add(new Option("pa2:max-callees-per-site", "<number>", "The pointer analysis does not analyze CALLs with too many callees (default 15)") {
 	    public void action() {
@@ -100,10 +102,10 @@ public abstract class Flags {
 	    public void action() {
 		FLOW_SENSITIVITY = false;
 	    }});
-	opts.add(new Option("pa2:use-freshen-trick", "") {
+	opts.add(new Option("pa2:disable-freshen-trick", "Internal hack inside the pointer analysis; disable if you suspect some bug") {
 	    public void action() {
-		USE_FRESHEN_TRICK = true;
-		System.out.println("USE_FRESHEN_TRICK");
+		USE_FRESHEN_TRICK = false;
+		System.out.println("DISABLE_FRESHEN_TRICK");
 	    }});
 
 	return opts;
