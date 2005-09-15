@@ -23,19 +23,23 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HField;
 
+import harpoon.Util.ParseUtil;
+import java.io.IOException;
+
 /**
  * <code>SpecialInterProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SpecialInterProc.java,v 1.5 2005-09-13 19:21:43 salcianu Exp $
+ * @version $Id: SpecialInterProc.java,v 1.6 2005-09-15 03:52:21 salcianu Exp $
  */
 public class SpecialInterProc {
 
-    // IDEA: parse these method names from a file
+    // Quasi-safe methods.  These methods (usually natives) are
+    // treated specially (basically, by describing their lack of
+    // effect on the alising and the mutations they perform), in order
+    // to improve precision.
     //
-    // Harmless native methods.
-    //
-    // These methods ado not create any externally visible aliasing to
+    // These methods do not create any externally visible aliasing to
     // the objects reachable from their parameters (e.g., do not store
     // any parameter in a static field, do not return objects
     // reachable from params etc.)  Therefore, the analysis can ignore
@@ -46,94 +50,84 @@ public class SpecialInterProc {
     // 
     // NOTE: these methods may still mutate a non-object field of
     // their params.  The mutation analysis should model this.
-    private static String[][] hna = new String[][] {
-	{"java.lang.Object", "hashCode", "()I"},
-	{"java.lang.Object", "equals",   "(Ljava/lang/Object;)Z"},
+    // Due to this mutation possibility, we call them "quasi-safe" :)
 
-	{"java.lang.Double", "doubleToLongBits", "(D)J"},
-	{"java.lang.Double", "longBitsToDouble", "(J)D"},
+    // map quasiSafe methods -> list of indices of params whose
+    // (transitively reachable) non-object fields may be mutated
+    private static Map<HMethod,List<Integer>> quasiSafe = null;
 
-	{"java.lang.Float",  "floatToIntBits",   "(F)I"},
 
-	{"java.lang.Math",   "floor",            "(D)D"},
+    private static String quasiSafePropertiesFileName() {	
+	return 
+	    "harpoon/Analysis/PA2/quasi-safe." + 
+	    harpoon.Main.Settings.getStdLibVerName() +
+	    ".properties";
+    }
 
-	{"java.lang.Class",  "isArray",          "()Z"},
-	{"java.lang.Class",  "isInterface",      "()Z"},
-	{"java.lang.Class",  "isPrimitive",      "()Z"},
-	{"java.lang.Class",  "getName",          "()Ljava/lang/String;"},
+    // exceptions thrown by initQuasiSafe use this prefix
+    private static String quasiSafeErrorPrefix() {
+	return
+	    "Error reading quasi-safe methods from " +
+	    quasiSafePropertiesFileName();
+    }
 
-	{"java.lang.reflect.Constructor", "getModifiers",  "()I"},
+    static void initQuasiSafe(final Linker linker) {
+	quasiSafe = new HashMap<HMethod,List<Integer>>();
 
-	{"java.lang.reflect.Field",       "getModifiers",  "()I"},
-	{"java.lang.reflect.Field",       "getName",       "()Ljava/lang/String;"},
-	
-	{"java.lang.reflect.Method",      "getModifiers",  "()I"},
-	{"java.lang.reflect.Method",      "getName",       "()Ljava/lang/String;"},
-
-	{"java.io.FileInputStream",  "open",       "(Ljava/lang/String;)V"},
-	{"java.io.FileInputStream",  "available",  "()I"},
-	{"java.io.FileInputStream",  "read",       "()I"},
-	{"java.io.FileInputStream",  "read",       "([B)I"},
-	{"java.io.FileInputStream",  "readBytes",  "([BII)I"},
-	{"java.io.FileInputStream",  "skip",       "(J)J"},
-	{"java.io.FileInputStream",  "close",      "()V"},
-
-	{"java.io.File",  "length0",  "()J"},
-
-	{"java.io.FileOutputStream", "open",       "(Ljava/lang/String;)V"},
-	{"java.io.FileOutputStream", "close",      "()V"},
-	{"java.io.FileOutputStream", "write",      "(I)V"},
-	{"java.io.FileOutputStream", "write",      "([B)V"},
-	{"java.io.FileOutputStream", "writeBytes", "([BII)V"},
-
-	{"java.lang.System",   "currentTimeMillis",  "()J"},
-
-	/*
-	  {"java.lang.Thread",   "currentThread",      "()Ljava/lang/Thread;"},
-	  {"java.lang.Thread",   "interrupt0",         "()V"},
-	*/
-
-	{"java.lang.Throwable", "printStackTrace0",  "(Ljava/lang/Object;)V"},
-
-	{"java.lang.Runtime",   "exitInternal",      "(I)V"}
-    };
-
-    private static Set<HMethod> harmlessNatives = null;
-
-    static void initHarmlessNatives(Linker linker) {
-	harmlessNatives = new HashSet<HMethod>();
-	for(int i = 0; i < hna.length; i++) {
-	    HClass hClass = null;
-	    try {
-		hClass  = linker.forName(hna[i][0]);
-	    } catch(harpoon.ClassFile.NoSuchClassException e) {
-		System.err.println("WARNING: Class " + hna[i][0] + " not found");
-		continue;
-	    }
-
-	    HMethod hMethod = null;
-	    try {
-		hMethod = hClass.getDeclaredMethod(hna[i][1], hna[i][2]);
-	    } catch(java.lang.NoSuchMethodError e) {
-		System.err.println
-		    ("WARNING: Method " + hna[i][0] + "." + 
-		     hna[i][1] + hna[i][2] + " not found");
-		continue;
-	    }
-
-	    harmlessNatives.add(hMethod);
+	try {
+	    ParseUtil.readResource
+		(quasiSafePropertiesFileName(),
+		 new ParseUtil.StringParser() {
+		    public void parseString(String s) throws ParseUtil.BadLineException {
+			int equals = s.indexOf('=');
+			String mName = null;
+			final List<Integer> mutatedParams = new LinkedList<Integer>();
+			if(equals == -1) {
+			    mName = s;
+			}
+			else {
+			    mName = s.substring(0, equals);
+			    ParseUtil.parseSet
+				(s.substring(equals+1),
+				 new ParseUtil.StringParser() {
+				    public void parseString(String s) {
+					try {
+					    int i = Integer.parseInt(s.trim());
+					    if(i < -2) throw new NumberFormatException();
+					    mutatedParams.add(new Integer(i));
+					}
+					catch(NumberFormatException ex) {
+					    throw new RuntimeException
+						(quasiSafeErrorPrefix() + 
+						 "; not a valid param number " + s,
+						 ex);
+					}
+				    }
+				});
+			}
+			
+			HMethod hm = ParseUtil.parseMethod(linker, mName.trim());
+			quasiSafe.put(hm, mutatedParams);
+			
+			System.out.println
+			    ("quasiSafe: " + hm +
+			     (mutatedParams.isEmpty() ? 
+			      "" : 
+			      ("\n\tmutated params = " + mutatedParams.toString())));
+		    }
+		});
+	}
+	catch(IOException ex) {
+	    throw new RuntimeException(quasiSafeErrorPrefix(), ex);
 	}
     }
 
-    public static boolean canModel(HMethod hm) {
-	if(harmlessNatives == null)
-	    initHarmlessNatives(hm.getDeclaringClass().getLinker());
-	if(harmlessNatives.contains(hm)) return true;
-	if(isSpecial(hm)) return true;
 
+    public static boolean canModel(HMethod hm) {
+	if(isQuasiSafe(hm)) return true;
+	if(isSpecial(hm)) return true;
 	if(isArrayCopy(hm)) return true;
 	if(isClone(hm)) return true;
-
 	return false;
     }
 
@@ -177,7 +171,7 @@ public class SpecialInterProc {
 		  paramVars,
 		  intraProc,
 		  newCons);
-	// we assume that all overriders of an unharmful native are also unharmful
+	// we assume that all overriders of a quasi-safe native are also quasi-safe
     }
 
 
@@ -189,7 +183,7 @@ public class SpecialInterProc {
 			 List<LVar> paramVars,
 			 IntraProc intraProc,
 			 Collection<Constraint> newCons) {
-	if(modelHarmlessNative(cs, callee, paramVars, intraProc, newCons))
+	if(modelQuasiSafeNative(cs, callee, paramVars, intraProc, newCons))
 	    return true;
 
 	if(modelSpecialMethod(cs, callee, paramVars, intraProc, newCons))
@@ -204,16 +198,22 @@ public class SpecialInterProc {
 	return false;
     }
 
-    private static boolean modelHarmlessNative(CALL cs,
-					       HMethod callee,
-					       List<LVar> paramVars,
-					       IntraProc intraProc,
-					       Collection<Constraint> newCons) {
-	if(harmlessNatives == null)
-	    initHarmlessNatives(PAUtil.getLinker(cs));
-	if(!harmlessNatives.contains(callee)) return false;
 
-	// System.out.println("Harmless native: " + callee);
+    private static boolean isQuasiSafe(HMethod hm) {
+	if(quasiSafe == null) 
+	    initQuasiSafe(hm.getDeclaringClass().getLinker());
+	return quasiSafe.containsKey(hm);
+    }
+
+
+    private static boolean modelQuasiSafeNative(CALL cs,
+						HMethod callee,
+						List<LVar> paramVars,
+						IntraProc intraProc,
+						Collection<Constraint> newCons) {
+	if(!isQuasiSafe(callee)) return false;
+
+	// System.out.println("Quasi safe native: " + callee);
 
 	modelSafeMethod(cs, callee, paramVars, intraProc, newCons);
 
@@ -281,9 +281,16 @@ public class SpecialInterProc {
 							  IntraProc intraProc,
 							  Collection<Constraint> newCons) {
 	if(callee.getDeclaringClass().getName().equals("java.io.FileInputStream")) {
-	    if(callee.getName().equals("available")) return;
-	    assert !callee.isStatic();
-
+	    if(callee.isStatic()) return;
+	    if(callee.getName().equals("available"))
+		return;
+	    
+	    /*
+	      callee.getName().equals("nativeAvailable") ||
+	      callee.getName().equals("nativeGetFilePointer") ||
+	      callee.getName().equals("nativeGetLength") ||
+	      callee.getName().equals("nativeValid")) */
+	    
 	    // the state of input file stream is mutated
 	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));
 
