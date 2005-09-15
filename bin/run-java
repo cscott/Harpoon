@@ -15,7 +15,9 @@ else
     defjava=java
 fi
 
+
 # grab more java opts from the command line.
+javaopts="";
 while [ -n "$1" ]; do
     case "$1" in
     -D*) javaopts="$javaopts $1" ;;
