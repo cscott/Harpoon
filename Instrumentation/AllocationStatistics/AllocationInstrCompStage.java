@@ -25,7 +25,7 @@ import java.io.FileOutputStream;
  * <code>AllocationInstrCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationInstrCompStage.java,v 1.3 2003-06-04 18:46:09 salcianu Exp $
+ * @version $Id: AllocationInstrCompStage.java,v 1.4 2005-09-15 04:01:42 salcianu Exp $
  */
 public class AllocationInstrCompStage extends CompilerStage {
 
@@ -73,6 +73,7 @@ public class AllocationInstrCompStage extends CompilerStage {
 			    "<allocNumberingFileName> <instrResultFileName>",
 			    "Reads in allocation numbering stub and instrumentation results") {
 	    public void action() {
+		READ_ALLOC_STATS = true;
 		allocNumberingFileName = getArg(0);
 		instrumentationResultsFileName = getArg(1);
 		System.out.println("allocNumberingFileName = " + 
@@ -89,8 +90,9 @@ public class AllocationInstrCompStage extends CompilerStage {
 	return opts;
     }
 
-    // bogus, the real selection will be done inside action
-    public boolean enabled() { return true; }
+    public boolean enabled() {
+	return INSTRUMENT_ALLOCS || READ_ALLOC_STATS;
+    }
 
     public CompilerState action(CompilerState cs) {
 	assert !PRINT_ALLOC_STATS || READ_ALLOC_STATS :
