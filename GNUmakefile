@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.108 2005-09-15 03:58:46 salcianu Exp $
+# $Id: GNUmakefile,v 1.109 2005-09-15 18:40:44 salcianu Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -225,6 +225,7 @@ properties:
 	@cp Support/precisec-no-sect-makefile.template harpoon/Support
 	@cp Backend/Runtime1/*.properties harpoon/Backend/Runtime1
 	@cp Analysis/Realtime/*.properties harpoon/Analysis/Realtime
+	@cp Analysis/PA2/*.properties harpoon/Analysis/PA2
 	@echo done.
 
 first:
