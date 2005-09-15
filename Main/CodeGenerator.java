@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.13 2005-09-12 18:22:30 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.14 2005-09-15 03:42:30 salcianu Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
@@ -181,7 +181,7 @@ public class CodeGenerator extends CompilerStage {
 
     /** Tells whether the code generator stage is enabled.  Default is
         <code>true</code>. */
-    public boolean ENABLED = true;
+    public static boolean ENABLED = true;
 
     public CompilerState action(CompilerState cs) {
 	// always enabled; unpack cs and go to work!
