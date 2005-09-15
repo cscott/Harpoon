@@ -73,7 +73,7 @@ import jpaul.Misc.BoolMCell;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.66 2005-09-02 19:53:25 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.67 2005-09-15 03:41:56 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -139,7 +139,7 @@ public class SAMain extends harpoon.IR.Registration {
 	buildQuadFormPipeline();
 
 	// convert quad IR -> tree IR
-	addStage(new LowQuadToTree()); 
+	addStage(new LowQuadToTree());
 
 	// tree-form analyses
 	buildTreeFormPipeline();
@@ -186,7 +186,7 @@ public class SAMain extends harpoon.IR.Registration {
 	addStage(new WriteBarriers.DynamicWBQuadPass());
 
 	// common processing and small optimizations
-	addStage(new RegularQuadPass());
+	addStage(new CommonQuadPass());
     }
 
 
@@ -208,7 +208,10 @@ public class SAMain extends harpoon.IR.Registration {
 	addStage(new MIPSOptimizations.TreePass());
 
 	// perform basic sanity checks on the produced tree form
-	addStage(new RegularCompilerStageEZ("sanity-check-tree") {
+	addStage(new CompilerStageEZ("sanity-check-tree") {
+
+	    public boolean enabled() { return CodeGenerator.ENABLED; }
+
 	    protected void real_action() {
 		hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
 		hcf = new CachingCodeFactory(hcf);
@@ -252,8 +255,9 @@ public class SAMain extends harpoon.IR.Registration {
 
     private static List<Option> getAllOptions() {
 	List<Option> opts = new LinkedList<Option>();
+	opts.addAll(Settings.getOptions());
 	Map<String,String> opt2stage = new HashMap<String,String>();
-	for(CompilerStage stage : stages){
+	for(CompilerStage stage : stages) {
 	    addOptions(stage, opts, opt2stage);
 	}
 	return opts;
@@ -351,11 +355,13 @@ public class SAMain extends harpoon.IR.Registration {
 
 
 
-    private static class BuildInitialCompState extends RegularCompilerStageEZ {
+    private static class BuildInitialCompState extends CompilerStageEZ {
 	public BuildInitialCompState() { super("compiler-initialization"); }
 	public List<Option> getOptions() { return getTopLevelOptions(); }
+
+	public boolean enabled() { return true; }
 	
-	protected void real_action() { 
+	protected void real_action() {
 	    // create an initial compiler state
 	    linker = new AbstractClassFixupRelinker(Loader.systemLinker);
 	    mainM  = getMainMethod(linker);          // main method
@@ -529,8 +535,10 @@ public class SAMain extends harpoon.IR.Registration {
 
 
 
-    private static class BuildQuadForm extends RegularCompilerStageEZ {
+    private static class BuildQuadForm extends CompilerStageEZ {
 	public BuildQuadForm() { super("build-quad-form"); }
+
+	public boolean enabled() { return true; }
 
 	protected void real_action() {
 	    // default code factory.
@@ -588,8 +596,10 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
-    private static class RegularQuadPass extends RegularCompilerStageEZ {
-	public RegularQuadPass() { super("regular-quad-pass"); }
+    private static class CommonQuadPass extends CompilerStageEZ {
+	public CommonQuadPass() { super("common-quad-pass"); }
+
+	public boolean enabled() { return CodeGenerator.ENABLED; }
 
 	protected void real_action() {
 	    // now we can finally set the (final?) classHierarchy and
@@ -603,13 +613,13 @@ public class SAMain extends harpoon.IR.Registration {
 		.codeFactory();
 	    // non-virtualize any final methods -- this used to be done
 	    // in the low-quad translation, but doing so is unsafe unless
-	    // you've got a classHierarchy handy -- you could inadventently
+	    // you've got a classHierarchy handy -- you could inadvertently
 	    // create a new dangling reference to an uncallable method.
 	    hcf = new harpoon.Analysis.Quads.Nonvirtualize
 		(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
 		 classHierarchy).codeFactory();
 	    
-	    if (LOOPOPTIMIZE)
+	    if(LOOPOPTIMIZE)
 		loop_optimizations();
 	    
 	    hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
@@ -667,8 +677,10 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
     
-    private static class LowQuadToTree extends RegularCompilerStageEZ {
+    private static class LowQuadToTree extends CompilerStageEZ {
 	public LowQuadToTree() { super("lowquad-to-tree"); }
+
+	public boolean enabled() { return CodeGenerator.ENABLED; }
 
 	protected void real_action() {
 	    // low quad -> tree form
@@ -687,8 +699,10 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
 
-    private static class RegularTreePass extends RegularCompilerStageEZ {
+    private static class RegularTreePass extends CompilerStageEZ {
 	public RegularTreePass() { super("regular-tree-pass"); }
+
+	public boolean enabled() { return CodeGenerator.ENABLED; }
 
 	protected void real_action() {
 	    if (MULTITHREADED) /* pass to insert GC polling calls */
@@ -697,8 +711,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    
 	    // -- general tree form optimizations --
 
-	    hcf = 
-		harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
+	    hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
 	    
 	    // CSA 08-apr-2003: this code was turned off in feb 17, 2000 with
 	    //  the comment: "Turn off DeadCodeElimination, as it seems to be
