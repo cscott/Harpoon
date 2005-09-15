@@ -24,13 +24,14 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HField;
 
 import harpoon.Util.ParseUtil;
+import harpoon.Util.ParseUtil.BadLineException;
 import java.io.IOException;
 
 /**
  * <code>SpecialInterProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SpecialInterProc.java,v 1.6 2005-09-15 03:52:21 salcianu Exp $
+ * @version $Id: SpecialInterProc.java,v 1.7 2005-09-15 14:25:56 salcianu Exp $
  */
 public class SpecialInterProc {
 
@@ -56,6 +57,9 @@ public class SpecialInterProc {
     // (transitively reachable) non-object fields may be mutated
     private static Map<HMethod,List<Integer>> quasiSafe = null;
 
+    // map quasiSafe methods -> list of types of non-primitive parameters
+    private static Map<HMethod,List<HClass>> quasiSafeObjTypes = null;
+
 
     private static String quasiSafePropertiesFileName() {	
 	return 
@@ -73,12 +77,13 @@ public class SpecialInterProc {
 
     static void initQuasiSafe(final Linker linker) {
 	quasiSafe = new HashMap<HMethod,List<Integer>>();
+	quasiSafeObjTypes = new HashMap<HMethod,List<HClass>>();
 
 	try {
 	    ParseUtil.readResource
 		(quasiSafePropertiesFileName(),
 		 new ParseUtil.StringParser() {
-		    public void parseString(String s) throws ParseUtil.BadLineException {
+		    public void parseString(String s) throws BadLineException {
 			int equals = s.indexOf('=');
 			String mName = null;
 			final List<Integer> mutatedParams = new LinkedList<Integer>();
@@ -107,13 +112,32 @@ public class SpecialInterProc {
 			}
 			
 			HMethod hm = ParseUtil.parseMethod(linker, mName.trim());
+			checkMutatedParams(hm, mutatedParams);
+
 			quasiSafe.put(hm, mutatedParams);
+			if(!mutatedParams.isEmpty())
+			    quasiSafeObjTypes.put(hm, PAUtil.getObjParamTypes(hm));
 			
 			System.out.println
 			    ("quasiSafe: " + hm +
 			     (mutatedParams.isEmpty() ? 
 			      "" : 
 			      ("\n\tmutated params = " + mutatedParams.toString())));
+		    }
+
+
+		    public void checkMutatedParams(HMethod hm, List<Integer> mutatedParams) throws BadLineException {
+			int objParams = PAUtil.getObjParamTypes(hm).size();
+			for(Integer index : mutatedParams) {
+			    int i = index.intValue();
+			    if(i < 0) {
+				continue; // must be one of the special IO effects
+			    }
+			    if(i >= objParams) {
+				throw new BadLineException
+				    ("Obj. param. index too big: " + i + "\n\tmethod = " + hm);
+			    }
+			}
 		    }
 		});
 	}
@@ -280,16 +304,39 @@ public class SpecialInterProc {
 							  List<LVar> paramVars,
 							  IntraProc intraProc,
 							  Collection<Constraint> newCons) {
+	if(quasiSafe == null) {
+	    initQuasiSafe(callee.getDeclaringClass().getLinker());
+	}
+	List<Integer> mutatedParams = quasiSafe.get(callee);
+	if((mutatedParams == null) || mutatedParams.isEmpty()) return;
+
+	List<HClass> objParamTypes = quasiSafeObjTypes.get(callee);
+
+	for(Integer index : mutatedParams) {
+	    int i = index.intValue();
+	    if(i < 0) {
+		continue; // must be one of the IO effects
+	    }
+	    HClass hClass = objParamTypes.get(i);
+	    HField hf = 
+		hClass.isArray() ? 
+		PAUtil.getArrayField(callee.getDeclaringClass().getLinker()) :
+		null; 
+	    // TODO: null field means the entire object state is
+	    // potentially changed.  Maybe we should have a special
+	    // field for "non-object fields of the object state".
+
+	    newCons.add(new WriteConstraint(paramVars.get(i),
+					    hf,
+					    intraProc.vWrites()));
+	}
+
+
+	/*
 	if(callee.getDeclaringClass().getName().equals("java.io.FileInputStream")) {
 	    if(callee.isStatic()) return;
 	    if(callee.getName().equals("available"))
 		return;
-	    
-	    /*
-	      callee.getName().equals("nativeAvailable") ||
-	      callee.getName().equals("nativeGetFilePointer") ||
-	      callee.getName().equals("nativeGetLength") ||
-	      callee.getName().equals("nativeValid")) */
 	    
 	    // the state of input file stream is mutated
 	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));
@@ -310,6 +357,7 @@ public class SpecialInterProc {
 	    // the state of input file stream is mutated
 	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));	    
 	}
+	*/
     }
 
 
@@ -354,6 +402,7 @@ public class SpecialInterProc {
 	    (hm.getDeclaringClass().getName().equals("java.lang.Object") ||
 	     // arrays can have .clone() methods too;
 	     // ex: int[][].clone() in JLex.SparseBitSet.clone()
+	     // TODO: check semantics of clone for multidimensional arrays.
 	     hm.getDeclaringClass().isArray()) &&
 	    hm.getName().equals("clone") &&
 	    hm.getDescriptor().equals("()Ljava/lang/Object;");
