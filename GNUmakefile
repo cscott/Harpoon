@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.107 2005-08-26 15:43:33 salcianu Exp $
+# $Id: GNUmakefile,v 1.108 2005-09-15 03:58:46 salcianu Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -134,7 +134,8 @@ PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
 	    Support/precisec-no-sect-makefile.template \
 	    Support/mipsda-makefile.template \
 	    $(wildcard Backend/Runtime1/*.properties) \
-            $(wildcard Analysis/Realtime/*.properties)
+            $(wildcard Analysis/Realtime/*.properties) \
+	    $(wildcard Analysis/PA2/*.properties)
 PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 	 $(foreach dir, $(ALLPKGS),\
 	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/README))
