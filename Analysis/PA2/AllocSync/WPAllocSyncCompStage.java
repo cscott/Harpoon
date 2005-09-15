@@ -38,7 +38,7 @@ import jpaul.Misc.BoolMCell;
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.6 2005-09-02 19:54:58 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.7 2005-09-15 03:50:14 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
 
@@ -74,7 +74,7 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 		    SA_IN_LOOPS = true;
 		    assert 
 			getOptionalArg(0).equals("inLoops") : 
-			"unknown optional arg of --pa2:sa is not isLoop";
+			"unknown optional arg of --pa2:sa is not inLoops";
 		}
 		System.out.println("STACK ALLOC; inlining depth <= " + MAX_SA_INLINE_LEVEL + "; " + 
 				   (SA_IN_LOOPS ? "" : "not ") + "in loops");
