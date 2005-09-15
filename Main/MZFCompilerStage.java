@@ -17,7 +17,7 @@ import java.util.Arrays;
  * <code>MZFCompilerStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MZFCompilerStage.java,v 1.2 2003-04-22 00:09:57 salcianu Exp $
+ * @version $Id: MZFCompilerStage.java,v 1.3 2005-09-15 03:45:39 salcianu Exp $
  */
 public class MZFCompilerStage extends CompilerStageEZ {
     
@@ -25,12 +25,17 @@ public class MZFCompilerStage extends CompilerStageEZ {
     public MZFCompilerStage() { super("mzf"); }
 
     public List/*<Option>*/ getOptions() {
-	// no command line options: uses system properties instead
-	return Collections.EMPTY_LIST;
+	return Arrays.<Option>asList(new Option("mzf", "Enable MZF analysis; the various params of the analysis are taken from boolean system properties (TODO: create nice command line options for them)") {
+	    public void action() {
+		ENABLED = true;
+	    }
+	});
     }
 
+    private boolean ENABLED = false;
+
     // a bit bogus: real_action will do the real tests
-    public boolean enabled() { return true; }
+    public boolean enabled() { return ENABLED; }
 
     protected void real_action() {
 	/* counter factory must be set up before field reducer,
