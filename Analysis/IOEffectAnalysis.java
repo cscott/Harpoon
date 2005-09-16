@@ -14,6 +14,8 @@ import harpoon.ClassFile.Linker;
 
 import harpoon.Analysis.CallGraph;
 
+import harpoon.Util.ParseUtil;
+
 /**
  * <code>IOEffectAnalysis</code> is a simple analysis that detects
  * whether a method may (transitively) execute an input/output
@@ -21,7 +23,7 @@ import harpoon.Analysis.CallGraph;
  * by a method, or by one of its transitive callees.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IOEffectAnalysis.java,v 1.2 2005-09-13 19:16:27 salcianu Exp $ */
+ * @version $Id: IOEffectAnalysis.java,v 1.3 2005-09-16 19:08:45 salcianu Exp $ */
 public class IOEffectAnalysis {
 
     /** Creates a <code>IOEffectAnalysis</code> object.
@@ -93,27 +95,29 @@ public class IOEffectAnalysis {
     }
 
 
+    private String ioMethodsPropertiesFileName() {
+	return 
+	    "harpoon/Analysis/io-methods." + 
+	    harpoon.Main.Settings.getStdLibVerName() + 
+	    ".properties";
+    }
+
     // init the set of methods that perform IO operations
-    private void initIOMethods(Linker linker) {
+    private void initIOMethods(final Linker linker) {
 	ioMethods = new HashSet<HMethod>();
-	for(int i = 0; i < methods.length; i++) {
-	    String className  = methods[i][0];
-	    String methodName = methods[i][1];
-	    try {
-		boolean found = false;
-		for(HMethod hm : linker.forName(className).getMethods()) {
-		    if(hm.getName().equals(methodName)) {
-			ioMethods.add(hm);
-			found = true;
+	try {
+	    ParseUtil.readResource
+		(ioMethodsPropertiesFileName(),
+		 new ParseUtil.StringParser() {
+		    public void parseString(String line) throws ParseUtil.BadLineException {
+			ioMethods.add(ParseUtil.parseMethod(linker, line.trim()));
 		    }
-		}
-		if(!found) {
-		    System.err.println("initIOMethods: warning: unknown method " + className + "." + methodName);
-		}
-	    } catch(harpoon.ClassFile.NoSuchClassException e) {
-		System.out.println("initIOMethods: warning: unknown class " + className);
-		// ignore: it simply means that class ie never instantiated in the current application
-	    }
+		});
+	}
+	catch(java.io.IOException ex) {
+	    throw new RuntimeException
+		("Error reading I/O methods from " + ioMethodsPropertiesFileName(),
+		 ex);
 	}
     }
     private Set<HMethod> ioMethods = null;

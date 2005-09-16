@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
+import java.util.HashSet;
 
 import jpaul.Constraints.Constraint;
 import jpaul.Constraints.LtConstraint;
@@ -15,6 +17,7 @@ import jpaul.Constraints.CtConstraint;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.Linker;
 
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -27,7 +30,7 @@ import harpoon.Analysis.Quads.CallGraph;
  * <code>InterProcConsGen</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcConsGen.java,v 1.5 2005-09-13 19:13:54 salcianu Exp $
+ * @version $Id: InterProcConsGen.java,v 1.6 2005-09-16 19:08:45 salcianu Exp $
  */
 class InterProcConsGen {
 
@@ -71,7 +74,6 @@ class InterProcConsGen {
 	}
 
 	// Deal with calls to unanalyzable calls
-	// almost all exceptions escape -> do not waste any precision on them.
 	if(unanalyzableCALL(cs, callees)) {
 	    treatUnanalyzableCALL(cs, paramVars);
 	    return newCons;
@@ -94,13 +96,44 @@ class InterProcConsGen {
     private Collection<Constraint> newCons;
 
 
+    private boolean containsTooBigCallee(CALL cs, HMethod[] callees) {
+	if(tooBigCallees == null) {
+	    tooBigCallees = new HashSet<HMethod>();
+	    Linker linker = Util.quad2method(cs).getDeclaringClass().getLinker();
+	    for(int i = 0; i < tooBigCallees.length; i++) {
+		tooBigCallees.add(getMethod(linker, tooBigCallees[i]));
+	    }
+	}
+	return tooBigCallees.contains(cs.method());
+    }
+    private Set<HMethod> tooBigCallees = null;
+
+    private HMethod getMethod(Linker linker, String methodName) {
+	try {
+	    return harpoon.Util.ParseUtil.parseMethod(linker, methodName);
+	}
+	catch (Exception ex) {
+	    System.err.println("warning: cannot find method " + methodName);
+	    return null;
+	}
+    }
+
+    private String[] tooBigMethods = new String[] {
+	"java.security.Policy.setup(Ljava/security/Policy;)V",
+	"java.security.Policy.getPermissions(Ljava/security/ProtectionDomain;)Ljava/security/PermissionCollection;"
+    };
+
 
     private boolean unanalyzableCALL(CALL cs, HMethod[] callees) {
+	// almost all exceptions escape -> do not waste any precision on them.
 	if(PAUtil.exceptionInitializerCall(cs))
 	    return true;
 
 	// pretty intuitive: that's what unanalyzable CALL usually means!
 	if(containsUnanalyzable(callees))
+	    return true;
+
+	if(containsTooBigCallee(cs, callees))
 	    return true;
 
 	// For very large SCCs, the analysis sets the fix-point
@@ -126,9 +159,9 @@ class InterProcConsGen {
 
     /** generate constraints for an unanalyzable call */
     private void treatUnanalyzableCALL(CALL cs, List<LVar> paramVars) {
-	if(Flags.VERBOSE_CALL) {
+	//if(Flags.VERBOSE_CALL) {
 	    System.out.println("SKIP UNANALYZABLE " + Util.code2str(cs));
-	}
+	    //}
 
 	// all inside edges continue to exist
 	newCons.add(new LtConstraint(intraProc.preIVar(cs), intraProc.postIVar(cs)));
