@@ -19,7 +19,7 @@ import jpaul.DataStructs.DSUtil;
  * <code>Settings</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Settings.java,v 1.2 2005-09-16 14:52:40 salcianu Exp $
+ * @version $Id: Settings.java,v 1.3 2005-09-16 14:54:59 salcianu Exp $
  */
 public abstract class Settings {
 
@@ -77,7 +77,7 @@ public abstract class Settings {
 		String gnuVer = (String) hf.getConstant();
 		if(!STD_LIB_VER.equals(gnuVer)) {		    
 		    throw new RuntimeException
-			("User demanded classpath " + STD_LIB_VER + ", but " + gnuVer + 
+			("User/default settings demanded classpath " + STD_LIB_VER + ", but " + gnuVer + 
 			 " found instead in paths " + classpaths() +
 			 "\nPlease check harpoon.class.path");
 		}
