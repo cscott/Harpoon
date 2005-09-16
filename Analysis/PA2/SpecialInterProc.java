@@ -31,7 +31,7 @@ import java.io.IOException;
  * <code>SpecialInterProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SpecialInterProc.java,v 1.7 2005-09-15 14:25:56 salcianu Exp $
+ * @version $Id: SpecialInterProc.java,v 1.8 2005-09-16 13:59:32 salcianu Exp $
  */
 public class SpecialInterProc {
 
@@ -117,12 +117,14 @@ public class SpecialInterProc {
 			quasiSafe.put(hm, mutatedParams);
 			if(!mutatedParams.isEmpty())
 			    quasiSafeObjTypes.put(hm, PAUtil.getObjParamTypes(hm));
-			
-			System.out.println
-			    ("quasiSafe: " + hm +
-			     (mutatedParams.isEmpty() ? 
-			      "" : 
-			      ("\n\tmutated params = " + mutatedParams.toString())));
+
+			if(Flags.VERBOSE_SPECIAL_CALL) {
+			    System.out.println
+				("quasiSafe: " + hm +
+				 (mutatedParams.isEmpty() ? 
+				  "" : 
+				  ("\n\tmutated params = " + mutatedParams.toString())));
+			}
 		    }
 
 
@@ -237,7 +239,8 @@ public class SpecialInterProc {
 						Collection<Constraint> newCons) {
 	if(!isQuasiSafe(callee)) return false;
 
-	// System.out.println("Quasi safe native: " + callee);
+	if(Flags.VERBOSE_SPECIAL_CALL)
+	    System.out.println("Quasi safe native: " + callee);
 
 	modelSafeMethod(cs, callee, paramVars, intraProc, newCons);
 
@@ -282,11 +285,11 @@ public class SpecialInterProc {
 					     intraProc.postIVar(cs)));
 	    }
 
-	    /*
+	    if(Flags.VERBOSE_SPECIAL_CALL) {
 	      System.out.println("newEdges: {");
 	      newEdges.print("  ");
 	      System.out.println("}");
-	    */
+	    }
 
 	    // make cs.retval() point to the right node
 	    newCons.add(new CtConstraint(Collections.singleton(head),
@@ -330,34 +333,6 @@ public class SpecialInterProc {
 					    hf,
 					    intraProc.vWrites()));
 	}
-
-
-	/*
-	if(callee.getDeclaringClass().getName().equals("java.io.FileInputStream")) {
-	    if(callee.isStatic()) return;
-	    if(callee.getName().equals("available"))
-		return;
-	    
-	    // the state of input file stream is mutated
-	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));
-
-	    // input stream methods that take an array as first argument, write its elements
-	    List<HClass> types = PAUtil.getParamTypes(callee);
-	    if(types.size() >= 2) {
-		HClass firstParamType = types.get(1);
-		if(firstParamType.isArray()) {
-		    newCons.add(new WriteConstraint(paramVars.get(1),
-						    PAUtil.getArrayField(firstParamType.getLinker()),
-						    intraProc.vWrites()));
-		}
-	    }
-	}
-
-	if(callee.getDeclaringClass().getName().equals("java.io.FileOutputStream")) {
-	    // the state of input file stream is mutated
-	    newCons.add(new WriteConstraint(paramVars.get(0), null, intraProc.vWrites()));	    
-	}
-	*/
     }
 
 
@@ -442,7 +417,7 @@ public class SpecialInterProc {
 				      intraProc,
 				      list);
 
-	if(Flags.VERBOSE_ARRAYCOPY) {
+	if(Flags.VERBOSE_ARRAYCOPY || Flags.VERBOSE_SPECIAL_CALL) {
 	    System.out.println("Constraints for arraycopy(" + src + "," + dst +")");
 	    for(Constraint c : list) {
 		System.out.println("\t" + c);

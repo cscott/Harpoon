@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.6 2005-09-15 03:49:43 salcianu Exp $
+ * @version $Id: Flags.java,v 1.7 2005-09-16 13:59:32 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -30,6 +30,8 @@ public abstract class Flags {
     static boolean VERBOSE_CLONE = false;
 
     static boolean VERBOSE_ARRAYCOPY = false;
+
+    static boolean VERBOSE_SPECIAL_CALL = false;
 
     static boolean VERBOSE_CALL = false;
 
