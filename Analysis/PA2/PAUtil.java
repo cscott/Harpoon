@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.5 2005-09-05 21:30:58 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.6 2005-09-16 14:47:35 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -203,6 +203,20 @@ public abstract class PAUtil {
 	    pTypes.add(type);
 	}
 	return pTypes;
+    }
+
+    /** Returns a list of the types of the object (=non-primitive)
+        parameters of method <code>hm</code>.  This lists include the
+        type of the receiver (for non-static methods) and respects the
+        order in which params are declared.  */
+    public static List<HClass> getObjParamTypes(HMethod hm) {
+	LinkedList<HClass> objParamTypes = new LinkedList<HClass>();
+	for(HClass hClass : getParamTypes(hm)) {
+	    if(!hClass.isPrimitive()) {
+		objParamTypes.addLast(hClass);
+	    }
+	}
+	return objParamTypes;
     }
 
     static synchronized HField getArrayField(final Linker linker) {
