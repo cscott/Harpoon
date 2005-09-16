@@ -5,14 +5,21 @@ package harpoon.Main;
 
 import java.util.List;
 import java.util.Arrays;
+import java.util.Iterator;
+
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
 
 import harpoon.Util.Options.Option;
+
+import jpaul.DataStructs.DSUtil;
 
 /**
  * <code>Settings</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Settings.java,v 1.1 2005-09-15 03:40:00 salcianu Exp $
+ * @version $Id: Settings.java,v 1.2 2005-09-16 14:52:40 salcianu Exp $
  */
 public abstract class Settings {
 
@@ -55,6 +62,46 @@ public abstract class Settings {
 	}
 	// should not happen
 	throw new Error("unknown STD_LIB " + STD_LIB);
+    }
+
+
+    public static void checkClasspathVersion() {
+	if(STD_LIB.equals(StdLib.CLASSPATH)) {
+	    try {
+		HClass gnuConfig = Loader.systemLinker.forName("gnu.classpath.Configuration");
+		HField hf = gnuConfig.getField("CLASSPATH_VERSION");
+		if(!hf.isConstant()) {
+		    System.err.println("Cannot determine GNU classpath version;\n\tgnu.classpath.Configuration.CLASSPATH_VERSION is not a constant field\nASSUME CLASSPATH VERSION " + STD_LIB_VER + " IS CORRECT");
+		    return;
+		}
+		String gnuVer = (String) hf.getConstant();
+		if(!STD_LIB_VER.equals(gnuVer)) {		    
+		    throw new RuntimeException
+			("User demanded classpath " + STD_LIB_VER + ", but " + gnuVer + 
+			 " found instead in paths " + classpaths() +
+			 "\nPlease check harpoon.class.path");
+		}
+		SAMain.messageln("Found GNU classpath-" + STD_LIB_VER + " on the path");
+		// TODO: it would be nice to also print where on the path the GNU classpath resides
+	    }
+	    catch(harpoon.ClassFile.NoSuchClassException ex) {
+		throw new RuntimeException
+		    ("Cannot find gnu.classpath.Configuration class in paths " + classpaths() + 
+		     "\nPlease check harpoon.class.path",
+		     ex);
+	    }
+	    catch(NoSuchFieldError ex) {
+		throw new RuntimeException
+		    ("Class gnu.classpath.Configuration exists, but it does not have a CLASSPATH_VERSION field", ex);
+	    }
+	}
+    }
+
+    private static String classpaths() {
+	return
+	    DSUtil.iterableToString(new Iterable() {
+		public Iterator iterator() { return Loader.classpaths(); }
+	    });
     }
 
 }
