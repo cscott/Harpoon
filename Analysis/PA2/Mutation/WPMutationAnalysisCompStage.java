@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Set;
+import java.util.Collection;
 
 import jpaul.DataStructs.Pair;
 import jpaul.DataStructs.Relation;
@@ -36,7 +37,7 @@ import harpoon.Util.Util;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.8 2005-09-13 19:22:35 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.9 2005-09-19 00:44:17 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -49,16 +50,27 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
     public List<Option> getOptions() {
 	List<Option> opts = new LinkedList<Option>();
-	opts.add(new Option("wp-mutation", "Whole Program Mutation Analysis") {
+	opts.add(new Option("wp-mutation", "", "regexp", "Whole Program Mutation Analysis.  By default, presents the purity status of each method, and the safe parameters; if the optional arg \"regexp\" is present also present the regular expressions that cover all mutated heap locations.") {
 	    public void action() {
 		WP_MUTATION_ANALYSIS = true;
 		Flags.RECORD_WRITES  = true;
+		// turn on the pointer analysis
+		paEnabler.value = true;
+		if(getOptionalArg(0) != null) {
+		    assert 
+			getOptionalArg(0).equals("regexp") : 
+			"Unknown wp-mutation optional argument \"" + getOptionalArg(0) + "\"";
+		    if(getOptionalArg(0).equals("regexp")) {
+			SHOW_REGEXP = true;
+		    }
+		}
 	    }
 	});
 	return opts;
     }
 
     private boolean WP_MUTATION_ANALYSIS = false;
+    private boolean SHOW_REGEXP = false;
 
     public boolean enabled() {
 	return WP_MUTATION_ANALYSIS;
@@ -74,9 +86,16 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	ma = new MutationAnalysis(pa);
 	io = new IOEffectAnalysis(pa.getCallGraph());
 
-	Relation<HClass,HMethod> class2methods = new MapSetRelation<HClass,HMethod>();
+	Collection<HMethod> methodsOfInterest = methodsOfInterest();
 
-	for(HMethod hm : pa.getCallGraph().transitiveSucc(Collections.<HMethod>singleton(mainM))) {
+	// time pointer analysis (before doing any regexps etc, such
+	// that we can time it accurately).
+	AnalysisPolicy ap = new AnalysisPolicy(Flags.FLOW_SENSITIVITY, -1, Flags.MAX_INTRA_SCC_ITER);
+	PAUtil.timePointerAnalysis(mainM, methodsOfInterest, pa, ap, "");
+
+	Relation<HClass,HMethod> class2methods = new MapSetRelation<HClass,HMethod>();
+	
+	for(HMethod hm : methodsOfInterest()) {
 	    if(hcf.convert(hm) == null) continue;
 	    if(hm.getDeclaringClass().isArray()) continue;
 	    class2methods.add(hm.getDeclaringClass(), hm);
@@ -96,6 +115,25 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	ma = null;
 	io = null;
     }
+
+
+    /** Returns the methods we want to analyze.  We completely ignore
+        certain big and otherwise uninteresting methods.  */
+    private Collection<HMethod> methodsOfInterest() {
+	//return pa.getCallGraph().transitiveSucc(Collections.<HMethod>singleton(mainM));
+
+	return 
+	    PAUtil.interestingMethods
+	    (Collections.<HMethod>singleton(mainM),
+	     pa.getCallGraph(),
+	     // undesirable methods wqe do not want to consider
+	     new Predicate<HMethod>() {
+		public boolean check(HMethod hm) {
+		    return PAUtil.methodTooBig(hm);
+		}
+	    });
+    }
+
 
     private static final String[] libPackageNames = new String[] {
 	"java",
@@ -184,7 +222,9 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		}
 		System.out.println();
 		//System.out.println(indent + "Mutated fields = " + ma.getMutatedAbstrFields(hm));
-		System.out.println(indent + "MutRegExp = " + ma.getMutationRegExp(hm));		
+		if(SHOW_REGEXP) {
+		    System.out.println(indent + "MutRegExp = " + ma.getMutationRegExp(hm));
+		}
 	    }
 
 	    List<ParamInfo> safeParams = ma.getSafeParams(hm);

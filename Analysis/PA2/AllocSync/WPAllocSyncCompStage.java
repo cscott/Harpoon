@@ -31,6 +31,7 @@ import harpoon.Analysis.PA2.PointerAnalysis;
 import harpoon.Analysis.PA2.AnalysisPolicy;
 import harpoon.Analysis.PA2.Flags;
 import harpoon.Analysis.PA2.WPPointerAnalysisCompStage;
+import harpoon.Analysis.PA2.PAUtil;
 
 import jpaul.Misc.BoolMCell;
 
@@ -38,7 +39,7 @@ import jpaul.Misc.BoolMCell;
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.7 2005-09-15 03:50:14 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.8 2005-09-19 00:44:17 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
 
@@ -76,8 +77,25 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 			getOptionalArg(0).equals("inLoops") : 
 			"unknown optional arg of --pa2:sa is not inLoops";
 		}
+
 		System.out.println("STACK ALLOC; inlining depth <= " + MAX_SA_INLINE_LEVEL + "; " + 
 				   (SA_IN_LOOPS ? "" : "not ") + "in loops");
+
+		// check the allocation strategy
+		String allocStrategy = System.getProperty("harpoon.alloc.strategy");
+		if(allocStrategy != null) {
+		    if(!allocStrategy.contains("nifty")) {
+			System.err.println
+			    ("Warning: Stack allocation with harpoon.alloc.strategy=\"" + allocStrategy +
+			     "\"\n\tFlex will do stack allo, but we hope you know what you're doing :)");
+		    }
+		}
+		else {
+		    System.setProperty("harpoon.alloc.strategy", "nifty");
+		    System.out.println("Set harpoon.alloc.strategy to \"" + 
+				       System.getProperty("harpoon.alloc.strategy") + "\"");
+		}
+		
 		//System.setProperty("harpoon.runtime", "2");
 	    }
 	});
@@ -101,23 +119,13 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	CallGraph cg = pa.getCallGraph();
 	AnalysisPolicy ap = new AnalysisPolicy(Flags.FLOW_SENSITIVITY, -1, Flags.MAX_INTRA_SCC_ITER);
 
-
-	System.out.println("\n1. WHOLE PROGRAM POINTER ANALYSIS");
-	Timer timer = new Timer();
-	pa.getInterProcResult(mainM, ap);
-	for(Object hm : cg.transitiveSucc(mainM)) {
-	    if(pa.isAnalyzable((HMethod) hm)) {
-		InterProcAnalysisResult ipar = pa.getInterProcResult((HMethod) hm, ap);
-		ipar.invalidateCaches();
-	    }
-	}
-	System.out.println("WHOLE PROGRAM POINTER ANALYSIS TOTAL TIME: " + timer);
-
-	
+	PAUtil.timePointerAnalysis
+	    (mainM, cg.transitiveSucc(mainM),
+	     pa, ap, "1. ");
 
 	// inlining depth 0 is not bad: it means doing just direct stack allocation
 	System.out.println("\n2. GENERATE INLINING CHAINS OF DEPTH <= " + MAX_SA_INLINE_LEVEL);
-	timer.start();
+	Timer timer = new Timer();
 	AllCallers allCallers = new AllCallersImpl(classHierarchy, pa.getCallGraph());
 	System.out.println("AllCallers GENERATION TIME: " + timer);
 	List<InlineChain> ics = new LinkedList<InlineChain>();	

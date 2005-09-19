@@ -48,7 +48,7 @@ import harpoon.Util.Util;
  * <code>AllocSyncOneMethod</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: AllocSyncOneMethod.java,v 1.2 2005-08-16 22:41:57 salcianu Exp $
+ * @version $Id: AllocSyncOneMethod.java,v 1.3 2005-09-19 00:44:17 salcianu Exp $
  */
 class AllocSyncOneMethod {
 
@@ -166,7 +166,7 @@ class AllocSyncOneMethod {
 	    for(CALL cs : allCallers.getCALLs(caller, hm)) {
 		// do not inline calls with multiple possible callees
 		if(!allCallers.monoCALL(cs)) continue;
-		if(!pa.hasAnalyzedCALL(caller, cs, hm)) continue;
+		if(!pa.hasAnalyzedCALL(cs, hm)) continue;
 		if(!SA_IN_LOOPS && loopDet.inLoop(cs)) {
 		    if(ASFlags.VERBOSE) {
 			System.out.println(buff + "Cannot inline in-loop cs=" + Util.code2str(cs));

@@ -19,6 +19,7 @@ import jpaul.DataStructs.WorkList;
 import jpaul.DataStructs.DSUtil;
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.ForwardNavigator;
+import jpaul.Misc.Predicate;
 
 import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HField;
@@ -39,12 +40,13 @@ import harpoon.IR.Quads.METHOD;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
+import harpoon.Util.Timer;
 
 /**
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.6 2005-09-16 14:47:35 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.7 2005-09-19 00:43:30 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -395,6 +397,87 @@ public abstract class PAUtil {
 	default:
 	    return false;
 	}
+    }
+
+
+    /** Returns all methods that are transitively reachable from
+        <code>roots</code>, along call paths that do not include any
+        "undesirable" methods.  The returned set does not contain any
+        undesirable method.  */
+    public static Set<HMethod> interestingMethods(Collection<HMethod> roots,
+						  final harpoon.Analysis.CallGraph cg,
+						  final Predicate<HMethod> undesirable) {
+	Predicate<HMethod> acceptable = Predicate.<HMethod>NOT(undesirable);
+
+	Set<HMethod> reachable = 
+	    DiGraph.diGraph
+	    (DSUtil.filterColl(roots,
+			       acceptable,
+			       new LinkedList<HMethod>()),
+	     new ForwardNavigator<HMethod>() {
+		 public List<HMethod> next(HMethod hm) {
+		     if(undesirable.check(hm)) return Collections.<HMethod>emptyList();
+		     return Arrays.<HMethod>asList(cg.calls(hm));
+		 }
+	     }).vertices();
+
+	return
+	    (Set<HMethod>)
+	    DSUtil.filterColl(reachable,
+			      acceptable,
+			      new HashSet<HMethod>());
+    }
+
+
+    /** Detects certain pathological methods whose analysis takes a
+        long time without producing something really useful.  This is
+        a simple method that just looks for some usual suspects. */
+    public static boolean methodTooBig(HMethod hm) {
+	if(tooBigCallees == null) {
+	    tooBigCallees = new HashSet<HMethod>();
+	    Linker linker = hm.getDeclaringClass().getLinker();
+	    for(int i = 0; i < tooBigMethods.length; i++) {
+		tooBigCallees.add(getMethod(linker, tooBigMethods[i]));
+	    }
+	}
+	return tooBigCallees.contains(hm);
+    }
+    private static Set<HMethod> tooBigCallees = null;
+
+    private static HMethod getMethod(Linker linker, String methodName) {
+	try {
+	    return harpoon.Util.ParseUtil.parseMethod(linker, methodName);
+	}
+	catch (Exception ex) {
+	    System.err.println("warning: cannot find method " + methodName);
+	    return null;
+	}
+    }
+
+    private static String[] tooBigMethods = new String[] {
+	"java.security.Policy.setup(Ljava/security/Policy;)V",
+	"java.security.Policy.getPermissions(Ljava/security/ProtectionDomain;)Ljava/security/PermissionCollection;"
+    };
+
+
+
+    public static void timePointerAnalysis(HMethod mainM, Collection<HMethod> methodsOfInterest,
+					   PointerAnalysis pa, AnalysisPolicy ap, String prefix) {
+	System.out.println("\n" + prefix + "WHOLE PROGRAM POINTER ANALYSIS");
+	Timer timer = new Timer();
+	if(methodsOfInterest.contains(mainM)) {
+	    if(pa.isAnalyzable(mainM)) {
+		InterProcAnalysisResult ipar = pa.getInterProcResult(mainM, ap);
+		ipar.invalidateCaches();
+	    }
+	}
+	for(HMethod hm : methodsOfInterest) {
+	    if(pa.isAnalyzable(hm)) {
+		InterProcAnalysisResult ipar = pa.getInterProcResult(hm, ap);
+		ipar.invalidateCaches();
+	    }
+	}
+	System.out.println("WHOLE PROGRAM POINTER ANALYSIS TOTAL TIME: " + timer);
     }
 
 }

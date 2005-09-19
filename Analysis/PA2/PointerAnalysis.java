@@ -3,6 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PA2;
 
+import java.util.Set;
+import java.util.HashSet;
+import jpaul.DataStructs.Pair;
+
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.CachingCodeFactory;
 
@@ -15,7 +19,7 @@ import harpoon.IR.Quads.CALL;
  * the different pointer analysis implementations.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.1 2005-08-10 02:58:19 salcianu Exp $ */
+ * @version $Id: PointerAnalysis.java,v 1.2 2005-09-19 00:43:30 salcianu Exp $ */
 public abstract class PointerAnalysis {
 
     /** The simplified analysis result for the end of the method
@@ -88,13 +92,21 @@ public abstract class PointerAnalysis {
     }
 
 
-    /** Checks whether the call <code>cs</code> from
-        <code>caller</code> to <code>callee</code> has been analyzed
-        or not.  Why is this important?  For speed reasons, the
-        pointer analysis may have decided to ignore certain calls.
-        However, analysis clients must be aware of this; e.g., this
-        information is important if we perform inlining in order to
-        enhance stack-allocation.  */
-    public abstract boolean hasAnalyzedCALL(HMethod caller, CALL cs, HMethod callee);
+    public void notifyAnalyzedCALL(CALL cs, HMethod callee) {
+	analyzedCALLs.add(new Pair<CALL,HMethod>(cs, callee));
+    }
+
+    private Set<Pair<CALL,HMethod>> analyzedCALLs = new HashSet<Pair<CALL,HMethod>>();
+
+
+    /** Checks whether the call <code>cs</code> to <code>callee</code>
+        has been analyzed or not.  Why is this important?  For speed
+        reasons, the pointer analysis may have decided to ignore
+        certain calls.  However, analysis clients must be aware of
+        this; e.g., this information is important if we perform
+        inlining in order to enhance stack-allocation.  */
+    public boolean hasAnalyzedCALL(CALL cs, HMethod callee) {
+	return analyzedCALLs.contains(new Pair<CALL,HMethod>(cs, callee));
+    }
 
 }

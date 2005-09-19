@@ -30,7 +30,7 @@ import harpoon.Analysis.Quads.CallGraph;
  * <code>InterProcConsGen</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcConsGen.java,v 1.6 2005-09-16 19:08:45 salcianu Exp $
+ * @version $Id: InterProcConsGen.java,v 1.7 2005-09-19 00:43:30 salcianu Exp $
  */
 class InterProcConsGen {
 
@@ -87,6 +87,8 @@ class InterProcConsGen {
 	    if(SpecialInterProc.model(cs, callee, paramVars, intraProc, newCons)) {
 		continue;
 	    }
+	    // notify the underlying pointer analysis that we really analyze the call cs to callee
+	    pa.notifyAnalyzedCALL(cs, callee);
 	    generateConstraints(cs, callee, paramVars);
 	}
 
@@ -96,54 +98,41 @@ class InterProcConsGen {
     private Collection<Constraint> newCons;
 
 
-    private boolean containsTooBigCallee(CALL cs, HMethod[] callees) {
-	if(tooBigCallees == null) {
-	    tooBigCallees = new HashSet<HMethod>();
-	    Linker linker = Util.quad2method(cs).getDeclaringClass().getLinker();
-	    for(int i = 0; i < tooBigCallees.length; i++) {
-		tooBigCallees.add(getMethod(linker, tooBigCallees[i]));
-	    }
-	}
-	return tooBigCallees.contains(cs.method());
-    }
-    private Set<HMethod> tooBigCallees = null;
-
-    private HMethod getMethod(Linker linker, String methodName) {
-	try {
-	    return harpoon.Util.ParseUtil.parseMethod(linker, methodName);
-	}
-	catch (Exception ex) {
-	    System.err.println("warning: cannot find method " + methodName);
-	    return null;
-	}
-    }
-
-    private String[] tooBigMethods = new String[] {
-	"java.security.Policy.setup(Ljava/security/Policy;)V",
-	"java.security.Policy.getPermissions(Ljava/security/ProtectionDomain;)Ljava/security/PermissionCollection;"
-    };
-
-
-    private boolean unanalyzableCALL(CALL cs, HMethod[] callees) {
+    /** Checks whether the pointer analysis will always consider
+        unanalyzable a certain call site.  During its execution, the
+        analysis may decide to skip even more call sites (e.g., if the
+        fixed-point solver does not finish for a certain set of
+        mutually recursive methods in a certain # of iterations, it
+        may decide to consider unanalyzable all calls to same-SCC
+        methods).  */
+    static boolean clearlyUnanalyzableCALL(CALL cs, HMethod[] callees) {
 	// almost all exceptions escape -> do not waste any precision on them.
 	if(PAUtil.exceptionInitializerCall(cs))
 	    return true;
 
 	// pretty intuitive: that's what unanalyzable CALL usually means!
-	if(containsUnanalyzable(callees))
+	if((callees != null) && containsUnanalyzable(callees))
 	    return true;
 
-	if(containsTooBigCallee(cs, callees))
-	    return true;
+	for(int i = 0; i < callees.length; i++) {
+	    if(PAUtil.methodTooBig(callees[i]))
+		return true;
+	}
 
-	// For very large SCCs, the analysis sets the fix-point
-	// iteration limit to 0; in that case, we know that we
-	// should not analyze calls to same-SCC methods.
-	if(callees.length > Flags.MAX_CALLEES_PER_ANALYZABLE_SITE) {
-	    //if(Flags.VERBOSE_CALL)
+	// Refuse to analyze CALLs with too many callees
+	if((callees != null) && (callees.length > Flags.MAX_CALLEES_PER_ANALYZABLE_SITE)) {
+	    if(Flags.VERBOSE_CALL)
 		System.out.println("Too many callees (" + callees.length + ") for cs = " + Util.code2str(cs));
 	    return true;
 	}
+
+	return false;
+    }
+
+
+    private boolean unanalyzableCALL(CALL cs, HMethod[] callees) {
+	if(clearlyUnanalyzableCALL(cs, callees))
+	    return true;
 
 	if(pa.shouldSkipDueToFPLimit(cs, null)) {
 	    if(Flags.VERBOSE_CALL) {
@@ -207,7 +196,7 @@ class InterProcConsGen {
     private static boolean containsUnanalyzable(HMethod[] callees) {
 	for(HMethod callee : callees) {
 	    if(PAUtil.isNative(callee) && !SpecialInterProc.canModel(callee)) {
-		System.out.println("Unanalyzable " + callee + " desc = " + callee.getDescriptor());
+		//System.out.println("Unanalyzable " + callee + " desc = " + callee.getDescriptor());
 		return true;
 	    }
 	}

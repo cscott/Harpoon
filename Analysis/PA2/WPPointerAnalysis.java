@@ -19,6 +19,7 @@ import jpaul.Graphs.Navigator;
 import jpaul.Graphs.ForwardNavigator;
 import jpaul.Graphs.SCComponent;
 import jpaul.Graphs.TopSortedCompDiGraph;
+import jpaul.Graphs.GraphUtil;
 
 import jpaul.DataStructs.WorkSet;
 import jpaul.DataStructs.WorkStack;
@@ -54,7 +55,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.5 2005-09-02 19:54:21 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.6 2005-09-19 00:43:30 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -115,25 +116,39 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	System.out.println("findNoFPCgSCC TOTAL TIME = " + timer);
     }
 
-
-    private final ForwardNavigator<HMethod> cgNav = new ForwardNavigator<HMethod>() {
-	public List<HMethod> next(HMethod hm) {
-	    List<HMethod> next = new LinkedList<HMethod>();
-	    for(HMethod callee : cg.calls(hm)) {
-		if(PAUtil.isAbstract(callee)) {
-		    if(VERBOSE) System.out.println("Warning: abstract! " + callee);
-		    continue;
+    private final ForwardNavigator<HMethod> cgNav = 
+	GraphUtil.cachedFwdNavigator(new ForwardNavigator<HMethod>() {
+	    public List<HMethod> next(HMethod hm) {
+		Set<HMethod> next = new HashSet<HMethod>();
+		
+		for(CALL cs : cg.getCallSites(hm)) {
+		    // to save time, we don't analyze exception initializers
+		    // we just assume they don't do anything interesting
+		    if(PAUtil.exceptionInitializerCall(cs)) continue;
+		    
+		    // ignore clearly unanalyzable programs
+		    HMethod[] callees = cg.calls(hm, cs);
+		    if(InterProcConsGen.clearlyUnanalyzableCALL(cs, callees)) continue;
+		    
+		    for(HMethod callee : callees) {
+			if(PAUtil.isAbstract(callee)) {
+			    continue;
+			}
+			// disconsider methods that can be modeled without actually analyzing them
+			if(SpecialInterProc.canModel(callee)) {
+			    continue;
+			}
+			// no dependency on already-analyzed callees
+			if(hm2result.get(callee) != null) {
+			    continue;
+			}
+			next.add(callee);
+		    }
 		}
-
-		// consider only unanalyzed method
-		if(!SpecialInterProc.canModel(callee)) {
-		    next.add(callee);
-		}
+		return new LinkedList<HMethod>(next);
 	    }
-	    return next;
-	}
-    };
-
+	});
+    
 
 
     // used by CallConstraint
@@ -332,8 +347,11 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	// there seems to be good to iterate more over some special
 	// nests of mutually-recursive methods.
 	for(HMethod hm : scc.nodes()) {
-	    if(hm.getName().equals("write") || hm.getName().equals("read")) {
-		k *= 2;
+	    String hmName = hm.getName();
+	    String hmClassName = hm.getDeclaringClass().getName();
+	    if((hmName.equals("write") || hmName.equals("read")) &&
+	       hmClassName.startsWith("java.io.")) {
+		k *= 5;
 		break;
 	    }
 	}
@@ -589,10 +607,10 @@ public class WPPointerAnalysis extends PointerAnalysis {
     }
 
 
-    public boolean hasAnalyzedCALL(HMethod caller, CALL cs, HMethod callee) {
+    public boolean hasAnalyzedCALL(CALL cs, HMethod callee) {
 	// 0. Take care against un-analyzed callers -> in that case,
 	// the CALL was definitely not analyzed
-	if(!hm2result.containsKey(caller)) return false;
+	if(!hm2result.containsKey(Util.quad2method(cs))) return false;
 	// 1. For very-large SCCs of mutually-recursive methods, we skip calls to same-scc methods.
 	if(unanalyzedIntraSCCCalls.contains(cs)) return false;
 	// 2. Calls to exception initializers were considered unanalyzable (for efficiency).
@@ -602,28 +620,13 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	// Note: 2 & 3 were actually modeled by the analysis somehow.
 	// Still, they were not properly analyzed, and this fact is
 	// important for several optimizations.  Let them know this.
-	return true;
+
+	return super.hasAnalyzedCALL(cs, callee);
     }
 
 
     protected void finalize() {
 	TypeFilter.releaseClassHierarchy();
     }
-
-    /*
-    private void degradePrecision(HMethod hm, MethodData md) {
-	if(md.iterCount == ap.fpMaxIter) {
-	    // try to reduce the precision, in the hope of making the analysis finish on this SCC
-	    AnalysisPolicy ap2 = lessPrecise(md.ap);
-	    if(!ap2.equals(md.ap)) {
-		System.out.println("Downgraded the policy for " + hm + "\n\t" + 
-				   md.ap + " -> " + ap2);
-		md.ap = ap2;
-		md.intraProc = new IntraProc(hm, ap2, this);
-		md.iterCount = 0; // reset the counter
-	    }
-	}
-    }
-    */
 
 }
