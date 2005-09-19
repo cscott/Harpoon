@@ -73,7 +73,7 @@ import jpaul.Misc.BoolMCell;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.68 2005-09-16 14:52:40 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.69 2005-09-19 00:41:56 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -107,7 +107,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    System.exit(1);
 	}
 
-	Settings.checkClasspathVersion();
+	Settings.checkStdLibVersion();
 	checkOptionConsistency();
 	
 	CompilerState cs = CompilerState.EMPTY_STATE;

@@ -19,7 +19,7 @@ import jpaul.DataStructs.DSUtil;
  * <code>Settings</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Settings.java,v 1.3 2005-09-16 14:54:59 salcianu Exp $
+ * @version $Id: Settings.java,v 1.4 2005-09-19 00:41:56 salcianu Exp $
  */
 public abstract class Settings {
 
@@ -65,8 +65,12 @@ public abstract class Settings {
     }
 
 
-    public static void checkClasspathVersion() {
-	if(STD_LIB.equals(StdLib.CLASSPATH)) {
+    public static void checkStdLibVersion() {
+	switch(STD_LIB) {
+	case SUNJDK: 
+	    SAMain.messageln("Assume sunjdk 1.1.x is on the path " + classpaths() + "\ncurrently, no way to check");
+	    break;
+	case CLASSPATH:
 	    try {
 		HClass gnuConfig = Loader.systemLinker.forName("gnu.classpath.Configuration");
 		HField hf = gnuConfig.getField("CLASSPATH_VERSION");
@@ -94,6 +98,7 @@ public abstract class Settings {
 		throw new RuntimeException
 		    ("Class gnu.classpath.Configuration exists, but it does not have a CLASSPATH_VERSION field", ex);
 	    }
+	    break;
 	}
     }
 
