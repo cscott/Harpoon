@@ -30,7 +30,7 @@ import harpoon.Analysis.Quads.CallGraph;
  * <code>InterProcConsGen</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: InterProcConsGen.java,v 1.7 2005-09-19 00:43:30 salcianu Exp $
+ * @version $Id: InterProcConsGen.java,v 1.8 2005-09-20 20:01:43 salcianu Exp $
  */
 class InterProcConsGen {
 
@@ -148,9 +148,9 @@ class InterProcConsGen {
 
     /** generate constraints for an unanalyzable call */
     private void treatUnanalyzableCALL(CALL cs, List<LVar> paramVars) {
-	//if(Flags.VERBOSE_CALL) {
+	if(Flags.SHOW_SKIPPED_UNANALYZABLE) {
 	    System.out.println("SKIP UNANALYZABLE " + Util.code2str(cs));
-	    //}
+	}
 
 	// all inside edges continue to exist
 	newCons.add(new LtConstraint(intraProc.preIVar(cs), intraProc.postIVar(cs)));

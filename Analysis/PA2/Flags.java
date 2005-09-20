@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.7 2005-09-16 13:59:32 salcianu Exp $
+ * @version $Id: Flags.java,v 1.8 2005-09-20 20:01:43 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -42,6 +42,8 @@ public abstract class Flags {
     static boolean USE_FRESHEN_TRICK = true;
 
     static int MAX_CALLEES_PER_ANALYZABLE_SITE = 15;
+
+    static boolean SHOW_SKIPPED_UNANALYZABLE = false;
 
     public static boolean RECORD_WRITES = false;
     public static boolean IGNORE_CERTAIN_MUTATIONS = true;
@@ -109,6 +111,12 @@ public abstract class Flags {
 		USE_FRESHEN_TRICK = false;
 		System.out.println("DISABLE_FRESHEN_TRICK");
 	    }});
+
+	opts.add(new Option("pa2:show-skipped-unanalyzable", "Shows all the unanalyzable methods (usually natives).  This option is useful to detect commonly appearing native methods that, if modelled manually, may imnprove the precision of the analysis") {
+	    public void action() {
+		SHOW_SKIPPED_UNANALYZABLE = true;
+	    }
+	});
 
 	return opts;
     }

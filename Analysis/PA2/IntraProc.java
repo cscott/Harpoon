@@ -73,7 +73,7 @@ import harpoon.Analysis.PA2.Mutation.MutationAnalysis;
  * <code>IntraProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IntraProc.java,v 1.6 2005-09-13 19:26:28 salcianu Exp $
+ * @version $Id: IntraProc.java,v 1.7 2005-09-20 20:01:43 salcianu Exp $
  */
 public class IntraProc {
     
@@ -401,7 +401,7 @@ public class IntraProc {
 
 	public void visit(ASET q) {
 	    if(Flags.RECORD_WRITES) {
-		recordWrites(q.src(),
+		recordWrites(q.objectref(),
 			     PAUtil.getArrayField(PAUtil.getLinker(q)));
 	    }
 	    // arrays of primitives (e.g., ints) are irrelevant
