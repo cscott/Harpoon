@@ -51,7 +51,7 @@ import harpoon.Util.Timer;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.8 2005-09-21 19:33:42 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.9 2005-09-21 23:03:33 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -470,7 +470,7 @@ public abstract class PAUtil {
     public static void timePointerAnalysis(HMethod mainM, Collection<HMethod> methodsOfInterest,
 					   PointerAnalysis pa, AnalysisPolicy ap, String prefix) {	
 	System.out.println("\n" + prefix + "WHOLE PROGRAM POINTER ANALYSIS");
-	Stats.clear();
+	if(Flags.STATS) Stats.clear();
 	Timer timer = new Timer();
 	if(methodsOfInterest.contains(mainM)) {
 	    if(pa.isAnalyzable(mainM)) {
@@ -485,7 +485,7 @@ public abstract class PAUtil {
 	    }
 	}
 	System.out.println("WHOLE PROGRAM POINTER ANALYSIS TOTAL TIME: " + timer);
-	Stats.printStats(20, 5);
+	if(Flags.STATS) Stats.printStats(20, 5);
     }
 
 

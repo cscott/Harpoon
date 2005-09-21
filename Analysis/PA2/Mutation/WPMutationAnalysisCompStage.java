@@ -1,5 +1,5 @@
 // WPMutationAnalysisCompStage.java, created Wed Aug 31 13:23:51 2005 by salcianu
-// Copyright (C) 2003 Alexandru Salcianu <salcianu@alum.mit.edu>
+// Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PA2.Mutation;
 
@@ -37,7 +37,7 @@ import harpoon.Util.Util;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.10 2005-09-21 19:33:43 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.11 2005-09-21 23:03:33 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 

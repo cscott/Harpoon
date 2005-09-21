@@ -23,7 +23,7 @@ import harpoon.ClassFile.HCodeFactory;
  * <code>Stats</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Stats.java,v 1.1 2005-09-21 19:33:42 salcianu Exp $
+ * @version $Id: Stats.java,v 1.2 2005-09-21 23:03:33 salcianu Exp $
  */
 public class Stats {
 
@@ -128,10 +128,11 @@ public class Stats {
 		    totalQuadSize + " quad(s)");
 	int count = 0;
 	for(HMethod hm : methods) {
-	    out.println(hm2sizeBytecode.get(hm) + " bytecodes;\t" + 
+	    out.println(hm + "\n\t" + 
+			hm2sizeBytecode.get(hm) + " bytecodes;\t" + 
 			hm2sizeWithTry.get(hm) + " quads;\t" + 
 			hm2time.get(hm) + " / " + hm2tcg.get(hm) + " ms;\t" + 
-			hm2passes.get(hm) + " passes:\n\t" + hm);
+			hm2passes.get(hm) + " pass(es)");
 	    count++;
 	    if(count >= maxMethods) break;
 	}

@@ -55,7 +55,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.7 2005-09-21 19:33:42 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.8 2005-09-21 23:03:33 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -334,7 +334,9 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	_analyzeSCC(scc, ap);
 	
 	timer.stop();
-	Stats.recordSCCAnalysis(scc, timer.timeElapsed());
+	if(Flags.STATS) {
+	    Stats.recordSCCAnalysis(scc, timer.timeElapsed());
+	}
 	System.out.println("Total analysis time for SCC" + scc.getId() + " : " + timer);
 	System.out.println();
     }
@@ -368,7 +370,9 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	for(HMethod hm : scc.nodes()) {
 	    tcg.start();
 	    hm2md.put(hm, (new MethodData(new IntraProc(hm, ap.flowSensitivity, this), ap)));
-	    Stats.recordMethodConsGen(hm, tcg.timeElapsed());
+	    if(Flags.STATS) {
+		Stats.recordMethodConsGen(hm, tcg.timeElapsed());
+	    }
 	    assert hm2result.get(hm) == null;
 	}
 
@@ -479,7 +483,9 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	}
 	timerSimplify.stop();
 	timerFull.stop();
-	Stats.recordMethodAnalysis(hm, timerFull.timeElapsed());
+	if(Flags.STATS) {
+	    Stats.recordMethodAnalysis(hm, timerFull.timeElapsed());
+	}
 	
 	System.out.println("\tMethod analysis time: " + timerSolve + " + " + timerSimplify);
 	return res;
