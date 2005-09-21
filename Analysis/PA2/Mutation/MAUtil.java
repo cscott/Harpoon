@@ -11,6 +11,7 @@ import java.util.Iterator;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.CachingCodeFactory;
 
 import harpoon.IR.Quads.METHOD;
@@ -26,7 +27,7 @@ import harpoon.Analysis.PA2.PAUtil;
  * <code>MAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MAUtil.java,v 1.2 2005-09-07 20:36:50 salcianu Exp $
+ * @version $Id: MAUtil.java,v 1.3 2005-09-21 19:33:43 salcianu Exp $
  */
 abstract class MAUtil {
 
@@ -77,4 +78,50 @@ abstract class MAUtil {
 	return hClass.getName();
     }
 
+
+    static String methodNameWithSafeAnnot(HMethod hm, List<ParamInfo> safeParams, PointerAnalysis pa) {
+	StringBuffer sb = new StringBuffer();
+
+	int m = hm.getModifiers();
+	if(m != 0) {
+	    sb.append(java.lang.reflect.Modifier.toString(m));
+	    sb.append(' ');
+	}
+
+	sb.append(polishedName(hm.getReturnType()));
+	sb.append(' ');
+	
+	Iterator<ParamInfo> itPI = MAUtil.getParamInfo(hm, pa).iterator();
+	if(!hm.isStatic()) {
+	    ParamInfo pi = itPI.next();
+	    if(safeParams.contains(pi)) {
+		sb.append("[safe] ");
+	    }
+	}
+
+	if(hm instanceof HConstructor) {
+	    sb.append(hm.getDeclaringClass().getName());
+	}
+	else {
+	    sb.append(hm.getName());
+	}
+	sb.append("(");
+
+	boolean first = true;
+	for( ; itPI.hasNext(); ) {
+	    ParamInfo pi = itPI.next();
+	    if(!first) sb.append(", ");
+	    first = false;
+
+	    if(safeParams.contains(pi)) {
+		sb.append("[safe] ");
+	    }
+	    sb.append(polishedName(pi.type()));
+	    sb.append(" ");
+	    sb.append(pi.declName());
+	}
+	sb.append(")");
+
+	return sb.toString();
+    }
 }

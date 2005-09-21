@@ -58,11 +58,15 @@ public class Timer {
      */
 
     public long timeElapsed() {
+	if(running()) {
+	    return System.currentTimeMillis() - timerStart;
+	}
 	return timeElapsed;
     }
 
     /** Return a string representing the current state of the timer. */
     public String toString() {
+	if(timerStart != -1) stop();
 	StringBuffer sb = new StringBuffer();
 	if (timerStart != -1) {
 	    sb.append(((System.currentTimeMillis() - 

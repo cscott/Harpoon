@@ -14,11 +14,14 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
 
+import java.io.PrintStream;
+
 import jpaul.DataStructs.WorkSet;
 import jpaul.DataStructs.WorkList;
 import jpaul.DataStructs.DSUtil;
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.ForwardNavigator;
+import jpaul.Graphs.SCComponent;
 import jpaul.Misc.Predicate;
 
 import harpoon.ClassFile.HMember;
@@ -37,6 +40,8 @@ import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 
+import harpoon.Analysis.CallGraph;
+
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
@@ -46,7 +51,7 @@ import harpoon.Util.Timer;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.7 2005-09-19 00:43:30 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.8 2005-09-21 19:33:42 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -456,14 +461,16 @@ public abstract class PAUtil {
 
     private static String[] tooBigMethods = new String[] {
 	"java.security.Policy.setup(Ljava/security/Policy;)V",
-	"java.security.Policy.getPermissions(Ljava/security/ProtectionDomain;)Ljava/security/PermissionCollection;"
+	"java.security.Policy.getPermissions(Ljava/security/ProtectionDomain;)Ljava/security/PermissionCollection;",
+	"java.util.TimeZone.timezones()Ljava/util/Hashtable;"
     };
 
 
 
     public static void timePointerAnalysis(HMethod mainM, Collection<HMethod> methodsOfInterest,
-					   PointerAnalysis pa, AnalysisPolicy ap, String prefix) {
+					   PointerAnalysis pa, AnalysisPolicy ap, String prefix) {	
 	System.out.println("\n" + prefix + "WHOLE PROGRAM POINTER ANALYSIS");
+	Stats.clear();
 	Timer timer = new Timer();
 	if(methodsOfInterest.contains(mainM)) {
 	    if(pa.isAnalyzable(mainM)) {
@@ -478,6 +485,39 @@ public abstract class PAUtil {
 	    }
 	}
 	System.out.println("WHOLE PROGRAM POINTER ANALYSIS TOTAL TIME: " + timer);
+	Stats.printStats(20, 5);
+    }
+
+
+    static void printMethodSCC(PrintStream ps,
+			       SCComponent<HMethod> scc) {
+	printMethodSCC(ps, scc, null, null);
+    }
+
+    static void printMethodSCC(PrintStream ps,
+			       SCComponent<HMethod> scc,
+			       Map<HMethod,SCComponent<HMethod>> hm2scc,
+			       CallGraph cg) {
+	ps.print("SCC" + scc.getId() + " (" + scc.size() + " method(s)");
+	if(scc.isLoop()) ps.print(" - loop");
+	ps.println(") {");
+	for(HMethod hm : scc.nodes()) {
+	    ps.println("  " + hm + "{" + hm.getDescriptor() + "}");
+	    if(hm2scc == null) continue;
+	    for(HMethod callee : cg.calls(hm)) {
+		ps.print("    " + callee);
+		SCComponent<HMethod> sccCallee = hm2scc.get(callee);
+		if(sccCallee != null) {
+		    if(sccCallee == scc)
+			ps.print(" [SAME SCC]");
+		    else
+			ps.print(" [SCC" + sccCallee.getId() + "]");
+		}
+		ps.println();
+	    }
+	}
+	ps.println("}");
+	ps.flush();
     }
 
 }

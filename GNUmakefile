@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.109 2005-09-15 18:40:44 salcianu Exp $
+# $Id: GNUmakefile,v 1.110 2005-09-21 19:33:42 salcianu Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -135,7 +135,8 @@ PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
 	    Support/mipsda-makefile.template \
 	    $(wildcard Backend/Runtime1/*.properties) \
             $(wildcard Analysis/Realtime/*.properties) \
-	    $(wildcard Analysis/PA2/*.properties)
+	    $(wildcard Analysis/PA2/*.properties) \
+	    $(wildcard Analysis/*.properties)
 PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 	 $(foreach dir, $(ALLPKGS),\
 	    $(wildcard $(dir)/package.html) $(wildcard $(dir)/README))
@@ -226,6 +227,7 @@ properties:
 	@cp Backend/Runtime1/*.properties harpoon/Backend/Runtime1
 	@cp Analysis/Realtime/*.properties harpoon/Analysis/Realtime
 	@cp Analysis/PA2/*.properties harpoon/Analysis/PA2
+	@cp Analysis/*.properties harpoon/Analysis
 	@echo done.
 
 first:

@@ -12,7 +12,7 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.HashSet;
 
-import java.io.PrintWriter;
+import java.io.PrintStream;
 
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.Navigator;
@@ -55,7 +55,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.6 2005-09-19 00:43:30 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.7 2005-09-21 19:33:42 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -205,7 +205,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	List<SCComponent<HMethod>> methodSCCs = tsCompDiGraph.incrOrder();
 
 	if(Flags.SHOW_METHOD_SCC) {
-	    printMethodSCCs(pwStdOut, methodSCCs, hm,
+	    printMethodSCCs(System.out, methodSCCs, hm,
 			    tsCompDiGraph.getVertex2SccMap(),
 			    cg);
 	}
@@ -282,7 +282,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
     // that may invoke a method from scc.
     private void addUnanalyzedIntraSCCCalls(SCComponent<HMethod> scc) {
 	System.out.println("SCC with unanalyzed intra-SCC CALLs");
-	printMethodSCC(pwStdOut, scc, null, null);
+	PAUtil.printMethodSCC(System.out, scc, null, null);
 	for(HMethod hm : scc.nodes()) {
 	    for(CALL cs : cg.getCallSites(hm)) {
 		if(anyCalleeInScc(cs, scc)) {
@@ -306,9 +306,6 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	return unanalyzedIntraSCCCalls.contains(cs);
     }
 
-
-    private final PrintWriter pwStdOut = new PrintWriter(System.out, true);
-
     private Navigator<HMethod> interProcDepNav;
 
 
@@ -331,11 +328,13 @@ public class WPPointerAnalysis extends PointerAnalysis {
     // to add timing and debug printing.  I have to agree that an
     // aspect would be cleaner here.
     private void analyzeSCC(SCComponent<HMethod> scc, AnalysisPolicy ap) {
-	printMethodSCC(pwStdOut, scc, null, null);
+	PAUtil.printMethodSCC(System.out, scc, null, null);
 	Timer timer = new Timer();
 	
 	_analyzeSCC(scc, ap);
 	
+	timer.stop();
+	Stats.recordSCCAnalysis(scc, timer.timeElapsed());
 	System.out.println("Total analysis time for SCC" + scc.getId() + " : " + timer);
 	System.out.println();
     }
@@ -365,8 +364,11 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 	boolean skipSameSccCalls = false;
 
+	Timer tcg = new Timer();
 	for(HMethod hm : scc.nodes()) {
+	    tcg.start();
 	    hm2md.put(hm, (new MethodData(new IntraProc(hm, ap.flowSensitivity, this), ap)));
+	    Stats.recordMethodConsGen(hm, tcg.timeElapsed());
 	    assert hm2result.get(hm) == null;
 	}
 
@@ -452,6 +454,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	System.out.println("Analyze (" + md.iterCount + ") \"" + hm + "\"" + "; " + hm.getDescriptor());
 	
 	Timer timerSolve = new Timer();
+	Timer timerFull = new Timer();
 	FullAnalysisResult far = md.intraProc.fullSolve();
 	timerSolve.stop();
 
@@ -474,7 +477,10 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	if(Flags.USE_FRESHEN_TRICK) {
 	    res = GraphOptimizations.freshen(res);
 	}
-
+	timerSimplify.stop();
+	timerFull.stop();
+	Stats.recordMethodAnalysis(hm, timerFull.timeElapsed());
+	
 	System.out.println("\tMethod analysis time: " + timerSolve + " + " + timerSimplify);
 	return res;
     }
@@ -570,40 +576,14 @@ public class WPPointerAnalysis extends PointerAnalysis {
     }
 
 
-    private static void printMethodSCCs(PrintWriter pw, List<SCComponent<HMethod>> listSCCs, HMethod hmRoot,
+    private static void printMethodSCCs(PrintStream ps, List<SCComponent<HMethod>> listSCCs, HMethod hmRoot,
 					Map<HMethod,SCComponent<HMethod>> hm2scc,
 					CallGraph cg) {
-	pw.println("SCC of methods for the analysis of " + hmRoot);
+	ps.println("SCC of methods for the analysis of " + hmRoot);
 	for(SCComponent<HMethod> scc : listSCCs) {
-	    printMethodSCC(pw, scc, hm2scc, cg);
+	    PAUtil.printMethodSCC(ps, scc, hm2scc, cg);
 	}
-	pw.flush();
-    }
-
-    private static void printMethodSCC(PrintWriter pw,
-				       SCComponent<HMethod> scc,
-				       Map<HMethod,SCComponent<HMethod>> hm2scc,
-				       CallGraph cg) {
-	pw.print("SCC" + scc.getId() + " (" + scc.size() + " method(s)");
-	if(scc.isLoop()) pw.print(" - loop");
-	pw.println(") {");
-	for(HMethod hm : scc.nodes()) {
-	    pw.println("  " + hm + "{" + hm.getDescriptor() + "}");
-	    if(hm2scc == null) continue;
-	    for(HMethod callee : cg.calls(hm)) {
-		pw.print("    " + callee);
-		SCComponent<HMethod> sccCallee = hm2scc.get(callee);
-		if(sccCallee != null) {
-		    if(sccCallee == scc)
-			pw.print(" [SAME SCC]");
-		    else
-			pw.print(" [SCC" + sccCallee.getId() + "]");
-		}
-		pw.println();
-	    }
-	}
-	pw.println("}");
-	pw.flush();
+	ps.flush();
     }
 
 

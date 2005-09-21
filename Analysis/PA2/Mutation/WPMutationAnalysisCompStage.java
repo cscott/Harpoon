@@ -37,7 +37,7 @@ import harpoon.Util.Util;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.9 2005-09-19 00:44:17 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.10 2005-09-21 19:33:43 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -204,8 +204,19 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
     private void displayInfo(HMethod hm, String indent, Stat stat) {
 	stat.nbMethods++;
-	System.out.println(indent + hm);
 	try {
+	    List<ParamInfo> safeParams = ma.getSafeParams(hm);
+	    for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
+		stat.nbParams++;
+		if(pi.type().isPrimitive()) continue;
+		stat.nbObjParams++;
+		if(safeParams.contains(pi)) {
+		    stat.nbSafeParams++;
+		}
+	    }
+
+	    System.out.println(indent + MAUtil.methodNameWithSafeAnnot(hm, safeParams, pa));
+
 	    if(ma.isPure(hm)) {
 		if(!io.doesIO(hm)) {
 		    System.out.println(indent + "PURE");
@@ -226,25 +237,6 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		    System.out.println(indent + "MutRegExp = " + ma.getMutationRegExp(hm));
 		}
 	    }
-
-	    List<ParamInfo> safeParams = ma.getSafeParams(hm);
-	    System.out.print(indent + "PARAMS: ");
-	    boolean first = true;
-	    for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
-		stat.nbParams++;
-		if(pi.type().isPrimitive()) continue;
-		stat.nbObjParams++;
-		if(!first) {
-		    System.out.print(", ");
-		}
-		if(safeParams.contains(pi)) {
-		    System.out.print("[safe] ");
-		    stat.nbSafeParams++;
-		}
-		System.out.print(MAUtil.polishedName(pi.type()) + " " + pi.declName());
-		first = false;
-	    }
-	    System.out.println();
 	}
 	catch(NoAnalysisResultException e) {
 	    System.out.println(indent + "WARNING: UNANALYZED");
