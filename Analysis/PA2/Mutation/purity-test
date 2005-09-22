@@ -1,0 +1,46 @@
+#!/bin/bash
+
+## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
+## Licensed under the terms of the GNU GPL; see COPYING for details.
+## $Id: purity-test,v 1.1 2005-09-22 21:15:10 salcianu Exp $
+
+JAVA_OPTS=""
+
+PURITY_HOME=`dirname $0`
+
+if [ -d ${PURITY_HOME}/aux ]; then
+    # Normal case: run as part of the kit
+    JOLDEN_HOME=${PURITY_HOME}/jolden
+    export CLASSPATH=${PURITY_HOME}/purity.jar:${PURITY_HOME}/aux/jutil.jar:${PURITY_HOME}/aux/jpaul.jar
+else
+    echo Script run during Flex development, not from the kit
+    PURITY_HOME=`dirname $0`/../../..
+    JOLDEN_HOME=${HOME}/jolden
+    export CLASSPATH=${PURITY_HOME}:${PURITY_HOME}/Support/jpaul.jar:${PURITY_HOME}/Support/jutil.jar:$CLASSPATH
+    JAVA_OPTS="-Dharpoon.class.path=${PURITY_HOME}/Support/reflect-thunk.jar:${PURITY_HOME}/Support/cpvm.jar:${PURITY_HOME}/../classpath-install/share/classpath";
+fi
+
+# make sure we are at the root of the purity analysis
+cd ${PURITY_HOME}
+
+if [ ! \( -d ${JOLDEN_HOME} \) ]; then
+    echo FATAL: confused about the JOLDEN_HOME directory ...
+    exit 1;
+fi
+
+if [ "$1" = "all" ]; then 
+    JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
+else 
+    # Normal case: analyze only the first two JOLDEN_APPS
+    JOLDEN_APPS="BH BiSort"
+fi
+
+
+mkdir -p results
+
+for app in $JOLDEN_APPS; do
+
+    subdir=`echo $app | tr [:upper:] [:lower:]`
+    java ${JAVA_OPTS} harpoon.Main.Purity $app ${JOLDEN_HOME}/$subdir | tee ./results/$app.purity.out
+
+done; 

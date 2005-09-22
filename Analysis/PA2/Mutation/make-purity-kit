@@ -1,0 +1,126 @@
+#!/bin/bash
+
+## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
+## Licensed under the terms of the GNU GPL; see COPYING for details.
+## $Id: make-purity-kit,v 1.1 2005-09-22 21:15:10 salcianu Exp $
+
+KIT_DIR=purity-kit
+FLEX_DIR=`dirname $0`/../../..
+
+cd ${FLEX_DIR} &&
+echo Current dir = `pwd`
+if [ "$?" != 0 ]; then
+    echo Cannot g to the FLEX_DIR=${FLEX_DIR}
+    exit 0;
+fi
+
+
+# 0. make the temporary dir where we put everything that wil go into the kit
+echo Make temporary dir ${KIT_DIR} && \
+rm -rf ${KIT_DIR} && \
+mkdir ${KIT_DIR}
+
+if [ "$?" != 0 ]; then
+    echo Error making the ${KIT_DIR} dir
+    exit 1;
+fi
+
+
+# 1. make harpoon and its property files and copy them to ${KIT_DIR}
+echo Make harpoon and its property files && \
+make && \
+make properties && \
+cp -r harpoon ${KIT_DIR}
+
+if [ "$?" != 0 ]; then
+    echo Error making / copying Flex
+    exit 2;
+fi
+
+
+# 2. take care of the root sets from Support
+echo Copy the Support root set property files && \
+mkdir ${KIT_DIR}/Support && \
+cp Support/*root-set* ${KIT_DIR}/Support &&
+
+if [ "$?" != 0 ]; then
+    echo Error copying the root sets
+    exit 3;
+fi
+
+
+# 3. copy the .jar(s) composing the std. lib. Flex  compiles against
+echo Copy the jar\'s for the std lib we compile / analyze against && \
+mkdir ${KIT_DIR}/lib && \
+cp Support/reflect-thunk.jar ${KIT_DIR}/lib && \
+cp Support/cpvm.jar ${KIT_DIR}/lib && \
+cp ../classpath-install/share/classpath/glibj.zip ${KIT_DIR}/lib
+
+if [ "$?" != 0 ]; then
+    echo Error copying the standard lib used by Flex
+    exit 4;
+fi
+
+
+# 4. copy the jolden benchmarks; we use them as test-cases
+echo Copy the jolden bechmarks - we use them as testcases && \
+cp -r ~/jolden ${KIT_DIR}
+
+if [ "$?" != 0 ]; then
+    echo Error copying the jolden benchmarks
+    exit 5;
+fi
+
+
+# 5. copy jpaul.jar and jutil.jar
+echo Copy auxiliary jar\'s: jpaul and jutil && \
+mkdir ${KIT_DIR}/aux && \
+cp Support/jpaul.jar Support/jutil.jar ${KIT_DIR}/aux
+
+if [ "$?" != 0 ]; then
+    echo Error copying the auxiliary jars: jpaul and jutil
+    exit 6;
+fi
+
+
+# 6. Always take care of the licence
+echo Copy GNU GPL Licence && \
+cp COPYING ${KIT_DIR} && \
+cp Analysis/PA2/Mutation/PURITY-README.txt ${KIT_DIR}/README.txt && \
+cp Analysis/PA2/Mutation/purity-test ${KIT_DIR}
+
+
+if [ "$?" != 0 ]; then
+    echo Error copying the COPYING, README.txt
+    exit 7;
+fi
+
+
+
+# GOING INTO ${KIT_DIR}
+# 7. Making the .jar with the analysis
+echo Make the main jar with the analysis code && \
+cd ${KIT_DIR} && \
+jar -cf purity.jar harpoon Support &&
+rm -rf harpoon Support
+
+if [ "$?" != 0 ]; then
+    echo Cannot make purity.jar
+    exit 8;
+fi
+
+
+# 8. Finally, make a .tgz with all files
+cd .. && \
+tar -czvf purity-kit.tgz purity-kit && \
+rm -rf purity-kit
+
+
+if [ "$?" != 0 ]; then
+    echo Cannot make purity-kit.tgz
+    exit 9;
+fi
+
+
+echo Purity analysis kit left in `pwd`/purity-kit.tgz
+
