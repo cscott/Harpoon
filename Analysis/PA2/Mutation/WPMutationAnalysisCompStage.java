@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Collection;
 
 import jpaul.DataStructs.Pair;
@@ -37,7 +40,7 @@ import harpoon.Util.Util;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.11 2005-09-21 23:03:33 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.12 2005-09-22 21:22:39 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -66,11 +69,31 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		}
 	    }
 	});
+	opts.add(new Option("wp-mutation-save", "Save the results of the whole program mutation analysis in the static fields of WPMutationAnalysisCompStage: pureMethods (the set of pure methods) and method2SafeParams (a map from methods to the safe parameter indices.") {
+	    public void action() {
+		STORE_IN_STATICS = true;
+	    }
+	});
 	return opts;
     }
 
     private boolean WP_MUTATION_ANALYSIS = false;
     private boolean SHOW_REGEXP = false;
+
+    // if true, at the end of the analysis we'll store into static
+    // fields the computed set of pure methods and the safe parameters
+    // of each method.
+    private boolean STORE_IN_STATICS = false;
+    
+    /** If the <code>--wp-mutation-save</code> option is used, the
+        analysis will save all discovered pure methods in this set.  */
+    public static Set<HMethod> pureMethods = null;
+    /** If the <code>--wp-mutation-save</code> option is used, the
+        analysis will save here a map from each analyzed method to the
+        indices of its safe parameters; indices start from 0, and take
+        into account the <code>this</code> argument for the instance
+        methods. */
+    public static Map<HMethod,List<Integer>> method2SafeParams = null;
 
     public boolean enabled() {
 	return WP_MUTATION_ANALYSIS;
@@ -81,6 +104,10 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
     private IOEffectAnalysis io;
     
     public void real_action() {
+	if(STORE_IN_STATICS) {
+	    pureMethods = new HashSet<HMethod>();
+	    method2SafeParams = new HashMap<HMethod,List<Integer>>();
+	}
 	pa = (PointerAnalysis) attribs.get("pa");
 	assert pa != null : "cannot find the pointer analysis";
 	ma = new MutationAnalysis(pa);
@@ -215,11 +242,16 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		}
 	    }
 
+	    if(STORE_IN_STATICS) {
+		updateMethod2SafeParams(hm, safeParams);
+	    }
+
 	    System.out.println(indent + MAUtil.methodNameWithSafeAnnot(hm, safeParams, pa));
 
 	    if(ma.isPure(hm)) {
 		if(!io.doesIO(hm)) {
 		    System.out.println(indent + "PURE");
+		    pureMethods.add(hm);
 		    stat.nbPureMethods++;
 		}
 		else {
@@ -245,6 +277,19 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		if(!hClass.isPrimitive()) stat.nbObjParams++;
 	    }
 	}
+    }
+
+
+    private void updateMethod2SafeParams(HMethod hm, List<ParamInfo> safeParams) {
+	List<Integer> safeParamIndices = new LinkedList<Integer>();
+	int index = 0;
+	for(ParamInfo pi : MAUtil.getParamInfo(hm, pa)) {
+	    if(safeParams.contains(pi)) {
+		safeParamIndices.add(new Integer(index));
+	    }
+	    index++;
+	}
+	method2SafeParams.put(hm, safeParamIndices);
     }
 
 }
