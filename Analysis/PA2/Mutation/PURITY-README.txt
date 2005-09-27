@@ -22,7 +22,10 @@ objects.  The reason JML uses this definition is that if a method does
 not mutate any pre-existent object, the invariants attached to those
 objects propagate over calls to that method.  In addition, as a
 special case, our (and JML's) definition of purity allows a pure
-constructor to mutate fields of the "this" object.
+constructor to mutate fields of the "this" object.  [ However, as
+explained in the Section D. below, you may use the option
+"--no-jml-constructor-purity" to instruct the analysis to consider
+such constructors impure. ]
 
 
 
@@ -128,7 +131,9 @@ library); you do NOT need to pass the path to GNU classpath: we use
 the <code>glibj.zip</code> included in the purity analysis kit.
 
 The rest of the arguments are passed verbatim to
-harpoon.Main.SAMain.main(String[] args)
+harpoon.Main.SAMain.main(String[] args).  Such a possible argument is
+"--no-jml-constructor-purity": it instructs the analysis to consider
+impure the constructors that mutate the fields of the "this" object.
 
 [ WARNING: you can take a look at the ./purity-test script, but it is
 more complex than what you actually need.  The reason for its

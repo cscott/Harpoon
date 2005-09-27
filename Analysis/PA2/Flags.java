@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.9 2005-09-21 23:03:33 salcianu Exp $
+ * @version $Id: Flags.java,v 1.10 2005-09-27 13:37:26 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -123,6 +123,12 @@ public abstract class Flags {
 	opts.add(new Option("pa2:stats", "Prints statistics about the pointer analysis: longest to analyze method(s)/SCC(s), etc.") {
 	    public void action() {
 		STATS = true;
+	    }
+	});
+
+	opts.add(new Option("no-jml-constructor-purity", "Instructs the analysis to consider impure the constructors that mutate fields of the this object; the result is a stricter purity definition than the JML one.") {
+	    public void action() {
+		IGNORE_CONSTR_MUTATION_ON_THIS = false;
 	    }
 	});
 
