@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.4 2003-10-03 17:41:47 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.5 2005-09-27 13:36:17 salcianu Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.IR.RawClass.ConstantDouble
@@ -65,8 +65,8 @@ public final class OpConstant extends Operand {
       else if (c instanceof ConstantLong)    this.type=HClass.Long;
       else if (c instanceof ConstantString)  
 	this.type=parent.linker.forName("java.lang.String");
-      else throw new Error("Unknown ConstantValue type: "+c);
-    } else throw new Error("Unknown constant pool entry: "+c);
+      else throw new Error("Unknown ConstantValue type: "+ c + "; in method " + parent.getMethod());
+    } else throw new Error("Unknown constant pool entry: " + c + "; in method " + parent.getMethod());
     check();
   }
   /** Return the value of this <code>Operand</code>. */
