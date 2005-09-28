@@ -30,7 +30,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.14 2005-08-09 20:23:54 salcianu Exp $
+ * @version $Id: Quad.java,v 1.15 2005-09-28 18:23:24 salcianu Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -81,6 +81,15 @@ public abstract class Quad
     public int getID() { return id; }
     /** Force everyone to reimplement toString() */
     public abstract String toString();
+
+
+    /** Returns a string representation of this quad containing the
+        source file and the line number info, in addition to the other
+        information provided by the regulat toString().  Great info
+        for debugging! */
+    public String toLongString() {
+	return getSourceFile() + ":" + getLineNumber() + " " + toString();
+    }
 
     /** Accept a visitor. */
     public abstract void accept(QuadVisitor v);
