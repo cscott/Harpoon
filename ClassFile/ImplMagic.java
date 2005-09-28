@@ -25,7 +25,7 @@ import java.util.Map;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.8 2002-04-10 03:04:15 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.9 2005-09-28 17:25:38 salcianu Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -83,6 +83,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
+	}
+	// [AS 09/28/05]: added to stop a really NASTY bug.  We do need
+	// Bill Pugh's tool as a standard part of javac :)
+	public boolean equals(Object o) {
+	    return (o instanceof HClass &&
+		    ((HClass)o).getDescriptor().equals(getDescriptor()));
 	}
     } // END MagicClass
     
