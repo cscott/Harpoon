@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.4 2003-03-18 02:27:02 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.5 2005-09-28 23:12:00 salcianu Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -74,12 +74,14 @@ abstract class HMethodImpl
    * Returns the descriptor for this method.
    */
   public String getDescriptor() {
+    // [AS 09/28/05]: why don't we use caching here?
+    // it would have a HUGE impact!
     StringBuffer sb = new StringBuffer("(");
     for (int i=0; i<parameterTypes.length; i++)
       sb.append(parameterTypes[i].getDescriptor());
     sb.append(')');
     sb.append(returnType.getDescriptor());
-    return sb.toString();
+    return sb.toString();    
   }
 
   /**
@@ -178,15 +180,33 @@ abstract class HMethodImpl
     if (_this_==obj) return true; // common case.
     try { method = (HMethod) obj; }
     catch (ClassCastException e) { return false; }
+
+    if (!_this_.getName().equals(method.getName())) return false;
     if (!_this_.getDeclaringClass().getDescriptor().equals
 	(method.getDeclaringClass().getDescriptor())) return false;
-    if (!_this_.getName().equals(method.getName())) return false;
+    // Instead of comparing the method descriptors (expensive, because
+    // HMethodImpl.getDescriptor() does not use caching), we compare
+    // parameters and return results one by one.
     HClass hc1[] = _this_.getParameterTypes();
     HClass hc2[] = method.getParameterTypes();
     if (hc1.length != hc2.length) return false;
-    for (int i=0; i<hc1.length; i++)
+    for (int i=0; i<hc1.length; i++) 
       if (!hc1[i].getDescriptor().equals(hc2[i].getDescriptor()))
 	return false;
+
+    // [AS 09/28/05]: Added a test for the result type.  Contrary to
+    // widespread "rumors", in Java, we can have two DISTINCT methods
+    // with the same name, same declaring class, same parameter types,
+    // and with DIFERENT result types (a method in a subclass refines
+    // the return type of a superclass method it overrides - javac
+    // generates two separate methods: the one with the less specific
+    // return type just invokes the other method; at each call site,
+    // javac generates code that calls the appropriate one of the
+    // two).  Basically, in JVM one method <-> one triple <declaring
+    // class, name, method descriptor>.  That's the equality relation
+    // we need!
+    if(!_this_.getReturnType().getDescriptor().equals
+       (method.getReturnType().getDescriptor())) return false;
     return true;
   }
 
@@ -194,8 +214,11 @@ abstract class HMethodImpl
   // factored out for re-use
   static int hashCode(HMethod hm) {
     return
+      // [AS 09/28/05]: the descriptor hashcode should be enough
+      /* 
       hm.getDeclaringClass().hashCode() ^
       hm.getName().hashCode() ^
+      */
       hm.getDescriptor().hashCode();
   }
 
