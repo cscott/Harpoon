@@ -52,7 +52,7 @@ import harpoon.Util.Util;
  * behave this way.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.5 2002-04-11 04:00:31 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.6 2005-09-28 18:24:16 salcianu Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -140,23 +140,23 @@ public class CALL extends SIGMA {
 	 * of the current method.   This is hard to check, so we do it
 	 * the other way round. */
 	if (this.isVirtual) 
-	    assert !method.isStatic() && 
-			!(method instanceof HConstructor) &&
-			!Modifier.isPrivate(method.getModifiers()) : "meaning of final parameter to CALL constructor "+
-			"has been inverted.  isVirtual should be true "+
-			"unless the called method is a constructor, static, "+
-			"private, or declared in a superclass of the "+
-			"current method.";
+	    assert 
+		!method.isStatic() && !(method instanceof HConstructor) &&
+		!Modifier.isPrivate(method.getModifiers()) : 
+	    "Meaning of final parameter to CALL constructor has been inverted. " + 
+		"isVirtual should be true unless the called method is a constructor, " + 
+		"static, private, or declared in a superclass of the current method.";
 	// check params and retval against method.
-	assert (method.getReturnType()==HClass.Void
-		    ? retval==null : retval!=null) : "retval not consistent with return type.";
-	assert (method.getParameterTypes().length + (isStatic()?0:1)) ==
-		    params.length;
-	assert !isStatic() || isVirtual()==false : "method can't be both static and virtual";
+	assert (method.getReturnType()==HClass.Void ? retval==null : retval!=null) : 
+	    "Retval not consistent with return type in " + this.toLongString();
+	assert (method.getParameterTypes().length + (isStatic()?0:1)) == params.length :
+	    "Param # mismatch between " + this.toLongString() + " and method " + method;
+	assert !isStatic() || isVirtual()==false : 
+	    "Method can't be both static and virtual in " + this.toLongString();
 	// check that retval and retex are different if return val is primitive
-	assert !(retval==retex && retex!=null &&
-		      method.getReturnType().isPrimitive()) : "can't merge a primitive and a Throwable w/o violating "+
-		    "type safety.";
+	assert !(retval==retex && retex!=null && method.getReturnType().isPrimitive()) :
+	    "Can't merge a primitive and a Throwable w/o violating type safety; " + 
+	    "wrong identical retex,retval in " + this.toLongString();
 	// I guess it's legal, then.
     }
     // convenience constructor.
