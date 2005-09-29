@@ -25,7 +25,7 @@ import java.util.Map;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.9 2005-09-28 17:25:38 salcianu Exp $
+ * @version $Id: ImplMagic.java,v 1.10 2005-09-29 04:15:16 salcianu Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -42,18 +42,23 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	MagicClass(Linker linker, harpoon.IR.RawClass.ClassFile classfile) {
 	    super(linker);
 	    this.name = classfile.this_class().name().replace('/','.');
+
 	    this.superclass = (classfile.super_class == 0)?null:
 		new ClassPointer(linker,
 				 "L"+classfile.super_class().name()+";");
+
 	    this.interfaces = new HPointer[classfile.interfaces_count()];
 	    for (int i=0; i<interfaces.length; i++)
 		interfaces[i] = 
 		    new ClassPointer(linker, 
 				     "L"+classfile.interfaces(i).name()+";");
+
 	    this.modifiers = classfile.access_flags.access_flags;
+
 	    this.declaredFields = new HField[classfile.fields.length];
 	    for (int i=0; i<declaredFields.length; i++)
 		declaredFields[i] = new MagicField(this, classfile.fields[i]);
+
 	    this.declaredMethods = new HMethod[classfile.methods.length];
 	    for (int i=0; i<declaredMethods.length; i++)
 		declaredMethods[i] = // constructors are different.
@@ -62,6 +67,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 		    :(classfile.methods[i].name().equals("<clinit>"))
 		    ?(HMethod)new MagicInitializer(this, classfile.methods[i])
 		    :(HMethod)new MagicMethod(this, classfile.methods[i]);
+
 	    this.sourcefile = "";
 	    for (int i=0; i<classfile.attributes.length; i++)
 		if (classfile.attributes[i] instanceof AttributeSourceFile) {
@@ -70,6 +76,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 			.sourcefile();
 		    break;
 		}
+
 	    // for some odd reason, interfaces have 'java.lang.Object'
 	    // as their superclass in the class file format.  In the
 	    // rarified "real world", interfaces have *no* superclass.
