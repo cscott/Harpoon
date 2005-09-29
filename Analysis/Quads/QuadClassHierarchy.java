@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.7 2004-02-08 05:09:40 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.8 2005-09-29 03:56:53 salcianu Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -118,17 +118,71 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	return sb.toString();
     }
 
-    ////// hclass objects
-    private final HMethod HMstrIntern;
-    private final HMethod HMthrStart;
-    private final HMethod HMthrRun;
-    private QuadClassHierarchy(Linker linker) {
+    // Frequently used HMethod objects' should be final, but the java
+    // compiler cannot detect that this method is called only from the
+    // constructor ...
+    private HMethod HMstrIntern;
+    private HMethod HMthrStart;
+    private HMethod HMthrRun;
+    /* [AS 09/28/05]: Used to be a private constructor: confusing:
+       this "constructor" was radically different from the real
+       constructor - it is just a convenient initializers for the real
+       constructor, and should be declared as such. */
+    private void initHMethods(Linker linker) {
 	HMstrIntern = linker.forName("java.lang.String")
 	    .getMethod("intern",new HClass[0]);
 	HMthrStart = linker.forName("java.lang.Thread")
 	    .getMethod("start", new HClass[0]);
 	HMthrRun = linker.forName("java.lang.Thread")
 	    .getMethod("run", new HClass[0]);
+    }
+
+
+    private Collection plusImplicitExceptions(Linker linker, Collection roots, HCodeFactory hcf) {
+	// add 'implicit' exceptions to root set when analyzing QuadWithTry
+	String[] implExcName = new String[] { 
+	    "java.lang.ArrayStoreException",
+	    "java.lang.NullPointerException",
+	    "java.lang.ArrayIndexOutOfBoundsException",
+	    "java.lang.NegativeArraySizeException",
+	    "java.lang.ArithmeticException",
+	    "java.lang.ClassCastException"
+	};
+	roots = new HashSet(roots); // make mutable
+	for (int i=0; i<implExcName.length; i++)
+	    roots.add(linker.forName(implExcName[i])
+		      .getConstructor(new HClass[0]));
+	return roots;
+    }
+
+    // make initial worklist from roots collection.
+    private void initWorkList(State S, Collection roots) {
+	for (Iterator it = roots.iterator(); it.hasNext(); ) {
+	    HClass rootC; HMethod rootM; boolean instantiated;
+	    
+	    // deal with the different types of objects in the roots collection
+	    Object o = it.next();
+	    if (o instanceof HMethod) {
+		rootM = (HMethod) o;
+		rootC = rootM.getDeclaringClass();
+		// let's assume non-static method roots have objects to go with 'em.
+		instantiated = !rootM.isStatic();
+	    } else { // only HMethods and HClasses in roots, so o must be HClass
+		rootM = null;
+		rootC = (HClass) o;
+		// no methods of an array.  so mention of an array means
+		// it is instantiated.  otherwise, it's not.
+		instantiated = rootC.isArray();
+	    }
+	    
+	    if (instantiated)
+		discoverInstantiatedClass(S, rootC);
+	    else
+		discoverClass(S, rootC);
+	    
+	    if (rootM != null)
+		methodPush(S, rootM);
+	}
     }
 
     /** Creates a <code>ClassHierarchy</code> of all classes
@@ -141,125 +195,49 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
      *  explicitly include an instantiated class in the hierarchy, add
      *  a constructor or non-static method of that class to the
      *  <code>roots</code> <code>Collection</code>.<p> <code>hcf</code>
-     *  must be a code factory that generates quad form. */
+     *  must be a code factory that generates quad form. 
+
+     <p>
+     [AS 09/28/05]: TODO: why do we consider as instantiated the
+     declaring class of a non-static method root?  What if that method
+     is actually called on an instantiated SUBclass?  MORE IMPORTANT
+     QUESTION: why is it important for a class to be included in the
+     classes() set?
+     */
     public QuadClassHierarchy(Linker linker,
 			      Collection roots, HCodeFactory hcf) {
-	this(linker); // initialize hclass objects.
+	initHMethods(linker); // initialize hclass objects.
 	if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadWithTry.codename)) {
-	    // add 'implicit' exceptions to root set when analyzing QuadWithTry
-	    String[] implExcName = new String[] { 
-		"java.lang.ArrayStoreException",
-		"java.lang.NullPointerException",
-		"java.lang.ArrayIndexOutOfBoundsException",
-		"java.lang.NegativeArraySizeException",
-		"java.lang.ArithmeticException",
-		"java.lang.ClassCastException"
-	    };
-	    roots = new HashSet(roots); // make mutable
-	    for (int i=0; i<implExcName.length; i++)
-		roots.add(linker.forName(implExcName[i])
-			  .getConstructor(new HClass[0]));
+	    roots = plusImplicitExceptions(linker, roots, hcf);
 	}
+
 	// state.
 	final State S = new State();
+	// quad visitor for processing each quad
+	final QuadVisitor qv = new MyQuadVisitor(S);
 
 	// make initial worklist from roots collection.
-	for (Iterator it=roots.iterator(); it.hasNext(); ) {
-	    HClass rootC; HMethod rootM; boolean instantiated;
-	    // deal with the different types of objects in the roots collection
-	    Object o = it.next();
-	    if (o instanceof HMethod) {
-		rootM = (HMethod) o;
-		rootC = rootM.getDeclaringClass();
-		// let's assume non-static roots have objects to go with 'em.
-		instantiated = !rootM.isStatic();
-	    } else { // only HMethods and HClasses in roots, so must be HClass
-		rootM = null;
-		rootC = (HClass) o;
-		// no methods of an array.  so mention of an array means
-		// it is instantiated.  otherwise, it's not.
-		instantiated = rootC.isArray();
-	    }
-	    if (instantiated)
-		discoverInstantiatedClass(S, rootC);
-	    else
-		discoverClass(S, rootC);
-	    if (rootM!=null)
-		methodPush(S, rootM);
-	}
+	initWorkList(S, roots);
 
 	// worklist algorithm.
 	while (!S.W.isEmpty()) {
 	    HMethod m = S.W.pull();
 	    S.done.add(m); // mark us done with this method.
-	    // This method should be marked as usable.
-	    {
-		Set<HMethod> s = S.classMethodsUsed.get(m.getDeclaringClass());
-		assert s!=null;
-		assert s.contains(m);
-	    }
+
+	    // Safety check: this method should be marked as usable.
+	    assert checkIsMarkedAsUsed(S, m);
+
 	    // look at the hcode for the method.
 	    harpoon.IR.Quads.Code hc = (harpoon.IR.Quads.Code) hcf.convert(m);
-	    if (hc==null) { // native or unanalyzable method.
+
+	    if (hc == null) { // native or unanalyzable method.
 		if(!m.getReturnType().isPrimitive() &&
 		   !m.getReturnType().isInterface())
 		    // be safe; assume the native method can make an object
 		    // of its return type.
 		    discoverInstantiatedClass(S, m.getReturnType());
-	    } else { // look for CALLs, NEWs, and ANEWs
-		QuadVisitor qv = new QuadVisitor() {
-		    public void visit(Quad q) { /* do nothing */ }
-		    // creation of a (possibly-new) class
-		    public void visit(ANEW q) {
-			discoverInstantiatedClass(S, q.hclass());
-		    }
-		    public void visit(NEW q) {
-			discoverInstantiatedClass(S, q.hclass());
-		    }
-		    public void visit(CONST q) {
-			if (q.type().isPrimitive()) return;
-			discoverInstantiatedClass(S, q.type());
-			if (q.type().getName().equals("java.lang.String"))
-			    // string constants use intern()
-			    discoverMethod(S,HMstrIntern,false/*non-virtual*/);
-			if (q.type().getName().equals("java.lang.Class"))
-			    discoverClass(S, (HClass) q.value());
-			if (q.type().getName().equals("java.lang.reflect.Field"))
-			    discoverClass(S, ((HField) q.value()).getDeclaringClass());
-			if (q.type().getName().equals("java.lang.reflect.Method"))
-			    discoverClass(S, ((HMethod) q.value()).getDeclaringClass());
-		    }
-		    // CALLs:
-		    public void visit(CALL q) {
-			if (q.isStatic() || !q.isVirtual())
-			    discoverMethod(S, q.method(),false/*non-virtual*/);
-			else
-			    discoverMethod(S, q.method(),true/*virtual*/);
-		    }
-		    // get and set discover classes (don't instantiate, though)
-		    public void visit(GET q) {
-			discoverClass(S, q.field().getDeclaringClass());
-		    }
-		    public void visit(SET q) {
-			discoverClass(S, q.field().getDeclaringClass());
-		    }
-		    // make sure we have the class we're testing against
-		    // handy.
-		    public void visit(INSTANCEOF q) {
-			discoverClass(S, q.hclass());
-		    }
-		    public void visit(TYPECAST q) {
-			discoverClass(S, q.hclass());
-		    }
-		    public void visit(TYPESWITCH q) {
-			for (int i=0; i<q.keysLength(); i++)
-			    discoverClass(S, q.keys(i));
-		    }
-		    public void visit(HANDLER q) {
-			if (q.caughtException()==null) return;
-			discoverClass(S, q.caughtException());
-		    }
-		};
+	    }
+	    else { // look for CALLs, NEWs, and ANEWs
 		// iterate through quads with visitor.
 		for (Iterator<Quad> it = hc.getElementsI(); it.hasNext(); )
 		    it.next().accept(qv);
@@ -267,9 +245,10 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	} // END worklist.
 	
 	// build method table from classMethodsUsed.
-	for (Iterator<Set<HMethod>> it= S.classMethodsUsed.values().iterator();
-	     it.hasNext(); )
-	    methods.addAll(it.next());
+	for (Set<HMethod> set : S.classMethodsUsed.values()) {
+	    methods.addAll(set);
+	}
+
 	// now generate children set from classKnownChildren.
 	for (HClass c : S.classKnownChildren.keySet()) {
 	    Set<HClass> s = S.classKnownChildren.get(c);
@@ -278,12 +257,94 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	}
     }
 
+
+    // executed just for assertions; by calling this method in an
+    // assertion condition, we don't pay its cost if the assertions
+    // are off
+    private boolean checkIsMarkedAsUsed(State S, HMethod m) {
+	HClass hc = m.getDeclaringClass();
+	Set<HMethod> s = S.classMethodsUsed.get(hc);
+	assert s!=null : "NULL classMethodsUsed(declClass=" + hc + ") for m=" + m;
+	assert s.contains(m) : "m NOT IN classMethodsUsed(declClass=" + hc + ") for m=" + m;
+	return true;
+    }
+
+
+    // quad visitor used in the main worklist algorithm, while
+    // processing the instructions of each method.
+    private class MyQuadVisitor extends QuadVisitor {
+	MyQuadVisitor(State S) { this.S = S; }
+	private final State S;
+
+	public void visit(Quad q) { /* do nothing */ }
+	// creation of a (possibly-new) class
+	public void visit(ANEW q) {
+	    discoverInstantiatedClass(S, q.hclass());
+	}
+	public void visit(NEW q) {
+	    discoverInstantiatedClass(S, q.hclass());
+	}
+	public void visit(CONST q) {
+	    if (q.type().isPrimitive()) return;
+
+	    discoverInstantiatedClass(S, q.type());
+	    if (q.type().getName().equals("java.lang.String"))
+	    // string constants use intern()
+	    discoverMethod(S,HMstrIntern,false/*non-virtual*/);
+	    if (q.type().getName().equals("java.lang.Class")) {
+		discoverClass(S, (HClass) q.value());
+	    }
+	    if (q.type().getName().equals("java.lang.reflect.Field")) {
+		discoverClass(S, ((HField) q.value()).getDeclaringClass());
+	    }
+	    if (q.type().getName().equals("java.lang.reflect.Method")) {
+		discoverClass(S, ((HMethod) q.value()).getDeclaringClass());
+	    }
+	}
+	// CALLs:
+	public void visit(CALL q) {
+	    if (q.isStatic() || !q.isVirtual()) {
+		discoverMethod(S, q.method(),false/*non-virtual*/);
+	    }
+	    else {
+		discoverMethod(S, q.method(),true/*virtual*/);
+	    }
+	}
+	// get and set discover classes (don't instantiate, though)
+	public void visit(GET q) {
+	    discoverClass(S, q.field().getDeclaringClass());
+	}
+	public void visit(SET q) {
+	    discoverClass(S, q.field().getDeclaringClass());
+	}
+	// make sure we have the class we're testing against
+	// handy.
+	public void visit(INSTANCEOF q) {
+	    discoverClass(S, q.hclass());
+	}
+	public void visit(TYPECAST q) {
+	    discoverClass(S, q.hclass());
+	}
+	public void visit(TYPESWITCH q) {
+	    for (int i=0; i<q.keysLength(); i++) {
+		discoverClass(S, q.keys(i));
+	    }
+	}
+	public void visit(HANDLER q) {
+	    if (q.caughtException()==null) return;
+	    discoverClass(S, q.caughtException());
+	}
+    };
+    
+
+
     /* when we discover a new class nc:
         for each superclass c or superinterface i of this class,
          add all called methods of c/i to worklist of nc, if nc implements.
     */
     private void discoverClass(State S, HClass c) {
 	if (S.classKnownChildren.containsKey(c)) return; // not a new class.
+
 	// add to known-children lists.
 	assert !S.classKnownChildren.containsKey(c);
 	S.classKnownChildren.put(c, new HashSet());
@@ -291,13 +352,16 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	S.classMethodsUsed.put(c, new HashSet());
 	assert !S.classMethodsPending.containsKey(c);
 	S.classMethodsPending.put(c, new HashSet());
+
 	// add class initializer (if it exists) to "called" methods.
 	HMethod ci = c.getClassInitializer();
 	if ((ci!=null) && (!S.done.contains(ci)))
 	    methodPush(S, ci);
+
 	// mark component type of arrays
 	if (c.isArray())
 	    discoverClass(S, c.getComponentType());
+
 	// work through parents (superclass and interfaces)
 	for (Object pO : parents(c)) {
 	    HClass p = (HClass) pO;
@@ -306,6 +370,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    knownChildren.add(c); // kC non-null after discoverClass.
 	}
     }
+
     private void discoverInstantiatedClass(State S, HClass c) {
 	if (instedClasses.contains(c)) return; else instedClasses.add(c);
 	discoverClass(S, c);
@@ -346,6 +411,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	}
 	// done with this class/interface.
     }
+
     /* when we hit a method call site (method in class c):
         add method of c and all children of c to worklist.
        if method in interface i:
@@ -403,6 +469,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     private void methodPush(State S, HMethod m) {
 	assert !S.done.contains(m);
 	if (S.W.contains(m)) return; // already on work list.
+
 	// Add to worklist
 	S.W.add(m);
 	// mark this method as used.
@@ -412,26 +479,35 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	Set<HMethod> s2 = S.classMethodsPending.get(m.getDeclaringClass());
 	s2.remove(m);
     }
-    // State for algorithm.
+
+
+
+    // State for the algorithm.
     private static class State {
-	// keeps track of methods which are actually invoked at some point.
+
+	// for each class, keeps track of methods which are actually invoked at some point.
 	final Map<HClass,Set<HMethod>> classMethodsUsed
 	    = new HashMap<HClass,Set<HMethod>>(); // class->set map.
+
 	// keeps track of methods which might be called, if someone gets
 	// around to instantiating an object of the proper type.
 	final Map<HClass,Set<HMethod>> classMethodsPending
 	    = new HashMap<HClass,Set<HMethod>>(); // class->set map
+
 	// keeps track of all known children of a given class.
 	final Map<HClass,Set<HClass>> classKnownChildren
 	    = new HashMap<HClass,Set<HClass>>(); // class->set map.
+
 	// keeps track of which methods we've done already.
 	final Set<HMethod> done = new HashSet<HMethod>();
+
 	// keeps track of methods we've only seen non-virtual invocations for.
 	final Set<HMethod> nonvirtual = new HashSet<HMethod>();
 
 	// Worklist.
 	final WorkSet<HMethod> W = new WorkSet<HMethod>();
     }
+
 
     // useful utility method
     private static boolean isVirtual(HMethod m) {
