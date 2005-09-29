@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.5 2005-09-28 23:12:00 salcianu Exp $
+ * @version $Id: HMethodImpl.java,v 1.6 2005-09-29 03:38:00 salcianu Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -213,13 +213,19 @@ abstract class HMethodImpl
   public int hashCode() { return hashCode(this); }
   // factored out for re-use
   static int hashCode(HMethod hm) {
-    return
-      // [AS 09/28/05]: the descriptor hashcode should be enough
-      /* 
-      hm.getDeclaringClass().hashCode() ^
-      hm.getName().hashCode() ^
-      */
-      hm.getDescriptor().hashCode();
+    int hashCode = 0;
+
+    hashCode ^= hm.getDeclaringClass().hashCode();
+    hashCode ^= hm.getName().hashCode();
+ 
+    HClass paramTypes[] = hm.getParameterTypes();
+    for(int i = 0; i < paramTypes.length; i++) {
+      hashCode ^= paramTypes[i].hashCode();
+    }
+
+    hashCode ^= hm.getReturnType().hashCode();
+
+    return hashCode;
   }
 
   /**
