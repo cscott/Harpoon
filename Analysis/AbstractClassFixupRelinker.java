@@ -27,7 +27,7 @@ import java.util.Set;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.11 2004-02-08 03:19:12 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.12 2005-09-29 04:05:18 salcianu Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -114,7 +114,7 @@ public class AbstractClassFixupRelinker extends Relinker {
 		// NOT IMPLEMENTED IN CLASS!  this better be an abstract class:
 		assert Modifier.isAbstract(hc.getModifiers()) :
 		    "interface method "+hm+" not implemented in non-abstract "+
-		    "class "+hc;
+		    "class "+hc + "; hmm=" + hmm;
 		// okay, it's an abstract class, so make an abstract
 		// implementation method.
 		HMethod nm=hc.getMutator().addDeclaredMethod
