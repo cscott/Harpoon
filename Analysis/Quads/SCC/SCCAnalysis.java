@@ -69,7 +69,7 @@ import net.cscott.jutil.Util;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.7 2004-02-08 01:53:44 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.8 2005-09-29 04:03:25 salcianu Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -280,7 +280,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    // we know that the conditional is zero on the false leg
 		    if (falseTaken)
 			raiseV(V, Wv, q.dst(i,0),
-			       new xIntConstant(toInternal(HClass.Boolean),0));
+			       new xIntConstant(SCCAnalysis.toInternal(HClass.Boolean),0));
 		    // CJMP test is possibly non-boolean, so we don't in fact
 		    // know the value of the true side (except that it is
 		    // non-zero)
@@ -429,7 +429,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		assert v==null || v instanceof xClassNonNull;
 	    if (v instanceof xClass)
 		raiseV(V, Wv, q.dst(), 
-		       new xClass( toInternal( ((xClass)v).type().getComponentType() ) ) );
+		       new xClass( SCCAnalysis.toInternal( ((xClass)v).type().getComponentType() ) ) );
 	}
 	public void visit(ALENGTH q) {
 	    LatticeVal v = get( q.objectref() );
@@ -468,17 +468,17 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (q.retval() != null) {
 		// in the bytecode world, everything's an int.
 		HClass ty = q.method().getReturnType();
-		LatticeVal v = new xClass(toInternal(ty));
+		LatticeVal v = new xClass(SCCAnalysis.toInternal(ty));
 		if (ty==HClass.Byte)
-		    v = new xBitWidth(toInternal(HClass.Byte),  8,  7);
+		    v = new xBitWidth(SCCAnalysis.toInternal(HClass.Byte),  8,  7);
 		else if (ty==HClass.Short)
-		    v = new xBitWidth(toInternal(HClass.Short), 16, 15);
+		    v = new xBitWidth(SCCAnalysis.toInternal(HClass.Short), 16, 15);
 		else if (ty==HClass.Char)
-		    v = new xBitWidth(toInternal(HClass.Char),  0, 16);
+		    v = new xBitWidth(SCCAnalysis.toInternal(HClass.Char),  0, 16);
 		else if (ty==HClass.Boolean)
-		    v = new xBitWidth(toInternal(HClass.Boolean),0, 1);
+		    v = new xBitWidth(SCCAnalysis.toInternal(HClass.Boolean),0, 1);
 		else if (ty.isPrimitive())
-		    v = new xClassNonNull(toInternal(ty));
+		    v = new xClassNonNull(SCCAnalysis.toInternal(ty));
 		raiseV(V, Wv, q.retval(), v);
 	    }
 	    raiseV(V, Wv, q.retex(), 
@@ -541,26 +541,26 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		HClass hcO = ((xClass) vO).type();
 		if (hcA==null) { // can't prove type is array; usually this
 		                 // means we've turned useSigmas off.
-		    raiseV(V, Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1));
+		    raiseV(V, Wv, q.dst(), new xBitWidth(SCCAnalysis.toInternal(HClass.Boolean),0,1));
 		    return;
 		}
-		hcA = toInternal(hcA); // normalize external types.
+		hcA = SCCAnalysis.toInternal(hcA); // normalize external types.
 		// special case when q.objectref is null
 		if (hcO == HClass.Void) // always true.
-		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
+		    raiseV(V, Wv, q.dst(), new xIntConstant(SCCAnalysis.toInternal(HClass.Boolean),1));
 		else if (vA instanceof xClassExact &&
 			 hcO.isInstanceOf(hcA)) // always true
-		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
+		    raiseV(V, Wv, q.dst(), new xIntConstant(SCCAnalysis.toInternal(HClass.Boolean),1));
 		else if (vO instanceof xClassExact &&
 			 !hcO.isInstanceOf(hcA)) // always false
-		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0));
+		    raiseV(V, Wv, q.dst(), new xIntConstant(SCCAnalysis.toInternal(HClass.Boolean),0));
 		else if (hcA.isInterface() ||
 			 hcO.isInterface() ||
 			 hcO.isInstanceOf(hcA) ||
 			 hcA.isInstanceOf(hcO)) // unknowable.
-		    raiseV(V, Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1));
+		    raiseV(V, Wv, q.dst(), new xBitWidth(SCCAnalysis.toInternal(HClass.Boolean),0,1));
 		else // always false.
-		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0));
+		    raiseV(V, Wv, q.dst(), new xIntConstant(SCCAnalysis.toInternal(HClass.Boolean),0));
 	    }
 	}
 	public void visit(CONST q) {
@@ -586,7 +586,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		assert (q.objectref()!=null ?
 			    get(q.objectref())==null ||
 			    get(q.objectref()) instanceof xClassNonNull : true) : q;
-	    HClass type = toInternal(q.field().getType());
+	    HClass type = SCCAnalysis.toInternal(q.field().getType());
 	    if (q.field().isConstant()) {
 		Object val = q.field().getConstant();
 		if (type == linker.forName("java.lang.String"))
@@ -644,7 +644,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		       new xClassNonNull( m.getDeclaringClass() ) );
 	    for (int k=0; k < pt.length; j++, k++)
 		if (pt[k].isPrimitive())
-		    raiseV(V, Wv, q.params(j), new xClassNonNull( toInternal(pt[k]) ) );
+		    raiseV(V, Wv, q.params(j), new xClassNonNull( SCCAnalysis.toInternal(pt[k]) ) );
 		else
 		    raiseV(V, Wv, q.params(j), new xClass( pt[k] ) );
 	}
@@ -724,7 +724,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    // RULE 4:
 		    HClass ty = q.evalType();
 		    if (ty.isPrimitive())
-			raiseV(V, Wv, q.dst(), new xClassNonNull( toInternal(ty) ) );
+			raiseV(V, Wv, q.dst(), new xClassNonNull( SCCAnalysis.toInternal(ty) ) );
 		    else
 			raiseV(V, Wv, q.dst(), new xClass( ty ) );
 		}
@@ -877,7 +877,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    public void visit_default(OPER q) {
 		HClass ty = q.evalType();
 		if (ty.isPrimitive())
-		    raiseV(V, Wv, q.dst(), new xClassNonNull( toInternal(ty) ) );
+		    raiseV(V, Wv, q.dst(), new xClassNonNull( SCCAnalysis.toInternal(ty) ) );
 		else
 		    raiseV(V, Wv, q.dst(), new xClass( ty ) );
 	    }
@@ -1280,567 +1280,6 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	return c;
     }
 
-    /*-------------------------------------------------------------*/
-    // Lattice classes.
-
-    /** No information obtainable about a temp. */
-    static abstract class LatticeVal {
-	public String toString() { return "Top"; }
-	public boolean equals(Object o) { return o instanceof LatticeVal; }
-	// merge.
-	public abstract LatticeVal merge(LatticeVal v);
-	// narrow.
-	public abstract boolean isLowerThan(LatticeVal v);
-	// by default, the renaming does nothing.
-	public LatticeVal rename(PHI p, int i) { return this; }
-	public LatticeVal rename(SIGMA s, int i) { return this; }
-    }
-    /** A typed temp. */
-    static class xClass extends LatticeVal {
-	protected HClass type;
-	public xClass(HClass type) {
-	    assert type!=HClass.Boolean && type!=HClass.Byte &&
-			type!=HClass.Short && type!=HClass.Char : "Not an internal type ("+type+")";
-	    this.type = type;
-	}
-	public HClass type() { return type; }
-	public String toString() { 
-	    return "xClass: " + type;
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    xClass xc;
-	    try { xc=(xClass) o; }
-	    catch (ClassCastException e) { return false;}
-	    return xc!=null && xc.type.equals(type);
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    xClass vv = (xClass) v;
-	    return new xClass(mergeTypes(this.type, vv.type));
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xClass);
-	}
-	// Class merge function.
-	static HClass mergeTypes(HClass a, HClass b) {
-	    assert a!=null && b!=null;
-	    if (a==b) return a; // take care of primitive types.
-	    
-	    // Special case 'Void' Hclass, used for null constants.
-	    if (a==HClass.Void)
-		return b;
-	    if (b==HClass.Void)
-		return a;
-	    
-	    // by this point better be array ref or object, not primitive type.
-	    assert (!a.isPrimitive()) && (!b.isPrimitive());
-	    return HClassUtil.commonParent(a,b);
-	}
-    }
-    /** A single class type; guaranteed the value is not null. */
-    static class xClassNonNull extends xClass {
-	public xClassNonNull(HClass type) { 
-	    super( type );
-	    assert type!=HClass.Void;
-	}
-	public String toString() { 
-	    return "xClassNonNull: { " + type + " }";
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xClassNonNull && super.equals(o));
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (!(v instanceof xClassNonNull)) return super.merge(v);
-	    xClassNonNull vv = (xClassNonNull) v;
-	    return new xClassNonNull(mergeTypes(this.type, vv.type));
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xClassNonNull);
-	}
-    }
-    /** An object of the specified *exact* type (not a subtype). */
-    static class xClassExact extends xClassNonNull {
-	public xClassExact(HClass type) {
-	    super(type);
-	    assert !type.isInterface(); // interface types can't be exact.
-	}
-	public String toString() { 
-	    return "xClassExact: { " + type + " }";
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xClassExact && super.equals(o));
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xClassExact(type);
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xClassExact);
-	}
-    }
-    /** An array with constant length.  The array is not null, of course. */
-    static class xClassArray extends xClassExact {
-	protected int length;
-	public xClassArray(HClass type, int length) {
-	    super(type);
-	    this.length = length;
-	}
-	public int length() { return length; }
-	public String toString() {
-	    return "xClassArray: " + 
-		type.getComponentType() + "["+length+"]";
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    xClassArray xca;
-	    try { xca = (xClassArray) o; }
-	    catch (ClassCastException e) { return false; }
-	    return xca!=null && super.equals(xca) && xca.length == length;
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xClassArray(type,length);
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xClassArray);
-	}
-    }
-    /** An integer value of the specified bitwidth. */
-    static class xBitWidth extends xClassExact {
-	/** Highest significant bit for positive numbers. */
-	protected int plusWidth;
-	/** Highest significant bit for negative numbers. */
-	protected int minusWidth;
-	/** Constructor. */
-	public xBitWidth(HClass type, int minusWidth, int plusWidth) {
-	    super(toInternal(type));
-	    // limit.
-	    if (type == HClass.Long) {
-		this.minusWidth = Math.min(64, minusWidth);
-		this.plusWidth  = Math.min(63, plusWidth);
-	    } else if (type == HClass.Int) {
-		this.minusWidth = Math.min(32, minusWidth);
-		this.plusWidth  = Math.min(31, plusWidth);
-	    } else // NON-CANONICAL TYPES: CAREFUL! (this.type fixed by above)
-		if (type == HClass.Boolean) {
-		this.minusWidth = Math.min( 0, minusWidth);
-		this.plusWidth  = Math.min( 1, plusWidth);
-	    } else if (type == HClass.Short) {
-		this.minusWidth = Math.min(16, minusWidth);
-		this.plusWidth  = Math.min(15, plusWidth);
-	    } else if (type == HClass.Byte) {
-		this.minusWidth = Math.min( 8, minusWidth);
-		this.plusWidth  = Math.min( 7, plusWidth);
-	    } else if (type == HClass.Char) {
-		this.minusWidth = Math.min( 0, minusWidth);
-		this.plusWidth  = Math.min(16, plusWidth);
-	    } else throw new Error("Unknown type for xBitWidth: "+type);
-	}
-	public int minusWidth() { return minusWidth; }
-	public int plusWidth () { return plusWidth;  }
-	public String toString() {
-	    return "xBitWidth: " + type + " " +
-		"-"+minusWidth+"+"+plusWidth+" bits";
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    xBitWidth xbw;
-	    try { xbw = (xBitWidth) o; }
-	    catch (ClassCastException e) { return false; }
-	    return xbw!=null && super.equals(xbw) &&
-		xbw.minusWidth == minusWidth &&
-		xbw.plusWidth  == plusWidth;
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (!(v instanceof xBitWidth)) return super.merge(v);
-	    // bitwidth merge
-	    xBitWidth vv = (xBitWidth) v;
-	    if (!this.type.equals(vv.type)) return super.merge(vv);
-	    return new xBitWidth
-		(this.type, 
-		 Math.max(this.minusWidth, vv.minusWidth),
-		 Math.max(this.plusWidth, vv.plusWidth));
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xBitWidth);
-	}
-    }
-    /** An integer value which is the result of an INSTANCEOF. */
-    static class xInstanceofResultUnknown extends xBitWidth
-	implements xInstanceofResult {
-	Temp tested;
-	INSTANCEOF q;
-	public xInstanceofResultUnknown(INSTANCEOF q) { this(q, q.src()); }
-	xInstanceofResultUnknown(INSTANCEOF q, Temp tested) {
-	    super(toInternal(HClass.Boolean),0,1);
-	    this.q = q;
-	    this.tested = tested;
-	}
-	public Temp tested() { return tested; }
-	public INSTANCEOF def() { return q; }
-	public String toString() {
-	    return "xInstanceofResultUnknown: " + type + " " +q;
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xInstanceofResultUnknown && super.equals(o) &&
-		    ((xInstanceofResultUnknown)o).q == q &&
-		    ((xInstanceofResultUnknown)o).tested == tested);
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (v instanceof xInstanceofResult)
-		// xInstanceofResultKnown merged with
-		// xInstanceofResultKnown or xInstanceofResultUnknown
-		return makeUnknown();
-	    // all others.
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xBitWidth);
-	}
-	public xInstanceofResultKnown makeKnown(boolean nvalue) {
-	    return new xInstanceofResultKnown(q,tested,nvalue?1:0);
-	}
-	public xInstanceofResultUnknown makeUnknown() {
-	    return new xInstanceofResultUnknown(q,tested);
-	}
-	// override renaming functions.
-	public LatticeVal rename(PHI q, int j) {
-	    for (int i=0; i<q.numPhis(); i++)
-		if (q.src(i, j)==this.tested)
-		    return new xInstanceofResultUnknown(def(), q.dst(i));
-	    return this;
-	}
-	public LatticeVal rename(SIGMA q, int j) {
-	    for (int i=0; i<q.numSigmas(); i++)
-		if (q.src(i)==this.tested)
-		    return new xInstanceofResultUnknown(def(), q.dst(i, j));
-	    return this;
-	}
-    }
-    /** An unknown boolean value which is the result of an OPER. */
-    static class xOperBooleanResultUnknown extends xBitWidth
-	implements xOperBooleanResult {
-	OPER q;
-	Temp[] operands;
-	public xOperBooleanResultUnknown(OPER q) { this(q, q.operands()); }
-	xOperBooleanResultUnknown(OPER q, Temp[] operands) {
-	    super(toInternal(HClass.Boolean),0,1);
-	    this.q = q;
-	    this.operands = operands;
-	}
-	public Temp[] operands() { return operands; }
-	public OPER def() { return q; }
-	public String toString() {
-	    return "xOperBooleanResultUnknown: " + type + " " +q;
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    if (o==this) return true; // common case.
-	    if (!(o instanceof xOperBooleanResultUnknown)) return false;
-	    if (!super.equals(o)) return false;
-	    xOperBooleanResultUnknown oo = (xOperBooleanResultUnknown)o;
-	    if (oo.q != q) return false;
-	    if (oo.operands.length != operands.length) return false;
-	    for (int i=0; i<operands.length; i++)
-		if (oo.operands[i] != operands[i]) return false;
-	    return true;
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (v instanceof xOperBooleanResult)
-		// xOperBooleanResultKnown merged with
-		// xOperBooleanResultKnown or xOperBooleanResultUnknown
-		return makeUnknown();
-	    // all others.
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xBitWidth);
-	}
-	public xOperBooleanResultKnown makeKnown(boolean nvalue) {
-	    return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
-	}
-	public xOperBooleanResultUnknown makeUnknown() {
-	    return new xOperBooleanResultUnknown(q,operands);
-	}
-	// override renaming functions.
-	public LatticeVal rename(PHI q, int j) {
-	    MyTempMap mtm = new MyTempMap();
-	    for (int i=0; i<q.numPhis(); i++)
-		mtm.put(q.src(i,j), q.dst(i));
-	    return new xOperBooleanResultUnknown(def(), mtm.tempMap(operands()));
-	}
-	public LatticeVal rename(SIGMA q, int j) {
-	    MyTempMap mtm = new MyTempMap();
-	    for (int i=0; i<q.numSigmas(); i++)
-		mtm.put(q.src(i), q.dst(i, j));
-	    return new xOperBooleanResultUnknown(def(), mtm.tempMap(operands()));
-	}
-	private static class MyTempMap extends HashMap implements TempMap {
-	    public Temp tempMap(Temp t) {
-		return containsKey(t) ? (Temp) get(t) : t;
-	    }
-	    public Temp[] tempMap(Temp[] t) {
-		Temp[] r = new Temp[t.length];
-		for (int i=0; i<r.length; i++)
-		    r[i] = tempMap(t[i]);
-		return r;
-	    }
-	}
-    }
-    /** An integer or boolean constant. */
-    static class xIntConstant extends xBitWidth implements xConstant {
-	protected long value;
-	public xIntConstant(HClass type, long value) {
-	    super(type, value<0?Util.fls(-value):0, value>0?Util.fls(value):0);
-	    this.value = value;
-	}
-	public long value() { return value; }
-	public Object constValue() { 
-	    if (type==HClass.Int) return new Integer((int)value);
-	    if (type==HClass.Long) return new Long((long)value);
-	    //if (type==HClass.Boolean) return new Integer(value!=0?1:0);
-	    throw new Error("Unknown integer constant type.");
-	}
-	public String toString() {
-	    return "xIntConstant: " + type + " " + value;
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xIntConstant && super.equals(o) &&
-		    ((xIntConstant)o).value == value);
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xIntConstant(type,value);
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xIntConstant);
-	}
-    }
-    /** An integer value which is the result of an INSTANCEOF. */
-    static class xInstanceofResultKnown extends xIntConstant
-	implements xInstanceofResult {
-	Temp tested;
-	INSTANCEOF q;
-	public xInstanceofResultKnown(INSTANCEOF q, boolean value) {
-	    this(q, q.src(), value?1:0);
-	}
-	private xInstanceofResultKnown(INSTANCEOF q, Temp tested, long value) {
-	    super(toInternal(HClass.Boolean),value);
-	    this.q = q;
-	    this.tested = tested;
-	    assert value==0 || value==1;
-	}
-	public Temp tested() { return tested; }
-	public INSTANCEOF def() { return q; }
-	public String toString() {
-	    return "xInstanceofResultKnown: " + value + " " +q;
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xInstanceofResultKnown && super.equals(o) &&
-		    ((xInstanceofResultKnown)o).q == q &&
-		    ((xInstanceofResultKnown)o).tested == tested);
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (v instanceof xInstanceofResult)
-		// xInstanceofResultKnown merged with
-		// xInstanceofResultKnown or xInstanceofResultUnknown
-		return this._equals(v) ? (LatticeVal)
-		    makeKnown(value!=0) : makeUnknown();
-	    // all others.
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xIntConstant);
-	}
-	public xInstanceofResultKnown makeKnown(boolean nvalue) {
-	    return new xInstanceofResultKnown(q,tested,nvalue?1:0);
-	}
-	public xInstanceofResultUnknown makeUnknown() {
-	    return new xInstanceofResultUnknown(q,tested);
-	}
-	// override renaming functions.
-	public LatticeVal rename(PHI q, int j) {
-	    for (int i=0; i<q.numPhis(); i++)
-		if (q.src(i, j)==this.tested)
-		    return new xInstanceofResultKnown(def(), q.dst(i), value);
-	    return this;
-	}
-	public LatticeVal rename(SIGMA q, int j) {
-	    for (int i=0; i<q.numSigmas(); i++)
-		if (q.src(i)==this.tested)
-		    return new xInstanceofResultKnown(def(),q.dst(i, j),value);
-	    return this;
-	}
-    }
-    /** A known boolean value which is the result of an OPER. */
-    static class xOperBooleanResultKnown extends xIntConstant
-	implements xOperBooleanResult {
-	OPER q;
-	Temp[] operands;
-	public xOperBooleanResultKnown(OPER q, boolean value) {
-	    this(q, q.operands(), value?1:0);
-	}
-	xOperBooleanResultKnown(OPER q, Temp[] operands, long value)
-	{
-	    super(toInternal(HClass.Boolean),value);
-	    this.q = q;
-	    this.operands = operands;
-	    assert value==0 || value==1;
-	}
-	public Temp[] operands() { return operands; }
-	public OPER def() { return q; }
-	public String toString() {
-	    return "xOperBooleanResultKnown: " + value + " " +q;
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    if (o==this) return true; // common case.
-	    if (!(o instanceof xOperBooleanResultKnown)) return false;
-	    if (!super.equals(o)) return false;
-	    xOperBooleanResultKnown oo = (xOperBooleanResultKnown)o;
-	    if (oo.q != q) return false;
-	    if (oo.operands.length != operands.length) return false;
-	    for (int i=0; i<operands.length; i++)
-		if (oo.operands[i] != operands[i]) return false;
-	    return true;
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (v instanceof xOperBooleanResult)
-		// xOperBooleanResultKnown merged with
-		// xOperBooleanResultKnown or xOperBooleanResultUnknown
-		return this._equals(v) ? (LatticeVal)
-		    makeKnown(value!=0) : makeUnknown();
-	    // all others.
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xIntConstant);
-	}
-	public xOperBooleanResultKnown makeKnown(boolean nvalue) {
-	    return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
-	}
-	public xOperBooleanResultUnknown makeUnknown() {
-	    return new xOperBooleanResultUnknown(q,operands);
-	}
-	// override renaming functions.
-	public LatticeVal rename(PHI q, int j) {
-	    MyTempMap mtm = new MyTempMap();
-	    for (int i=0; i<q.numPhis(); i++)
-		mtm.put(q.src(i,j), q.dst(i));
-	    return new xOperBooleanResultKnown(def(), mtm.tempMap(operands()),
-					       value);
-	}
-	public LatticeVal rename(SIGMA q, int j) {
-	    MyTempMap mtm = new MyTempMap();
-	    for (int i=0; i<q.numSigmas(); i++)
-		mtm.put(q.src(i), q.dst(i, j));
-	    return new xOperBooleanResultKnown(def(), mtm.tempMap(operands()),
-					       value);
-	}
-	private static class MyTempMap extends HashMap implements TempMap {
-	    public Temp tempMap(Temp t) {
-		return containsKey(t) ? (Temp) get(t) : t;
-	    }
-	    public Temp[] tempMap(Temp[] t) {
-		Temp[] r = new Temp[t.length];
-		for (int i=0; i<r.length; i++)
-		    r[i] = tempMap(t[i]);
-		return r;
-	    }
-	}
-    }
-    static class xNullConstant extends xClass implements xConstant {
-	public xNullConstant() {
-	    super(HClass.Void);
-	}
-	public Object constValue() { return null; }
-	public String toString() {
-	    return "xNullConstant: null";
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xNullConstant);
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xNullConstant();
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xNullConstant);
-	}
-    }
-    static class xFloatConstant extends xClassExact
-	implements xConstant {
-	protected Object value;
-	public xFloatConstant(HClass type, Object value) {
-	    super(type); this.value = value;
-	}
-	public Object constValue() { return value; }
-	public String toString() {
-	    return "xFloatConstant: " + type + " " + value.toString();
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xFloatConstant && super.equals(o) &&
-		    ((xFloatConstant)o).value.equals(value));
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xFloatConstant(type, value);
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xFloatConstant);
-	}
-    }
-    static class xStringConstant extends xClassExact
-	implements xConstant {
-	protected Object value;
-	public xStringConstant(HClass type, Object value) {
-	    super(type);
-	    // note that the string constant objects are intern()ed.
-	    // doing this here ensures that evaluating ACMPEQ with constant
-	    // args works correctly.
-	    this.value = ((String)value).intern();
-	}
-	public Object constValue() { return value; }
-	public String toString() {
-	    return "xStringConstant: " + 
-		"\"" + harpoon.Util.Util.escape(value.toString()) + "\"";
-	}
-	public boolean equals(Object o) { return _equals(o); }
-	private boolean _equals(Object o) {
-	    return (o instanceof xStringConstant && super.equals(o) &&
-		    ((xStringConstant)o).value.equals(value));
-	}
-	public LatticeVal merge(LatticeVal v) {
-	    if (this._equals(v)) return new xStringConstant(type, value);
-	    return super.merge(v);
-	}
-	public boolean isLowerThan(LatticeVal v) {
-	    return !(v instanceof xStringConstant);
-	}
-    }
-    static interface xConstant {
-	public Object constValue();
-    }
-    static interface xInstanceofResult {
-	public Temp tested();
-	public INSTANCEOF def();
-	public xInstanceofResultKnown makeKnown(boolean value);
-	public xInstanceofResultUnknown makeUnknown();
-    }
-    static interface xOperBooleanResult {
-	public Temp[] operands();
-	public OPER def();
-	public xOperBooleanResultKnown makeKnown(boolean value);
-	public xOperBooleanResultUnknown makeUnknown();
-    }
-    /////////////////////////////////////////////////////////
     // ways to degrade the analysis to collect statistics.
     private final Corruptor corruptor = null; // no corruption.
     private final boolean useSigmas = true;
@@ -1884,3 +1323,577 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
     };
 }
+
+
+
+
+/////////////////////////////////////////////////////////////////
+
+/* [AS 09/28/05]: The following classes were initially declared as
+   static inner classes inside the big SCCAnalysis class above.
+   Unfortunately, all the Sun JDK 1.5.0 compilers I've tried (_02,
+   _04, and _05) generate incorrect code: the generated code
+   references an inner class, SCCAnalysis$1, that is NEVER produced by
+   the compiler.  The Flex linker reported an error while I was trying
+   to parse itself.  Moving all these static classes outside the main
+   class was the only thing that convinced the JDK 1.5.0 to generate
+   (seemingly) correct code. */
+
+/*-------------------------------------------------------------*/
+// Lattice classes.
+
+/** No information obtainable about a temp. */
+abstract class LatticeVal {
+    public String toString() { return "Top"; }
+    public boolean equals(Object o) { return o instanceof LatticeVal; }
+    // merge.
+    public abstract LatticeVal merge(LatticeVal v);
+    // narrow.
+    public abstract boolean isLowerThan(LatticeVal v);
+    // by default, the renaming does nothing.
+    public LatticeVal rename(PHI p, int i) { return this; }
+    public LatticeVal rename(SIGMA s, int i) { return this; }
+}
+/** A typed temp. */
+class xClass extends LatticeVal {
+    protected HClass type;
+    public xClass(HClass type) {
+	assert type!=HClass.Boolean && type!=HClass.Byte &&
+	    type!=HClass.Short && type!=HClass.Char : "Not an internal type ("+type+")";
+	this.type = type;
+    }
+    public HClass type() { return type; }
+    public String toString() { 
+	return "xClass: " + type;
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	xClass xc;
+	try { xc=(xClass) o; }
+	catch (ClassCastException e) { return false;}
+	return xc!=null && xc.type.equals(type);
+    }
+    public LatticeVal merge(LatticeVal v) {
+	xClass vv = (xClass) v;
+	return new xClass(mergeTypes(this.type, vv.type));
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xClass);
+    }
+    // Class merge function.
+    static HClass mergeTypes(HClass a, HClass b) {
+	assert a!=null && b!=null;
+	if (a==b) return a; // take care of primitive types.
+	    
+	// Special case 'Void' Hclass, used for null constants.
+	if (a==HClass.Void)
+	    return b;
+	if (b==HClass.Void)
+	    return a;
+	    
+	// by this point better be array ref or object, not primitive type.
+	assert (!a.isPrimitive()) && (!b.isPrimitive());
+	return HClassUtil.commonParent(a,b);
+    }
+}
+/** A single class type; guaranteed the value is not null. */
+class xClassNonNull extends xClass {
+    public xClassNonNull(HClass type) { 
+	super( type );
+	assert type!=HClass.Void;
+    }
+    public String toString() { 
+	return "xClassNonNull: { " + type + " }";
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xClassNonNull && super.equals(o));
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (!(v instanceof xClassNonNull)) return super.merge(v);
+	xClassNonNull vv = (xClassNonNull) v;
+	return new xClassNonNull(mergeTypes(this.type, vv.type));
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xClassNonNull);
+    }
+}
+/** An object of the specified *exact* type (not a subtype). */
+class xClassExact extends xClassNonNull {
+    public xClassExact(HClass type) {
+	super(type);
+	assert !type.isInterface(); // interface types can't be exact.
+    }
+    public String toString() { 
+	return "xClassExact: { " + type + " }";
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xClassExact && super.equals(o));
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (this._equals(v)) return new xClassExact(type);
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xClassExact);
+    }
+}
+/** An array with constant length.  The array is not null, of course. */
+class xClassArray extends xClassExact {
+    protected int length;
+    public xClassArray(HClass type, int length) {
+	super(type);
+	this.length = length;
+    }
+    public int length() { return length; }
+    public String toString() {
+	return "xClassArray: " + 
+	    type.getComponentType() + "["+length+"]";
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	xClassArray xca;
+	try { xca = (xClassArray) o; }
+	catch (ClassCastException e) { return false; }
+	return xca!=null && super.equals(xca) && xca.length == length;
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (this._equals(v)) return new xClassArray(type,length);
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xClassArray);
+    }
+}
+/** An integer value of the specified bitwidth. */
+class xBitWidth extends xClassExact {
+    /** Highest significant bit for positive numbers. */
+    protected int plusWidth;
+    /** Highest significant bit for negative numbers. */
+    protected int minusWidth;
+    /** Constructor. */
+    public xBitWidth(HClass type, int minusWidth, int plusWidth) {
+	super(SCCAnalysis.toInternal(type));
+	// limit.
+	if (type == HClass.Long) {
+	    this.minusWidth = Math.min(64, minusWidth);
+	    this.plusWidth  = Math.min(63, plusWidth);
+	} else if (type == HClass.Int) {
+	    this.minusWidth = Math.min(32, minusWidth);
+	    this.plusWidth  = Math.min(31, plusWidth);
+	} else // NON-CANONICAL TYPES: CAREFUL! (this.type fixed by above)
+	    if (type == HClass.Boolean) {
+		this.minusWidth = Math.min( 0, minusWidth);
+		this.plusWidth  = Math.min( 1, plusWidth);
+	    } else if (type == HClass.Short) {
+		this.minusWidth = Math.min(16, minusWidth);
+		this.plusWidth  = Math.min(15, plusWidth);
+	    } else if (type == HClass.Byte) {
+		this.minusWidth = Math.min( 8, minusWidth);
+		this.plusWidth  = Math.min( 7, plusWidth);
+	    } else if (type == HClass.Char) {
+		this.minusWidth = Math.min( 0, minusWidth);
+		this.plusWidth  = Math.min(16, plusWidth);
+	    } else throw new Error("Unknown type for xBitWidth: "+type);
+    }
+    public int minusWidth() { return minusWidth; }
+    public int plusWidth () { return plusWidth;  }
+    public String toString() {
+	return "xBitWidth: " + type + " " +
+	    "-"+minusWidth+"+"+plusWidth+" bits";
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	xBitWidth xbw;
+	try { xbw = (xBitWidth) o; }
+	catch (ClassCastException e) { return false; }
+	return xbw!=null && super.equals(xbw) &&
+	    xbw.minusWidth == minusWidth &&
+	    xbw.plusWidth  == plusWidth;
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (!(v instanceof xBitWidth)) return super.merge(v);
+	// bitwidth merge
+	xBitWidth vv = (xBitWidth) v;
+	if (!this.type.equals(vv.type)) return super.merge(vv);
+	return new xBitWidth
+	    (this.type, 
+	     Math.max(this.minusWidth, vv.minusWidth),
+	     Math.max(this.plusWidth, vv.plusWidth));
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xBitWidth);
+    }
+}
+/** An integer value which is the result of an INSTANCEOF. */
+class xInstanceofResultUnknown extends xBitWidth
+    implements xInstanceofResult {
+    Temp tested;
+    INSTANCEOF q;
+    public xInstanceofResultUnknown(INSTANCEOF q) { this(q, q.src()); }
+    xInstanceofResultUnknown(INSTANCEOF q, Temp tested) {
+	super(SCCAnalysis.toInternal(HClass.Boolean),0,1);
+	this.q = q;
+	this.tested = tested;
+    }
+    public Temp tested() { return tested; }
+    public INSTANCEOF def() { return q; }
+    public String toString() {
+	return "xInstanceofResultUnknown: " + type + " " +q;
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xInstanceofResultUnknown && super.equals(o) &&
+		((xInstanceofResultUnknown)o).q == q &&
+		((xInstanceofResultUnknown)o).tested == tested);
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (v instanceof xInstanceofResult)
+	    // xInstanceofResultKnown merged with
+	    // xInstanceofResultKnown or xInstanceofResultUnknown
+	    return makeUnknown();
+	// all others.
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xBitWidth);
+    }
+    public xInstanceofResultKnown makeKnown(boolean nvalue) {
+	return new xInstanceofResultKnown(q,tested,nvalue?1:0);
+    }
+    public xInstanceofResultUnknown makeUnknown() {
+	return new xInstanceofResultUnknown(q,tested);
+    }
+    // override renaming functions.
+    public LatticeVal rename(PHI q, int j) {
+	for (int i=0; i<q.numPhis(); i++)
+	    if (q.src(i, j)==this.tested)
+		return new xInstanceofResultUnknown(def(), q.dst(i));
+	return this;
+    }
+    public LatticeVal rename(SIGMA q, int j) {
+	for (int i=0; i<q.numSigmas(); i++)
+	    if (q.src(i)==this.tested)
+		return new xInstanceofResultUnknown(def(), q.dst(i, j));
+	return this;
+    }
+}
+/** An unknown boolean value which is the result of an OPER. */
+class xOperBooleanResultUnknown extends xBitWidth
+    implements xOperBooleanResult {
+    OPER q;
+    Temp[] operands;
+    public xOperBooleanResultUnknown(OPER q) { this(q, q.operands()); }
+    xOperBooleanResultUnknown(OPER q, Temp[] operands) {
+	super(SCCAnalysis.toInternal(HClass.Boolean),0,1);
+	this.q = q;
+	this.operands = operands;
+    }
+    public Temp[] operands() { return operands; }
+    public OPER def() { return q; }
+    public String toString() {
+	return "xOperBooleanResultUnknown: " + type + " " +q;
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	if (o==this) return true; // common case.
+	if (!(o instanceof xOperBooleanResultUnknown)) return false;
+	if (!super.equals(o)) return false;
+	xOperBooleanResultUnknown oo = (xOperBooleanResultUnknown)o;
+	if (oo.q != q) return false;
+	if (oo.operands.length != operands.length) return false;
+	for (int i=0; i<operands.length; i++)
+	    if (oo.operands[i] != operands[i]) return false;
+	return true;
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (v instanceof xOperBooleanResult)
+	    // xOperBooleanResultKnown merged with
+	    // xOperBooleanResultKnown or xOperBooleanResultUnknown
+	    return makeUnknown();
+	// all others.
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xBitWidth);
+    }
+    public xOperBooleanResultKnown makeKnown(boolean nvalue) {
+	return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
+    }
+    public xOperBooleanResultUnknown makeUnknown() {
+	return new xOperBooleanResultUnknown(q,operands);
+    }
+    // override renaming functions.
+    public LatticeVal rename(PHI q, int j) {
+	MyTempMap mtm = new MyTempMap();
+	for (int i=0; i<q.numPhis(); i++)
+	    mtm.put(q.src(i,j), q.dst(i));
+	return new xOperBooleanResultUnknown(def(), mtm.tempMap(operands()));
+    }
+    public LatticeVal rename(SIGMA q, int j) {
+	MyTempMap mtm = new MyTempMap();
+	for (int i=0; i<q.numSigmas(); i++)
+	    mtm.put(q.src(i), q.dst(i, j));
+	return new xOperBooleanResultUnknown(def(), mtm.tempMap(operands()));
+    }
+}
+/** An integer or boolean constant. */
+class xIntConstant extends xBitWidth implements xConstant {
+    protected long value;
+    public xIntConstant(HClass type, long value) {
+	super(type, value<0?Util.fls(-value):0, value>0?Util.fls(value):0);
+	this.value = value;
+    }
+    public long value() { return value; }
+    public Object constValue() { 
+	if (type==HClass.Int) return new Integer((int)value);
+	if (type==HClass.Long) return new Long((long)value);
+	//if (type==HClass.Boolean) return new Integer(value!=0?1:0);
+	throw new Error("Unknown integer constant type.");
+    }
+    public String toString() {
+	return "xIntConstant: " + type + " " + value;
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xIntConstant && super.equals(o) &&
+		((xIntConstant)o).value == value);
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (this._equals(v)) return new xIntConstant(type,value);
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xIntConstant);
+    }
+}
+
+class xNullConstant extends xClass implements xConstant {
+    public xNullConstant() {
+	super(HClass.Void);
+    }
+    public Object constValue() { return null; }
+    public String toString() {
+	return "xNullConstant: null";
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xNullConstant);
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (this._equals(v)) return new xNullConstant();
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xNullConstant);
+    }
+}
+class xFloatConstant extends xClassExact
+    implements xConstant {
+    protected Object value;
+    public xFloatConstant(HClass type, Object value) {
+	super(type); this.value = value;
+    }
+    public Object constValue() { return value; }
+    public String toString() {
+	return "xFloatConstant: " + type + " " + value.toString();
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xFloatConstant && super.equals(o) &&
+		((xFloatConstant)o).value.equals(value));
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (this._equals(v)) return new xFloatConstant(type, value);
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xFloatConstant);
+    }
+}
+class xStringConstant extends xClassExact
+    implements xConstant {
+    protected Object value;
+    public xStringConstant(HClass type, Object value) {
+	super(type);
+	// note that the string constant objects are intern()ed.
+	// doing this here ensures that evaluating ACMPEQ with constant
+	// args works correctly.
+	this.value = ((String)value).intern();
+    }
+    public Object constValue() { return value; }
+    public String toString() {
+	return "xStringConstant: " + 
+	    "\"" + harpoon.Util.Util.escape(value.toString()) + "\"";
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xStringConstant && super.equals(o) &&
+		((xStringConstant)o).value.equals(value));
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (this._equals(v)) return new xStringConstant(type, value);
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xStringConstant);
+    }
+}
+interface xConstant {
+    public Object constValue();
+}
+interface xInstanceofResult {
+    public Temp tested();
+    public INSTANCEOF def();
+    public xInstanceofResultKnown makeKnown(boolean value);
+    public xInstanceofResultUnknown makeUnknown();
+}
+interface xOperBooleanResult {
+    public Temp[] operands();
+    public OPER def();
+    public xOperBooleanResultKnown makeKnown(boolean value);
+    public xOperBooleanResultUnknown makeUnknown();
+}
+/////////////////////////////////////////////////////////
+
+
+/** An integer value which is the result of an INSTANCEOF. */
+class xInstanceofResultKnown extends xIntConstant
+    implements xInstanceofResult {
+    Temp tested;
+    INSTANCEOF q;
+    public xInstanceofResultKnown(INSTANCEOF q, boolean value) {
+	this(q, q.src(), value?1:0);
+    }
+    xInstanceofResultKnown(INSTANCEOF q, Temp tested, long value) {
+	super(SCCAnalysis.toInternal(HClass.Boolean),value);
+	this.q = q;
+	this.tested = tested;
+	assert value==0 || value==1;
+    }
+    public Temp tested() { return tested; }
+    public INSTANCEOF def() { return q; }
+    public String toString() {
+	return "xInstanceofResultKnown: " + value + " " +q;
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	return (o instanceof xInstanceofResultKnown && super.equals(o) &&
+		((xInstanceofResultKnown)o).q == q &&
+		((xInstanceofResultKnown)o).tested == tested);
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (v instanceof xInstanceofResult)
+	    // xInstanceofResultKnown merged with
+	    // xInstanceofResultKnown or xInstanceofResultUnknown
+	    return this._equals(v) ? (LatticeVal)
+		makeKnown(value!=0) : makeUnknown();
+	// all others.
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xIntConstant);
+    }
+    public xInstanceofResultKnown makeKnown(boolean nvalue) {
+	return new xInstanceofResultKnown(q,tested,nvalue?1:0);
+    }
+    public xInstanceofResultUnknown makeUnknown() {
+	return new xInstanceofResultUnknown(q,tested);
+    }
+    // override renaming functions.
+    public LatticeVal rename(PHI q, int j) {
+	for (int i=0; i<q.numPhis(); i++)
+	    if (q.src(i, j)==this.tested)
+		return new xInstanceofResultKnown(def(), q.dst(i), value);
+	return this;
+    }
+    public LatticeVal rename(SIGMA q, int j) {
+	for (int i=0; i<q.numSigmas(); i++)
+	    if (q.src(i)==this.tested)
+		return new xInstanceofResultKnown(def(),q.dst(i, j),value);
+	return this;
+    }
+}
+
+
+/** A known boolean value which is the result of an OPER. */
+class xOperBooleanResultKnown extends xIntConstant
+    implements xOperBooleanResult {
+    OPER q;
+    Temp[] operands;
+    public xOperBooleanResultKnown(OPER q, boolean value) {
+	this(q, q.operands(), value?1:0);
+    }
+    xOperBooleanResultKnown(OPER q, Temp[] operands, long value)
+    {
+	super(SCCAnalysis.toInternal(HClass.Boolean),value);
+	this.q = q;
+	this.operands = operands;
+	assert value==0 || value==1;
+    }
+    public Temp[] operands() { return operands; }
+    public OPER def() { return q; }
+    public String toString() {
+	return "xOperBooleanResultKnown: " + value + " " +q;
+    }
+    public boolean equals(Object o) { return _equals(o); }
+    private boolean _equals(Object o) {
+	if (o==this) return true; // common case.
+	if (!(o instanceof xOperBooleanResultKnown)) return false;
+	if (!super.equals(o)) return false;
+	xOperBooleanResultKnown oo = (xOperBooleanResultKnown)o;
+	if (oo.q != q) return false;
+	if (oo.operands.length != operands.length) return false;
+	for (int i=0; i<operands.length; i++)
+	    if (oo.operands[i] != operands[i]) return false;
+	return true;
+    }
+    public LatticeVal merge(LatticeVal v) {
+	if (v instanceof xOperBooleanResult)
+	    // xOperBooleanResultKnown merged with
+	    // xOperBooleanResultKnown or xOperBooleanResultUnknown
+	    return this._equals(v) ? (LatticeVal)
+		makeKnown(value!=0) : makeUnknown();
+	// all others.
+	return super.merge(v);
+    }
+    public boolean isLowerThan(LatticeVal v) {
+	return !(v instanceof xIntConstant);
+    }
+    public xOperBooleanResultKnown makeKnown(boolean nvalue) {
+	return new xOperBooleanResultKnown(q,operands,nvalue?1:0);
+    }
+    public xOperBooleanResultUnknown makeUnknown() {
+	return new xOperBooleanResultUnknown(q,operands);
+    }
+    // override renaming functions.
+    public LatticeVal rename(PHI q, int j) {
+	MyTempMap mtm = new MyTempMap();
+	for (int i=0; i<q.numPhis(); i++)
+	    mtm.put(q.src(i,j), q.dst(i));
+	return new xOperBooleanResultKnown(def(), mtm.tempMap(operands()),
+					   value);
+    }
+    public LatticeVal rename(SIGMA q, int j) {
+	MyTempMap mtm = new MyTempMap();
+	for (int i=0; i<q.numSigmas(); i++)
+	    mtm.put(q.src(i), q.dst(i, j));
+	return new xOperBooleanResultKnown(def(), mtm.tempMap(operands()),
+					   value);
+    }
+}
+
+
+class MyTempMap extends HashMap implements TempMap {
+    public Temp tempMap(Temp t) {
+	return containsKey(t) ? (Temp) get(t) : t;
+    }
+    public Temp[] tempMap(Temp[] t) {
+	Temp[] r = new Temp[t.length];
+	for (int i=0; i<r.length; i++)
+	    r[i] = tempMap(t[i]);
+	return r;
+    }
+}
+
