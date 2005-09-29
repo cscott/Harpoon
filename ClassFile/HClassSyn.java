@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>HClassSyn</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.9 2002-04-10 03:04:12 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.10 2005-09-29 04:13:55 salcianu Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -51,6 +51,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 	addConstructor((HConstructor)methods[i]);
       else
 	addDeclaredMethod(methods[i].getName(), methods[i]);
+    
     assert methods.length == declaredMethods.length;
 
     // ensure linker information is consistent.
@@ -155,9 +156,12 @@ class HClassSyn extends HClassCls implements HClassMutator {
 
   private HMethod addDeclaredMethod0(HMethod m) {
     assert m.getDeclaringClass()==this;
-    for (int i=0; i<declaredMethods.length; i++)
-      if (declaredMethods[i].equals(m))
-	throw new DuplicateMemberException("Method "+m+" in "+this);
+    for (int i=0; i<declaredMethods.length; i++) {
+      if (declaredMethods[i].equals(m)) {
+	throw new DuplicateMemberException
+	  ("Method "+m+" in "+this + "old = " + declaredMethods[i]);
+      }
+    }
     declaredMethods = 
       (HMethod[]) Util.grow(HMethod.arrayFactory,
 			    declaredMethods, m, declaredMethods.length);
