@@ -61,26 +61,27 @@ typedef struct
 } modifier_type;
 
 typedef struct
-{ 
+{
   unsigned long target_ID; // ID of the entry that contains the type that this modifies
   unsigned long upperbound;
   dwarf_entry* target_ptr; // Type that this entry modifies (DW_AT_type)
 } array_bound;
 
 typedef struct
-{ 
+{
   unsigned long target_ID; // ID of the entry that contains the type that this modifies
+  char *name;
   dwarf_entry* target_ptr; // Type that this entry modifies (DW_AT_type)
 } tdef;
 
 typedef struct
-{ 
+{
   unsigned long target_ID; // ID of the entry that contains the type that this modifies
   dwarf_entry* target_ptr; // Type that this entry modifies (DW_AT_type)
 } consttype;
 
 typedef struct
-{ 
+{
   unsigned long target_ID; // ID of the entry that contains the type that this modifies
   dwarf_entry* target_ptr; // Type that this entry modifies (DW_AT_type)
   long data_member_location; // Addr offset relative to struct head

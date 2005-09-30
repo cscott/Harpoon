@@ -520,8 +520,18 @@ char * printname(dwarf_entry * type,int op) {
     {
       tdef * tdef_ptr=(tdef*)type->entry_ptr;
       if (op==GETTYPE||op==GETJUSTTYPE) {
-	char *typename=printname(tdef_ptr->target_ptr,op);
-	return typename;
+        if (tdef_ptr->target_ptr==NULL)
+          return tdef_ptr->name;
+        if (tdef_ptr->target_ptr->tag_name==DW_TAG_union_type||
+            tdef_ptr->target_ptr->tag_name==DW_TAG_structure_type) {
+          collection_type *ctype=(collection_type*)tdef_ptr->target_ptr->entry_ptr;
+          if (ctype->name!=NULL)
+            return ctype->name;
+          ctype->name=tdef_ptr->name;
+          return tdef_ptr->name;
+        }
+        char *typename=printname(tdef_ptr->target_ptr,op);
+        return typename;
       }
     }
     break;
@@ -573,13 +583,13 @@ char * printname(dwarf_entry * type,int op) {
     collection_type *ctype=(collection_type*)type->entry_ptr;
     if (op==GETTYPE&&ctype->name==NULL&&assigntype) {
       ctype->name=(char*)malloc(100);
-      sprintf(ctype->name,"TYPE%ld",typecount++);
+      sprintf(ctype->name,"unnamed_0x%lx",type->ID);
     }
     if (op==GETTYPE)
       return ctype->name;
     if (op==GETJUSTTYPE&&ctype->name==NULL&&assigntype) {
       ctype->name=(char*)malloc(100);
-      sprintf(ctype->name,"TYPE%ld",typecount++);
+      sprintf(ctype->name,"unnamed_0x%lx",type->ID);
     }
     if (op==GETJUSTTYPE)
       return ctype->name;

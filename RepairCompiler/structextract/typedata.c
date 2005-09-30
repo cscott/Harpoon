@@ -202,6 +202,7 @@ char entry_is_listening_for_attribute(dwarf_entry* e, unsigned long attr)
     case DW_AT_name:
       return (tag_is_collection_type(tag) ||
               tag_is_member(tag) ||
+	      tag==DW_TAG_typedef||
               tag_is_enumerator(tag) ||
               tag_is_function(tag) ||
               tag_is_formal_parameter(tag) ||
@@ -437,6 +438,11 @@ char harvest_name(dwarf_entry* e, const char* str)
   if (tag_is_enumerator(tag))
     {
       ((enumerator*)e->entry_ptr)->name = strdup(str);
+      return 1;
+    }
+  else if (tag==DW_TAG_typedef)
+    {
+      ((tdef*)e->entry_ptr)->name = strdup(str);
       return 1;
     }
   else if (tag_is_collection_type(tag))
