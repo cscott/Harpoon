@@ -63,6 +63,15 @@ package java.lang.reflect;
  */
 public class AccessibleObject
 {
+
+    // default visibility for use by inherited classes
+    // [AS] added to make sure we support GNU Classpath 0.08 
+  /**
+   * True if this object is marked accessible, which means the reflected
+   * object bypasses normal security checks.
+   */
+  boolean flag = false;
+
   /**
    * Only the three reflection classes that extend this can create an
    * accessible object.  This is not serializable for security reasons.
@@ -78,8 +87,11 @@ public class AccessibleObject
    */
   public boolean isAccessible()
   {
-      return true;
+      // [AS] Harpoon/Runtime use to return always "true", but
+      // classpath-0.08 returns flag.
+    return flag;
   }
+
 
   /**
    * Convenience method to set the flag on a number of objects with a single
