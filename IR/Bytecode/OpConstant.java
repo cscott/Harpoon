@@ -12,6 +12,7 @@ import harpoon.IR.RawClass.ConstantFloat;
 import harpoon.IR.RawClass.ConstantInteger;
 import harpoon.IR.RawClass.ConstantLong;
 import harpoon.IR.RawClass.ConstantString;
+import harpoon.IR.RawClass.ConstantClass;
 import harpoon.Util.Util;
 
 /**
@@ -24,7 +25,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.5 2005-09-27 13:36:17 salcianu Exp $
+ * @version $Id: OpConstant.java,v 1.6 2005-09-30 20:17:29 salcianu Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.IR.RawClass.ConstantDouble
@@ -32,6 +33,7 @@ import harpoon.Util.Util;
  * @see harpoon.IR.RawClass.ConstantInteger
  * @see harpoon.IR.RawClass.ConstantLong
  * @see harpoon.IR.RawClass.ConstantString
+ * @see harpoon.IR.RawClass.ConstantClass
  */
 public final class OpConstant extends Operand {
   final Object value;
@@ -47,7 +49,21 @@ public final class OpConstant extends Operand {
 	// skip this check for minilib, because it doesn't necessarily have
 	// all the wrapper classes necessary for type.getWrapper() to work.
     HClass check = l.forClass(value.getClass());
-    if ((!type.isPrimitive() && check!=type) ||
+    
+    // [AS] ConstantValue hack - make sure we generate a strong warning
+    if(!type.isPrimitive() && check!=type) {
+	if(!WARNING_PRINTED1) {
+	    System.out.println("\n\nWARNING: ConstantValue hack");
+	    System.out.println("Violated assertion in harpoon.IR.Bytecode.OpConstant.check()");
+	    System.out.println("Flex will assume everything is fine and just ignore it.");
+	    System.out.println("The state of this method is currently IMPERFECT, JUST SOMETHING");
+	    System.out.println("TO ALLOW FLEX TO PARSE ITSELF (and other JDK1.5 compiled code)\n");
+	    WARNING_PRINTED1 = true;
+	}
+    }
+
+    if (// [AS] commented out to make progress on JDK 1.5 generated .class files
+	/*(!type.isPrimitive() && check!=type) ||*/
 	( type.isPrimitive() && check!=type.getWrapper(l)))
       throw new Error("value doesn't match type of OpConstant: " + 
 		      type + "/" + check);
@@ -65,6 +81,20 @@ public final class OpConstant extends Operand {
       else if (c instanceof ConstantLong)    this.type=HClass.Long;
       else if (c instanceof ConstantString)  
 	this.type=parent.linker.forName("java.lang.String");
+      // [AS] 09/27/05 - begin
+      else if (c instanceof ConstantClass) {
+	// [AS] not sure if this is OK with the code generator; 
+	// Therefore, generate a very big message the first time we're called
+	if(!WARNING_PRINTED2) {
+	    System.out.println("\n\nWARNING: ConstantValue hack");
+	    System.out.println("Constructed harpoon.IR.Bytecode.OpConstant with a class constant.");
+	    System.out.println("The state of this method is currently IMPERFECT, JUST SOMETHING");
+	    System.out.println("TO ALLOW FLEX TO PARSE ITSELF (and other JDK1.5 compiled code)\n");
+	    WARNING_PRINTED2 = true;
+	}
+	this.type = parent.linker.forName("java.lang.Class");
+      }
+      // [AS] - end
       else throw new Error("Unknown ConstantValue type: "+ c + "; in method " + parent.getMethod());
     } else throw new Error("Unknown constant pool entry: " + c + "; in method " + parent.getMethod());
     check();
@@ -80,4 +110,8 @@ public final class OpConstant extends Operand {
       return "(String)\""+Util.escape(getValue().toString())+"\"";
     return "("+getType().getName()+")"+getValue().toString();
   }
+
+    // [AS] used for the ConstantValue hack - to generate one-time warnings
+    private static boolean WARNING_PRINTED1 = false;
+    private static boolean WARNING_PRINTED2 = false;
 }
