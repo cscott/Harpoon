@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.14 2005-02-20 20:31:28 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.15 2005-09-30 06:18:11 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -109,6 +109,7 @@ public class CLI {
 	    System.out.println("-time");
 	    System.out.println("-omitcomp");
 	    System.out.println("-mergenodes");
+	    System.out.println("-debuggraph");
 	    System.exit(-1);
 	}
 
@@ -120,6 +121,8 @@ public class CLI {
                 Compiler.REPAIR=false;
 	    } else if (args[i].equals("-omitcomp")) {
                 Compiler.OMITCOMP=true;
+	    } else if (args[i].equals("-debuggraph")) {
+                Compiler.DEBUGGRAPH=true;
 	    } else if (args[i].equals("-mergenodes")) {
                 Compiler.MERGENODES=true;
 	    } else if (args[i].equals("-depth")) {

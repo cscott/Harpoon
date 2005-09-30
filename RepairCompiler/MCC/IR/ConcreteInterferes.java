@@ -1,5 +1,6 @@
 package MCC.IR;
 import java.util.*;
+import MCC.Compiler;
 
 public class ConcreteInterferes {
     Termination termination;
@@ -13,10 +14,10 @@ public class ConcreteInterferes {
      * model definition rule r. */
 
     public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
-	
+
 	// A rule that adds something to a set can't be falsified by
 	// an update that is only performed if the set is empty
-	if (!initialinterferes(mun,r,satisfy)) 
+        if (!initialinterferes(mun,r,satisfy))
 	    return false;
 
 	for(int i=0;i<mun.numUpdates();i++) {
@@ -24,7 +25,7 @@ public class ConcreteInterferes {
 	    for (int j=0;j<un.numUpdates();j++) {
 		Updates update=un.getUpdate(j);
 		//Abstract updates don't have concrete interference1
-		if (update.isAbstract()) 
+		if (update.isAbstract())
 		    continue;
 
 		DNFRule drule=satisfy?r.getDNFNegGuardExpr():r.getDNFGuardExpr();
@@ -34,7 +35,7 @@ public class ConcreteInterferes {
 		/* Test to see if the update only effects new
 		   objects and we're only testing for falsifying
 		   model definition rules. */
-		
+
 		if ((!satisfy)&&updateonlytonewobject(mun,un,update))
 		    continue;
 
@@ -50,7 +51,7 @@ public class ConcreteInterferes {
                        node already models the action of this
                        update. */
 
-		    if ((un.getRule()==r)&& 
+		    if ((un.getRule()==r)&&
 			(((mun.op==MultUpdateNode.ADD)&&satisfy)
 			 ||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)
 			 ||(mun.op==MultUpdateNode.MODIFY))) {
@@ -87,13 +88,20 @@ public class ConcreteInterferes {
 			if (satisfy) {
 			    /** Check to see if the update definitely falsifies r, thus
 			     * can't accidentally satisfy it r. */
-			    if (interferesinclusion(un, update, r)) 
+			    if (interferesinclusion(un, update, r)) {
+                                if (Compiler.DEBUGGRAPH)
+                                    System.out.println("CASE 1");
 				return true;
-			} else
-			    return true; /* Interferes with inclusion condition */
+                            }
+			} else {
+                            if (Compiler.DEBUGGRAPH)
+                                System.out.println("CASE 2");
+
+                            return true; /* Interferes with inclusion condition */
+                        }
 		    }
 		}
-		
+
 		for(int k=0;k<drule.size();k++) {
 		    RuleConjunction rconj=drule.get(k);
 		    for(int l=0;l<rconj.size();l++) {
@@ -122,10 +130,14 @@ public class ConcreteInterferes {
                                              doesn't exist.*/
 			}
 
-			if (interferes(update,dexpr))
-			    return true;
+			if (interferes(update,dexpr)) {
+                            if (Compiler.DEBUGGRAPH)
+                                System.out.println("CASE 3");
+
+                            return true;
+                        }
 		    }
-		}	    
+		}
 	    }
 	}
 	return false;
@@ -150,7 +162,7 @@ public class ConcreteInterferes {
 	    return false;
 	return true;
     }
-    
+
     static private boolean updateonlytonewobject(MultUpdateNode mun, UpdateNode un, Updates updates) {
 	AbstractRepair ar=mun.getRepair();
 	if ((ar!=null)&&(ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION))
@@ -182,14 +194,14 @@ public class ConcreteInterferes {
 		    }
 		}
 	    }
-	
+
 	return false;
     }
 
     /** This method tries to show that if the Update update from the
      *  UpdateNode un changes the value of the inclusion constraint
      * that it falsifies the guard of model definition rule. */
-    
+
     static private boolean interferesinclusion(UpdateNode un, Updates update, Rule r) {
 	Descriptor updated_des=update.getDescriptor();
 	Inclusion inclusion=r.getInclusion();
@@ -219,7 +231,7 @@ public class ConcreteInterferes {
 	    /* Build variable correspondance */
 	    HashSet set=new HashSet();
 	    inclusionexpr.findmatch(updated_des,set);
-	    
+
 	    for(Iterator matchit=set.iterator();matchit.hasNext();) {
 		DotExpr dotexpr=(DotExpr)matchit.next();
 		DotExpr updateexpr=(DotExpr)update.getLeftExpr();
@@ -271,7 +283,7 @@ public class ConcreteInterferes {
 
 		    boolean varok=true;
 		    Set vars=rexpr.freeVars();
-		    if (vars!=null) 
+		    if (vars!=null)
 			for(Iterator it=vars.iterator();it.hasNext();) {
 			    VarDescriptor vd=(VarDescriptor) it.next();
 			    if (!vd.isGlobal()) {
@@ -282,7 +294,7 @@ public class ConcreteInterferes {
 				}
 			    }
 			}
-		    
+
 		    if (!varok)
 			continue;
 
@@ -319,9 +331,9 @@ public class ConcreteInterferes {
 				    rexpr.equals(remap,update.getRightExpr())) {
 				    match=true;
 				    break;
-				}				    
+				}
 			    }
-			} 
+			}
 		    }
 		    if (!match) {
 			good=false;
@@ -367,7 +379,7 @@ public class ConcreteInterferes {
 	    return false; /* Can't accidentally interfere with other bindings if there aren't any! */
 
 	boolean firstfield=true;
-	
+
 
 	while(true) {
 	    if (update_e instanceof CastExpr)
@@ -433,7 +445,7 @@ public class ConcreteInterferes {
 	}
 	return null;
     }
-    
+
     /** This function checks to see if an update is only performed if
      * a given set (or image set produced by a relation) is empty, and
      * the algorithm is computing whether the update may falsify a
@@ -452,7 +464,7 @@ public class ConcreteInterferes {
 	    if (ep.getType()!=ExprPredicate.SIZE)
 		return true;
 	    Opcode op=Opcode.translateOpcode(negated,ep.getOp());
-   
+
 	    if (((op==Opcode.EQ)&&(ep.rightSize()==1))|| //(=1)
 		((op==Opcode.NE)&&(ep.rightSize()==0))|| //(!=0)
 		((op==Opcode.GT)&&(ep.rightSize()==0))|| //(>0)
@@ -486,7 +498,7 @@ public class ConcreteInterferes {
 		for (int j=0;j<un.numUpdates();j++) {
 		    Updates update=un.getUpdate(j);
 		    //Abstract updates don't have concrete interference1
-		    if (update.isAbstract()) 
+		    if (update.isAbstract())
 			continue;
 		    if (testdisjoint(update, r, r.getGuardExpr()))
 			return true;
@@ -503,7 +515,7 @@ public class ConcreteInterferes {
 	   there is no interference. */
 	if (!dexpr.getExpr().usesDescriptor(descriptor))
 	    return false;
-	    
+
 	if (update.isExpr()) {
 	    /* We need to pair the variables */
 	    Set vars=update.getRightExpr().freeVars();

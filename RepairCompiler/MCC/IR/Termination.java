@@ -73,20 +73,20 @@ public class Termination {
 	generateconjunctionnodes();
 	constraintdependence=new ConstraintDependence(state,this);
 
-        debugmsg("Generating scope nodes");
+        debugmsg("*****Generating scope nodes*****");
 	generatescopenodes();
-        debugmsg("Generating repair nodes");
+        debugmsg("*****Generating repair nodes*****");
 	generaterepairnodes();
-        debugmsg("Generating data structure nodes");
+        debugmsg("*****Generating data structure nodes*****");
 	generatedatastructureupdatenodes();
-        debugmsg("Generating compensation nodes");
+        debugmsg("*****Generating compensation nodes*****");
 	if (!Compiler.OMITCOMP)
 	    generatecompensationnodes();
-        debugmsg("Generating abstract edges");
+        debugmsg("*****Generating abstract edges*****");
 	generateabstractedges();
-        debugmsg("Generating scope edges");
+        debugmsg("*****Generating scope edges*****");
 	generatescopeedges();
-        debugmsg("Generating update edges");
+        debugmsg("*****Generating update edges*****");
 	generateupdateedges();
 
 
@@ -243,22 +243,22 @@ public class Termination {
 			    TupleOfExpr toe=(TupleOfExpr)e;
 			    if (negated) {
 				GraphNode agn=(GraphNode)abstractremove.get(toe.relation);
-				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				GraphNode.Edge edge=new GraphNode.Edge("requirestupleremove",agn);
 				gn.addEdge(edge);
 			    } else {
 				GraphNode agn=(GraphNode)abstractadd.get(toe.relation);
-				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				GraphNode.Edge edge=new GraphNode.Edge("requirestupleadd",agn);
 				gn.addEdge(edge);
 			    }
 			} else if (e instanceof ElementOfExpr) {
 			    ElementOfExpr eoe=(ElementOfExpr)e;
 			    if (negated) {
 				GraphNode agn=(GraphNode)abstractremove.get(eoe.set);
-				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				GraphNode.Edge edge=new GraphNode.Edge("requireselementremove",agn);
 				gn.addEdge(edge);
 			    } else {
 				GraphNode agn=(GraphNode)abstractadd.get(eoe.set);
-				GraphNode.Edge edge=new GraphNode.Edge("requires",agn);
+				GraphNode.Edge edge=new GraphNode.Edge("requireselementadd",agn);
 				gn.addEdge(edge);
 			    }
 			} else throw new Error("Unrecognized Abstract Update");
@@ -268,14 +268,20 @@ public class Termination {
 	    /* Cycle through the rules to look for possible conflicts */
 	    for(int i=0;i<state.vRules.size();i++) {
 		Rule r=(Rule) state.vRules.get(i);
+                if (Compiler.DEBUGGRAPH) {
+                    System.out.println(gn.getLabel()+"--->"+((GraphNode)scopesatisfy.get(r)).getLabel());
+                }
 		if (concreteinterferes.interferes(mun,r,true)) {
 		    GraphNode scopenode=(GraphNode)scopesatisfy.get(r);
-		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
+		    GraphNode.Edge e=new GraphNode.Edge("satisfyscopeinterferes",scopenode);
 		    gn.addEdge(e);
 		}
+                if (Compiler.DEBUGGRAPH) {
+                    System.out.println(gn.getLabel()+"--->"+((GraphNode)scopefalsify.get(r)).getLabel());
+                }
 		if (concreteinterferes.interferes(mun,r,false)) {
 		    GraphNode scopenode=(GraphNode)scopefalsify.get(r);
-		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
+		    GraphNode.Edge e=new GraphNode.Edge("falsifyscopeinterferes",scopenode);
 		    gn.addEdge(e);
 		}
 	    }
@@ -298,7 +304,7 @@ public class Termination {
 		if (abstractinterferes.checkrelationconstraint(ar, cons))
 		    continue;
                 if (AbstractInterferes.interferesquantifier(ar,cons)) {
-                    GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
+                    GraphNode.Edge e=new GraphNode.Edge("interferesquantifier",gn2);
                     gn.addEdge(e);
                 } else {
                     for(int i=0;i<conj.size();i++) {
@@ -308,7 +314,7 @@ public class Termination {
                             continue;
                         if (getConstraint(gn)==null||
                             !abstractinterferes.interferemodifies(ar,getConstraint(gn),dp,cons)) {
-                            GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
+                            GraphNode.Edge e=new GraphNode.Edge("interferesmodify",gn2);
                             gn.addEdge(e);
                             break;
                         }
@@ -320,7 +326,7 @@ public class Termination {
 		TermNode tn2=(TermNode)gn2.getOwner();
 		ScopeNode sn2=tn2.getScope();
 		if (AbstractInterferes.interfereswithrule(ar,sn2.getRule(),sn2.getSatisfy())) {
-		    GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
+		    GraphNode.Edge e=new GraphNode.Edge("interfereswithrule",gn2);
 		    gn.addEdge(e);
 		}
 	    }
@@ -394,7 +400,7 @@ public class Termination {
 		    DNFPredicate dp=conj.get(i);
 		    if (abstractinterferes.scopeinterfereswithpredicate(sn,dp)||
 			AbstractInterferes.interfereswithquantifier(sn.getDescriptor(),sn.getSatisfy(),constr)) {
-			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
+			GraphNode.Edge e=new GraphNode.Edge("interferesconjunction",gn2);
 			GraphNode gnconseq=(GraphNode)consequence.get(sn);
 			gnconseq.addEdge(e);
 			break;
@@ -407,13 +413,13 @@ public class Termination {
 		Rule r=(Rule) state.vRules.get(i);
 		if (AbstractInterferes.interfereswithrule(sn.getDescriptor(),sn.getSatisfy(),r,true)) {
 		    GraphNode scopenode=(GraphNode)scopesatisfy.get(r);
-		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
+		    GraphNode.Edge e=new GraphNode.Edge("interferesscopesatisfy2",scopenode);
 		    GraphNode gnconseq=(GraphNode)consequence.get(sn);
 		    gnconseq.addEdge(e);
 		}
 		if (AbstractInterferes.interfereswithrule(sn.getDescriptor(),sn.getSatisfy(),r,false)) {
 		    GraphNode scopenode=(GraphNode)scopefalsify.get(r);
-		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
+		    GraphNode.Edge e=new GraphNode.Edge("interferesscopefalsify2",scopenode);
 		    GraphNode gnconseq=(GraphNode)consequence.get(sn);
 		    gnconseq.addEdge(e);
 		}
@@ -463,7 +469,7 @@ public class Termination {
 		    //		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),gn.getTextLabel()+" #"+i+" "+ar.type(),tn2);
 		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),dp.name()+" "+ar.type(),tn2);
 		    gn2.setOption(absrepoption);
-		    GraphNode.Edge e=new GraphNode.Edge("abstract",gn2);
+		    GraphNode.Edge e=new GraphNode.Edge("abstractedge1",gn2);
 		    gn.addEdge(e);
 		    if (!predtoabstractmap.containsKey(dp))
 			predtoabstractmap.put(dp,new HashSet());
@@ -565,7 +571,7 @@ public class Termination {
 			un.addUpdate(u);
 			if (abstractremove.containsKey(rq.relation)) {
 			    GraphNode agn=(GraphNode)abstractremove.get(rq.relation);
-			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    GraphNode.Edge e=new GraphNode.Edge("requiresremove1",agn);
 			    gn2.addEdge(e);
 			} else {
 			    continue; /* Abstract repair doesn't exist */
@@ -578,7 +584,7 @@ public class Termination {
 			un.addUpdate(u);
 			if (abstractremove.containsKey(sq.set)) {
 			    GraphNode agn=(GraphNode)abstractremove.get(sq.set);
-			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    GraphNode.Edge e=new GraphNode.Edge("requiresremove2",agn);
 			    gn2.addEdge(e);
 			} else {
 			    continue; /* Abstract repair doesn't exist */
@@ -597,7 +603,7 @@ public class Termination {
 		    continue;
 
 		mun.addUpdate(un);
-		GraphNode.Edge e=new GraphNode.Edge("abstract"+compensationcount,gn2);
+		GraphNode.Edge e=new GraphNode.Edge("abstractcomp"+compensationcount,gn2);
 		compensationcount++;
 		gn.addEdge(e);
 		updatenodes.add(gn2);
@@ -675,7 +681,7 @@ public class Termination {
 			un.addUpdate(u);
 			if (abstractremove.containsKey(rq.relation)) {
 			    GraphNode agn=(GraphNode)abstractremove.get(rq.relation);
-			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    GraphNode.Edge e=new GraphNode.Edge("requiresremove3",agn);
 			    gn2.addEdge(e);
 			} else {
 			    goodflag=false;break; /* Abstract repair doesn't exist */
@@ -688,7 +694,7 @@ public class Termination {
 			un.addUpdate(u);
 			if (abstractremove.containsKey(sq.set)) {
 			    GraphNode agn=(GraphNode)abstractremove.get(sq.set);
-			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    GraphNode.Edge e=new GraphNode.Edge("requiresremove4",agn);
 			    gn2.addEdge(e);
 			} else {
 			    goodflag=false;break; /* Abstract repair doesn't exist */
@@ -707,7 +713,7 @@ public class Termination {
 		mun.addUpdate(un);
 	    }
 	    if (goodflag) {
-		GraphNode.Edge e=new GraphNode.Edge("abstract"+(removefromcount++),gn2);
+		GraphNode.Edge e=new GraphNode.Edge("abstract3"+(removefromcount++),gn2);
 		gn.addEdge(e);
 		updatenodes.add(gn2);
 	    }
@@ -828,7 +834,7 @@ public class Termination {
 		mun.addUpdate(un);
 	    }
 	    if (goodflag) {
-		GraphNode.Edge e=new GraphNode.Edge("abstract"+modifycount,gn2);
+		GraphNode.Edge e=new GraphNode.Edge("abstract4"+modifycount,gn2);
 		modifycount++;
 		gn.addEdge(e);
 		updatenodes.add(gn2);
@@ -1012,7 +1018,7 @@ public class Termination {
 			un.checkupdates()&&
 			debugmsg("Updates checked")) {
 			mun.addUpdate(un);
-			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
+			GraphNode.Edge e=new GraphNode.Edge("abstract5"+addtocount,gn2);
 			addtocount++;
 			gn.addEdge(e);
 			updatenodes.add(gn2);
@@ -1266,7 +1272,7 @@ public class Termination {
 		un.addUpdate(u);
 		if (abstractadd.containsKey(rq.relation)) {
 		    GraphNode agn=(GraphNode)abstractadd.get(rq.relation);
-		    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+		    GraphNode.Edge e=new GraphNode.Edge("requiresadd5",agn);
 		    gn.addEdge(e);
 		} else {
 		    return false;
@@ -1290,7 +1296,7 @@ public class Termination {
 		un.addUpdate(u);
 		if (abstractadd.containsKey(sq.set)) {
 		    GraphNode agn=(GraphNode)abstractadd.get(sq.set);
-		    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+		    GraphNode.Edge e=new GraphNode.Edge("requiresadd6",agn);
 		    gn.addEdge(e);
 		} else {
 		    return false;

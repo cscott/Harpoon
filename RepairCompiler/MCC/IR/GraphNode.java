@@ -2,13 +2,12 @@ package MCC.IR;
 
 import java.util.*;
 import java.io.*;
+import MCC.Compiler;
 
 public class GraphNode {
 
-    public static boolean useEdgeLabels;
-
     /* NodeStatus enumeration pattern ***********/
-    
+
     public static final NodeStatus UNVISITED = new NodeStatus("UNVISITED");
     public static final NodeStatus PROCESSING = new NodeStatus("PROCESSING");
     public static final NodeStatus FINISHED = new NodeStatus("FINISHED");
@@ -22,7 +21,7 @@ public class GraphNode {
     /* Edge *****************/
 
     public static class Edge {
-        
+
         private String label;
         private GraphNode target;
 	private GraphNode source;
@@ -65,11 +64,11 @@ public class GraphNode {
     int discoverytime = -1;
     int finishingtime = -1; /* used for searches */
 
-    Vector edges = new Vector();  
+    Vector edges = new Vector();
     Vector inedges = new Vector();
     String nodelabel;
     String textlabel;
-    NodeStatus status = UNVISITED;    
+    NodeStatus status = UNVISITED;
     String dotnodeparams = new String();
     Object owner = null;
     boolean merge=false;
@@ -157,7 +156,7 @@ public class GraphNode {
             dotnodeparams = new String();
         }
     }
-    
+
     public void setStatus(NodeStatus status) {
         if (status == null) {
             throw new NullPointerException();
@@ -172,7 +171,7 @@ public class GraphNode {
     public String getTextLabel() {
         return textlabel;
     }
-    
+
     public NodeStatus getStatus() {
         return this.status;
     }
@@ -221,17 +220,17 @@ public class GraphNode {
 
 
     public static class DOTVisitor {
-        
+
         java.io.PrintWriter output;
         int tokennumber;
         int color;
-      
+
         private DOTVisitor(java.io.OutputStream output) {
             tokennumber = 0;
             color = 0;
             this.output = new java.io.PrintWriter(output, true);
         }
-        
+
         private String getNewID(String name) {
             tokennumber = tokennumber + 1;
             return new String (name+tokennumber);
@@ -239,7 +238,7 @@ public class GraphNode {
 
         Collection nodes;
 	Collection special;
-        
+
         public static void visit(java.io.OutputStream output, Collection nodes) {
 	    visit(output,nodes,null);
 	}
@@ -250,7 +249,7 @@ public class GraphNode {
             visitor.nodes = nodes;
             visitor.make();
         }
-        
+
         private void make() {
             output.println("digraph dotvisitor {");
             output.println("\trotate=90;");
@@ -264,8 +263,8 @@ public class GraphNode {
             traverse();
             output.println("}\n");
         }
-                
-        private void traverse() {            
+
+        private void traverse() {
 	    Set cycleset=GraphNode.findcycles(nodes);
 
             Iterator i = nodes.iterator();
@@ -286,7 +285,7 @@ public class GraphNode {
 		    if (nodes.contains(node)) {
 			for(Iterator nodeit=nonmerge(node).iterator();nodeit.hasNext();) {
 			    GraphNode node2=(GraphNode)nodeit.next();
-			    String edgelabel = useEdgeLabels ? "label=\"" + edge.getLabel() + "\"" : "label=\"\"";
+			    String edgelabel = Compiler.DEBUGGRAPH ? "label=\"" + edge.getLabel() + "\"" : "label=\"\"";
 			    output.println("\t" + gn.getLabel() + " -> " + node2.getLabel() + " [" + edgelabel + edge.dotnodeparams + "];");
 			}
 		    }
@@ -318,7 +317,7 @@ public class GraphNode {
 
     }
 
-    /** This function returns the set of nodes involved in cycles. 
+    /** This function returns the set of nodes involved in cycles.
      *	It only considers cycles containing nodes in the set 'nodes'.
     */
     public static Set findcycles(Collection nodes) {
@@ -383,7 +382,7 @@ public class GraphNode {
     }
 
     /**
-     * DFS encapsulates the depth first search algorithm 
+     * DFS encapsulates the depth first search algorithm
      */
     public static class DFS {
 
@@ -394,7 +393,7 @@ public class GraphNode {
 	HashMap sccmap;
 	HashMap sccmaprev;
 
-        private DFS(Collection nodes) { 
+        private DFS(Collection nodes) {
             this.nodes = nodes;
         }
 	/** Calculates the strong connected components for the graph composed
@@ -442,29 +441,29 @@ public class GraphNode {
             if (nodes == null) {
                 throw new NullPointerException();
             }
-            
+
             DFS dfs = new DFS(nodes);
             return dfs.go();
         }
 
-        private boolean go() {           
+        private boolean go() {
             Iterator i;
             time = 0;
             boolean acyclic=true;
             i = nodes.iterator();
             while (i.hasNext()) {
                 GraphNode gn = (GraphNode) i.next();
-                gn.reset();            
-            }            
+                gn.reset();
+            }
 
             i = nodes.iterator();
             while (i.hasNext()) {
                 GraphNode gn = (GraphNode) i.next();
-		assert gn.getStatus() != PROCESSING;                    
+		assert gn.getStatus() != PROCESSING;
                 if (gn.getStatus() == UNVISITED) {
                     if (!dfs(gn))
 			acyclic=false;
-                } 
+                }
             }
 	    return acyclic;
         }

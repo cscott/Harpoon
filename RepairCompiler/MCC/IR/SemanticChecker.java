@@ -1099,7 +1099,7 @@ public class SemanticChecker {
         dCurrentType = type;
 
         // parse the labels and fields
-        if (!parse_labelsandfields(pn.getChild("lf"))) {
+        if (pn.getChild("lf")!=null && !parse_labelsandfields(pn.getChild("lf"))) {
             ok = false;
         }
 

@@ -28,6 +28,7 @@ public class Compiler {
     public static boolean OMITCOMP=false;
     public static boolean MERGENODES=false;
     public static boolean TIME=false;
+    public static boolean DEBUGGRAPH=false;
 
     public static Vector debuggraphs=new Vector();
 
@@ -80,13 +81,8 @@ public class Compiler {
 	    nodes.addAll(state.rulenodes.values());
 
 	    FileOutputStream dotfile;
-	    dotfile = new FileOutputStream(cli.infile + ".dependencies.edgelabels.dot");
-	    GraphNode.useEdgeLabels = true;
-	    GraphNode.DOTVisitor.visit(dotfile, nodes);
-	    dotfile.close();
 
 	    dotfile = new FileOutputStream(cli.infile + ".dependencies.dot");
-	    GraphNode.useEdgeLabels = false;
 	    GraphNode.DOTVisitor.visit(dotfile, nodes);
 	    dotfile.close();
 	} catch (Exception e) {

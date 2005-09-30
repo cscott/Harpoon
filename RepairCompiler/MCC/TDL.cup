@@ -247,6 +247,17 @@ structure ::=
 	structure.addChild(lf);
 	RESULT = structure;
 	:}
+	|
+	STRUCTURE ID:typename optsubtype:subtype OPENBRACE CLOSEBRACE
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode structure = new ParseNode("structure", parser.curLine(6));
+	structure.addChild("name", parser.curLine(5)).addChild(typename);
+	if (subtype != null) {
+	 structure.addChild(subtype);
+	}
+	RESULT = structure;
+	:}
 
 	| ID:type MULT ID:name SEMICOLON
 	{:
