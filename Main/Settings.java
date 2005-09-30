@@ -19,7 +19,7 @@ import jpaul.DataStructs.DSUtil;
  * <code>Settings</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Settings.java,v 1.4 2005-09-19 00:41:56 salcianu Exp $
+ * @version $Id: Settings.java,v 1.5 2005-09-30 02:31:11 salcianu Exp $
  */
 public abstract class Settings {
 
@@ -65,6 +65,9 @@ public abstract class Settings {
     }
 
 
+    /** Checks that the path from the property
+        <code>harpoon.class.path</code> contains a supported
+        implementation of the standard library.  */
     public static void checkStdLibVersion() {
 	switch(STD_LIB) {
 	case SUNJDK: 
