@@ -2,7 +2,7 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: purity-test,v 1.1 2005-09-22 21:15:10 salcianu Exp $
+## $Id: purity-test,v 1.2 2005-09-30 02:46:11 salcianu Exp $
 
 JAVA_OPTS=""
 
@@ -17,7 +17,7 @@ else
     PURITY_HOME=`dirname $0`/../../..
     JOLDEN_HOME=${HOME}/jolden
     export CLASSPATH=${PURITY_HOME}:${PURITY_HOME}/Support/jpaul.jar:${PURITY_HOME}/Support/jutil.jar:$CLASSPATH
-    JAVA_OPTS="-Dharpoon.class.path=${PURITY_HOME}/Support/reflect-thunk.jar:${PURITY_HOME}/Support/cpvm.jar:${PURITY_HOME}/../classpath-install/share/classpath";
+    JAVA_OPTS="-Dharpoon.class.path=${PURITY_HOME}/Support/reflect-thunk.jar:${PURITY_HOME}/Support/cpvm.jar:${PURITY_HOME}/Support/glibj-0.08-extra.jar:${PURITY_HOME}/../classpath-install/share/classpath";
 fi
 
 # make sure we are at the root of the purity analysis

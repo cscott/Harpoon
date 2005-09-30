@@ -2,18 +2,40 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: make-purity-kit,v 1.1 2005-09-22 21:15:10 salcianu Exp $
+## $Id: make-purity-kit,v 1.2 2005-09-30 02:46:11 salcianu Exp $
 
 KIT_DIR=purity-kit
 FLEX_DIR=`dirname $0`/../../..
 
+GNU_CLASSPATH_LIB_PATH=${FLEX_DIR}/../classpath-install/share/classpath
+
 cd ${FLEX_DIR} &&
 echo Current dir = `pwd`
 if [ "$?" != 0 ]; then
-    echo Cannot g to the FLEX_DIR=${FLEX_DIR}
+    echo Cannot go to directory FLEX_DIR=${FLEX_DIR}
     exit 0;
 fi
 
+
+if [ ! -f ${GNU_CLASSPATH_LIB_PATH}/glibj.zip ]; then
+    echo ${GNU_CLASSPATH_LIB_PATH}/glibj.zip does not exist
+    echo Please check the GNU_CLASSPATH_LIB_PATH
+    exit 1;
+fi
+
+#-1. check that GNU Classpath has right version (0.08)
+GNU_CLASSPATH_VER=`javap -verbose -classpath ${GNU_CLASSPATH_LIB_PATH}/glibj.zip gnu.classpath.Configuration | grep -A 1 CLASSPATH_VERSION | grep "Constant value" | cut -d " " -f 6`
+
+if [ "${GNU_CLASSPATH_VER}" != "0.08" ]; then
+    echo
+    echo WARNING
+    echo Unsupported GNU Classpath version \"${GNU_CLASSPATH_VER}\"\; expect 0.08
+    echo Most likely, it is a bug in javap or in our way of determining the GNU Classpath version\; we optimistically assume you have the right version and continue\; HOWEVER\, IT IS A GOOD IDEA TO MAKE SURE YOU USE GNU CLASSPATH 0.08\!
+    echo WARNING
+    echo
+fi
+
+echo GREAT\! Found GNU Classpath ${GNU_CLASSPATH_VER}
 
 # 0. make the temporary dir where we put everything that wil go into the kit
 echo Make temporary dir ${KIT_DIR} && \
@@ -54,7 +76,8 @@ echo Copy the jar\'s for the std lib we compile / analyze against && \
 mkdir ${KIT_DIR}/lib && \
 cp Support/reflect-thunk.jar ${KIT_DIR}/lib && \
 cp Support/cpvm.jar ${KIT_DIR}/lib && \
-cp ../classpath-install/share/classpath/glibj.zip ${KIT_DIR}/lib
+cp Support/glibj-0.08-extra.jar ${KIT_DIR}/lib && \
+cp ${GNU_CLASSPATH_LIB_PATH}/glibj.zip ${KIT_DIR}/lib/glibj-0.08.zip
 
 if [ "$?" != 0 ]; then
     echo Error copying the standard lib used by Flex
