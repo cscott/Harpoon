@@ -12,7 +12,7 @@ import java.util.Map;
  * modified in order to add or replace method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CachingCodeFactory.java,v 1.4 2002-04-24 23:48:22 salcianu Exp $
+ * @version $Id: CachingCodeFactory.java,v 1.5 2005-09-30 19:01:47 salcianu Exp $
  */
 public class CachingCodeFactory implements SerializableCodeFactory {
     /** Parent code factory. Creates the representations this
@@ -54,7 +54,6 @@ public class CachingCodeFactory implements SerializableCodeFactory {
      *  converted representation of <code>m</code> to its cache. */
     public HCode convert(HMethod m) {
 	if (h.containsKey(m)) return (HCode) h.get(m); // even if get()==null.
-
 	HCode hc = parent.convert(m);
 	put(m, hc);
 	return hc;

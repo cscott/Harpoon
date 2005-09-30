@@ -13,14 +13,13 @@ import java.net.URL;
  * <code>Purity</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Purity.java,v 1.2 2005-09-30 02:44:19 salcianu Exp $
+ * @version $Id: Purity.java,v 1.3 2005-09-30 19:01:47 salcianu Exp $
  */
 public class Purity {
 
     /** Version number for the Purity tool. */
     public static String VERSION = "0.01";
     
-
     /** Convenient entry point for the purity analysis.
         <code>args[0]</code> should be the main class of the
         application you want to analyze.  <code>args[1]</code> should

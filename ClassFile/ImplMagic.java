@@ -25,7 +25,7 @@ import java.util.Map;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.10 2005-09-29 04:15:16 salcianu Exp $
+ * @version $Id: ImplMagic.java,v 1.11 2005-09-30 19:01:47 salcianu Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -191,8 +191,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
     public static final HCodeFactory codeFactory = new SerializableCodeFactory() {
 	public String getCodeName() 
 	{ return harpoon.IR.Bytecode.Code.codename; }
-	public HCode convert(HMethod m)
-	{
+	public HCode convert(HMethod m) {
 	    harpoon.IR.RawClass.MethodInfo methodinfo =
 	    (harpoon.IR.RawClass.MethodInfo) repository.get(meth2str(m));
 	    if (methodinfo==null) return null;
@@ -202,7 +201,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    repository.remove(m); // make methodinfo garbage.
 	}
     };
-    
+
     static class MagicMethod extends HMethodImpl {
 	/** Creates a <code>MagicMethod</code> from a 
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
