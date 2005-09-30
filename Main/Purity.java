@@ -1,5 +1,5 @@
 // Purity.java, created Tue Sep 20 10:30:44 2005 by salcianu
-// Copyright (C) 2003 Alexandru Salcianu <salcianu@alum.mit.edu>
+// Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
@@ -13,12 +13,12 @@ import java.net.URL;
  * <code>Purity</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Purity.java,v 1.1 2005-09-22 21:19:41 salcianu Exp $
+ * @version $Id: Purity.java,v 1.2 2005-09-30 02:44:19 salcianu Exp $
  */
 public class Purity {
 
     /** Version number for the Purity tool. */
-    public static String VERSION = "0.00"; // everything has a beginning!
+    public static String VERSION = "0.01";
     
 
     /** Convenient entry point for the purity analysis.
@@ -86,30 +86,41 @@ public class Purity {
     private static String[] stdLibs = new String[] { 
 	"reflect-thunk.jar",
 	"cpvm.jar",
-	"glibj.zip"
+	"glibj-0.08-extra.jar",
+	"glibj-0.08.zip"
     };
 
 
-    private static final String thisClassName = "harpoon/Main/Purity.class";
     private static final String cannotFindRoot = "FATAL: cannot find the Flex root";
 
     private static String findFlexRoot() {
-	URL url = ClassLoader.getSystemResource(thisClassName);
-	assert (url != null) && url.getProtocol().equals("file") : cannotFindRoot;
-
+	// file.separator should really be called dir.separator ..
 	String fileSep = System.getProperty("file.separator");
+	if(fileSep == null || fileSep.equals("")) {
+	    System.out.println("WARNING sys property file.separator = \"" + fileSep + "\"; assume it is /");
+	    fileSep = "/";	    
+	}
+	String thisClassName = Purity.class.getName().replace('.', fileSep.charAt(0)) + ".class";
 
-	String root = chop(url.getFile(), thisClassName);
-	root = chop(root, fileSep);
+	URL url = ClassLoader.getSystemResource(thisClassName);
+	assert (url != null) : cannotFindRoot;
+	String urlStr = url.toString();
+	System.out.println("Purity entry point url = " + urlStr);
 
-	System.out.println("url.getFile() = " + url.getFile());
-	System.out.println("root = " + root);
+	int lastCol = urlStr.lastIndexOf(':');
+	String fileName = lastCol == -1 ? urlStr : urlStr.substring(lastCol+1);
+	
+	String root = chop(chop(fileName, thisClassName), fileSep);
 
-	if(root.endsWith(".jar!") || root.endsWith(".zip!")) {
+	if(root.endsWith(".jar") || root.endsWith(".jar!") || 
+	   root.endsWith(".zip") || root.endsWith(".zip!")) {
 	    int index = root.lastIndexOf(fileSep);
 	    assert index != -1 : cannotFindRoot;
 	    root = root.substring(0, index);
 	}
+
+	System.out.println("Flex Root = " + root);
+
 	return root;
     }
 
