@@ -68,13 +68,35 @@ import java.io.PrintStream;
 import jpaul.Misc.BoolMCell;
 
 /**
- * <code>SAMain</code> is a program to compile java classes to some
- * approximation of StrongARM assembly.  It is for development testing
- * purposes, not production use.
+ * <code>SAMain</code> is the entry point for most of the analyses and
+ * optimizations implemented in Flex.  Originally, this file was
+ * started by Felix S. Klock II as an entry point for the StrongArm
+ * native compilation; hence the name.  However, it gradually grew up
+ * to include invocations for all the important compiler stanges.  The
+ * whole file was reorganized into a pipeline of {@link
+ * harpoon.Main.CompilerStage}s by Alex Salcianu in the Spring of
+ * 2003.  It has been used as the main entry pointy for Flex ever
+ * since.  Today, its name stands more for <i>Static Analysis Main</i>
+ * than for any StrongArm specificity; however, there are many
+ * non-analysis compiler stages inside.
+ *
+ * <p>The very numerous compiler stages are controlled by the (command
+ * line) options passed into the <code>String[]</code> parameter of
+ * the <code>main</code> method.  To learn about these options, invoke
+ * this class with the <code>-h</code> command line option.
+ *
+ * <p>Needless to say, this is a research prototype.  There is no
+ * guarantee that any combination of modules (controlled by a
+ * combination of command line options) works together well; also,
+ * there is no guarantee that Flex will identify and report any
+ * inconsistent combination of options.
+ *
+ * <p>For an example of programmatic use of <code>SAMain</code>,
+ * please see the {@link harpoon.Main.Purity Purity} class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.69 2005-09-19 00:41:56 salcianu Exp $
- */
+ * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
+ * @version $Id: SAMain.java,v 1.70 2005-09-30 18:58:12 salcianu Exp $ */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean OPTIMIZE = false;
@@ -324,6 +346,11 @@ public class SAMain extends harpoon.IR.Registration {
 		},
 		new Option("verbose-load", "Show where each class is loaded from") {
 		    public void action() { harpoon.ClassFile.Loader.VERBOSE = true; }
+		},
+		new Option("verbose-bytecode-method", "Display methods that are parsed from the bytecode classfiles.  Thes are not all the methods Flex manipulates; Flex may generate other methods too.") {
+		    public void action() { 
+			harpoon.IR.Bytecode.Code.VERBOSE_BYTECODE_METHOD_CREATION = true;
+		    }
 		}
 	    });
     }

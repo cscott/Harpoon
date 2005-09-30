@@ -34,7 +34,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.14 2003-05-09 21:08:01 cananian Exp $
+ * @version $Id: Code.java,v 1.15 2005-09-30 18:58:13 salcianu Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode implements Graph<Instr,InstrEdge> {
@@ -45,8 +45,17 @@ public class Code extends HCode implements Graph<Instr,InstrEdge> {
   final HMethod parent;
   final MethodInfo methodinfo;
 
+  /** If turned on, we print a short message each time the bytecode
+      representation for a method is created.  A top-level command
+      line option turns this on, to allow us to see which methods are
+      parsed by Flex. */
+  public static boolean VERBOSE_BYTECODE_METHOD_CREATION = false;
+    
   /** Constructor. */
   public Code(HMethod parent, MethodInfo methodinfo) {
+    if(VERBOSE_BYTECODE_METHOD_CREATION) {
+      System.err.println("[bytecode method] " + parent);
+    }
     this.linker = parent.getDeclaringClass().getLinker();
     this.parent = parent;
     this.methodinfo = methodinfo;
