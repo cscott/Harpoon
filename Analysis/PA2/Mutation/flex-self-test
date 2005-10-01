@@ -2,7 +2,7 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: flex-self-test.sh,v 1.1 2005-09-30 20:05:11 salcianu Exp $
+## $Id: flex-self-test,v 1.1 2005-10-01 21:56:19 salcianu Exp $
 
 echo Flex analyzing its own purity\; the analysis will take many hours\!
 
