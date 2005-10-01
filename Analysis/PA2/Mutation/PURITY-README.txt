@@ -79,7 +79,10 @@ into a directory purity-kit, containg the following files/subdirs:
    discontinue using this purity analysis kit if you have any problems
    witth the GNU GPL.
 
+7. purity-test and flex-self-test - Two testing scripts.
+
 6. README.txt - The file you are reading right now.
+
 
 
 
@@ -107,6 +110,20 @@ benchmarks, execute
 ./purity-test creates a "results" subdirectory containing files with
 the analysis trace for each analyzed testcase.
 
+If you want to do a huge test, then run
+
+  ./flex-self-test
+
+This script will launch the purity analysis on itself, including all
+the code reachable from the Flex infrastructure according to the
+static call graph.
+
+This huge test is not supposed to end in any reasonable amount of
+time.  Instead, you should let it run until the "Execute stage pa2"
+method is printed, and then abort it.  If no error was printed so far,
+it means that Flex was able to parse its own bytecode and build an
+intermediate representation (IR).  This is a very good sign, because
+many errors used to occur in the very early stages of IR construction.
 
 
 D. USAGE
