@@ -527,6 +527,7 @@ public class SemanticChecker {
                 return null;
             }
 
+            rd.addUsage(RelationDescriptor.IMAGE);
             rq.setRelation(rd);
             vd1.setType(rd.getDomain().getType());
 	    vd1.setSet(rd.getDomain());

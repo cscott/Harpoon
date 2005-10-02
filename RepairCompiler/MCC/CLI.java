@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.15 2005-09-30 06:18:11 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.16 2005-10-02 05:13:26 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -103,13 +103,13 @@ public class CLI {
 	    System.out.println("-depth depthnum constraintnum -- generate dependency graph from constraintnum with depth of depthnum");
 	    System.out.println("-depthconj depthnum constraintnum conjunctionnum -- generate dependency graph from constraintnum with depth of depthnum");
 	    System.out.println("-instrument -- generate instrumentation code");
-	    System.out.println("-aggressivesearch");
-	    System.out.println("-prunequantifiernodes");
-	    System.out.println("-cplusplus");
-	    System.out.println("-time");
-	    System.out.println("-omitcomp");
-	    System.out.println("-mergenodes");
-	    System.out.println("-debuggraph");
+	    System.out.println("-aggressivesearch -- search for one repair per constraint");
+	    System.out.println("-prunequantifiernodes -- prune nodes that satisfy constraint by decreasing scope");
+	    System.out.println("-cplusplus -- properly set up c++ classes");
+	    System.out.println("-time -- generate timing code");
+	    System.out.println("-omitcomp -- omit compensation updates");
+	    System.out.println("-mergenodes -- omit nodes for simpler role dependence graphs");
+	    System.out.println("-debuggraph -- add edge labels and support to debug graph");
 	    System.exit(-1);
 	}
 
