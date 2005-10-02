@@ -1,4 +1,4 @@
-Purity Analysis Kit v0.00
+Purity Analysis Kit v0.01
 Copyright (c) 2005 - Alexandru Salcianu <salcianu@alum.mit.edu>
 GNU General Public Licence
 
