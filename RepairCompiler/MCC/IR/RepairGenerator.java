@@ -638,6 +638,51 @@ public class RepairGenerator {
 	    cr.endblock();
 	}
 
+        Iterator reliterator = state.stRelations.descriptors();
+	while (reliterator.hasNext()) {
+	    RelationDescriptor rd = (RelationDescriptor) reliterator.next();
+
+
+	    String relname = rd.getSafeSymbol();
+            if (rd.testUsage(RelationDescriptor.IMAGE)) {
+                cr.startblock();
+                cr.outputline("/* printing relation " + relname+"*/");
+                cr.outputline("printf(\"\\nPrinting relation " + rd.getSymbol() + " - %d elements \\n\", SimpleHashcountset("+relname+"_hash));");
+                cr.addDeclaration("struct SimpleIterator","__reliterator");
+                cr.outputline("SimpleHashiterator("+relname+"_hash,&__reliterator);");
+                cr.outputline("while (hasNext(&__reliterator))");
+                cr.startblock();
+                cr.addDeclaration("int","__relval");
+                cr.addDeclaration("int","__relval2");
+                cr.outputline("__relval2 = (int) key(&__reliterator);");
+                cr.outputline("__relval = (int) next(&__reliterator);");
+
+                cr.outputline("printf(\"<%ld,%ld> \", __relval2,__relval);");
+
+                cr.endblock();
+                cr.endblock();
+            } else if (rd.testUsage(RelationDescriptor.INVIMAGE)) {
+                cr.startblock();
+                cr.outputline("/* printing inv relation " + relname+"*/");
+                cr.outputline("printf(\"\\nPrinting relation using inv" + rd.getSymbol() + " - %d elements \\n\", SimpleHashcountset("+relname+"_hash));");
+                cr.addDeclaration("struct SimpleIterator","__reliterator");
+                cr.outputline("SimpleHashiterator("+relname+"_hashinv,&__reliterator);");
+                cr.outputline("while (hasNext(&__reliterator))");
+                cr.startblock();
+                cr.addDeclaration("int","__relval");
+                cr.addDeclaration("int","__relval2");
+                cr.outputline("__relval2 = (int) key(&__reliterator);");
+                cr.outputline("__relval = (int) next(&__reliterator);");
+
+
+                cr.outputline("printf(\"<%ld,%ld> \", __relval,__relval2);");
+
+                cr.endblock();
+                cr.endblock();
+            }
+
+	}
+
 	cr.outputline("printf(\"\\n\\n------------------- END PRINTING\\n\");");
     }
 

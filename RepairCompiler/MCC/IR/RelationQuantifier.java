@@ -36,11 +36,13 @@ public class RelationQuantifier extends Quantifier {
 	writer.addDeclaration("struct SimpleIterator",x.getSafeSymbol()+"_iterator");
         writer.outputline("for (SimpleHashiterator("+relation.getSafeSymbol()+"_hash, &"+x.getSafeSymbol()+"_iterator); hasNext(&"+x.getSafeSymbol()+"_iterator); )");
         writer.startblock();
-        writer.addDeclaration(y.getType().getGenerateType().toString(), y.getSafeSymbol());        
-	writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next(&"+x.getSafeSymbol()+"_iterator);");
-        // #ATTN#: key is called second because next() forwards ptr and key does not!
-        writer.addDeclaration(x.getType().getGenerateType().toString(), x.getSafeSymbol());        
+        // #ATTN#: key is called first because next() forwards ptr and key does not!
+        writer.addDeclaration(x.getType().getGenerateType().toString(), x.getSafeSymbol());
 	writer.outputline(x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") key(&"+x.getSafeSymbol()+"_iterator);");
+
+        writer.addDeclaration(y.getType().getGenerateType().toString(), y.getSafeSymbol());
+	writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next(&"+x.getSafeSymbol()+"_iterator);");
+
     }
 
     public void generate_open(CodeWriter writer, String type,int number, String left,String right) {
@@ -64,8 +66,8 @@ public class RelationQuantifier extends Quantifier {
 	writer.endblock();
 	writer.outputline("else");
 	writer.startblock();
-        writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next(&"+x.getSafeSymbol()+"_iterator);");
         writer.outputline(x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") key(&"+x.getSafeSymbol()+"_iterator);");
+        writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next(&"+x.getSafeSymbol()+"_iterator);");
 	writer.endblock();
     }
 
