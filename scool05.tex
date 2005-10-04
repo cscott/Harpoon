@@ -1,8 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.13 2005-08-06 05:39:34 cananian Exp $
+% $Id: scool05.tex,v 1.14 2005-10-04 23:25:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[11pt]{csaacmconfbig} % 10 page limit
-%\usepackage{times}
+\documentclass{csa-sig-alternate}
 \usepackage{epsfig}
 %\usepackage{supertech}
 \usepackage{array}
@@ -23,7 +22,7 @@
 \verbatim}%
   {\endverbatim}
 % tighten up captions
-\renewcommand{\figadjust}{\vspace{-1.5em}}
+%\renewcommand{\figadjust}{\vspace{-1.5em}}
 % be sloppy
 \sloppy
 
@@ -32,22 +31,6 @@
 
 %setup varioref package
 \renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
-
-%\renewcommand{\floatpagefraction}{0.8}
-%\renewcommand{\topfraction}{0.25}
-
-\title{Efficient Object-Based Software Transactions}
-
-\gdef\and{\hspace*{4em}}%Tight title with one line for authors
-\author{C.~Scott~Ananian \and Martin~Rinard \\
-Computer Science and Artificial Intelligence Laboratory\\
-Massachusetts Institute of Technology\\
-Cambridge, MA 02139 \\
-\texttt{\{cananian,rinard\}@csail.mit.edu}
-}
-%\special{papersize=8.5in,11in}
-
-%\date{\today \\ $ $Revision: 1.13 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -82,12 +65,29 @@ Cambridge, MA 02139 \\
 \newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
 
 
-%\renewcommand{\baselinestretch}{0.97}
 \begin{document}
-%
+\conferenceinfo{SCOOL'05,} {October 16, 2005, San Diego, California, USA.}
+\CopyrightYear{2005}
+\crdata{}
+\title{Efficient Object-Based Software Transactions%
+\titlenote{%
+This research was supported by
+DARPA/AFRL Contract F33615-00-C-1692.}%
+}
+\numberofauthors{2}
+\author{
+\alignauthor C.~Scott~Ananian\\
+\affaddr{Computer~Science~and Artificial~Intelligence~Laboratory}\\
+\affaddr{Massachusetts Institute of Technology}\\
+\affaddr{Cambridge, MA 02139}\\
+\email{cananian@csail.mit.edu}
+\alignauthor Martin~Rinard\\
+\affaddr{Computer~Science~and Artificial~Intelligence~Laboratory}\\
+\affaddr{Massachusetts Institute of Technology}\\
+\affaddr{Cambridge, MA 02139}\\
+\email{rinard@csail.mit.edu}
+}
 \maketitle
-%%% XXX TURN BACK ON FOR CAMERA-READY
-%\support{This research was supported by DARPA/AFRL Contract F33615-00-C-1692.}
 %
 % abstract
 \begin{abstract}
@@ -105,6 +105,14 @@ Cambridge, MA 02139 \\
   The design presented cooperates well with an HTM providing support
   for small short transactions.
 \end{abstract}
+% XXX FIX ME XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+\category{D.3.2}{Programming Languages}{Language
+  Classifications}[Object-oriented languages, Java]
+\category{D.3.4}{Program\-ming Languages}{Processors}[Compilers]
+\category{E.2}{Data Storage Representations}{Object representation}
+\terms{Languages, Performance, Experimentation, Algorithms}
+\keywords{Transactions}
+
 
 %
 \secput{intro}{Introduction}
@@ -830,11 +838,8 @@ inline writeT(ver, f, nval) {
 \end{inlinecode}
 
 \subsection{Large objects}\label{sec:large}
-\begin{figure}
-\begin{center}
-\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
-\end{center}%
-\figadjust%
+\begin{figure}\centering
+\epsfig{file=Figures/tr-w-all.eps,width=2.25in,clip=true}
 \caption{Proportion of transactional writes to objects equal to or
   smaller than a given size.}
 \label{fig:tr-w}%
@@ -865,11 +870,11 @@ can obtain a trivial implementation using some
 existing small-transaction HTM.
 
 \subsection{Hybrid STM/HTM}\label{sec:hybrid}
-\begin{figure}[t]\begin{center}%
-\includegraphics[width=3.25in,clip=true]{Figures/sean_lie_6b.eps}%
-\end{center}\figadjust%
+\begin{figure}\centering
+\epsfig{file=Figures/sean_lie_6b.eps,width=3.25in,clip=true}
 \caption{Performance (in cycles per node push on a simple queue
-  benchmark) of LTM~\cite{AnanianAsKuLeLi04} (HTM), the
+  benchmark) of LTM\punt{~\cite{AnanianAsKuLeLi04}} (HTM), the
+%%%%%%%%%%%%%%%%%%%^^^^^^ XXXXXXXXXXXXXXXXXXXXXXXXXXX
   object-based system presented in this paper (STM) and a hybrid
   scheme (HSTM).}%
 \label{fig:hybrid}%
