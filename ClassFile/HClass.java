@@ -14,6 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jpaul.DataStructs.MapFacts;
+import jpaul.DataStructs.MapWithDefault;
+import jpaul.DataStructs.NoCompTreeMap;
+
 /**
  * Instances of the class <code>HClass</code> represent classes and 
  * interfaces of a java program.  Every array also belongs to a
@@ -31,7 +35,7 @@ import java.util.Map;
  * <code>Linker</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.47 2004-02-08 01:58:03 cananian Exp $
+ * @version $Id: HClass.java,v 1.48 2005-10-05 15:49:20 salcianu Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -301,6 +305,49 @@ public abstract class HClass extends HPointer
    * @exception NoSuchMethodError if a matching method is not found.
    */
   public final HMethod getMethod(String name, String descriptor)
+    throws NoSuchMethodError {
+    if(immutableEpoch) {
+      // cache too old - throw it away
+      if(cacheEpoch != currentEpoch) {
+	refreshCache();
+      }
+      Map<String,HMethod> desc2hm = cacheGetMethod.get(name);
+      HMethod hm = desc2hm.get(descriptor);
+      if(hm == null) {
+	hm = _getMethod(name, descriptor);
+	desc2hm.put(descriptor, hm);
+      }
+      return hm;
+    }
+    return _getMethod(name, descriptor);
+  }
+
+  private static boolean immutableEpoch = false;
+  private static int currentEpoch = 0;
+  private int cacheEpoch = -1;
+
+  public static void enterImmutableEpoch() {
+    currentEpoch++;
+    immutableEpoch = true;
+  }
+
+  public static void exitImmutableEpoch() {
+    immutableEpoch = false;
+  }
+
+  private Map<String,Map<String,HMethod>> cacheGetMethod;
+
+  private void refreshCache() {
+    cacheGetMethod = 
+      new MapWithDefault<String, Map<String,HMethod>>
+      (new NoCompTreeMap<String,Map<String,HMethod>>(),
+       MapFacts.<String,HMethod>noCompTree(),
+       true);
+    cacheEpoch = currentEpoch;
+  }
+
+
+  private final HMethod _getMethod(String name, String descriptor)
     throws NoSuchMethodError {
     // construct master method list, if we haven't already.
     HMethod[] methods=getMethods();
