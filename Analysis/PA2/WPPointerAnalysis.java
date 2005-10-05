@@ -55,22 +55,34 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.8 2005-09-21 23:03:33 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.9 2005-10-05 16:18:53 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
 
     public WPPointerAnalysis(CachingCodeFactory hcf, CallGraph cg, Linker linker, ClassHierarchy classHierarchy,
 			     Collection<HMethod> roots, int fpMaxIter) {
+	Timer timer = new Timer();
+
 	this.hcf     = hcf;
 	this.nodeRep = new NodeRepository(linker);
 	this.cg      = cg;
 	this.linker  = linker;
 
 	TypeFilter.initClassHierarchy(classHierarchy);
-
 	findNoFPCgSCC(roots, fpMaxIter);
+
+	timeSoFar += timer.timeElapsed();
     }
+
+    /* Technical detail for timing.  Stores the total time spent so
+       far in non-analysis related methods.  Currently, it stores just
+       the time spent in the constructor, that includes some
+       time-consuming operations.  We do so because the pointer
+       analysis object is allocated in some stage and timed in
+       another.  Storing this time here was the easiest way to measure
+       the entire pointer analysis time.  */
+    long timeSoFar = 0;
 
     private final CachingCodeFactory hcf;
     private final NodeRepository nodeRep;
@@ -96,7 +108,8 @@ public class WPPointerAnalysis extends PointerAnalysis {
     
     private void findNoFPCgSCC(Collection<HMethod> roots, int fpMaxIter) {
 	Timer timer = new Timer();
-	System.out.println("findNoFPCgSCC(" + roots + ")");
+	System.out.print("\nfindNoFPCgSCC(" + roots + ") ... ");
+	System.out.flush();
 	// Find out inter-proc dependencies
 	DiGraph<HMethod> methodDepDiGraph =
 	    DiGraph.<HMethod>diGraph(roots, cgNav);
@@ -113,7 +126,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	}
 
 	hm2CgSCC.putAll(tsCompDiGraph.getVertex2SccMap());
-	System.out.println("findNoFPCgSCC TOTAL TIME = " + timer);
+	System.out.println(timer);
     }
 
     private final ForwardNavigator<HMethod> cgNav = 
@@ -194,7 +207,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	new HashMap<HMethod,InterProcAnalysisResult>();
 
     private InterProcAnalysisResult computeResult(HMethod hm, AnalysisPolicy ap) {
-	Timer timer = new Timer();
+	Timer timer = Flags.TIMING ? new Timer() : null;
 
 	// 1. find all unanalyzed callees, compute dependencies
 	// between them + find the strongly connected components
@@ -215,7 +228,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    analyzeSCC(scc, ap);
 	}
 
-	System.out.println("ANALYSIS TIME " + timer);
+	if(Flags.TIMING) System.out.println("ANALYSIS TIME " + timer);
 
 	// enable some GC
 	this.interProcDepNav = null;
@@ -329,15 +342,16 @@ public class WPPointerAnalysis extends PointerAnalysis {
     // aspect would be cleaner here.
     private void analyzeSCC(SCComponent<HMethod> scc, AnalysisPolicy ap) {
 	PAUtil.printMethodSCC(System.out, scc, null, null);
-	Timer timer = new Timer();
+	Timer timer = Flags.TIMING ? new Timer() : null;
 	
 	_analyzeSCC(scc, ap);
 	
-	timer.stop();
+	if(Flags.TIMING) {
+	    System.out.println("Total analysis time for SCC" + scc.getId() + " : " + timer);
+	}
 	if(Flags.STATS) {
 	    Stats.recordSCCAnalysis(scc, timer.timeElapsed());
 	}
-	System.out.println("Total analysis time for SCC" + scc.getId() + " : " + timer);
 	System.out.println();
     }
 
@@ -368,7 +382,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 	Timer tcg = new Timer();
 	for(HMethod hm : scc.nodes()) {
-	    tcg.start();
+	    tcg.freshStart();
 	    hm2md.put(hm, (new MethodData(new IntraProc(hm, ap.flowSensitivity, this), ap)));
 	    if(Flags.STATS) {
 		Stats.recordMethodConsGen(hm, tcg.timeElapsed());
@@ -457,12 +471,12 @@ public class WPPointerAnalysis extends PointerAnalysis {
     private InterProcAnalysisResult analyzeMethod(HMethod hm, MethodData md) {
 	System.out.println("Analyze (" + md.iterCount + ") \"" + hm + "\"" + "; " + hm.getDescriptor());
 	
-	Timer timerSolve = new Timer();
-	Timer timerFull = new Timer();
+	Timer timerSolve = Flags.TIMING ? new Timer() : null;
+	Timer timerFull = Flags.STATS ? new Timer() : null;
 	FullAnalysisResult far = md.intraProc.fullSolve();
-	timerSolve.stop();
+	if(Flags.STATS) timerSolve.stop();
 
-	Timer timerSimplify = new Timer();
+	Timer timerSimplify = Flags.TIMING ? new Timer() : null;
 	InterProcAnalysisResult res = far;
 	displayStats(res, " --trimUnreachable-> ");
 
@@ -481,9 +495,10 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	if(Flags.USE_FRESHEN_TRICK) {
 	    res = GraphOptimizations.freshen(res);
 	}
-	timerSimplify.stop();
-	timerFull.stop();
+
+	if(Flags.TIMING) timerSimplify.stop();
 	if(Flags.STATS) {
+	    timerFull.stop();
 	    Stats.recordMethodAnalysis(hm, timerFull.timeElapsed());
 	}
 	

@@ -35,12 +35,13 @@ import harpoon.Analysis.PA2.PAUtil;
 import harpoon.Analysis.IOEffectAnalysis;
 
 import harpoon.Util.Util;
+import harpoon.Util.Timer;
 
 /**
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.12 2005-09-22 21:22:39 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.13 2005-10-05 16:18:53 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -71,7 +72,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	});
 	opts.add(new Option("wp-mutation-save", "Save the results of the whole program mutation analysis in the static fields of WPMutationAnalysisCompStage: pureMethods (the set of pure methods) and method2SafeParams (a map from methods to the safe parameter indices.") {
 	    public void action() {
-		STORE_IN_STATICS = true;
+		STORE_RESULTS_IN_STATICS = true;
 	    }
 	});
 	return opts;
@@ -83,7 +84,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
     // if true, at the end of the analysis we'll store into static
     // fields the computed set of pure methods and the safe parameters
     // of each method.
-    private boolean STORE_IN_STATICS = false;
+    private boolean STORE_RESULTS_IN_STATICS = false;
     
     /** If the <code>--wp-mutation-save</code> option is used, the
         analysis will save all discovered pure methods in this set.  */
@@ -104,7 +105,10 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
     private IOEffectAnalysis io;
     
     public void real_action() {
-	if(STORE_IN_STATICS) {
+	// we promise to be nice and not mutate HClass'es :)
+	HClass.enterImmutableEpoch();
+
+	if(STORE_RESULTS_IN_STATICS) {
 	    pureMethods = new HashSet<HMethod>();
 	    method2SafeParams = new HashMap<HMethod,List<Integer>>();
 	}
@@ -113,7 +117,9 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	ma = new MutationAnalysis(pa);
 	io = new IOEffectAnalysis(pa.getCallGraph());
 
+	Timer timer = new Timer();
 	Collection<HMethod> methodsOfInterest = methodsOfInterest();
+	System.out.println("methodsOfInterest time = " + timer);
 
 	// time pointer analysis (before doing any regexps etc, such
 	// that we can time it accurately).
@@ -122,7 +128,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
 	Relation<HClass,HMethod> class2methods = new MapSetRelation<HClass,HMethod>();
 	
-	for(HMethod hm : methodsOfInterest()) {
+	for(HMethod hm : methodsOfInterest) {
 	    if(hcf.convert(hm) == null) continue;
 	    if(hm.getDeclaringClass().isArray()) continue;
 	    class2methods.add(hm.getDeclaringClass(), hm);
@@ -141,6 +147,8 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	pa = null;
 	ma = null;
 	io = null;
+
+	HClass.exitImmutableEpoch();
     }
 
 
@@ -153,7 +161,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    PAUtil.interestingMethods
 	    (Collections.<HMethod>singleton(mainM),
 	     pa.getCallGraph(),
-	     // undesirable methods wqe do not want to consider
+	     // undesirable methods we do not want to consider
 	     new Predicate<HMethod>() {
 		public boolean check(HMethod hm) {
 		    return PAUtil.methodTooBig(hm);
@@ -242,7 +250,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		}
 	    }
 
-	    if(STORE_IN_STATICS) {
+	    if(STORE_RESULTS_IN_STATICS) {
 		updateMethod2SafeParams(hm, safeParams);
 	    }
 

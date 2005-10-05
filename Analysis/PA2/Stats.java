@@ -23,7 +23,7 @@ import harpoon.ClassFile.HCodeFactory;
  * <code>Stats</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Stats.java,v 1.2 2005-09-21 23:03:33 salcianu Exp $
+ * @version $Id: Stats.java,v 1.3 2005-10-05 16:18:53 salcianu Exp $
  */
 public class Stats {
 
@@ -142,7 +142,7 @@ public class Stats {
 	out.println(sccs.size() + " analyzed SCC(s) of methods");
 	count = 0;
 	for(SCComponent<HMethod> scc : sccs) {
-	    out.println(scc2time.get(scc) + " ms: ");
+	    out.print(scc2time.get(scc) + " ms: ");
 	    PAUtil.printMethodSCC(out, scc);
 	    count++;
 	    if(count >= maxSCCs) break;

@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.10 2005-09-27 13:37:26 salcianu Exp $
+ * @version $Id: Flags.java,v 1.11 2005-10-05 16:18:53 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -46,6 +46,7 @@ public abstract class Flags {
     static boolean SHOW_SKIPPED_UNANALYZABLE = false;
 
     static boolean STATS = false;
+    static boolean TIMING = true;
 
     public static boolean RECORD_WRITES = false;
     public static boolean IGNORE_CERTAIN_MUTATIONS = true;
@@ -122,7 +123,14 @@ public abstract class Flags {
 
 	opts.add(new Option("pa2:stats", "Prints statistics about the pointer analysis: longest to analyze method(s)/SCC(s), etc.") {
 	    public void action() {
-		STATS = true;
+		STATS  = true;
+		TIMING = true;
+	    }
+	});
+
+	opts.add(new Option("pa2:time-pre", "Execute and time - BEFORE the pointer analysis - the construction of several components that are useful for the entire compiler, not just for the pointer analysis: IR, call graph etc.") {
+	    public void action() {
+		TIME_PREANALYSIS = true;
 	    }
 	});
 

@@ -51,7 +51,7 @@ import harpoon.Util.Timer;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.9 2005-09-21 23:03:33 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.10 2005-10-05 16:18:53 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -442,7 +442,10 @@ public abstract class PAUtil {
 	    tooBigCallees = new HashSet<HMethod>();
 	    Linker linker = hm.getDeclaringClass().getLinker();
 	    for(int i = 0; i < tooBigMethods.length; i++) {
-		tooBigCallees.add(getMethod(linker, tooBigMethods[i]));
+		HMethod tooBig = getMethod(linker, tooBigMethods[i]);
+		if(tooBig != null) {
+		    tooBigCallees.add(tooBig);
+		}
 	    }
 	}
 	return tooBigCallees.contains(hm);
@@ -468,7 +471,7 @@ public abstract class PAUtil {
 
 
     public static void timePointerAnalysis(HMethod mainM, Collection<HMethod> methodsOfInterest,
-					   PointerAnalysis pa, AnalysisPolicy ap, String prefix) {	
+					   PointerAnalysis pa, AnalysisPolicy ap, String prefix) {
 	System.out.println("\n" + prefix + "WHOLE PROGRAM POINTER ANALYSIS");
 	if(Flags.STATS) Stats.clear();
 	Timer timer = new Timer();
@@ -484,7 +487,13 @@ public abstract class PAUtil {
 		ipar.invalidateCaches();
 	    }
 	}
-	System.out.println("WHOLE PROGRAM POINTER ANALYSIS TOTAL TIME: " + timer);
+
+	long totalTime = 
+	    timer.timeElapsed() +
+	    ( (pa instanceof WPPointerAnalysis) ?
+	      ((WPPointerAnalysis) pa).timeSoFar :
+	      0 );
+	System.out.println("WHOLE PROGRAM POINTER ANALYSIS TOTAL TIME: " + totalTime);
 	if(Flags.STATS) Stats.printStats(20, 5);
     }
 

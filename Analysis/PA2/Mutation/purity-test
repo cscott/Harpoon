@@ -2,7 +2,7 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: purity-test,v 1.2 2005-09-30 02:46:11 salcianu Exp $
+## $Id: purity-test,v 1.3 2005-10-05 16:18:53 salcianu Exp $
 
 JAVA_OPTS=""
 
@@ -30,9 +30,11 @@ fi
 
 if [ "$1" = "all" ]; then 
     JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
-else 
+elif [ "$1" != "" ]; then
+    JOLDEN_APPS="$1";
+else
     # Normal case: analyze only the first two JOLDEN_APPS
-    JOLDEN_APPS="BH BiSort"
+    JOLDEN_APPS="BH Bisort"
 fi
 
 
@@ -41,6 +43,6 @@ mkdir -p results
 for app in $JOLDEN_APPS; do
 
     subdir=`echo $app | tr [:upper:] [:lower:]`
-    java ${JAVA_OPTS} harpoon.Main.Purity $app ${JOLDEN_HOME}/$subdir | tee ./results/$app.purity.out
+    java ${JAVA_OPTS} harpoon.Main.Purity $app ${JOLDEN_HOME}/$subdir --pa2:time-pre --pa2:stats | tee ./results/$app.purity.out
 
 done; 
