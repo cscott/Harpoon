@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.6 2005-09-30 20:17:29 salcianu Exp $
+ * @version $Id: OpConstant.java,v 1.7 2005-10-05 16:21:32 salcianu Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.IR.RawClass.ConstantDouble
@@ -53,7 +53,7 @@ public final class OpConstant extends Operand {
     // [AS] ConstantValue hack - make sure we generate a strong warning
     if(!type.isPrimitive() && check!=type) {
 	if(!WARNING_PRINTED1) {
-	    System.out.println("\n\nWARNING: ConstantValue hack");
+	    System.out.println("\n\nWARNING: ConstantClass/Value hack");
 	    System.out.println("Violated assertion in harpoon.IR.Bytecode.OpConstant.check()");
 	    System.out.println("Flex will assume everything is fine and just ignore it.");
 	    System.out.println("The state of this method is currently IMPERFECT, JUST SOMETHING");
@@ -86,7 +86,7 @@ public final class OpConstant extends Operand {
 	// [AS] not sure if this is OK with the code generator; 
 	// Therefore, generate a very big message the first time we're called
 	if(!WARNING_PRINTED2) {
-	    System.out.println("\n\nWARNING: ConstantValue hack");
+	    System.out.println("\n\nWARNING: ConstantClass/Value hack");
 	    System.out.println("Constructed harpoon.IR.Bytecode.OpConstant with a class constant.");
 	    System.out.println("The state of this method is currently IMPERFECT, JUST SOMETHING");
 	    System.out.println("TO ALLOW FLEX TO PARSE ITSELF (and other JDK1.5 compiled code)\n");

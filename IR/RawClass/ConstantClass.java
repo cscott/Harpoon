@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * represent a class or an interface.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantClass.java,v 1.3 2005-09-30 20:17:28 salcianu Exp $
+ * @version $Id: ConstantClass.java,v 1.4 2005-10-05 16:21:32 salcianu Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.1"
  * @see Constant
  */
@@ -53,7 +53,7 @@ public class ConstantClass extends ConstantValue {
 	// [AS] not sure if returning an HClass is OK with the code generator; 
 	// Therefore, generate a very big message the first time we're called
 	if(!WARNING_PRINTED) {
-	    System.out.println("\n\nWARNING: ConstantValue hack");
+	    System.out.println("\n\nWARNING: ConstantClass/Value hack");
 	    System.out.println("Called harpoon.IR.RawClass.ConstantClass.value()");
 	    System.out.println("IMPERFECT, JUST SOMETHING TO ALLOW FLEX TO PARSE ITSELF (and other ");
 	    System.out.println("JDK1.5 compiled code). UNCLEAR INTERACTIONS WITH THE CODE GENERATOR\n");
