@@ -66,7 +66,7 @@ public class GraphAnalysis {
 		termination.updatenodes.contains(gn2))
 		return false;
 	}
-	
+
 	/* Make sure all abstractrepairs/consequence nodes in the dependent nodes
 	   are well formed. */
     outerloop:
@@ -77,11 +77,11 @@ public class GraphAnalysis {
 		boolean ismodify=false;
 		int numadd=0;
 		int numremove=0;
-		
+
 		if (termination.abstractrepair.contains(gn2)&&
 		    ((TermNode)gn2.getOwner()).getAbstract().getType()==AbstractRepair.MODIFYRELATION)
 		    ismodify=true;
-   
+
 		innerloop:
 		for(Iterator edgeit=gn2.edges();edgeit.hasNext();) {
 		    GraphNode gn3=((GraphNode.Edge)edgeit.next()).getTarget();
@@ -354,9 +354,10 @@ public class GraphAnalysis {
 	    /* Searches individual conjunctions + abstract action +updates for cycles */
 	    for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
-		boolean foundnocycle=false;
-		
+
 		for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
+                    boolean foundnocycle=false;
+
 		    GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
 		    GraphNode gn2=e.getTarget();
 		    TermNode tn2=(TermNode)gn2.getOwner();
@@ -365,14 +366,14 @@ public class GraphAnalysis {
 		    AbstractRepair ar=tn2.getAbstract();
 		    boolean ismodify=ar.getType()==AbstractRepair.MODIFYRELATION;
 		    int numadd=0;int numremove=0;
-		    
+
 		    for (Iterator edgeit2=gn2.edges();edgeit2.hasNext();) {
 			GraphNode.Edge e2=(GraphNode.Edge)edgeit2.next();
 			GraphNode gn3=e2.getTarget();
 			TermNode tn3=(TermNode)gn3.getOwner();
 			if (tn3.getType()!=TermNode.UPDATE)
 			    continue;
-			
+
 			boolean containsgn=cantremove.contains(gn);
 			boolean containsgn2=cantremove.contains(gn2);
 			boolean containsgn3=cantremove.contains(gn3);
@@ -417,14 +418,15 @@ public class GraphAnalysis {
 				mustremove.add(gn3);
 			}
 		    }
-		}
 
-		if(!foundnocycle) {
-		    if (!mustremove.contains(gn)) {
-			change=true;
-			mustremove.add(gn);
-		    }
-		}
+
+                    if(!foundnocycle) {
+                        if (!mustremove.contains(gn)) {
+                            change=true;
+                            mustremove.add(gn);
+                        }
+                    }
+                }
 	    }
 
 	    /* Searches scope nodes + compensation nodes */
@@ -450,7 +452,7 @@ public class GraphAnalysis {
 				change=true;
 				mustremove.add(gn2);
 			    }
-			} 
+			}
 			if (!containsgn)
 			    cantremove.remove(gn);
 			if (!containsgn2)

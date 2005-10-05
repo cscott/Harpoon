@@ -464,6 +464,34 @@ public class Termination {
 		}
 
 		for(int j=0;j<array.length;j++) {
+                    if (array[j]==AbstractRepair.ADDTOSET) {
+
+                        System.out.println("1");
+                        if ((dp.getPredicate() instanceof ExprPredicate)&&
+                            (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+                            System.out.println("2");
+                            boolean neg=dp.isNegated();
+                            Opcode op=((ExprPredicate)dp.getPredicate()).getOp();
+                            int size=((ExprPredicate)dp.getPredicate()).rightSize();
+                            op=Opcode.translateOpcode(neg,op);
+                            Descriptor des=((ExprPredicate)dp.getPredicate()).getDescriptor();
+                            if (des instanceof SetDescriptor) {
+                                System.out.println("3");
+
+                                int minsize=exactsize.minSize((SetDescriptor)des);
+                                Constraint reqc=exactsize.ensuresMinSize((SetDescriptor)des);
+                                if (((size==minsize)&&(op==Opcode.EQ))||
+                                    ((size<=minsize)&&(op==Opcode.GE))||
+                                    ((size<minsize)&&(op==Opcode.GT))) {
+                                    System.out.println("4");
+                                    constraintdependence.requiresConstraint(gn,reqc);
+                                    //force good ordering
+                                    continue; //no repair action needed here...
+                                }
+                            }
+                        }
+                    }
+
 		    AbstractRepair ar=new AbstractRepair(dp,array[j],d,sources);
 		    TermNode tn2=new TermNode(ar);
 		    //		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),gn.getTextLabel()+" #"+i+" "+ar.type(),tn2);

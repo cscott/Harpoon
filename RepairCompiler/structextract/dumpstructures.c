@@ -582,14 +582,38 @@ char * printname(dwarf_entry * type,int op) {
   case DW_TAG_structure_type: {
     collection_type *ctype=(collection_type*)type->entry_ptr;
     if (op==GETTYPE&&ctype->name==NULL&&assigntype) {
-      ctype->name=(char*)malloc(100);
-      sprintf(ctype->name,"unnamed_0x%lx",type->ID);
+      char *newb=(char *)malloc(1000);
+      int newchars=0;
+      int i;
+      ctype->name=newb;
+      newchars=sprintf(newb,"unnamed_",type->ID);
+      newb+=newchars;
+      for(i=0;i<ctype->num_members;i++) {
+        dwarf_entry * de=ctype->members[i];
+        if (de->tag_name==DW_TAG_member) {
+          member * me=(member *)de->entry_ptr;
+          newchars=sprintf(newb,"%s",me->name);
+          newb+=newchars;
+        }
+      }
     }
     if (op==GETTYPE)
       return ctype->name;
     if (op==GETJUSTTYPE&&ctype->name==NULL&&assigntype) {
-      ctype->name=(char*)malloc(100);
-      sprintf(ctype->name,"unnamed_0x%lx",type->ID);
+      char *newb=(char *)malloc(1000);
+      int newchars=0;
+      int i;
+      ctype->name=newb;
+      newchars=sprintf(newb,"unnamed_",type->ID);
+      newb+=newchars;
+      for(i=0;i<ctype->num_members;i++) {
+        dwarf_entry * de=ctype->members[i];
+        if (de->tag_name==DW_TAG_member) {
+          member * me=(member *)de->entry_ptr;
+          newchars=sprintf(newb,"%s",me->name);
+          newb+=newchars;
+        }
+      }
     }
     if (op==GETJUSTTYPE)
       return ctype->name;

@@ -8,15 +8,32 @@ class ExactSize {
     private Hashtable sizemap;
     private Hashtable constraintmap;
     private SetAnalysis setanalysis;
+    private Hashtable minsize;
+    private Hashtable constraintensureminsize;
 
     public ExactSize(State state) {
 	this.state=state;
 	this.sizemap=new Hashtable();
+        this.minsize=new Hashtable();
+        this.constraintensureminsize=new Hashtable();
 	this.constraintmap=new Hashtable();
 	this.setanalysis=state.setanalysis;
 	computesizes();
     }
-    
+
+    public int minSize(SetDescriptor sd) {
+	SizeObject so=new SizeObject(sd);
+	if (minsize.containsKey(so))
+	    return ((Integer)minsize.get(so)).intValue();
+	else
+	    return 0;
+    }
+
+    public Constraint ensuresMinSize(SetDescriptor sd) {
+        SizeObject so=new SizeObject(sd);
+	return (Constraint)constraintensureminsize.get(so);
+    }
+
     public int getsize(SetDescriptor sd) {
 	SizeObject so=new SizeObject(sd);
 	if (sizemap.containsKey(so))
@@ -55,6 +72,56 @@ class ExactSize {
 	return null;
     }
 
+    private void constructminsizes() {
+        boolean change=true;
+        HashSet usedsources=new HashSet();
+        while (change) {
+            change=false;
+            for(int i=0;i<state.vRules.size();i++) {
+                Rule r=(Rule)state.vRules.get(i);
+                //model defition rule with no condition
+                if ((!(r.getGuardExpr() instanceof BooleanLiteralExpr))||
+                    (!((BooleanLiteralExpr)r.getGuardExpr()).getValue()))
+                    continue;
+                //inclusion condition needs to be safe
+                if ((!(r.getInclusion() instanceof SetInclusion))||
+                    (!((SetInclusion)r.getInclusion()).getExpr().isSafe()))
+                    continue;
+                //needs exactly 1 quantifier which is a set quantifier
+                if (r.numQuantifiers()!=1||
+                    (!(r.getQuantifier(0) instanceof SetQuantifier)))
+                    continue;
+                SetQuantifier sq=(SetQuantifier)r.getQuantifier(0);
+                SetDescriptor sd=sq.getSet();
+                int size=-1;
+                Constraint source=null;
+                if (getsize(sd)>0) {
+                    size=getsize(sd);
+                    source=getConstraint(sd);
+                } else if (minSize(sd)>0) {
+                    size=minSize(sd);
+                    source=ensuresMinSize(sd);
+                } else continue;
+                if (size>1)
+                    size=1; //would need more in depth analysis otherwise
+                SetDescriptor newsd=((SetInclusion)r.getInclusion()).getSet();
+                if (usedsources.contains(newsd))
+                    continue; //avoid dependence cycles in our analysis
+                //need to force repair to fix one of the constraints in the cycle
+                int currentsize=minSize(newsd);
+                if (size>currentsize) {
+                    SizeObject so=new SizeObject(newsd);
+                    minsize.put(so, new Integer(size));
+                    constraintensureminsize.put(so,source);
+                    usedsources.add(source);
+		    System.out.println("Set "+newsd.toString()+" has minimum size "+size);
+                    change=true;
+                    //need update
+                }
+            }
+        }
+    }
+
     private void computesizes() {
 	for(Iterator it=state.stSets.descriptors();it.hasNext();) {
 	    SetDescriptor sd=(SetDescriptor)it.next();
@@ -88,7 +155,7 @@ class ExactSize {
 					    break;
 					}
 				    }
-				} 			
+				}
 			    }
 			}
 		    }
@@ -143,7 +210,7 @@ class ExactSize {
 					    break;
 					}
 				    }
-				} 			
+				}
 			    }
 			}
 		    }
@@ -160,5 +227,6 @@ class ExactSize {
 		}
 	    }
 	}
+        constructminsizes();
     }
 }

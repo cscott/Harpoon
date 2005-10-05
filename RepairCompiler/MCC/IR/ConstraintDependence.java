@@ -19,7 +19,7 @@ public class ConstraintDependence {
 	nodetonode=new Hashtable();
 	constructnodes();
     }
-    
+
     public Set computeOrdering() {
 	HashSet allnodes=new HashSet();
 	allnodes.addAll(constnodes);
@@ -36,7 +36,7 @@ public class ConstraintDependence {
                     return g1.getFinishingTime() - g2.getFinishingTime();
                 }
             });
-	
+
         topologicalsort.addAll(constnodes);
 	return topologicalsort;
     }
@@ -110,7 +110,7 @@ public class ConstraintDependence {
 	    constnodes.add(gn);
   	}
     }
-    
+
     private void constructconjunctionnodes(Termination termination) {
 	/*for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
 	  GraphNode conjnode=(GraphNode)it.next();
@@ -137,7 +137,7 @@ public class ConstraintDependence {
 	    GraphNode conjnode=(GraphNode)it.next();
 	    if (removedset.contains(conjnode))
 		continue;
-	    
+
 	    TermNode tn=(TermNode)conjnode.getOwner();
 	    Conjunction conj=tn.getConjunction();
 	    for(int i=0;i<conj.size();i++) {
@@ -215,7 +215,7 @@ public class ConstraintDependence {
 	}
 	return foundrule;
     }
- 
+
     static private Set providesfunction(State state, Function f) {
 	return providesfunction(state,f,false);
     }

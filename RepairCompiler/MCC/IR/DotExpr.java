@@ -57,12 +57,23 @@ public class DotExpr extends Expr {
     public boolean isSafe() {
 	if (!left.isSafe())
 	    return false;
+
 	FieldDescriptor tmpfd=fd;
-	if (tmpfd instanceof ArrayDescriptor)
-	    return false; // Arrays could be out of bounds
+
 	if (tmpfd.getPtr()) // Pointers cound be invalid
 	    return false;
-	return true;
+
+	if (tmpfd instanceof ArrayDescriptor) {
+            Expr arrayindex=((ArrayDescriptor)tmpfd).getIndexBound();
+            if (index instanceof IntegerLiteralExpr&&arrayindex instanceof IntegerLiteralExpr) {
+                int indexvalue=((IntegerLiteralExpr)index).getValue();
+                int arrayindexvalue=((IntegerLiteralExpr)arrayindex).getValue();
+                if (indexvalue>=0&&indexvalue<arrayindexvalue)
+                    return true;
+            }
+	    return false; // Otherwise, arrays could be out of bounds
+        }
+        return true;
     }
 
     public Set freeVars() {
