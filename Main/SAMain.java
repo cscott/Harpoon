@@ -44,6 +44,7 @@ import harpoon.Analysis.PA2.AllocSync.WPAllocSyncCompStage;
 import harpoon.Analysis.PA2.Mutation.WPMutationAnalysisCompStage;
 
 import harpoon.Util.Options.Option;
+import harpoon.Util.Timer;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -96,7 +97,7 @@ import jpaul.Misc.BoolMCell;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SAMain.java,v 1.70 2005-09-30 18:58:12 salcianu Exp $ */
+ * @version $Id: SAMain.java,v 1.71 2005-10-05 16:20:46 salcianu Exp $ */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean OPTIMIZE = false;
@@ -173,7 +174,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void buildQuadFormPipeline() {
-	// Pointer Analysis v2
+	// Pointer Analysis 2nd implementation
 	// detail: boolean flag to enable the pointer analysis
 	BoolMCell paEnabled = new BoolMCell(false);
 	addStage(new WPPointerAnalysisCompStage(paEnabled));
@@ -374,7 +375,10 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
     protected static void message(String msg) {
-	if(!QUIET) System.out.print(msg);
+	if(!QUIET) {
+	    System.out.print(msg);
+	    System.out.flush();
+	}
     }
 
     protected static void messageln(String msg) {
@@ -589,10 +593,17 @@ public class SAMain extends harpoon.IR.Registration {
 	    
 	    // make a rough class hierarchy.
 	    hcf = new CachingCodeFactory(hcf);
+
+	    Timer timer = new Timer();
+	    message("  class hierarchy construction ... ");
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    messageln(timer.toString());
 	    
-	    // use the rough class hierarchy to devirtualize as many call
-	    // sites as possible.
+	    // use the rough class hierarchy to devirtualize as many
+	    // call sites as possible.
+
+	    // NOTE: doesn't make sense to time: actual optimization
+	    // is performed lazily; this is just an object creation.
 	    hcf = new harpoon.Analysis.Quads.Nonvirtualize
 		(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
 		 classHierarchy).codeFactory();
@@ -609,17 +620,21 @@ public class SAMain extends harpoon.IR.Registration {
 	// when the main method is called, all the relevant classes have
 	// been initialized.
 	private void handle_class_initializers() {
+	    Timer timer = new Timer();
+	    message("  initializer transform ... ");
 	    // transform the class initializers using the class hierarchy.
 	    String resource = frame.getRuntime().resourcePath
 		("init-safe.properties");
 	    hcf = new harpoon.Analysis.Quads.InitializerTransform
 		(hcf, classHierarchy, linker, resource).codeFactory();
+	    message("(+ redo class hierarchy) ");
 	    // recompute the hierarchy after transformation.
 	    hcf = new CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    // config checking
 	    frame.getRuntime().configurationSet.add
 		("check_with_init_check_needed");
+	    messageln(timer.toString());
 	}
     }
 
