@@ -27,7 +27,7 @@ import java.util.Set;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.12 2005-08-09 20:38:28 salcianu Exp $
+ * @version $Id: CallGraphImpl.java,v 1.13 2005-10-05 16:10:22 salcianu Exp $
  */
 public class CallGraphImpl extends AbstrCallGraph  {
     final ClassHierarchy ch;
@@ -73,6 +73,8 @@ public class CallGraphImpl extends AbstrCallGraph  {
      *  method at a particular call site. */
     public HMethod[] calls(final HMethod m, final CALL cs) {
 	HMethod cm = cs.method();
+	String cmName = cm.getName();
+	String cmDesc = cm.getDescriptor();
 	// for 'special' invocations, we know the method exactly.
 	if ((!cs.isVirtual()) || cs.isStatic()) return new HMethod[]{ cm };
 	final Set<HMethod> s = new HashSet<HMethod>();
@@ -85,8 +87,7 @@ public class CallGraphImpl extends AbstrCallGraph  {
 	    // implementation of the method should be added to the set.
 	    if (ch.instantiatedClasses().contains(c))
 		try {
-		    s.add(c.getMethod(cm.getName(),
-				      cm.getDescriptor()));
+		    s.add(c.getMethod(cmName, cmDesc));
 		} catch (NoSuchMethodError nsme) { }
 	    // recurse through all children of this method's class.
 	    for (Iterator<HClass> it=ch.children(c).iterator(); it.hasNext(); )
