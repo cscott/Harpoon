@@ -25,7 +25,7 @@ import java.util.Map;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.11 2005-09-30 19:01:47 salcianu Exp $
+ * @version $Id: ImplMagic.java,v 1.12 2005-10-05 16:22:31 salcianu Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -84,19 +84,32 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    // Machine Specification, section 4.1, which offers zero
 	    // explanation for this strange behaviour.
 	    if (isInterface()) this.superclass = null;
+
+	    // The object will not be mutated after the end of the
+	    // constructor that's the perfect time to (pre)compute its
+	    // cached descriptor and hashCode.  Pre-computation
+	    // instead of 1st-time comp. saves us the test (at the
+	    // expense of computing data that may be unnecessary;
+	    // hopefully this occurs less frequently than the tests).
+	    descriptor = super.getDescriptor();
+	    hashcode   = super.hashCode();
 	} 
+
 	// optimize hashcode.
-	private transient int hashcode=0;
-	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
-	    if (hashcode==0) hashcode = super.hashCode();
-	    return hashcode;
-	}
+	public int hashCode() { return hashcode; }
+	private final int hashcode;
+
+	// [AS 09/28/05] added some caching
+	public String getDescriptor() { return descriptor; }
+	private final String descriptor; // initialized in the constructor
+
 	// [AS 09/28/05]: added to stop a really NASTY bug.  We do need
 	// Bill Pugh's tool as a standard part of javac :)
 	public boolean equals(Object o) {
 	    return (o instanceof HClass &&
 		    ((HClass)o).getDescriptor().equals(getDescriptor()));
 	}
+	// [AS 09/28/05] end
     } // END MagicClass
     
     // utility function to initialize HMethod/HConstructor/HInitializer.
@@ -214,6 +227,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
+	}
+	public boolean equals(Object obj) {
+	    if(this.hashCode() != obj.hashCode()) {
+		return false;
+	    }
+	    return super.equals(obj);
 	}
     } // END MagicMethod
 
