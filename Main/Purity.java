@@ -13,12 +13,12 @@ import java.net.URL;
  * <code>Purity</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Purity.java,v 1.3 2005-09-30 19:01:47 salcianu Exp $
+ * @version $Id: Purity.java,v 1.4 2005-10-05 16:28:16 salcianu Exp $
  */
 public class Purity {
 
     /** Version number for the Purity tool. */
-    public static String VERSION = "0.01";
+    public static String VERSION = "0.02";
     
     /** Convenient entry point for the purity analysis.
         <code>args[0]</code> should be the main class of the
@@ -71,6 +71,8 @@ public class Purity {
 	sa_args.add("--wp-mutation");
 	sa_args.add("--wp-mutation-save");
 	sa_args.add("--no-code-gen");
+	sa_args.add("--pa2:time-pre");
+	sa_args.add("--pa2:stats");
 
 	sa_args.add("-c");
 	sa_args.add(mainClassName);

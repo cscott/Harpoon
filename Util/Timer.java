@@ -26,31 +26,31 @@ public class Timer {
     private long timeElapsed, timerStart;
 
     /** Create a new Timer and initialize timeElapsed to 0. */
-
     public Timer() {
 	timeElapsed = 0;
-	timerStart = -1;
 	this.start();
     }
 
     /** Ask if the timer is currently running. */
-
     public boolean running() {
 	return timerStart != -1;
     }
 
     /** Start the timer running. */
-
     public void start() {
 	timerStart = System.currentTimeMillis();
     }
 
     /** Stop the timer. */
-
     public void stop() {
 	timeElapsed += System.currentTimeMillis() - timerStart;
 	assert timerStart != -1 : "Two Timer.stop() without Timer.start()";
 	timerStart = -1;
+    }
+
+    public void freshStart() {
+	timeElapsed = 0;
+	this.start();
     }
 
     /** Return the cumulative amount of time elapsed between starts and stops

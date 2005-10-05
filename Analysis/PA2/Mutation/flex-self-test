@@ -2,7 +2,7 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: flex-self-test,v 1.2 2005-10-05 16:18:53 salcianu Exp $
+## $Id: flex-self-test,v 1.3 2005-10-05 16:28:16 salcianu Exp $
 
 echo Flex analyzing its own purity\; the analysis will take many hours\!
 
@@ -27,5 +27,4 @@ java -ea -Xss16m -Xmx1600m \
 harpoon.Main.Purity \
 harpoon.Main.Purity \
 ${ANALYSIS_CODE_PATH} \
---pa2:time-pre --pa2:stats \
 2>&1 | tee $PKHOME/out.txt
