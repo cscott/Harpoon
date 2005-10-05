@@ -45,7 +45,7 @@ import harpoon.Util.Timer;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.7 2005-09-05 21:30:58 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.8 2005-10-05 16:15:29 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -97,7 +97,7 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 	CachingCodeFactory ccf;
 	if(!(hcf instanceof CachingCodeFactory) || !hcf.getCodeName().equals(QuadRSSx.codename)) {
 	    ccf = new CachingCodeFactory(QuadRSSx.codeFactory(QuadSSA.codeFactory(hcf)));
-	    hcf = ccf;	
+	    hcf = ccf;
 	}
 	else { 
 	    ccf = (CachingCodeFactory) hcf;
@@ -148,25 +148,47 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
     }
 
 
-    private void timePreanalysis(CachingCodeFactory ccf, CallGraph cg) {
-	System.out.println("\nSSA IR GENERATION");
-	Timer timer = new Timer();
-	for(HMethod hm : classHierarchy.callableMethods()) {
-	    ccf.convert(hm);
-	}
-	System.out.println("SSA IR GENERATION TOTAL TIME: " + timer);
+    private static int PROGRESS_PERIOD = 20;
 
-	System.out.println("\nCALL GRAPH CONSTRUCTION");
-	timer = new Timer();
+    private void timePreanalysis(CachingCodeFactory ccf, CallGraph cg) {
+	System.out.print("  TIME-PREANALYSIS\n    SSA IR GENERATION ");
+	System.out.flush();
+	Timer timer = new Timer();
+	int mcount = 0, cscount = 0;
+	for(HMethod hm : classHierarchy.callableMethods()) {
+	    HCode hcode = ccf.convert(hm);
+	    if(hcode == null) continue;
+	    if((++mcount) % PROGRESS_PERIOD == 0) System.out.print("#");
+	}
+	System.out.println(" OK; " + mcount + " methods; " + timer);
+
+	HClass.enterImmutableEpoch();
+
+	System.out.print("    CALL GRAPH CONSTRUCTION ");
+	System.out.flush();
+	//Timer method_timer = new Timer();
+	timer.freshStart();
+	mcount = 0; cscount = 0;
 	for(HMethod hm : classHierarchy.callableMethods()) {
 	    HCode hcode = ccf.convert(hm);
 	    if(hm == null) continue;
+	    //System.out.print("\n" + hm + " ... ");
+	    //method_timer.freshStart();
 	    for(CALL call : cg.getCallSites(hm)) {
 		HMethod[] callees = cg.calls(hm, call);
+		cscount++;
 	    }
+	    //System.out.print(method_timer + " / ");
+	    //method_timer.freshStart();
 	    HMethod[] callees = cg.calls(hm);
+	    //System.out.println(method_timer);
+	    if((++mcount) % PROGRESS_PERIOD == 0) System.out.print("#");
 	}
-	System.out.println("CALL GRAPH CONSTRUCTION TOTAL TIME: " + timer);
+
+	HClass.exitImmutableEpoch();
+
+	System.out.println();
+	System.out.println(" OK; " + mcount + " methods; " + cscount + " CALLs; " + timer + "\n");
     }
 
 
