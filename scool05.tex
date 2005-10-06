@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.16 2005-10-06 14:41:12 cananian Exp $
+% $Id: scool05.tex,v 1.17 2005-10-06 15:19:04 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -154,7 +154,7 @@ cache/memory system,
 have inspired similar Software Transactional Memory (STM) systems
 \cite{ShavitTo95,HarrisFr03}.  We suggest that the
 exclusive\footnote{In \secref{hybrid} we describe how to use a small
-  flat HTM to make our fundamentally object-based system more efficient.}
+  flat HTM to augment our object-based system.}
 use of flat memory abstractions in designing a modern lightweight
 transaction system is a mistake.
 
@@ -271,7 +271,7 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
   operations (loads and stores).  These are full input size runs.
 }\label{fig:perfnums}
 \end{figure*}
-\figput{tr-quad}{Classification of SPECjvm98 benchmarks into quadrants
+\figput{tr-quad2}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
 \figref{perfnums} (previously presented in \cite{AnanianAsKuLeLi04}) shows the raw sizes and frequency of transactions in

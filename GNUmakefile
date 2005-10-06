@@ -94,6 +94,13 @@ lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 	 Figures/Images/model-t-black.eps	\
 	 Figures/Images/model-t-redblue.eps	\
 
+# scool05 paper dependencies
+scool05.dvi: \
+	Figures/sean_lie_6b.eps Figures/nb-single-obj.eps \
+	Figures/nb-multi-obj.eps Figures/chuang.eps Figures/funarr.eps \
+	Figures/tr-sz-all.eps Figures/tr-w-all.eps Figures/bloat.eps \
+	$(foreach f, tr-multi-obj tr-quad2,\
+	  Figures/$(f).pstex Figures/$(f).pstex_t)
 # pldi04 paper dependencies
 pldi04.dvi ecoop04.dvi popl05.dvi: \
 	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
