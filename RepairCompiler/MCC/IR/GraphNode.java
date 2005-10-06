@@ -75,7 +75,7 @@ public class GraphNode {
     String nodeoption="";
 
     public void setOption(String option) {
-	this.nodeoption=option;
+	this.nodeoption=","+option;
     }
 
     public void setMerge() {
@@ -276,7 +276,7 @@ public class GraphNode {
 		if (special!=null&&special.contains(gn))
 		    option+=",shape=box";
 		if (!gn.merge)
-		    output.println("\t" + gn.getLabel() + " [label=\"" + label + "\"" + gn.dotnodeparams + option+"];");
+                    output.println("\t" + gn.getLabel() + " [label=\"" + label + "\"" + gn.dotnodeparams + option+"];");
 
 		if (!gn.merge)
                 while (edges.hasNext()) {
