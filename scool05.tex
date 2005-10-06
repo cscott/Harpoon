@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.18 2005-10-06 15:24:57 cananian Exp $
+% $Id: scool05.tex,v 1.19 2005-10-06 17:23:48 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -321,17 +321,18 @@ overwrite a flagged value will indicate to non-transactional code
 that exceptional processing is necessary; all other non-transactional
 operations proceed as usual.
 
+This read barrier is the only overhead required for non-transactional
+code.  As the test is simple and predictable, the runtime cost can be
+very low: the compare-and-branch can be scheduled in otherwise unused
+instruction slots on a multiple-issue processor \cite{HudsonMoSuWa00}.
+
 Note that our technique explicitly allows safe access to fields
 involved in a transaction from non-transactional code.
-\punt{
-Ensuring that transactional updates remain atomic to non-transactional
-code eases ``transactification'' and 
-Key idea is to allow safe access by non-transactional code, so as to
-allow transactification.
-}
 
 \epsfigput{bloat}{Application slowdown with increasing object bloat
-for the SPECjvm98 benchmark applications.}
+for the SPECjvm98 benchmark applications.  Note that in some cases
+bloat actually increases performance, due to fortuitous alignment and
+cache effects.}
 \subsection{Object expansion}
 We will need to add some additional information to each object to
 track transaction state.  We measured the slowdown caused by various
@@ -340,7 +341,12 @@ size of this extra information.  \figref{bloat} presents these
 results for the SPECjvm98 applications; we determined that two words
 (eight bytes) of additional storage per object would not impact
 performance unreasonably.  This amount of bloat causes a geometric
-mean of 2\% slowdown on these benchmarks.
+mean of 2\% (and no more than 10\%) slowdown on these benchmarks,
+including costs caused by increased heap size and more-frequent
+garbage collection.
+This is consistent with the results reported by Bacon, Fink, and
+Grove, who found that reducing object header size from two words to one
+gave speedups ranging from -1.5\% to 2.2\% \cite{BaconFiGr02}.
 
 \begin{figure}
 \begin{center}
@@ -381,14 +387,18 @@ scaling and proper fault-tolerant behavior: one faulty or slow
 processor cannot hold up the remaining good processors.
 
 We will implement the synchronization required by our algorithm using
-load-linked/store-conditional instructions.  We require a particular
+Load-Linked/Store-Conditional instructions.  We require a particular
 variant of these instructions that allows the location of the
-load-linked to be different from the target of the store-conditional:
+Load-Linked to be different from the target of the Store-Conditional:
 this variant is supported on the PowerPC processor family, although it
 has been deprecated in the newest chips.  This disjoint location
 capability is essential to allow us to keep a finger on one location
 while modifying another: a poor man's ``Double Compare And Swap''
-instruction.
+instruction.  Load-Linked/Store-Conditional also
+provides a convenient solution to the so-called ``ABA'' problem of
+Compare-And-Swap.\footnote{Store-Conditional will fail if the target
+  of the Load-Linked is written to, even if the value written is
+  identical to value previously in the location.}
 
 We will describe our algorithms in the Promela modeling language
 \cite{Holzmann03},
@@ -490,11 +500,11 @@ inline readNT(o, f, v) {
 The {\tt WriteNT} function does a non-transactional write of new value $nval$
 to field $f$ of object $o$.  For correctness, we need to ensure that
 the reader list is empty before we do the write.  We implement this
-with a load-linked/store-conditional pair, which is modelled in
+with a Load-Linked/Store-Conditional pair, which is modelled in
 Promela slightly differently, ensuring that our write only succeeds
 so long as the reader list remains empty.\footnote{Note that a
-  standard CAS would not suffice, as the load-linked targets a
-  different location than the store-conditional.}
+  standard CAS would not suffice, as the Load-Linked targets a
+  different location than the Store-Conditional.}
 If it is not empty, we
 call the copy-back procedure (as in {\tt readNT}), passing the
 constant {\tt kill\_all} to indicate that both transactional readers
@@ -628,7 +638,7 @@ inline copyBackField(o, f, mode, st) {
 \figref{copyback} presents the field copy-back routine.  We create a
 new version owned by a pre-aborted transaction which serves as a
 reservation on the head of the version list.  We then write to the
-object field with a load-linked/store-conditional pair if and only if
+object field with a Load-Linked/Store-Conditional pair if and only if
 our version is still at the head of the versions list.\footnote{Note
   again that a CAS does not suffice.}  This addresses
 the major race possible in this routine.
@@ -835,7 +845,7 @@ This is shown in the {\tt ensureWriter} routine in \figref{ensurewriter}.
 Once for each field we intend to write, we must perform a
 copy-through: copy the object's field value into all the versions and
 then write \FLAG to the object's field.  We use
-load-linked/store-conditional to update versions only if the object's
+Load-Linked/Store-Conditional to update versions only if the object's
 field has not already been set to \FLAG behind our backs by another
 copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
@@ -902,7 +912,10 @@ object-based software system.  The field flag mechanism described in
 \secref{flagfield} ensures that software transactions properly abort
 conflicting hardware transactions; hardware transactions must perform
 the \texttt{ReadNT} and \texttt{WriteNT} algorithms for a slight
-overhead (as shown in the figure).
+overhead (as shown in the figure).  The read barriers involved might
+be another target for hardware support \cite{ClickTeWo05}; one could
+also use small hardware transactions to implement the
+Load-Linked/Store-Conditional atomic sequences.
 
 \secput{verification}{Verification}
 The Promela model of this software transaction system was model
@@ -912,14 +925,12 @@ done on an SGI 64-processor MIPS machine with 16G of memory.
 
 Sequences of transactional and non-transactional load and store
 operations were checked using two concurrent processes,
-\punt{
 \footnote{Spin is not particularly suited to checking models with dynamic
 allocation and deallocation.  In particular, the order of allocation
 artificially enlarges the state space.
 A great deal of effort was expended tweaking the
 model to approach a canonical allocation ordering.  A better solution
 to this problem would allow larger model instances to be checked.}
-}
 and all possible
 interleavings were found to produce results consistent with
 the semantic atomicity of the transactions.  A number of subtle race
