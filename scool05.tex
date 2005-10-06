@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.17 2005-10-06 15:19:04 cananian Exp $
+% $Id: scool05.tex,v 1.18 2005-10-06 15:24:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -276,7 +276,7 @@ based on transaction properties.}
 
 \figref{perfnums} (previously presented in \cite{AnanianAsKuLeLi04}) shows the raw sizes and frequency of transactions in
 the transactified SPECjvm98 suite.
-\figref{tr-quad} proposes a
+\figref{tr-quad2} proposes a
 taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
 transactions that they perform.
@@ -290,12 +290,14 @@ desired transaction and/or atomicity properties will inevitably result
 in some applications in each of these categories.  Existing
 hardware transactional memory schemes only efficiently handle
 relatively short-lived and small transactions (Quad I or II),
-although for these they are very efficient.  Object-based
-transaction systems can asymptotically approach that efficiency for
-very long-lived transactions;  the existence of such is shown in
+although for these they are very efficient.  However, large and
+long-lived transactions can be readily seen in 
 \figref{tr-sz-all}, which plots
 the distribution of transaction sizes in SPECjvm98
-on a semi-log scale.
+on a semi-log scale.  Object-based transaction systems pay copying
+overhead up front, making them costly for small transactions, but have
+low subsequent per-operation costs, which make them the best choice
+for long-lived transactions.
 
 An ideal system would combine an HTM and an object-based
 transaction system to obtain the strengths of both; we will briefly
