@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.14 2005-10-04 23:25:31 cananian Exp $
+% $Id: scool05.tex,v 1.15 2005-10-06 13:50:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -64,6 +64,7 @@
 \newcommand{\addr}[1]{\ensuremath{\text{\tt \&}(#1)}}
 \newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
 
+\newcommand{\FLAG}{\texttt{FLAG}\xspace}
 
 \begin{document}
 \conferenceinfo{SCOOL'05,} {October 16, 2005, San Diego, California, USA.}
@@ -105,14 +106,16 @@ DARPA/AFRL Contract F33615-00-C-1692.}%
   The design presented cooperates well with an HTM providing support
   for small short transactions.
 \end{abstract}
-% XXX FIX ME XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+\category{C.0}{Computer Systems
+  Organization}{General}[Hardware/software interfaces]
 \category{D.3.2}{Programming Languages}{Language
   Classifications}[Object-oriented languages, Java]
+\category{D.3.3}{Programming Languages}{Language Constructs and
+  Features}[Concurrent programming structures]
 \category{D.3.4}{Program\-ming Languages}{Processors}[Compilers]
 \category{E.2}{Data Storage Representations}{Object representation}
-\terms{Languages, Performance, Experimentation, Algorithms}
-\keywords{Transactions}
-
+\terms{Algorithms, Verification, Languages, Experimentation}
+\keywords{Object-based transactions, synchronization, Java, Promela, SPIN}
 
 %
 \secput{intro}{Introduction}
@@ -121,13 +124,13 @@ fault-tolerance, exception-handling, and back-tracking.
 Although transactions can be implemented using mutual exclusion
 (locks), our algorithms will utilize non-blocking synchronization%
 \footnote{We use the term \emph{non-blocking} to describe
-generally any synchronization mechanism which doesn't rely on mutual
+generally any synchronization mechanism that doesn't rely on mutual
 exclusion or locking, including wait-free~\cite{Herlihy88},
 lock-free~\cite{MassalinPu91},
 and obstruction-free~\cite{HerlihyLuMo03} implementations.}
 to exploit optimistic concurrency among transactions.
 Non-blocking synchronization offers a number of advantages; among them
-fault-tolerance: processes which
+fault-tolerance: processes that
 fail in critical regions cannot prevent other processes from making
 progress.
 
@@ -154,7 +157,7 @@ transaction system is a mistake.
 There is no guarantee that the transactional data in an application
 will be matched to word, cache line, or page boundaries, leading to
 false sharing.  This false sharing may have semantic implications when
-transactions which ought to be able to commit in parallel are instead
+transactions that ought to be able to commit in parallel are instead
 made exclusive become some piece of data is co-located.  To some
 degree authors of parallel code are already aware of these issues: locks
 are placed, for example, to minimize cache ping-pong on SMP
@@ -196,14 +199,14 @@ break up large objects; we present our own solution to this problem in
 \secref{large}.
 
 In the following section we will examine the properties of
-transactional code which motivate our design.
+transactional code that motivate our design.
 
 \secput{properties}{Properties of Transactions}
 One of the difficulties of evaluating transaction implementations is the
 lack of benchmarks.  Although there is no body of
 code yet using {\tt atomic} regions, there is a substantial body of
-code which uses Java (locking) synchronization.  We have implemented a
-compiler which substitutes {\tt atomic} blocks/methods for {\tt
+code that uses Java (locking) synchronization.  We have implemented a
+compiler that substitutes {\tt atomic} blocks/methods for {\tt
   synchronized} blocks/methods in order to evaluate the properties
 Java transactions are likely to have.  Note that the semantics are not
 precisely compatible: the existing Java memory model allows
@@ -270,13 +273,13 @@ the transactified SPECjvm98 suite.
 \figref{tr-quad} proposes a
 taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
-transactions which they perform.
+transactions that they perform.
 
 \epsfigput{tr-sz-all}{Distribution of transaction size in the
   SPECjvm98 benchmark suite.  Note that the x-axis uses a logarithmic
   scale.}
 
-Any scheme which allows the programmer free choice of
+Any scheme that allows the programmer free choice of
 desired transaction and/or atomicity properties will inevitably result
 in some applications in each of these categories.  Existing
 hardware transactional memory schemes only efficiently handle
@@ -364,14 +367,14 @@ field, we wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
 
 \secput{algo}{Software Transaction Mechanism}
-We now present an algorithm which has these desired properties.
+We now present an algorithm that has these desired properties.
 Our algorithms will be completely non-blocking, which allows good
 scaling and proper fault-tolerant behavior: one faulty or slow
 processor cannot hold up the remaining good processors.
 
 We will implement the synchronization required by our algorithm using
 load-linked/store-conditional instructions.  We require a particular
-variant of these instructions which allows the location of the
+variant of these instructions that allows the location of the
 load-linked to be different from the target of the store-conditional:
 this variant is supported on the PowerPC processor family, although it
 has been deprecated in the newest chips.  This disjoint location
@@ -394,9 +397,9 @@ available from a URL given at the end of the paper.
   lists.  A transaction object consists of a single field {\it
     status}, which indicates if it has COMMITTED, ABORTED, or is WAITING.
   Each object contains two extra fields: {\it readers}, a
-  singly-linked list of transactions which have read this object; and
+  singly-linked list of transactions that have read this object; and
   {\it versions} a linked list of version objects.  If an object field
-  is FLAG, then the value for the field is obtained from the
+  is \FLAG, then the value for the field is obtained from the
   appropriate linked version object.}
 \figref{tr-multi-obj} illustrates the basic data structures of our
 software transaction implementation.  Objects are extended with two
@@ -407,24 +410,24 @@ identified by its {\tt owner} field.  There is a single unique
 transaction object for each transaction.
 
 The other added field, {\tt readers}, points to a singly-linked list
-of transactions which have read from this object.  Committed and
+of transactions that have read from this object.  Committed and
 aborted transactions are pruned from this list.  The {\tt readers}
 field is used to ensure that a transaction does not operate with
 out-of-date values if the object is later written
 non-transactionally.
 
-There is a special flag value, here denoted by {\tt FLAG}.  It should be
+There is a special flag value, here denoted by \FLAG.  It should be
 an uncommon value, i.e. not a small positive or negative integer
 constant, nor zero.  In our implementation, we have chosen the byte
 \texttt{0xCA} to be our flag value, repeated as necessary to fill out
 the width of the appropriate type.
 The semantic value of an object field is the value in the original
-object structure, \emph{unless that value is \texttt{FLAG}}, in which
+object structure, \emph{unless that value is \FLAG}, in which
 case the field's value is the value of the field in the first
 committed transaction in the object's version list.  A ``false flag''
-occurs when the application wishes to ``really'' store the value FLAG
+occurs when the application wishes to ``really'' store the value \FLAG
 in a field; this is handled by creating a fully-committed version
-attached to the object and storing FLAG in that version as well as in
+attached to the object and storing \FLAG in that version as well as in
 the object field.
 
 \subsecput{ops}{Operations}
@@ -432,7 +435,7 @@ We support transactional read/write and non-transactional read/write
 as well as transaction begin, transaction abort, and transaction
 commit.  Transaction begin simply involves the creation of a new
 transaction identifier object.  Transaction commit and abort are simply
-compare-and-swap operations which atomically set the transaction object's {\tt
+compare-and-swap operations that atomically set the transaction object's {\tt
   status} field appropriately if and only if it was previously in the
 WAITING state.
 The simplicity of commit and abort are appealing: our algorithm
@@ -446,12 +449,12 @@ We will present the other operations one-by-one.
 The {\tt ReadNT} function does a non-transactional read of field $f$ from
 object $o$, putting the result in $v$.
 In the common case, the only overhead is to check that
-the read value is not FLAG.  However, if the value read \emph{is}
-FLAG, we copy back the field value 
+the read value is not \FLAG.  However, if the value read \emph{is}
+\FLAG, we copy back the field value 
 from the most-recently committed transaction (aborting all other
 transactions) and try again.  The copy-back procedure will notify
 us if this is a ``false flag'', in which case the value of this
-field really is FLAG.  We pass the {\tt kill\_writers} constant
+field really is \FLAG.  We pass the {\tt kill\_writers} constant
 to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
@@ -490,7 +493,7 @@ constant {\tt kill\_all} to indicate that both transactional readers
 and writers should be aborted during the copy-back.  The copy-back
 procedure leaves the reader list empty.
 
-If the value to be written is actually the FLAG value, things get a
+If the value to be written is actually the \FLAG value, things get a
 little bit trickier.  This case does not occur often, and so the
 simplest correct implementation is to treat this non-transactional
 write as a short transactional write, creating a new transaction for
@@ -632,7 +635,7 @@ than our own.  These steps can be combined and hoisted so that they
 are done once before the first read from an object and not repeated.
 
 At read time, we initially read from the original object.  If the
-value read is not FLAG, we use it.  Otherwise, we look up the version
+value read is not \FLAG, we use it.  Otherwise, we look up the version
 object associated with our transaction (this will typically be at the
 head of the version list) and read the appropriate value from that
 version.  Note that the initial read-and-check can be omitted if we
@@ -823,9 +826,9 @@ This is shown in the {\tt ensureWriter} routine in \figref{ensurewriter}.
 
 Once for each field we intend to write, we must perform a
 copy-through: copy the object's field value into all the versions and
-then write FLAG to the object's field.  We use
+then write \FLAG to the object's field.  We use
 load-linked/store-conditional to update versions only if the object's
-field has not already been set to FLAG behind our backs by another
+field has not already been set to \FLAG behind our backs by another
 copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
 
@@ -921,7 +924,7 @@ readers to escape being aborted while racing a writer in
 \secput{related}{Related work}
 A number of researchers have been investigating transactional memory
 systems.  This is the first paper to present a model-checked non-blocking
-object-based system which allows co-existence of non-transactional and
+object-based system that allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 
 The first proposal for software transactional memory was proposed by
@@ -945,7 +948,7 @@ on object copying, and so has poor performance for large objects and
 arrays.  Not including work necessary to copy objects involved in
 writes, they require $O(R(R+W))$ work to open $R$ objects for reading
 and $W$ objects for writing, which may be quadratic in the number of objects
-involved in the transaction.   A list insertion benchmark which they
+involved in the transaction.   A list insertion benchmark that they
 present shows 9x slowdown over a locking scheme, they beat the locking
 implementation when more than 5-10 processors are active.  They
 present benchmark data with up to 576 threads on 72 processors.
@@ -966,7 +969,7 @@ Note that Harris and Fraser do not address the problem of
 concurrent non-transactional operations on locations involved in a
 transaction.  Java synchronization allows such concurrent operations,
 with semantics given by the Java memory model \cite{MansonPu02}.
-We support these operations safely using our FLAG mechanism.
+We support these operations safely using our \FLAG mechanism.
 }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \punt{
@@ -1170,7 +1173,7 @@ operations defined:
 \begin{itemize}
 \item $\funcname{FA-Create}(n)$: Return an array of size $n$.  The contents of
   the array are initialized to zero.
-\item $\funcname{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ which is
+\item $\funcname{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ that is
   functionally identical to array $A_j$ except that $A_{j'}(i)=v$.
   Array $A_j$ is not destroyed and can be accessed further.
 \item $\funcname{FA-Read}(A_j, i)$: Return $A_j(i)$.
@@ -1209,7 +1212,7 @@ during the execution of the atomic method.
 We will consider the following two operations on objects:
 \begin{itemize}
 \item $\funcname{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
-  there is a constant mapping function which given a field name
+  there is a constant mapping function that given a field name
   returns an integer index.  We will write the result of mapping $f$
   as \fref{f}{index}.  For simplicity, and without loss of generality,
   we will assume all fields are of equal size.
@@ -1235,7 +1238,7 @@ the object being updated appropriately:
 \end{itemize}
 
 The interesting cases are reads and writes inside an atomic method.
-At entry to our atomic method which will access (only) object $o$, we
+At entry to our atomic method that will access (only) object $o$, we
 store \fref{o}{fields} in a local variable $u$.  We create another
 local variable $u'$ which we initialize to $u$.  Then our read and
 write operations are implemented as:
@@ -1522,7 +1525,7 @@ updating.
 The key to constant-time access for single-threaded use is provided by the read
 operation.  A read to the root simply reads the appropriate value from
 the cache.  However, a read to a differential node triggers a series
-of rotations which swap the direction of differential nodes and result
+of rotations that swap the direction of differential nodes and result
 in the current array acquiring the cache and becoming the new root.
 This sequence of rotations is called \emph{re-rooting}, and is
 illustrated in Figure~\ref{fig:chuang}.  Each rotation
@@ -1629,7 +1632,7 @@ functional array; it consists of a {\tt size} for the array and a
 pointer to a {\tt Node}.  There are two types of nodes: a {\tt
   CacheNode} stores a value for every index in the array, and a {\tt
   DiffNode} stores a single change to an array.  {\tt Array} objects
-which point to {\tt CacheNode}s are roots.
+that point to {\tt CacheNode}s are roots.
 
 In step 1 of the figure, we have a root array $A$ and an
 array $B$ whose differential node $d_B$ points to $A$.  The functional
@@ -1645,7 +1648,7 @@ the value of $A$.
 
 We continue swinging pointers until step 5, when can finally set
 the element $x$ in the cache to $y$.  We perform this operation with a
-DCAS operation which checks that $\fref{C}{node}$ is still pointing to
+DCAS operation that checks that $\fref{C}{node}$ is still pointing to
 the cache as we expect.  Note that a concurrent rotation would swing
 $\fref{C}{node}$ in its step 1.  In general, therefore, the location
 pointing to the cache serves as a reservation on the cache.
@@ -1681,9 +1684,9 @@ using this six-step approach.
 %% %unsync rotate for transaction-local data.
 %% The first is to recognize that some array versions can only be seen by
 %% a single thread.  In particular, when we are working on an {\sl
-%%   IN-PROGRESS} operation, all array versions which it creates are
+%%   IN-PROGRESS} operation, all array versions that it creates are
 %% unreachable from other threads until the operation is committed.
-%% We can add a field {\tt creator} to the {\tt Array} object which records what
+%% We can add a field {\tt creator} to the {\tt Array} object that records what
 %% operation created that version.  If the {\tt creator} field of both
 %% $A$ and $B$ contains our own \var{oid} when we begin a rotate, we know
 %% that these versions are both thread local
@@ -1700,7 +1703,7 @@ transactions is providing atomicity within an operating system.
 Locking is difficult to reason about For example, we counted at the
 comments in the Linux filesystem layer, and found that about 15\% of
 the comments relate to locking protocols.  Those comments often
-describe global invariants of the program which are difficult to
+describe global invariants of the program that are difficult to
 verify.  And many kernel bugs involve races and deadlocks.
 
 [Dealing with nested transactions: modularity, semantics.]
@@ -1718,12 +1721,12 @@ to that same cache line will result in a T\_RFO cycle on the bus, to
 which the first processor's cache will result BUSY.  The second
 processor commits suicide (aborts itself) in response.
 
-[A processor which does transactional reads holds an irrevocable lock
+[A processor that does transactional reads holds an irrevocable lock
 on those cache lines until it commits or aborts itself, and any
-other processor which attempts a write on those lines will block,
+other processor that attempts a write on those lines will block,
 waiting.]
 
-This means that a processor which transactionally reads many locations
+This means that a processor that transactionally reads many locations
 and then loops forever without committing may prevent all other
 processors from ever making progress on their transactions.  This is a
 simple protocol error: the intervening processor should be able to
