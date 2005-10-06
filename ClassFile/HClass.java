@@ -33,12 +33,36 @@ import jpaul.DataStructs.NoCompTreeMap;
  * <code>HClass</code> objects are created with the <code>forName</code>,
  * <code>forDescriptor</code> and <code>forClass</code> methods of
  * <code>Linker</code>.
+ *
+ * <p><b>A note on mutability:</b> <code>HClass</code> objects may be
+ * mutable.  Of course, this is unpleasant for any attempt to cache
+ * the result of the expensive computations on such objects (e.g.,
+ * {@link #getMethod(String,String)}).  If you are VERY familiar with
+ * Flex, you can use caching in the periods when <code>HClass</code>es
+ * are guaranteed not to be mutated.  You just have to enter such a
+ * period (we call it <i>immutability epoch</i>) explicitly using
+ * {@link HClass.enterImmutableEpoch()} and end it using {@link
+ * HClass.exitImmutableEpoch()}.  E.g.,
+<pre>
+ HClass.enterImmutableEpoch();
+
+  Big computation that does not mutate HClass'es; e.g., a computation
+  that calls HClass.getMethod(String, String) a lot: construction of a
+  CallGraphImpl + all possible queries on it.
+
+ HClass.exitImmutableEpoch();
+</pre>
+ * Knowing that <code>HClass</code>es
+ * are not mutated in a certain code sequence is actually tricky,
+ * because most of the {@link harpoon.ClassFile.HCodeFactory
+ * HCodeFactories} are lazy; a good method is to use a {@link
+ * harpoon.ClassFile.CachingCodeFactory CachingCodeFactory} that has
+ * already computed the code of every method of interest.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.48 2005-10-05 15:49:20 salcianu Exp $
+ * @version $Id: HClass.java,v 1.49 2005-10-06 22:19:59 salcianu Exp $
  * @see harpoon.IR.RawClass.ClassFile
- * @see java.lang.Class
- */
+ * @see java.lang.Class */
 public abstract class HClass extends HPointer
   implements java.lang.Comparable<HClass>, ReferenceUnique, HType {
   /** The linker responsible for the resolution of this <code>HClass</code>
@@ -322,21 +346,41 @@ public abstract class HClass extends HPointer
     return _getMethod(name, descriptor);
   }
 
+  /* True if Flex is currently in an immutable epoch. */
   private static boolean immutableEpoch = false;
+  /* Number id of the current immutable epoch (if any). */
   private static int currentEpoch = 0;
+  /* Number id of the immutable epoch the cache(s) was/were computed.
+     This allows us to avoid reusing old (incorrect) caches from a
+     previous immutability epoch.  */
   private int cacheEpoch = -1;
 
-  public static void enterImmutableEpoch() {
+
+  /** Notifies the <code>HClass</code> implementation that Flex
+      enters an immutability epoch, i.e., a period of time when no
+      HClass will be mutated.  Inside an immutability epoch, expensive
+      <code>HClass</code> computations may perform caching.  These
+      caches are invalidated at the end of the current immutability
+      epoch, so there is danger of reusing caches from an old
+      epoch. */
+  public static final void enterImmutableEpoch() {
     currentEpoch++;
     immutableEpoch = true;
   }
 
-  public static void exitImmutableEpoch() {
+  /** Notifies the <code>HClass</code> implementation that Flex exits
+      an immutability epoch (i.e., in the future, Flex may mutate one
+      or more <code>HClass</code>. */
+  public static final void exitImmutableEpoch() {
     immutableEpoch = false;
   }
 
+  /* The cache for getMethod(String,String). */
   private Map<String,Map<String,HMethod>> cacheGetMethod;
 
+  /* Creates / refresh the caches: called the first time a cacheable
+     method is invoked in an immutability epoch.  This way, we make
+     sure we do not reuse the old caches (if any).  */
   private void refreshCache() {
     cacheGetMethod = 
       new MapWithDefault<String, Map<String,HMethod>>
