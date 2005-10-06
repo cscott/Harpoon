@@ -2,7 +2,7 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: purity-test,v 1.4 2005-10-05 16:28:16 salcianu Exp $
+## $Id: purity-test,v 1.5 2005-10-06 22:17:32 salcianu Exp $
 
 JAVA_OPTS=""
 
@@ -34,7 +34,7 @@ elif [ "$1" != "" ]; then
     JOLDEN_APPS="$1";
 else
     # Normal case: analyze only the first two JOLDEN_APPS
-    JOLDEN_APPS="BH Bisort"
+    JOLDEN_APPS="BH BiSort"
 fi
 
 
