@@ -60,7 +60,7 @@ import jpaul.DataStructs.NoCompTreeMap;
  * already computed the code of every method of interest.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.49 2005-10-06 22:19:59 salcianu Exp $
+ * @version $Id: HClass.java,v 1.50 2005-10-06 22:30:14 salcianu Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class */
 public abstract class HClass extends HPointer
@@ -345,6 +345,16 @@ public abstract class HClass extends HPointer
     }
     return _getMethod(name, descriptor);
   }
+
+  /*
+    VERY IMPORTANT for adding caching behavior to HClass methods
+
+    (1) examine getMethod(String,String) to see how a method should
+    use the caching mechanism correctly
+
+    (2) the cache for each method should be initialized in the
+    refreshCache() method.
+  */
 
   /* True if Flex is currently in an immutable epoch. */
   private static boolean immutableEpoch = false;
