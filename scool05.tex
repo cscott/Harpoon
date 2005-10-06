@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.19 2005-10-06 17:23:48 cananian Exp $
+% $Id: scool05.tex,v 1.20 2005-10-06 17:31:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -21,10 +21,6 @@
   {\par\linespread{0.9}\footnotesize\samepage%
 \verbatim}%
   {\endverbatim}
-% tighten up captions
-%\renewcommand{\figadjust}{\vspace{-1.5em}}
-% be sloppy
-\sloppy
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -143,6 +139,26 @@ measurements of transactional code justifying its design.  We
 provide one solution to the ``large object'' problem, and describe a
 hybrid hardware/software transaction system.
 
+\begin{figure*}
+\begin{center}
+\begin{tabular}{lrrrr}
+        & total      &              & transactional & biggest\\
+program & memory ops & transactions & memory ops    & transaction \\\hline
+{\tt 201\_compress} & 2,981,777,890 & 2,272 & $<$0.1\% & 2,302 \\
+{\tt 202\_jess} & 405,153,255 & 4,892,829 & 9.1\% & 7,092 \\
+{\tt 205\_raytrace} & 420,005,763 & 4,177 & 1.7\% & 7,149,099 \\
+{\tt 209\_db} & 848,082,597 & 45,222,742 & 23.0\% & 498,349 \\
+{\tt 213\_javac} & 472,416,129 & 668 & 99.9\% & 118,041,685 \\
+{\tt 222\_mpegaudio} & 2,620,818,169 & 2,991 & $<$0.1\% & 2,281 \\
+{\tt 228\_jack} & 187,029,744 & 12,017,041 & 34.2\% & 14,266 \\
+\end{tabular}
+\end{center}
+\caption{Transactification of SPECjvm98 benchmark suite: resulting
+  transaction counts and sizes, compared to total number of memory
+  operations (loads and stores).  These are full input size runs.
+}\label{fig:perfnums}
+\end{figure*}
+
 \secput{why}{Using Objects for Performance}
 Recent trends in lightweight transaction system design have used
 a \emph{transactional memory} abstraction.  The performance
@@ -251,26 +267,6 @@ multithreaded \texttt{227\_mtrt} benchmark is identical to its
 serialization, \texttt{205\_raytrace}.  For consistency, we present
 only the latter.
 
-\begin{figure*}
-\begin{center}
-\begin{tabular}{lrrrr}
-        & total      &              & transactional & biggest\\
-program & memory ops & transactions & memory ops    & transaction \\\hline
-{\tt 201\_compress} & 2,981,777,890 & 2,272 & $<$0.1\% & 2,302 \\
-{\tt 202\_jess} & 405,153,255 & 4,892,829 & 9.1\% & 7,092 \\
-{\tt 205\_raytrace} & 420,005,763 & 4,177 & 1.7\% & 7,149,099 \\
-{\tt 209\_db} & 848,082,597 & 45,222,742 & 23.0\% & 498,349 \\
-{\tt 213\_javac} & 472,416,129 & 668 & 99.9\% & 118,041,685 \\
-{\tt 222\_mpegaudio} & 2,620,818,169 & 2,991 & $<$0.1\% & 2,281 \\
-{\tt 228\_jack} & 187,029,744 & 12,017,041 & 34.2\% & 14,266 \\
-\end{tabular}
-\end{center}
-\figadjust%
-\caption{Transactification of SPECjvm98 benchmark suite: resulting
-  transaction counts and sizes, compared to total number of memory
-  operations (loads and stores).  These are full input size runs.
-}\label{fig:perfnums}
-\end{figure*}
 \figput{tr-quad2}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
@@ -362,7 +358,6 @@ program & memory ops    & stores \% \\\hline
 {\tt 228\_jack} & 63,912,386 & 17.0\% \\
 \end{tabular}
 \end{center}
-\figadjust%
 \caption{Comparison of loads and stores inside transactions for the
   SPECjvm98 benchmark suite, full input runs.}
 \label{fig:writepercent}
@@ -632,7 +627,6 @@ inline copyBackField(o, f, mode, st) {
   /* done */
 }
 \end{verbatim}
-\figadjust%
 \caption{The field copy-back routine.}\label{fig:copyback}
 \end{figure}
 \figref{copyback} presents the field copy-back routine.  We create a
@@ -757,7 +751,6 @@ inline ensureWriter(tid, o, ver) {
   assert (_r==NIL);
 }
 \end{verbatim}
-\figadjust%
 \caption{The per-object version-setup routine for transactional writes.}
 \label{fig:ensurewriter}
 \end{figure}
@@ -831,7 +824,6 @@ inline checkWriteField(o, f) {
   moveVersion(_rr, NIL);
 }
 \end{verbatim}
-\figadjust%
 \caption{The per-field copy-through routine for transactional writes.}
 \label{fig:copythrough}
 \end{figure}
@@ -1103,7 +1095,6 @@ available for download at
 The work described in \secref{hybrid} was joint with Sean Lie, who provided
 \figref{hybrid}.
 
-\small
 \bibliographystyle{abbrv}
 \bibliography{xaction}
 
@@ -1218,7 +1209,6 @@ never mutated after they are created.
 \subsection{A single-object protocol}
 \begin{figure}\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj.eps}
-\figadjust%
 \caption{Implementing non-blocking single-object concurrent operations
   with functional arrays.}
 \label{fig:single-o}
@@ -1282,9 +1272,8 @@ However, the restriction that only one object
 may be referenced within an atomic method is overly limiting.
 
 \subsection{Extension to multiple objects}
-\begin{figure}[t]\centering
+\begin{figure}\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
-\figadjust%
 \caption{Data structures to support non-blocking multi-object
   concurrent operations.  Objects point to a linked list of versions,
   which reference operation identifiers.  Versions created within the
@@ -1341,7 +1330,6 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
-\figadjust%
 \caption{\funcname{Read} and \funcname{ReadAtomic} implementations for the
   multi-object protocol.}\label{fig:reads}
 \end{figure}
@@ -1394,7 +1382,6 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
-\figadjust%
 \caption{\funcname{Write} and \funcname{WriteAtomic} implementations for the
   multi-object protocol.}\label{fig:writes}
 \end{figure}
@@ -1481,7 +1468,6 @@ constant time plus an invocation of \funcname{FA-Read} or
 \subsection{Lock-free functional arrays}\label{sec:large-obj}
 \begin{figure*}\centering
 \includegraphics[width=7in,clip=true]{Figures/chuang.eps}
-\figadjust%
 \caption{Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
@@ -1565,7 +1551,6 @@ choosing to perform a cut with probability $1/n$.
 
 \begin{figure*}\centering
 \includegraphics[width=7in,clip=true]{Figures/funarr.eps}
-\figadjust%
 \caption{Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.
   Array $A$ is a root node, and $\funcname{FA-Read}(A, x)=z$.
@@ -1638,7 +1623,6 @@ retry:\\
 \>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
 end\\
 \end{tabular}
-\figadjust%
 \caption{Implementation of lock-free functional array using shallow
   binding and randomized cuts.}
 \label{fig:fun-impl}
