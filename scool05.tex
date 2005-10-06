@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.20 2005-10-06 17:31:17 cananian Exp $
+% $Id: scool05.tex,v 1.21 2005-10-06 17:57:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -430,9 +430,10 @@ out-of-date values if the object is later written
 non-transactionally.
 
 There is a special flag value, here denoted by \FLAG.  It should be
-an uncommon value, i.e. not a small positive or negative integer
+an uncommon value, i.e., not a small positive or negative integer
 constant, nor zero.  In our implementation, we have chosen the byte
-\texttt{0xCA} to be our flag value, repeated as necessary to fill out
+\texttt{0xCA} to be our flag value, repeated as
+necessary\footnote{Slight scatological pun intended.} to fill out
 the width of the appropriate type.
 The semantic value of an object field is the value in the original
 object structure, \emph{unless that value is \FLAG}, in which
@@ -463,12 +464,12 @@ The {\tt ReadNT} function does a non-transactional read of field $f$ from
 object $o$, putting the result in $v$.
 In the common case, the only overhead is to check that
 the read value is not \FLAG.  However, if the value read \emph{is}
-\FLAG, we copy back the field value 
+\FLAG, the thread must copy back the field value 
 from the most-recently committed transaction (aborting all other
 transactions) and try again.  The copy-back procedure will notify
-us if this is a ``false flag'', in which case the value of this
-field really is \FLAG.  We pass the {\tt kill\_writers} constant
-to the copy-back procedure to
+the caller if this is a ``false flag'', in which case the value of this
+field really is \FLAG.  The {\tt kill\_writers} constant
+is passed to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
 All possible races are confined to the copy-back procedure.
@@ -493,14 +494,14 @@ inline readNT(o, f, v) {
 
 \subsubsection{Write}
 The {\tt WriteNT} function does a non-transactional write of new value $nval$
-to field $f$ of object $o$.  For correctness, we need to ensure that
-the reader list is empty before we do the write.  We implement this
-with a Load-Linked/Store-Conditional pair, which is modelled in
-Promela slightly differently, ensuring that our write only succeeds
+to field $f$ of object $o$.  For correctness, the thread needs to ensure that
+the reader list is empty before it does the write.  We implement this
+with a Load-Linked/Store-Conditional pair (modelled slightly
+differently in Promela), ensuring that the write only takes effect
 so long as the reader list remains empty.\footnote{Note that a
   standard CAS would not suffice, as the Load-Linked targets a
   different location than the Store-Conditional.}
-If it is not empty, we
+If it is not empty, the thread must
 call the copy-back procedure (as in {\tt readNT}), passing the
 constant {\tt kill\_all} to indicate that both transactional readers
 and writers should be aborted during the copy-back.  The copy-back
@@ -629,29 +630,30 @@ inline copyBackField(o, f, mode, st) {
 \end{verbatim}
 \caption{The field copy-back routine.}\label{fig:copyback}
 \end{figure}
-\figref{copyback} presents the field copy-back routine.  We create a
-new version owned by a pre-aborted transaction which serves as a
-reservation on the head of the version list.  We then write to the
-object field with a Load-Linked/Store-Conditional pair if and only if
-our version is still at the head of the versions list.\footnote{Note
+\figref{copyback} presents the field copy-back routine.  The thread creates a
+pseudo-version owned by a pre-aborted transaction which serves as a
+reservation on the head of the version list.  It then writes to the
+object field (with a Load-Linked/Store-Conditional pair) if and only if
+its pseudo-version remains at the head of the versions list.\footnote{Note
   again that a CAS does not suffice.}  This addresses
 the major race possible in this routine.
 
 \subsubsection{Transactional Read}
-A transactional read is split into two parts.  Before the read, we
-must ensure that our transaction is on the reader list for the
+A transactional read is split into two parts.  Before the read, the thread
+must ensure that its transaction is on the reader list for the
 object.  This is straight-forward to do in a non-blocking manner as
-long as we always add ourselves to the head of the list.  We must also
+long as all inserts are to the head of the list.  The thread must also
 walk the versions list, and abort any uncommitted transaction other
-than our own.  These steps can be combined and hoisted so that they
+than its own.  These steps can be combined and hoisted so that they
 are done once before the first read from an object and not repeated.
 
-At read time, we initially read from the original object.  If the
-value read is not \FLAG, we use it.  Otherwise, we look up the version
-object associated with our transaction (this will typically be at the
-head of the version list) and read the appropriate value from that
-version.  Note that the initial read-and-check can be omitted if we
-know that we have already written to this field inside this transaction.
+At read time, the thread initially reads from the original object.  If
+the value read is not \FLAG, the read value is used.  Otherwise, the
+thread looks up the version object associated with its transaction
+(this will typically be at the head of the version list) and reads the
+appropriate value from that version.  Note that the initial
+read-and-check can be omitted if it knows that it has already written
+to this field inside this transaction.
 \begin{inlinecode}
 inline readT(tid, o, f, ver, result) {
   do
@@ -828,21 +830,27 @@ inline checkWriteField(o, f) {
 \label{fig:copythrough}
 \end{figure}
 \subsubsection{Transactional Write}
-Again, writes are split in two.  Once for each object we must traverse
-the version list, aborting other versions and locating or creating a
-version corresponding to our transaction.  We must also traverse the
-reader list, aborting all transactions on the list except ourself.
-This is shown in the {\tt ensureWriter} routine in \figref{ensurewriter}.
+Like the transactional read, transactional writes are split.  The
+first preparatory step is done once for each object written by the
+transaction.  The version list for each object is traversed, aborting
+other versions and locating or creating a version {\tt ver} for the
+object corresponding to the current transaction.  We retain {\tt ver}
+for the actual write, later.  The reader list must also be traversed,
+aborting all transactions on the list except the current transaction.
+This is shown in the {\tt ensureWriter} routine in
+\figref{ensurewriter}.
 
-Once for each field we intend to write, we must perform a
-copy-through: copy the object's field value into all the versions and
+The second preparatory step is done once for each field we intend to write.
+The thread must perform a copy-through on each field:
+copy the object's (pre-write) field value into all the versions and
 then write \FLAG to the object's field.  We use
 Load-Linked/Store-Conditional to update versions only if the object's
-field has not already been set to \FLAG behind our backs by another
+field has not already been set to \FLAG behind our backs by a concurrent
 copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
 
-Then, for each write, we simply write to the identified version.
+Finally, for each transactional write to an object, we simply write to the
+identified version {\tt ver} for that object.
 \begin{inlinecode}
 inline writeT(ver, f, nval) {
   /* easy enough: */
