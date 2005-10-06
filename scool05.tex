@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.21 2005-10-06 17:57:53 cananian Exp $
+% $Id: scool05.tex,v 1.22 2005-10-06 22:22:46 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -635,8 +635,12 @@ pseudo-version owned by a pre-aborted transaction which serves as a
 reservation on the head of the version list.  It then writes to the
 object field (with a Load-Linked/Store-Conditional pair) if and only if
 its pseudo-version remains at the head of the versions list.\footnote{Note
-  again that a CAS does not suffice.}  This addresses
-the major race possible in this routine.
+  again that a CAS does not suffice.}  We want to avoid being
+interrupted while writing back some value $A$, and having a concurrent
+transaction finish writing back $A$ and then commit and write back
+some other value $B$, before we resume and clobber $B$ with out
+(interrupted) write-back of $A$.  The use of the LL/SC on the head of
+the version list prevents this possible race.
 
 \subsubsection{Transactional Read}
 A transactional read is split into two parts.  Before the read, the thread
