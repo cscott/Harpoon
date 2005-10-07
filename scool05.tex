@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.25 2005-10-07 14:38:54 cananian Exp $
+% $Id: scool05.tex,v 1.26 2005-10-07 15:50:48 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -61,6 +61,7 @@
 \newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
 
 \newcommand{\FLAG}{\texttt{FLAG}\xspace}
+\newcommand{\Spin}{\textsc{Spin}\xspace}
 
 \begin{document}
 \conferenceinfo{SCOOL'05,} {October 16, 2005, San Diego, California, USA.}
@@ -98,7 +99,7 @@ DARPA/AFRL Contract F33615-00-C-1692.}%
   We present empirical data on transaction properties to support the design.
   A model for the software
   transaction implementation is given in Promela, whose correctness
-  has been mechanically verified using the \textsc{Spin} model checker.
+  has been mechanically verified using the \Spin model checker.
   The design presented cooperates well with an HTM providing support
   for small short transactions.
 \end{abstract}
@@ -113,7 +114,7 @@ DARPA/AFRL Contract F33615-00-C-1692.}%
 \category{D.3.4}{Program\-ming Languages}{Processors}[Compilers]
 \category{E.2}{Data Storage Representations}{Object representation}
 \terms{Algorithms, Verification, Languages, Experimentation}
-\keywords{Object-based transactions, synchronization, Java, Promela, SPIN}
+\keywords{Object-based transactions, synchronization, Java, Promela, \Spin}
 
 %
 \secput{intro}{Introduction}
@@ -192,8 +193,8 @@ of the objects involved which are then atomically substituted for the
 originals at commit time.  Compile- or JIT-time analysis can track
 objects that have already been cloned, and henceforth operate on them
 without any synchronization overhead.  The details can be subtle, but a
-compiler can emit transactional code which is asymptotically equal
-in performance with unsynchronized/non-transactional code.  In
+compiler can emit transactional code which is, after initial overhead,
+equal in performance with unsynchronized/non-transactional code.  In
 \secref{properties} we will show that common applications may contain
 large and long-running transactions for which this behavior is
 important.
@@ -205,10 +206,10 @@ that all input and output locations touched by a transaction be known
 in advance.  Herlihy, Luchangco, Moir, and Scherer's scheme
 \cite{HerlihyLuMoSc03} allows transactions to touch a dynamic set of
 memory locations; however the user still has to \emph{explicitly} ``open''
-every object touched before it can be used in a transaction, and the
-work required may be quadratic in the number of objects involved.%
-\footnote{$O(R(R+W))$ work to open $R$ objects for reading and $W$
-objects for writing.}  The transaction system we will present
+every object touched before it can be used in a transaction.  Further
+the cost of opening $R$ objects for reading and $W$ objects for
+writing is $O(R(R+W))$; that is, potentially quadratic in the number
+of objects involved.  The transaction system we will present
 in \secref{algo} does not require foreknowledge of the behavior of a
 transaction, and does not blow up on transactions touching a large
 number of objects.
@@ -230,14 +231,14 @@ code that uses Java (locking) synchronization.  We have implemented a
 compiler that substitutes {\tt atomic} blocks/methods for {\tt
   synchronized} blocks/methods in order to evaluate the properties
 Java transactions are likely to have.  Note that the semantics are not
-precisely compatible \cite{BlundellLeMa05}: the existing Java memory
+precisely compatible~\cite{BlundellLeMa05}: the existing Java memory
 model allows 
 unsynchronized updates to shared fields to be observed within a
 synchronized block, while such updates will never be visible to an
 {\tt atomic} block.  The proposed revision of the Java memory model
 \cite{MansonPu02} narrows the semantic gap, however we do not treat
 {\tt volatile} fields in this work.  In addition, updates from nested
-blocks are not visible until the outer transaction commits.
+{\tt atomic} blocks are not visible until the outer transaction commits.
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
 correctness of the benchmarks we examine.
@@ -541,6 +542,17 @@ inline writeNT(o, f, nval) {
 \end{inlinecode}
 
 \subsubsection{Field Copy-Back}
+\figref{copyback} presents the field copy-back routine.  The thread creates a
+pseudo-version owned by a pre-aborted transaction which serves as a
+reservation on the head of the version list.  It then writes to the
+object field (with a Load-Linked/Store-Conditional pair) if and only if
+its pseudo-version remains at the head of the versions list.\footnote{Note
+  again that a CAS does not suffice.}  We want to avoid being
+interrupted while writing back some value $A$, and having a concurrent
+transaction finish writing back $A$ and then commit and write back
+some other value $B$, before we resume and clobber $B$ with our
+(interrupted) write-back of $A$.  The use of the LL/SC on the head of
+the version list prevents this possible race.
 \begin{figure}
 \fontsize{6.5}{7.4}
 \begin{verbatim}
@@ -630,24 +642,13 @@ inline copyBackField(o, f, mode, st) {
 \end{verbatim}
 \caption{The field copy-back routine.}\label{fig:copyback}
 \end{figure}
-\figref{copyback} presents the field copy-back routine.  The thread creates a
-pseudo-version owned by a pre-aborted transaction which serves as a
-reservation on the head of the version list.  It then writes to the
-object field (with a Load-Linked/Store-Conditional pair) if and only if
-its pseudo-version remains at the head of the versions list.\footnote{Note
-  again that a CAS does not suffice.}  We want to avoid being
-interrupted while writing back some value $A$, and having a concurrent
-transaction finish writing back $A$ and then commit and write back
-some other value $B$, before we resume and clobber $B$ with out
-(interrupted) write-back of $A$.  The use of the LL/SC on the head of
-the version list prevents this possible race.
 
 \subsubsection{Transactional Read}
 A transactional read is split into two parts.  Before the read, the thread
 must ensure that its transaction is on the reader list for the
 object.  This is straight-forward to do in a non-blocking manner as
 long as all inserts are to the head of the list.  The thread must also
-walk the versions list, and abort any uncommitted transaction other
+walk the versions list and abort any uncommitted transaction other
 than its own.  With sufficiently precise pointer analysis these steps
 can be combined and hoisted so that they are done once before the
 first read from an object and not repeated.  Imprecision in the
@@ -984,30 +985,31 @@ conflicting hardware transactions --- when the software scribbles
 \FLAG over the original field the hardware will detect the conflict.
 Hardware transactions must perform
 the \texttt{ReadNT} and \texttt{WriteNT} algorithms to ensure they
-interact properly with concurrent software transactions, although this
-behavior can be done in software (it does not need to be part of the
+interact properly with concurrent software transactions, although these
+checks can be done in software (they do not need to be part of the
 hardware HTM mechanism).  In the figure, the read barriers were done
 in software, and caused a 2.2x slowdown for the (very small) hardware
-transactions.  No special effort was made to tune code or minimize
-this, and the processor simulated had limited ability to exploit ILP
-(2 ALUs and 4-instruction issue width).  However, the read barriers
-might be a worthwhile target for hardware support \cite{ClickTeWo05}.
+transactions.  This is a pessimistic figure: no special effort was
+made to tune code or otherwise minimize slowdown, and the processor
+simulated had limited ability to exploit ILP (2 ALUs and 4-instruction
+issue width).  Even so, the read barriers might be a worthwhile target
+for hardware support \cite{ClickTeWo05}.
 
-Hardware support for small transactions may also be used to implement
-the software transaction implementation's
-Load-Linked/Store-Conditional atomic sequences, which may not
+As a fortuitous synergy, hardware support for small transactions may
+also be used to implement the software transaction implementation's
+Load-Linked/Store-Conditional sequences, which may not
 otherwise be available on a target processor.
 
 \secput{verification}{Verification}
 The Promela model of this software transaction system was
-model-checked with Spin version 4.1.0 and verified to operate
+model-checked with \Spin version 4.1.0 and verified to operate
 correctly and without races in the scenarios described below.  The
 verification was done on an SGI 64-processor MIPS machine with 16G of
 memory.
 
 Sequences of transactional and non-transactional load and store
-operations were checked using two concurrent processes,
-\footnote{Spin is not particularly suited to checking models with dynamic
+operations were checked using two concurrent processes,%
+\footnote{\Spin is not particularly suited to checking models with dynamic
 allocation and deallocation.  In particular, the order of allocation
 artificially enlarges the state space.
 A great deal of effort was expended tweaking the
@@ -1016,50 +1018,53 @@ to this problem would allow larger model instances to be checked.}
 and all possible
 interleavings were found to produce results consistent with
 the semantic atomicity of the transactions.  
-Different test scripts were run separately against the
-model, using separate processors of the verification machine (Spin can
-not otherwise exploit SMP).  Some representative costs include:
+Several test scripts were run against the
+model using separate processors of the verification machine (\Spin
+cannot otherwise exploit SMP).  Some representative costs include:
 \begin{itemize}
-\item Testing two concurrent {\tt writeT} operations (including
-  false-\FLAG conditions) against a single object required $3.8\times
+\item testing two concurrent {\tt writeT} operations (including
+  ``false flag'' conditions) against a single object required $3.8\times
   10^6$ states and $170$M memory;
-\item Testing a sequences of transactional and non-transactional reads
+\item testing sequences of transactional and non-transactional reads
   and writes against two objects (checking that all views of the two
   objects were consistent) required $4.6\times 10^6$ states and $207$M
-  memory.
-\item Testing a pair of concurrent increments at values bracketing the
+  memory; and
+\item testing a pair of concurrent increments at values bracketing the
   \FLAG value to 99.8\% coverage of the state space required
   $7.6\times 10^7$ states and $4.3$G memory.  Simultaneously
   model-checking a range of values caused the state space explosion
   in this case.
 \end{itemize}
-Spin's ``unreachable code'' reporting was used to ensure that our test
+\Spin's unreachable code reporting was used to ensure that our test
 cases exercised every code path, although this doesn't guarantee that
 every interesting interaction is checked.
 
-In the process one bug in Spin 4.0.7 was discovered and corrected (in
-Spin 4.1.0) and a number of subtle race conditions were discovered and
+In the process one bug in \Spin was discovered\footnote{Breadth-first
+search of atomic regions was performed incorrectly in \Spin 4.0.7;
+this was fixed in \Spin 4.1.0.}
+and a number of subtle race conditions in the model were discovered and
 corrected.  These included a number of modelling artifacts: in
 particular, we were extremely aggressive about reference-counting and
 deallocating objects in order to control the size of the state space,
 and this proved difficult to do correctly.  We also discovered some
-subtle-but-legitimate race conditions, including:
+subtle-but-legitimate race conditions in the transactions algorithm.
+For example:
 \begin{itemize}
-\item A race allowing conflicting readers to be created while a writer
-  was creating a new version object in {\tt ensureWriter}.
+\item A race allowed conflicting readers to be created while a writer
+  was inside {\tt ensureWriter} creating a new version object.
 \item Allowing already-committed version objects to be mutated when {\tt
     writeT} or {\tt writeNT} was asked to store a ``false flag'' produced
-  a number of subtle race conditions in {\tt ensureWriter} and {\tt
+  races between {\tt ensureWriter} and {\tt
     copyBackField}.  The code that was expected to manage these races
   had unexpected corner cases.
-\item Using a {\tt readers} bitmask to provide per-field granularity
-  to the {\tt readerList} proved unmanageable as a large number of
-  unforeseen races were discovered.
+\item Using a bitmask to provide per-field granularity
+  to the list of readers proved unmanageable as there were three-way
+  races between the bitmask, the readers list, and the version tree.
 \end{itemize}
-In addition, the model proved a valuable design tool, as portions of
-the algorithm could readily be mechanically checked to validate (or
-discredit) the designer's reasoning about the concurrent system.
-Humans do not excel at exhaustive state space exploration.
+In addition, the model-in-progress proved a valuable design tool, as
+portions of the algorithm could readily be mechanically checked to
+validate (or discredit) the designer's reasoning about the concurrent
+system.  Humans do not excel at exhaustive state space exploration.
 
 \punt{
 \secput{related}{Related work}
@@ -1209,15 +1214,16 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 }
 
 
-\secput{concl}{Conclusions}
+\vspace{1cm}% put this in the next column; keep section head together
+\secput{concl}{Conclusions}%
 We have described an efficient object-based implementation of
 non-blocking software transactions, along with empirical data backing
 its design and extensions for large objects and HTM hybridization.
-The design has been model-checked with the Spin model checker, and
+The design has been model-checked with the \Spin model checker, and
 implemented in the FLEX Java compiler.
 
 \section*{Spin model for Software Transactions}
-The complete Spin 4.1.0 model for the FLEX software transaction system is
+The complete \Spin 4.1.0 model for the FLEX software transaction system is
 available for download at
 \url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
 
