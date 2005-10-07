@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.22 2005-10-06 22:22:46 cananian Exp $
+% $Id: scool05.tex,v 1.23 2005-10-07 03:02:13 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -106,9 +106,9 @@ DARPA/AFRL Contract F33615-00-C-1692.}%
   Organization}{General}[Hardware/software interfaces]
 \category{D.2.4}{Software Engineering}{Software/Program
   Verification}[Model checking]
-\category{D.3.2}{Programming Languages}{Language
+\category{D.3.2}{Pro\-gram\-ming Languages}{Language
   Classifications}[Object-oriented languages, Java]
-\category{D.3.3}{Programming Languages}{Language Constructs and
+\category{D.3.3}{Program\-ming Languages}{Language Constructs and
   Features}[Concurrent programming structures]
 \category{D.3.4}{Program\-ming Languages}{Processors}[Compilers]
 \category{E.2}{Data Storage Representations}{Object representation}
@@ -648,16 +648,23 @@ must ensure that its transaction is on the reader list for the
 object.  This is straight-forward to do in a non-blocking manner as
 long as all inserts are to the head of the list.  The thread must also
 walk the versions list, and abort any uncommitted transaction other
-than its own.  These steps can be combined and hoisted so that they
-are done once before the first read from an object and not repeated.
+than its own.  With sufficiently precise pointer analysis these steps
+can be combined and hoisted so that they are done once before the
+first read from an object and not repeated.  Imprecision in the
+analysis may cause re-examination of the reader list.
 
 At read time, the thread initially reads from the original object.  If
 the value read is not \FLAG, the read value is used.  Otherwise, the
-thread looks up the version object associated with its transaction
-(this will typically be at the head of the version list) and reads the
+thread uses {\tt findVersion} to look up the version object {\tt ver}
+associated with its transaction 
+(this will typically be at the head of the version list) and then reads the
 appropriate value from that version.  Note that the initial
 read-and-check can be omitted if it knows that it has already written
-to this field inside this transaction.
+to this field inside this transaction, and that once {\tt ver} has
+been looked up, it can be used in subsequent calls to {\tt readT} (it
+is both an input and an output argument to the function).  If there is
+not an uncommitted version for the object, {\tt findVersion} returns
+the committed version in {\tt \_r}.
 \begin{inlinecode}
 inline readT(tid, o, f, ver, result) {
   do
@@ -861,6 +868,8 @@ inline writeT(ver, f, nval) {
   version[ver].field[f] = nval;
 }
 \end{inlinecode}
+Note that we have chosen not to allow concurrent writes by separate
+transactions to different fields in the same object.
 
 \subsection{Large objects}\label{sec:large}
 \begin{figure}\centering
@@ -877,8 +886,12 @@ indicates that over 10\% of writes may be to large objects.
 Obviously the copying cost would be prohibitive.
 
 Our solution is to represent large objects as \defn{functional
-  arrays}.  O'Neill and Burton \cite{ONeillBu97} give a fairly
-inclusive overview of such algorithms; we've chosen Tyng-Ruey Chuang's
+  arrays}.  Functional arrays allow access to both committed and
+uncommitted versions of the (large) object \emph{without} requiring
+multiple complete copies.
+O'Neill and Burton \cite{ONeillBu97} give a fairly
+inclusive overview of functional array data structures;
+we've chosen Tyng-Ruey Chuang's
 version \cite{Chuang94} of \emph{shallow binding}, which uses
 randomized cuts to the version tree to limit the cost of a read to
 $O(n)$ in the worst case.  Single-threaded accesses to the array are
