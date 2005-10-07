@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.23 2005-10-07 03:02:13 cananian Exp $
+% $Id: scool05.tex,v 1.24 2005-10-07 13:02:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -888,24 +888,73 @@ Obviously the copying cost would be prohibitive.
 Our solution is to represent large objects as \defn{functional
   arrays}.  Functional arrays allow access to both committed and
 uncommitted versions of the (large) object \emph{without} requiring
-multiple complete copies.
-O'Neill and Burton \cite{ONeillBu97} give a fairly
-inclusive overview of functional array data structures;
-we've chosen Tyng-Ruey Chuang's
-version \cite{Chuang94} of \emph{shallow binding}, which uses
-randomized cuts to the version tree to limit the cost of a read to
-$O(n)$ in the worst case.  Single-threaded accesses to the array are
-$O(1)$.  Our use of functional arrays is single-threaded in the common
-case, when transactions do not abort.  Chuang's scheme is attractive
-because it limits the worst-case cost of an abort, with very little
-added complexity.
+multiple complete copies.  O'Neill and Burton \cite{ONeillBu97} give a fairly
+inclusive overview of functional array data structures; we will review very
+briefly here.
 
-Of course, Chuang's algorithm is not lock free.
+Functional arrays are \emph{persistent}; that is, after an element is
+updated both the new and the old contents of the array are available
+for use.  Since arrays are simply maps from integers (indexes) to
+values; any functional map datatype (for example, a functional
+balanced tree) can be used to implement functional arrays.
+
+For concreteness, functional arrays have the following three
+operations defined:
+\begin{itemize}
+\item $\funcname{FA-Create}(n)$: Return an array of size $n$.  The contents of
+  the array are initialized to zero.
+\item $\funcname{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ that is
+  functionally identical to array $A_j$ except that $A_{j'}(i)=v$.
+  Array $A_j$ is not destroyed and can be accessed further.
+\item $\funcname{FA-Read}(A_j, i)$: Return $A_j(i)$.
+\end{itemize}
+We are interested in lock-free implementations, thus we
+allow any of these operations to \emph{fail}.  Failed operations
+can be safely retried, as all operations are idempotent by definition.
+
+For the moment, consider the following na{\"\i}ve implementation:
+\begin{itemize}
+\item $\funcname{FA-Create}_{so}(n)$: Return an ordinary imperative array of size
+  $n$.
+\item $\funcname{FA-Update}_{so}(A_j, i, v)$: Create a new imperative array
+  $A_{j'}$ and atomically copy the contents of $A_j$ to $A_{j'}$.
+  Return $A_{j'}$.
+\item $\funcname{FA-Read}_{so}(A_j, i)$: Return $A_j[i]$.
+\end{itemize}
+This implementation has $O(1)$ read and $O(n)$ update, so it matches
+the performance of imperative arrays only when $n=O(1)$, where $n$ is
+the size of the array (read, object).  We will therefore call these
+\emph{small object functional arrays}.  We can view the version
+objects we have so far described as implementations of such an
+algorithm, where $\funcname{FA-Update}_{so}$ takes an object and
+returns a version (slightly abusing the types).  This is implemented
+within {\tt ensureWriter}, \figref{ensurewriter}.
+
+To handle large objects, we replace this na{\"\i}ve implementation in
+order to scale better with large $n$.  We would like to prevent small
+changes to a large object from taking a large amount of time.  We
+could consider using a functional array implementation based on
+functional balanced trees.  However, this yields $O(\lg n)$ access or
+update, which is not as good as the $O(1)$ element access and update
+characteristic of imperative arrays.  Instead, we've chosen Tyng-Ruey
+Chuang's version \cite{Chuang94} of \emph{shallow binding}, which
+gives $O(1)$ cost for \funcname{FA-Update} and for single-threaded
+\funcname{FA-Read}.  Our use of functional arrays is single-threaded
+in the common case, when transactions do not abort.  Chuang's scheme
+uses randomized cuts to the version tree to limit the expected
+per-write overhead to $O(n)$ in the worst case (that is, the expected
+cost $C(l,m)$ of $l$ updates and $m$ reads obeys $C(l,m) \leq l + m +
+2nl$).  So with little complexity we can get worst case expected
+performance for aborts equivalent to the na{\"\i}ve
+implementation, while obtaining ``imperative-speed'' common-case
+(commit) accesses.
+
+Of course, Chuang's published algorithm is not lock free.
 The crucial operation is a rotation of a \emph{difference node} with the
 main body of the array.  Elsewhere we present a lock-free version of
 Chuang's algorithm~\cite{Ananian05}; for the purposes of the present paper we
-can obtain a trivial implementation using some
-existing small-transaction HTM.
+can trivially make Chuang's published algorithm lock-free by
+implementing the rotation using some existing small-transaction HTM.
 
 \subsection{Hybrid STM/HTM}\label{sec:hybrid}
 \begin{figure}\centering
