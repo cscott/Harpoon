@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.24 2005-10-07 13:02:27 cananian Exp $
+% $Id: scool05.tex,v 1.25 2005-10-07 14:38:54 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -960,8 +960,7 @@ implementing the rotation using some existing small-transaction HTM.
 \begin{figure}\centering
 \epsfig{file=Figures/sean_lie_6b.eps,width=3.25in,clip=true}
 \caption{Performance (in cycles per node push on a simple queue
-  benchmark) of LTM\punt{~\cite{AnanianAsKuLeLi04}} (HTM), the
-%%%%%%%%%%%%%%%%%%%^^^^^^ XXXXXXXXXXXXXXXXXXXXXXXXXXX
+  benchmark) of a simple bounded hardware transactional memory (HTM), the
   object-based system presented in this paper (STM) and a hybrid
   scheme (HSTM).}%
 \label{fig:hybrid}%
@@ -970,24 +969,41 @@ It is worth considering if a low-level HTM can yield benefits other
 than efficient implementations of large-object operations.  In fact,
 \figref{hybrid} presents research showing that we can combine the
 strengths of our object-based software transaction system with a
-fast bounded-size HTM.  In the figure, combining the systems is done
+fast bounded-size HTM.  The numbers presented are cycle counts from a
+cycle accurate multiprocessor simulator (UVSIM~\cite{Zhang03}),
+extended to implement a HTM for \cite{AnanianAsKuLeLi04}.  More
+details are available in \cite{Lie04}.
+
+In the figure, combining the systems is done
 in the most simple-minded way: all transactions are begun in
-LTM~\cite{AnanianAsKuLeLi04},
+the hardware transactional memory,
 and after any abort the transaction is restarted in the
 object-based software system.  The field flag mechanism described in
 \secref{flagfield} ensures that software transactions properly abort
-conflicting hardware transactions; hardware transactions must perform
-the \texttt{ReadNT} and \texttt{WriteNT} algorithms for a slight
-overhead (as shown in the figure).  The read barriers involved might
-be another target for hardware support \cite{ClickTeWo05}; one could
-also use small hardware transactions to implement the
-Load-Linked/Store-Conditional atomic sequences.
+conflicting hardware transactions --- when the software scribbles
+\FLAG over the original field the hardware will detect the conflict.
+Hardware transactions must perform
+the \texttt{ReadNT} and \texttt{WriteNT} algorithms to ensure they
+interact properly with concurrent software transactions, although this
+behavior can be done in software (it does not need to be part of the
+hardware HTM mechanism).  In the figure, the read barriers were done
+in software, and caused a 2.2x slowdown for the (very small) hardware
+transactions.  No special effort was made to tune code or minimize
+this, and the processor simulated had limited ability to exploit ILP
+(2 ALUs and 4-instruction issue width).  However, the read barriers
+might be a worthwhile target for hardware support \cite{ClickTeWo05}.
+
+Hardware support for small transactions may also be used to implement
+the software transaction implementation's
+Load-Linked/Store-Conditional atomic sequences, which may not
+otherwise be available on a target processor.
 
 \secput{verification}{Verification}
-The Promela model of this software transaction system was model
-checked with Spin version 4.1.0 and verified to operate correctly and
-without races in the scenarios described below.  The verification was
-done on an SGI 64-processor MIPS machine with 16G of memory.
+The Promela model of this software transaction system was
+model-checked with Spin version 4.1.0 and verified to operate
+correctly and without races in the scenarios described below.  The
+verification was done on an SGI 64-processor MIPS machine with 16G of
+memory.
 
 Sequences of transactional and non-transactional load and store
 operations were checked using two concurrent processes,
@@ -999,11 +1015,51 @@ model to approach a canonical allocation ordering.  A better solution
 to this problem would allow larger model instances to be checked.}
 and all possible
 interleavings were found to produce results consistent with
-the semantic atomicity of the transactions.  A number of subtle race
-conditions were discovered and corrected during this process.
-In particular, early versions of the algorithms sometimes allowed
-readers to escape being aborted while racing a writer in
-\texttt{createVersion}, and could allow inconsistent reads.
+the semantic atomicity of the transactions.  
+Different test scripts were run separately against the
+model, using separate processors of the verification machine (Spin can
+not otherwise exploit SMP).  Some representative costs include:
+\begin{itemize}
+\item Testing two concurrent {\tt writeT} operations (including
+  false-\FLAG conditions) against a single object required $3.8\times
+  10^6$ states and $170$M memory;
+\item Testing a sequences of transactional and non-transactional reads
+  and writes against two objects (checking that all views of the two
+  objects were consistent) required $4.6\times 10^6$ states and $207$M
+  memory.
+\item Testing a pair of concurrent increments at values bracketing the
+  \FLAG value to 99.8\% coverage of the state space required
+  $7.6\times 10^7$ states and $4.3$G memory.  Simultaneously
+  model-checking a range of values caused the state space explosion
+  in this case.
+\end{itemize}
+Spin's ``unreachable code'' reporting was used to ensure that our test
+cases exercised every code path, although this doesn't guarantee that
+every interesting interaction is checked.
+
+In the process one bug in Spin 4.0.7 was discovered and corrected (in
+Spin 4.1.0) and a number of subtle race conditions were discovered and
+corrected.  These included a number of modelling artifacts: in
+particular, we were extremely aggressive about reference-counting and
+deallocating objects in order to control the size of the state space,
+and this proved difficult to do correctly.  We also discovered some
+subtle-but-legitimate race conditions, including:
+\begin{itemize}
+\item A race allowing conflicting readers to be created while a writer
+  was creating a new version object in {\tt ensureWriter}.
+\item Allowing already-committed version objects to be mutated when {\tt
+    writeT} or {\tt writeNT} was asked to store a ``false flag'' produced
+  a number of subtle race conditions in {\tt ensureWriter} and {\tt
+    copyBackField}.  The code that was expected to manage these races
+  had unexpected corner cases.
+\item Using a {\tt readers} bitmask to provide per-field granularity
+  to the {\tt readerList} proved unmanageable as a large number of
+  unforeseen races were discovered.
+\end{itemize}
+In addition, the model proved a valuable design tool, as portions of
+the algorithm could readily be mechanically checked to validate (or
+discredit) the designer's reasoning about the concurrent system.
+Humans do not excel at exhaustive state space exploration.
 
 \punt{
 \secput{related}{Related work}
@@ -1157,7 +1213,7 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 We have described an efficient object-based implementation of
 non-blocking software transactions, along with empirical data backing
 its design and extensions for large objects and HTM hybridization.
-The design has been checked with the Spin model checker, and
+The design has been model-checked with the Spin model checker, and
 implemented in the FLEX Java compiler.
 
 \section*{Spin model for Software Transactions}
@@ -1167,13 +1223,13 @@ available for download at
 
 \section*{Acknowledgments}
 The work described in \secref{hybrid} was joint with Sean Lie, who provided
-\figref{hybrid}.
+\figref{hybrid}.  Some additional details are in \cite{Lie04}.
 
 \bibliographystyle{abbrv}
 \bibliography{xaction}
 
-\clearpage
-\normalsize
+\vfill% ie, \newcolumn  %\clearpage
+
 \appendix
 \secput{promela}{Promela Primer}
 A concise Promela reference is available at
