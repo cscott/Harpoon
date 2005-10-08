@@ -2,7 +2,7 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: make-purity-kit,v 1.4 2005-10-05 16:18:53 salcianu Exp $
+## $Id: make-purity-kit,v 1.5 2005-10-08 22:30:40 salcianu Exp $
 
 KIT_DIR=purity-kit
 FLEX_DIR=`dirname $0`/../../..
@@ -106,10 +106,10 @@ if [ "$?" != 0 ]; then
 fi
 
 
-# 6. Always take care of the licence
+# 6. Take care of the licence + some other files
 echo Copy GNU GPL Licence && \
-cp COPYING ${KIT_DIR} && \
-cp Analysis/PA2/Mutation/PURITY-README.txt ${KIT_DIR}/README.txt && \
+cp COPYING  ${KIT_DIR} && \
+cp Analysis/PA2/Mutation/PURITY-README.html  ${KIT_DIR}/README.html && \
 cp Analysis/PA2/Mutation/purity-test  ${KIT_DIR}
 cp Analysis/PA2/Mutation/flex-self-test  ${KIT_DIR}
 

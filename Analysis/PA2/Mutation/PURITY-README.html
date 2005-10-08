@@ -1,0 +1,377 @@
+<html>
+
+
+<head>
+<title>
+Purity Analysis Kit
+</title>
+</head>
+
+
+<body>
+
+<h1>Purity Analysis Kit v0.02</h1>
+
+
+<b>
+Copyright (c) 2005 - <a href="http://www.mit.edu/~salcianu">Alexandru
+Salcianu</a> &lt;salcianu@alum.mit.edu&gt;<br>
+GNU General Public Licence
+</b>
+
+
+<p>
+<b>Table of Contents:</b>
+
+<ul>
+ <li><a href="#licence-info">A. Licence Information</a>
+ <li><a href="#purity-def">B. Definition of <i>Purity</i></a>
+ <li><a href="#files">C. Download and Installation</a>
+ <li><a href="#requirements">D. Requirements</a>
+ <li><a href="#testing">E. Testing everything works fine</a>
+ <li><a href="#usage">F. Usage</a>
+ <li><a href="#programmatic-access">G. Programmatic Access to the
+ Analysis Results</a>
+ <li><a href="#thorny-issues">H. Thorny Issues you Should Know about Flex</a>
+</ul>
+
+<b>Note:</b> This HTML file serves a double purpose: (1) the main
+webpage for the purity analysis kit, and (2) the README file included
+in he kit.  When you read this file as part of the kit, some of the
+relative URLs may be invalid; however, this should not affect you,
+since by that time you should already have all the required files.
+
+
+<a name="licence-info"><h2>A. Licence information</h2></a>
+
+This purity analysis tool is released under the terms of the GNU
+General Public Licence (GNU GPL), available online from <a
+href="">here</a>.  Please discontinue using this tool if you disagree
+with the GNU GPL.
+
+
+<a name="purity-def"><h2>B. Definition of <i>Purity</i></h2></a>
+
+Our analysis considers a method pure if it does not mutate any object
+that existed before the method was invoked; this is also the
+definition used in <a href="">JML</a>.  Notice that a method that is
+pure according to this definition may still create, mutate and even
+return new objects.  The reason JML uses this definition is that if a
+method does not mutate any pre-existent object, the invariants
+attached to those objects propagate over calls to that method.  In
+addition, as a special case, our (and JML's) definition of purity
+allows a pure constructor to mutate fields of the <code>this</code>
+object. [ However, as explained in the Section D. below, you may use
+the option <code>--no-jml-constructor-purity</code> to instruct the
+analysis to consider such constructors impure. ]
+
+
+
+<a name="files"><h2>C. Download and Installation</h2></a>
+
+The purity analysis kit consists of a <code>.tgz</code> archive file
+that you can download from <a href="purity-kit.tgz">here</a>.  It
+unzips into a directory named <code>purity-kit</code>, containg the
+following files/subdirs:
+
+
+<ol>
+
+<li> <code>purity.jar</code> - Contains the classes of the purity
+   analysis, together with the rest of the <a
+   href="http://flex-master.csail.mit.edu/Harpoon">Flex</a> compiler
+   infrastructure.  The Java source code files are available from the
+   <a href="http://flex-master.csail.mit.edu/Harpoon">Flex
+   website</a>.  Flex is an open-source compiler infrastructure built
+   in Prof. Rinard's group at MIT.
+
+<p>
+<li> <code>aux/</code> - Subdirectory with the two <code>.jar</code>
+   libraries used by the implementation of the purity analysis:
+   <code>jpaul.jar</code> and <code>jutil.jar</code>.  These files are
+   not really part of the purity analysis: they are provided here only
+   for your convenience.  You may also find them, together with their
+   sources and Javadoc documentation, on the websites of the <a
+   href="http://jpaul.sourceforge.net">jpaul</a> and the <a
+   href="http://cscott.net/Projects/JUtil/jutil-latest/doc">JUtil</a>
+   projects.
+
+<p>
+<li> <code>lib/</code> - Subdirectory that contains the implementation
+   of the Java standard library that Flex compiles/analyzes Java
+   applications against.
+
+   <p>
+   Clarification: the analyzed application consists of (1) the user
+   code, and (2) the standard library from <code>lib/</code> (more
+   precisely, the current tool analyzes only those parts of (1) and
+   (2) that are transitively callable from the main method).  Notice
+   that the Java standard library from (2) may be different from the
+   Java standard library used by your JVM.
+
+   <p>
+   Currently, we use the Java standard library as implemented by the
+   <a href="http://www.gnu.org/software/classpath">GNU Classpath</a>
+   project.  More specifically, <code>lib/</code> contains the
+   <code>glibj.zip</code> from GNU Classpath v0.08, and two
+   <code>.jar</code>s that reconcile GNU Classpath with the object
+   layout used by our compiler.  Not sure they are really necessary
+   for the purity analyses, but better safe than sorry :) For the
+   purposes of purity analysis, you <b>do not</b> need to separately
+   download/install GNU Classpath 0.08; however, if you decide to take
+   a look at it, you may donwload it from the <a
+   href="http://www.gnu.org/software/classpath">GNU Classpath</a>
+   official website or directly from <a
+   href="classpath-0.08.tar.gz">here</a>.
+
+<p>
+<li> <code>jolden/</code> - Subdirectory containing the Java Olden
+   bechmarks.  These applications are not part of the purity analysis:
+   they are provided here only as testcases.
+
+<p>
+<li> <a
+   href="http://www.gnu.org/copyleft/gpl.html"><code>COPYING</code></a>
+   - The GNU GPL Licence details.
+
+<p>
+<li> <code>purity-test</code> and <code>flex-self-test</code> - Two
+testing scripts.
+
+<p>
+<li> <code>README.html</code> - The file you are reading right now.
+
+</ol>
+
+
+<a name="#requirements"><h2>D. Requirements</h2></a>
+
+<b>Software:</b> JDK 1.5 (Java with generics).  The purity tool has
+been tested on Linux (RedHat, Debian, Fedora Core 3) with the first 5
+releases of SUN JDK 1.5.0 (_01 to _05).  You should make sure that the
+<code>CLASSPATH</code> of your JVM contains the following files:
+<code>purity.jar</code>, <code>aux/jutil.jar</code>, and
+<code>aux/jpaul.jar</code>.
+
+<p>
+<b>Hardware:</b> a fast machine (recommended: P4 @ 3.2GHz or
+equivalent) with a lot of memory (recommended: 1Ghz for medium
+benchmarks, at least 2Ghz for more ambitious ones).
+
+
+
+<a name="testing"><h2>E. Testing</h2></a>
+
+Once you have all files in place, it's a good idea to test right
+away whether you can successfully run the purity analysis.  To do
+this, execute
+
+<p>
+<code>
+  cd purity-kit<br>
+  ./purity-test
+</code>
+
+<p>
+The <code>purity-test</code> script should analyze two Java Olden
+benchmarks from <code>jolden/</code>.  If everything goes fine, the
+script will generate a very verbose output, full of progress
+indicators; at the end of the analysis of each application, the
+analysis will print a short statistic regarding the total number of
+pure methods.  If you want to analyze all of the ten Java Olden
+benchmarks, execute
+
+<p>
+<code>
+  ./purity-test all
+</code>
+
+<p>
+<code>purity-test</code> creates a <code>results/</code>
+subdirectory containing files with the analysis trace for each
+analyzed testcase.
+
+<p>
+If you want to do a really big test, then run
+
+<p>
+<code>
+  ./flex-self-test
+</code>
+
+<p>
+The <code>flex-self-test</code> script performs the purity analysis on
+the entire code reachable from the Flex top-level class
+harpoon.Main.SAMain (this includes the code of the analysis and much
+more).  This should analyze 14,000+ methods of almost 450,000 bytecode
+instructions, in almost an hour on a P4 @ 3.2Ghz with 2Gb RAM (30
+minutes for the pointer and purity analysis itself).
+
+
+
+<a name="usage"><h2>F. Usage</h2></a>
+
+<b>Reminder:</b> Before using the purity analysis, you should make
+sure that <code>purity.jar</code>, <code>aux/jpaul.jar</code> and
+<code>aux/jutil.jar</code> are on your JVM's <code>CLASSPATH</code>.
+
+<p>
+The entry point for the purity analysis is the method 
+
+<p>
+<code>
+  public static void harpoon.Main.Purity.main(String[] args)
+</code>
+
+<p>The elements of the <code>args</code> array parameter correspond to
+the command line arguments.  They should be, in order:
+
+<ol>
+
+<li><code>args[0]</code> - The name of the main class of the
+application you want to analyze.
+
+<p>
+<li><code>args[1]</code> - The path where your application resides.
+As any Java CLASSPATH, this path can contain several elements
+(directors, <code>.jar</code> files, and <code>.zip</code> files),
+separated by ":".  The path that the analysis uses in order to load
+analyzed classes consists of (in order):
+
+<table border=1>
+
+<tr valign=top>
+<td>1</td>
+<td><code>args[1]</code></td>
+<td>
+The user-defined path
+</td>
+</tr>
+
+<tr valign=top>
+<td>2</td>
+<td><code>lib/reflect-thunk.jar:<br>lib/cpvm.jar</code></td>
+<td>
+Reimplement a few classes (e.g., reflection related ones), in order to
+"reconcile" GNU Classpath 0.08 with the object layout of our compiler.
+</td>
+</tr>
+
+<tr valign=top>
+<td>3</td>
+<td><code>lib/glibj-0.08-extra.jar</code></td>
+<td>
+A few additions to GNU Classpath 0.08; required to analyze class files
+generated with JDK 1.5.0.  GNU Classpath 0.08 implements the Java
+library up to 1.1, plus some parts of 1.2, but does not contain
+classes like <code>java.lang.StringBuilder</code> (introduced in JDK
+1.5).  Needless to say, this <code>.jar</code> does not fully upgrade
+GNU Classpath 0.08 to JDK 1.5; we provided only the files that are
+required such that the analysis can analyze itself.
+</td>
+</tr>
+
+<tr valign=top>
+<td>4</td>
+<td><code>lib/glibj-0.08.zip</code></td>
+<td>
+The classes from the GNU Classpath 0.08 Java standard library.
+</td>
+</tr>
+
+</table>
+
+
+<p>
+<li>The rest of the arguments are passed verbatim to
+<code>harpoon.Main.SAMain.main(String[] args)</code>.  Such a possible
+argument is <code>--no-jml-constructor-purity</code>: it instructs the
+analysis to consider impure the constructors that mutate the fields of
+the <code>this</code> object.
+
+</ol>
+
+<p>
+<b>Warning:</b> you can take a look at the <code>./purity-test</code> and
+<code>./flex-self-test</code>, but they are far more complex than what
+you actually need.  The reason for this complexity is that I also use
+them for testing while doing development in the Flex project, and the
+locations of certains elements are different than in the kit.
+
+
+
+<a name="programmatic-access"><h2>G. Programmatic Access to the Analysis Results</h2></a>
+
+<p>
+The purity analysis examines (almost) all methods that may be
+transitively callable from the main method of the application (i.e.,
+the <code>main</code> method of the main class).  After the analysis
+terminates, all detected pure methods are put in a set stored in a
+static field in the class
+<code>harpoon.Analysis.PA2.Mutation.WPMutationAnalysisCompStage</code>:
+
+<p>
+<code>
+  public static Set&lt;HMethod&gt; pureMethods;
+</code>
+
+<p>
+[ We say "almost" because, for efficiency reasons, the analysis skips
+(i.e., considers unanalyzable) several large library methods, whose
+analysis takes a long time and does not seem to produce anything
+useful.  Those methods deal with the SecurityManager and the time
+zones.  Let me know if you really care about them: the analysis can
+analyze them, at the cost of a bigger analysis time. ]
+
+<p>
+Also, the analysis stores a map from each analyzed method to a list of
+the indices of the "safe" parameters.  A parameter is safe if, for any
+object transitively reachable from that parameters, (1) the method
+does not mutate it, and (2) the method does not create new
+externally-visible aliasing to that object (this precludes storing
+references to such an object into a static, or returning such an
+object).  This map is stored in another static field of 
+<code>harpoon.Analysis.PA2.Mutation.WPMutationAnalysisCompStage</code>:
+
+<p>
+<code>
+  public static Map&lt;HMethod,List&lt;Integer&gt;&gt; method2SafeParam;
+</code>
+
+<p>
+The parameter indices start from 0 and take into account all
+parameters, including those of primitive types, and, in the case of
+instance methods, the implicit this argument (the first one, i.e.,
+#0).
+
+<p>
+<code>harpoon.ClassFile.HMethod</code> is the Flex handle for a method
+from the analyzed code.  Full Javadoc available on the <a
+href="http://flex-master.csail.mit.edu/Harpoon">Flex website</a>, or
+directly through this <a
+href="http://flex-master.csail.mit.edu/Harpoon/doc/harpoon/ClassFile/HMethod.html">URL</a>.
+
+
+
+<a name="thorny-issues"><h2>H. Thorny Issues you Should Know about Flex</h2></a>
+
+TODO: Explain the whole roots issue
+
+
+TODO: Explain the copyright issues related to classes.zip
+
+
+<p>
+Good luck!
+
+<hr>
+
+<b>
+Copyright (c) 2005 - <a href="http://www.mit.edu/~salcianu">Alexandru
+Salcianu</a> &lt;salcianu@alum.mit.edu&gt;<br>
+GNU General Public Licence
+</b>
+
+
+</body>
+</html>
