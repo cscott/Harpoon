@@ -32,7 +32,7 @@ GNU General Public Licence
  <li><a href="#usage">F. Usage</a>
  <li><a href="#programmatic-access">G. Programmatic Access to the
  Analysis Results</a>
- <li><a href="#thorny-issues">H. Thorny Issues you Should Know about Flex</a>
+ <li><a href="#thorny-issues">H. Limitations / Thorny Issues</a>
 </ul>
 
 <b>Note:</b> This HTML file serves a double purpose: (1) the main
@@ -353,12 +353,119 @@ href="http://flex-master.csail.mit.edu/Harpoon/doc/harpoon/ClassFile/HMethod.htm
 
 
 
-<a name="thorny-issues"><h2>H. Thorny Issues you Should Know about Flex</h2></a>
-
-TODO: Explain the whole roots issue
+<a name="thorny-issues"><h2>H. Limitations / Thorny Issues</h2></a>
 
 
-TODO: Explain the copyright issues related to classes.zip
+<ul>
+
+<li><b>Scalability problems:</b>
+
+The current implementation (the first version of which was completed
+in September 2005) is much faster than the one used for the benchmarks
+from the VMCAI'05 paper; in particular, the current implementation is
+able to analyze itself in less than an hour.  Still, even the current
+implementation has problems when analyzing big programs.  Most of
+these problems stem from the fact that we use an inherently expensive
+pointer analysis; some other problems are due to the fact that some
+parts of the Flex compiler infrastructure are not very fast.
+
+<p>
+The primary goal of the research presented in the VMCAI'05 paper was
+to support a more flexible notion of purity than previous analyses; in
+particular, we want to allow pure methods to mutate newly allocated
+objects (e.g., the objects allocated in order to construct the method
+result).  There are other published purity analyses (although it is
+unclear whether there is any publicly-available tool behind them);
+some of these analyses support a stricter notion of purity and claim
+to be faster that this analysis; a good such example is <a
+href="http://www.cse.ohio-state.edu/~rountev/">Atanas Rountev</a>'s
+analysis described in his ICSM'04 paper "Precise Identification of
+Side-Effect-Free Methods in Java" (available, for a small cost, from
+<a
+href="http://doi.ieeecomputersociety.org/10.1109/ICSM.2004.1357793">here</a>).
+
+
+
+<p>
+<li><b>Full program analysis:</b> 
+
+The current implementation requires a full program, i.e., by default,
+it cannot analyze a library.  Here is why: the analysis is
+inter-procedural and requires a call-graph for the analyzed program.
+Hence, the analysis needs to know all potential callees of a virtual
+call of the form <code>o.foo()</code>; this requires knowledge of the
+types of all objects that <code>o</code> may point to (once we know
+this, we can just see what <code>foo</code> method is invoked for each
+cuh type).  The current call-graph computation takes place before the
+pointer analysis and is very simple: it first determines all classes
+that may be instantiated in the program; next, for each virtual call
+of the form <code>o.foo()</code>, it considers all subclasses of the
+declared type for <code>o</code> that are instantiated in the current
+program.  [ Theoretically, it is possible to combine the call-graph
+computation and the pointer analysis; however, the pointer analysis
+alone is very complex so I never investigated such a combination. ]
+
+<p>
+So far we have explained the need to know all classes that may
+possibly be instantiated in a program.  Discovering this information
+requires knowledge of all methods that may be invoked by the analyzed
+program (because each method can instantiates classes that may not be
+instantiated anywhere else in the program).  Detecting all invoked
+methods and all instantiated classes is complex in the presence of (1)
+class instantiation via reflection, and (2) native methods (that our
+compiler infrastructure (that deals only with Java bytecode) does not
+see.  That's how we run into the other difficulty, finding the
+appropriate set of <i>roots</i> (see next point).
+
+
+<p>
+<li><b>Finding the appropriate set of program roots:</b> In big lines,
+a <i>root</i> is (1) a Java class/method that is instantiated/invoked
+using reflection/dynamic loading, (2) a Java class/method that is
+instantiated/invoked by a native method.
+
+<p>
+In general, Flex (or any other static compiler) is unable to find the
+roots of type (1) (e.g., the program can load classes with names read
+from an input file).  Theoretically, the roots of type (2) should be
+easy to find by the compiler, once we know the specific Java standard
+library we compile against (we just make the compiler know about the
+Java classes/methods that each native method from the standard library
+instantiates/invokes).  Still, Flex does not always do this (please
+don't ask me why, hopefully, this will be fixed at some point);
+sometimes, it may be possible to use the additional command line
+option <code>-r &lt;rootSetFileName&gt;</code> and pass a few
+additional roots.
+
+<p>
+The root problem introduces a new limitation: Flex cannot compile /
+analyze applications against arbitrary implementations of the Java
+standard library.  So, here is the new problem:
+
+
+<p>
+<li><b>Specific Java Standard Library Only:</b> Currently, Flex
+compiles / analyzes applications against the GNU Classath 0.08
+implementation of the Java standard library.  The reasons should be
+obvious from reading the previous points.  If your application uses a
+part of the standard library that is not in the currently used Java
+library, you're in trouble.
+
+<p>
+[ You may be confused that we don't base our tool on one of the Sun
+JDK implementations of the standard library (a
+<code>classes.zip</code>, <code>rt.jar</code> from a Sun JDK).  The
+reason has to do with the copyright attached to the Sun JDK, and we
+don't want to say more here. ]
+
+
+<p>
+<li><b>Correctness Issues:</b>
+
+TODO: mention out assumptions about toString, equals, compareTo methods.
+
+
+</ul>
 
 
 <p>
@@ -375,3 +482,4 @@ GNU General Public Licence
 
 </body>
 </html>
+
