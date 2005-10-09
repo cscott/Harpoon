@@ -35,11 +35,18 @@ GNU General Public Licence
  <li><a href="#thorny-issues">H. Limitations / Thorny Issues</a>
 </ul>
 
+
+<b>Warning:</b> The purity analysis tool and this webpage are provided
+as-it-is, without any guarantee or legal responsibility on behalf of
+their authors.<br>
+
+<p>
 <b>Note:</b> This HTML file serves a double purpose: (1) the main
-webpage for the purity analysis kit, and (2) the README file included
-in he kit.  When you read this file as part of the kit, some of the
-relative URLs may be invalid; however, this should not affect you,
-since by that time you should already have all the required files.
+webpage for the purity analysis kit, and (2) the
+<code>README.html</code> file included in he kit.  When you read this
+file as part of the kit, some of the relative URLs may be invalid;
+however, this should not affect you, since by that time you should
+already have all the required files.
 
 
 <a name="licence-info"><h2>A. Licence information</h2></a>
@@ -52,18 +59,23 @@ with the GNU GPL.
 
 <a name="purity-def"><h2>B. Definition of <i>Purity</i></h2></a>
 
-Our analysis considers a method pure if it does not mutate any object
-that existed before the method was invoked; this is also the
-definition used in <a href="">JML</a>.  Notice that a method that is
-pure according to this definition may still create, mutate and even
-return new objects.  The reason JML uses this definition is that if a
-method does not mutate any pre-existent object, the invariants
-attached to those objects propagate over calls to that method.  In
-addition, as a special case, our (and JML's) definition of purity
-allows a pure constructor to mutate fields of the <code>this</code>
-object. [ However, as explained in the Section D. below, you may use
-the option <code>--no-jml-constructor-purity</code> to instruct the
-analysis to consider such constructors impure. ]
+This tool implements the combined pointer and purity analysis
+described in our <a
+href="http://www.mit.edu/~salcianu/publications.html#vmcai05-purity">VMCAI'05
+paper</a>.  Our analysis considers a method pure if it does not mutate
+any object that existed before the method was invoked; this is also
+the definition used in <a
+href="http://www.cs.iastate.edu/~leavens/JML">JML</a>.  Notice that a
+method that is pure according to this definition may still create,
+mutate and even return new objects.  The reason JML uses this
+definition is that if a method does not mutate any pre-existent
+object, the invariants attached to those objects propagate over calls
+to that method.  In addition, as a special case, our (and JML's)
+definition of purity allows a pure constructor to mutate fields of the
+<code>this</code> object. <i>[ However, as explained in the Section
+F. below, you may use the option
+<code>--no-jml-constructor-purity</code> to instruct the analysis to
+consider such constructors impure. ]</i>
 
 
 
@@ -242,10 +254,7 @@ analyzed classes consists of (in order):
 
 <tr valign=top>
 <td>1</td>
-<td><code>args[1]</code></td>
-<td>
-The user-defined path
-</td>
+<td colspan="2">The user-defined path (i.e., the value of <code>args[1]</code>).</td>
 </tr>
 
 <tr valign=top>
@@ -316,12 +325,12 @@ static field in the class
 </code>
 
 <p>
-[ We say "almost" because, for efficiency reasons, the analysis skips
+<i>[ We say "almost" because, for efficiency reasons, the analysis skips
 (i.e., considers unanalyzable) several large library methods, whose
 analysis takes a long time and does not seem to produce anything
 useful.  Those methods deal with the SecurityManager and the time
 zones.  Let me know if you really care about them: the analysis can
-analyze them, at the cost of a bigger analysis time. ]
+analyze them, at the cost of a bigger analysis time. ]</i>
 
 <p>
 Also, the analysis stores a map from each analyzed method to a list of
@@ -363,11 +372,14 @@ href="http://flex-master.csail.mit.edu/Harpoon/doc/harpoon/ClassFile/HMethod.htm
 The current implementation (the first version of which was completed
 in September 2005) is much faster than the one used for the benchmarks
 from the VMCAI'05 paper; in particular, the current implementation is
-able to analyze itself in less than an hour.  Still, even the current
-implementation has problems when analyzing big programs.  Most of
-these problems stem from the fact that we use an inherently expensive
-pointer analysis; some other problems are due to the fact that some
-parts of the Flex compiler infrastructure are not very fast.
+able to analyze itself in less than an hour (the pointer and purity
+analysis taking 30 minutes, with the rest of the time spent on
+intermediate representation construction, call-graph construction, and
+other compiler stages).  Still, even the current implementation has
+problems when analyzing big programs.  Most of these problems stem
+from the fact that we use an inherently expensive pointer analysis;
+some other problems are due to the fact that some parts of the Flex
+compiler infrastructure are not very fast.
 
 <p>
 The primary goal of the research presented in the VMCAI'05 paper was
@@ -377,13 +389,22 @@ objects (e.g., the objects allocated in order to construct the method
 result).  There are other published purity analyses (although it is
 unclear whether there is any publicly-available tool behind them);
 some of these analyses support a stricter notion of purity and claim
-to be faster that this analysis; a good such example is <a
+to be faster that this analysis; if interested, please search these
+papers using your favorite search engine and contact their authors
+directly.  Alternatively, if you are an author of such an analysis,
+have a publicly available implementation, and want it mentioned here,
+please drop <a href="http://www.mit.edu/~salcianu">Alex Salcianu</a>
+an email, and your project will be mentioned here.
+
+
+<!--
+a good such example is <a
 href="http://www.cse.ohio-state.edu/~rountev/">Atanas Rountev</a>'s
 analysis described in his ICSM'04 paper "Precise Identification of
 Side-Effect-Free Methods in Java" (available, for a small cost, from
 <a
 href="http://doi.ieeecomputersociety.org/10.1109/ICSM.2004.1357793">here</a>).
-
+-->
 
 
 <p>
@@ -392,18 +413,19 @@ href="http://doi.ieeecomputersociety.org/10.1109/ICSM.2004.1357793">here</a>).
 The current implementation requires a full program, i.e., by default,
 it cannot analyze a library.  Here is why: the analysis is
 inter-procedural and requires a call-graph for the analyzed program.
-Hence, the analysis needs to know all potential callees of a virtual
-call of the form <code>o.foo()</code>; this requires knowledge of the
-types of all objects that <code>o</code> may point to (once we know
-this, we can just see what <code>foo</code> method is invoked for each
-cuh type).  The current call-graph computation takes place before the
-pointer analysis and is very simple: it first determines all classes
+The analysis needs to know all potential callees for a virtual call of
+the form <code>o.foo()</code>; this requires knowledge of the types of
+all objects that <code>o</code> may point to (once we know this, we
+can find out what <code>foo</code> method is invoked for each such
+class).  The current call-graph computation takes place before the
+pointer analysis and is quite simple: it first determines all classes
 that may be instantiated in the program; next, for each virtual call
 of the form <code>o.foo()</code>, it considers all subclasses of the
 declared type for <code>o</code> that are instantiated in the current
-program.  [ Theoretically, it is possible to combine the call-graph
-computation and the pointer analysis; however, the pointer analysis
-alone is very complex so I never investigated such a combination. ]
+program.  <i>[ Theoretically, it is possible to design and implement a
+combined call-graph and pointer analysis; however, the pointer
+analysis alone is very complex so I never investigated such a
+combination. ]</i>
 
 <p>
 So far we have explained the need to know all classes that may
@@ -412,17 +434,17 @@ requires knowledge of all methods that may be invoked by the analyzed
 program (because each method can instantiates classes that may not be
 instantiated anywhere else in the program).  Detecting all invoked
 methods and all instantiated classes is complex in the presence of (1)
-class instantiation via reflection, and (2) native methods (that our
+class instantiation via reflection, and (2) native methods - that our
 compiler infrastructure (that deals only with Java bytecode) does not
 see.  That's how we run into the other difficulty, finding the
 appropriate set of <i>roots</i> (see next point).
 
 
 <p>
-<li><b>Finding the appropriate set of program roots:</b> In big lines,
+<li><b>Finding the Appropriate Set of Program Roots:</b> In big lines,
 a <i>root</i> is (1) a Java class/method that is instantiated/invoked
-using reflection/dynamic loading, (2) a Java class/method that is
-instantiated/invoked by a native method.
+using reflection and dynamic class loading; (2) a Java class/method
+that is instantiated/invoked by a native method.
 
 <p>
 In general, Flex (or any other static compiler) is unable to find the
@@ -432,15 +454,15 @@ easy to find by the compiler, once we know the specific Java standard
 library we compile against (we just make the compiler know about the
 Java classes/methods that each native method from the standard library
 instantiates/invokes).  Still, Flex does not always do this (please
-don't ask me why, hopefully, this will be fixed at some point);
-sometimes, it may be possible to use the additional command line
-option <code>-r &lt;rootSetFileName&gt;</code> and pass a few
+don't ask me why; hopefully, this "feature" will be fixed at some
+point); sometimes, it may be possible to use the additional command
+line option <code>-r &lt;rootSetFileName&gt;</code> and pass a few
 additional roots.
 
 <p>
 The root problem introduces a new limitation: Flex cannot compile /
 analyze applications against arbitrary implementations of the Java
-standard library.  So, here is the new problem:
+standard library (see next point).
 
 
 <p>
@@ -449,21 +471,87 @@ compiles / analyzes applications against the GNU Classath 0.08
 implementation of the Java standard library.  The reasons should be
 obvious from reading the previous points.  If your application uses a
 part of the standard library that is not in the currently used Java
-library, you're in trouble.
+library, you're in trouble ...
 
 <p>
-[ You may be confused that we don't base our tool on one of the Sun
+<i>[ You may be confused that we don't base our tool on one of the Sun
 JDK implementations of the standard library (a
-<code>classes.zip</code>, <code>rt.jar</code> from a Sun JDK).  The
-reason has to do with the copyright attached to the Sun JDK, and we
-don't want to say more here. ]
+<code>classes.zip</code> / <code>rt.jar</code> file from a Sun JDK).
+The reason has to do with the copyright attached to the Sun JDK, and
+we don't want to say more here. ]</i>
 
 
 <p>
 <li><b>Correctness Issues:</b>
 
-TODO: mention out assumptions about toString, equals, compareTo methods.
+Although the underlying theoretical analysis is correct, there are
+several sources of unsoundness in the current implementation:
 
+<ul>
+
+<li><b>This is a research prototype, not an industrial tool!</b>
+Please have realistic assumptions before using this tool; due to the
+lack of resources (i.e., time) it has not been engineered to
+perfection.  Bug reports to <a
+href="http://www.mit.edu/~salcianu">Alex Salcianu</a> should consist
+of a plain-text email with a URL to a place that contains: (1) the
+file <code>purity-kit.tgz</code> that you're using (such that we make
+sure we debug the same version of the tool); (2) the application you
+analyze (including all relevant <code>.jar</code> / <code>.zip</code>
+files); (3) a text file containing the error trace, i.e., the output
+of the analysis; (4) the command line / script / Java code you use to
+invoke the analysis.  Of course, there is no time guarantee about the
+processing of the bug reports.
+
+<p>
+<li><b>Assumptions about <i>special methods</i></b>: Several methods appear
+almost everywhere, and confuse the call-graph computation.  E.g., many
+call-graph construction algorithms would normally report almost all
+<code>toString</code> methods from the program (and many other
+methods) as being part of a "nest" of mutually recursive methods.  The
+reason is that these methods generally call
+<code>StringBuffer.append(Object)</code>, which calls
+<code>String.valueOf(Object)</code>; this last method returns
+<code>"null"</code> if its argument is null; otherwise, it dynamically
+dispatch the <code>toString()</code> method on its <code>Object</code>
+argument, which (statically) appears to invoke all
+<code>toString()</code> methods from the program! <i>[ You are right, one
+could remove some of these problems by inlining
+<code>String.valueOf</code> until the type of its argument becomes
+more specific that <code>Object</code>; this will solve some, but not
+all the problems. ]</i>
+
+<p>
+Other similar methods are <code>equals</code> and
+<code>hashCode</code>.  Clearly, running an inter-procedural
+fixed-point algorithm on groups of dozens, possibly hundreds of
+methods will be too slow.  However, notice that we don't usually
+expect these methods to perform mutation.  To speed up the analysis,
+we assume that these methods are safe with respect to all their
+parameters (the methods do not mutate and do not create new externally
+visible paths to any object transitively reachable from the
+parameters).  We assume this property about all overriders of the
+following methods:
+
+<p>
+<code>
+String java.lang.Object.toString();<br>
+boolean java.lang.Object.equals(Object);<br>
+int java.lang.Object.hashCode();<br>
+int java.lang.Comparable.compareTo(Object);<br>
+</code>
+
+<p>
+This assumption allows the analysis to treat calls to such methods
+very fast, bypassing the usual inter-procedural algorithm.  Of course,
+after the analysis terminates, you can look over its log and see if
+any special method violated the assumption.  In general, this happens
+because of some caching mechanism (i.e., the methods updates a cache
+pointed from the <code>this</code> parameter); in that case, you can
+check manually that the caching mechanism is just a speed issue, with
+no impact on the semantics of the program.
+
+</ul>
 
 </ul>
 
