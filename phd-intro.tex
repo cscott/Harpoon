@@ -31,7 +31,7 @@ Although transactions can be implemented using mutual exclusion
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
 synchronization offers a number of advantages; foremost for the
-concerns of this thesis is fault-tolerance.  A process which fails
+concerns of this thesis is fault tolerance.  A process which fails
 while holding a lock within a critical region can prevent all other
 non-failing processes from ever making progress.  It is in general not
 possible to restore the locked data structures to a consistent state
@@ -56,8 +56,8 @@ starvation of low-priority tasks; see \charef{progress}.
 The transaction model is a natural means to express both desired
 atomicity and fault-tolerance properties.  In this thesis, I will also
 show how transactions can be integrated into an object-oriented
-language and used for fault-tolerance, backtracking,
-exception-handling, and concurrency control in new programs.  I will
+language and used for fault tolerance, backtracking,
+exception handling, and concurrency control in new programs.  I will
 also show how
 existing code might safely be ``transactified'' to fix existing
 concurrency bugs (\charef{safe-transactify}).
@@ -124,7 +124,7 @@ transactions.
 \subsection{Four new things transactions make easy}
 
 I present three examples in this section, illustrating how
-transactions can support fault-tolerance and back-tracking,
+transactions can support fault tolerance and backtracking,
 simplify locking, and provide a more intuitive
 means for specifying thread-safety properties.
 I will first examine a destructive traversal algorithm, showing how a
@@ -209,7 +209,7 @@ when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
 Introducing an explicit {\tt fail} statement allows us to use the same
-{\tt try}/{\tt else} for back-tracking search.\index{back-tracking}
+{\tt try}/{\tt else} for backtracking search.\index{backtracking}
 \note{Insert example here?}
 
 \subsubsection{Network flow}\label{sec:flow}\index{network flow}
@@ -308,7 +308,7 @@ for (int b=0; ; b++) {
 I non-deterministically choose to execute the body of the {\tt
   atomic} block if and only if it will be observed by all to execute
 atomically.  The same linguistic mechanism I introduced for
-fault-tolerance and back-tracking provides atomic regions for
+fault tolerance and backtracking provides atomic regions for
 synchronization as well.
 \note{Mention optimistic parallelism here?}
 

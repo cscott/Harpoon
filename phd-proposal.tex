@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-proposal.tex,v 1.10 2004-09-07 22:04:42 cananian Exp $
+% $Id: phd-proposal.tex,v 1.11 2005-10-10 22:35:36 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,twoside]{article}
 %\usepackage{pdffonts}
@@ -182,7 +182,7 @@ Although transactions can be implemented using mutual exclusion
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
 synchronization offers a number of advantages; foremost for the
-concerns of this thesis is fault-tolerance.  A process which fails
+concerns of this thesis is fault tolerance.  A process which fails
 while holding a lock within a critical region can prevent all other
 non-failing processes from ever making progress.  It is in general not
 possible to restore the locked data structures to a consistent state
@@ -206,7 +206,7 @@ synchronization can prevent \emph{priority inversion} in the system
 The transaction model is a natural means to express both desired
 atomicity and fault-tolerance properties.  In my thesis research, I
 will also show how transactions can be used as a general
-exception-handling mechanism and to implement back-tracking.
+exception-handling mechanism and to implement backtracking.
 Transactions can be integrated into Java and used for fault-tolerance,
 backtracking, exception-handling, and concurrency control in new
 programs.  Further, existing code can often be ``transactified'' to
@@ -392,7 +392,7 @@ non-blocking synchronization to implement atomic methods.
 
 \section{Examples and Motivation}
 I present three examples in this section, illustrating how
-transactions can support fault-tolerance and back-tracking,
+transactions can support fault tolerance and backtracking,
 simplify locking, and provide a more intuitive
 means for specifying thread-safety properties.
 I will first examine a destructive traversal algorithm, showing how a
@@ -478,7 +478,7 @@ when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
 Introducing an explicit {\tt fail} statement allows us to use the same
-{\tt try}/{\tt else} for back-tracking search.
+{\tt try}/{\tt else} for backtracking search.
 
 \subsecput{flow}{Network flow}
 
@@ -583,7 +583,7 @@ for (int b=0; ; b++) {
 I non-deterministically choose to execute the body of the {\tt
   atomic} block if and only if it will be observed by all to execute
 atomically.  The same linguistic mechanism I introduced for
-fault-tolerance and back-tracking provides atomic regions for
+fault tolerance and backtracking provides atomic regions for
 synchronization as well.
 \note{Mention optimistic parallelism here?}
 
@@ -1189,7 +1189,7 @@ The contributions of this thesis are expected to include:
   description of the transaction properties of typical Java programs
   transformed in such a way.
 \item A concrete language design to integrate transactions into Java
-  providing fault-tolerance, backtracking, and non-blocking
+  providing fault tolerance, backtracking, and non-blocking
   synchronization.
 %\note{This is \texttt{try \{\ldots\} else \{\ldots\}} syntax.}
 %\note{Omitting ``optimistic concurrency'' from this list for now.}
@@ -1209,7 +1209,7 @@ The contributions of this thesis are expected to include:
 \end{itemize}
 
 I have outlined a mechanism to integrate transactions into an object
-oriented language to provide fault-tolerance, back-tracking, and
+oriented language to provide fault tolerance, backtracking, and
 non-blocking synchronization.  I have also shown the potential for
 automatically ``transactifying'' existing Java programs, and presented
 empirical data on the properties of these transactified applications.
@@ -1438,7 +1438,7 @@ write operations are implemented as:
 
 At the end of the atomic method, we use Compare-And-Swap to atomically
 set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
-we back-off and retry.
+we back off and retry.
 
 With our na{\"\i}ve ``small object'' functional arrays, this implementation is
 exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
@@ -1587,7 +1587,7 @@ atomic method, we use CAS to set \fref{\var{oid}}{status} to
 {\sl COMPLETE} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
 the atomic method has also executed successfully; otherwise
 $\fref{\var{oid}}{status}=\text{\sl DISCARDED}$ and we must
-back-off and retry the atomic method.  All {\tt Version} structures
+back off and retry the atomic method.  All {\tt Version} structures
 created while in the atomic method will reference \emph{oid} in
 in their {\tt owner} field.
 
@@ -1633,7 +1633,7 @@ follows:
              \addr{\fref{\var{oid}}{status}})$$
   is successful, the atomic method as a whole has completed successfully,
   and can be linearized at the location of the CAS.
-  Otherwise, the method has failed.  Back-off and retry from
+  Otherwise, the method has failed.  Back off and retry from
   \funcname{AtomicEntry}.
 \end{itemize}
 Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{AtomicRead},

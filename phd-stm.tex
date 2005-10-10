@@ -722,7 +722,7 @@ write operations are implemented as:
 
 At the end of the atomic method, we use Compare-And-Swap to atomically
 set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
-we back-off and retry.
+we back off and retry.
 
 With our na{\"\i}ve ``small object'' functional arrays, this implementation is
 exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
@@ -874,7 +874,7 @@ atomic method, we use CAS to set \fref{\var{oid}}{status} to
 {\sl COMPLETE} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
 the atomic method has also executed successfully; otherwise
 $\fref{\var{oid}}{status}=\text{\sl DISCARDED}$ and we must
-back-off and retry the atomic method.  All {\tt Version} structures
+back off and retry the atomic method.  All {\tt Version} structures
 created while in the atomic method will reference \emph{oid} in
 in their {\tt owner} field.
 
@@ -920,7 +920,7 @@ follows:
              \addr{\fref{\var{oid}}{status}})$$
   is successful, the atomic method as a whole has completed successfully,
   and can be linearized at the location of the CAS.
-  Otherwise, the method has failed.  Back-off and retry from
+  Otherwise, the method has failed.  Back off and retry from
   \funcname{AtomicEntry}.
 \end{itemize}
 Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{AtomicRead},

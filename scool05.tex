@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.26 2005-10-07 15:50:48 cananian Exp $
+% $Id: scool05.tex,v 1.27 2005-10-10 22:35:36 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -119,7 +119,7 @@ DARPA/AFRL Contract F33615-00-C-1692.}%
 %
 \secput{intro}{Introduction}
 The transaction model is a natural means to express atomicity,
-fault-tolerance, exception-handling, and back-tracking.
+fault tolerance, exception handling, and backtracking.
 Although transactions can be implemented using mutual exclusion
 (locks), the algorithms presented utilize non-blocking synchronization%
 \footnote{We use the term \emph{non-blocking} to describe
@@ -129,7 +129,7 @@ lock-free~\cite{MassalinPu91},
 and obstruction-free~\cite{HerlihyLuMo03} implementations.}
 to exploit optimistic concurrency among transactions.
 Non-blocking synchronization offers a number of advantages; among them
-fault-tolerance: processes that
+fault tolerance: processes that
 fail in critical regions cannot prevent other processes from making
 progress.
 
@@ -161,14 +161,14 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
 \end{figure*}
 
 \secput{why}{Using Objects for Performance}
-Recent trends in lightweight transaction system design have used
+Many recent lightweight transaction system designs have used
 a \emph{transactional memory} abstraction.  The performance
 improvements and other advantages demonstrated by
 Hardware Transactional Memory (HTMs)
 \cite{Knight86,HerlihyMo92,HerlihyMo93,HammondWoCh04,AnanianAsKuLeLi04},
-using word- or cache-line--based abstractions to match the standard
+using cache-line--based abstractions to match the standard
 cache/memory system,
-have inspired similar Software Transactional Memory (STM) systems
+have inspired similar word-based Software Transactional Memory (STM) systems
 \cite{ShavitTo95,HarrisFr03}.  We suggest that the
 exclusive\footnote{In \secref{hybrid} we describe how to use a small
   flat HTM to augment our object-based system.}
@@ -206,12 +206,12 @@ that all input and output locations touched by a transaction be known
 in advance.  Herlihy, Luchangco, Moir, and Scherer's scheme
 \cite{HerlihyLuMoSc03} allows transactions to touch a dynamic set of
 memory locations; however the user still has to \emph{explicitly} ``open''
-every object touched before it can be used in a transaction.  Further
+every object touched before it can be used in a transaction.  Moreover,
 the cost of opening $R$ objects for reading and $W$ objects for
 writing is $O(R(R+W))$; that is, potentially quadratic in the number
 of objects involved.  The transaction system we will present
 in \secref{algo} does not require foreknowledge of the behavior of a
-transaction, and does not blow up on transactions touching a large
+transaction, and does not blow up on transactions that touch a large
 number of objects.
 
 Large objects and arrays typically present problems for object-based
@@ -226,7 +226,7 @@ transactional code that motivate our design.
 \secput{properties}{Properties of Transactions}
 One of the difficulties of evaluating transaction implementations is the
 lack of benchmarks.  Although there is no body of
-code yet using {\tt atomic} regions, there is a substantial body of
+code that uses {\tt atomic} regions, there is a substantial body of
 code that uses Java (locking) synchronization.  We have implemented a
 compiler that substitutes {\tt atomic} blocks/methods for {\tt
   synchronized} blocks/methods in order to evaluate the properties
@@ -379,21 +379,21 @@ reserving the extra allocation effort for transactional writes.
 \secput{algo}{Software Transaction Mechanism}
 We now present an algorithm that has these desired properties.
 Our algorithms will be completely non-blocking, which allows good
-scaling and proper fault-tolerant behavior: one faulty or slow
+scaling and proper fault tolerant behavior: one faulty or slow
 processor cannot hold up the remaining good processors.
 
 We will implement the synchronization required by our algorithm using
-Load-Linked/Store-Conditional instructions.  We require a particular
+Load Linked/Store Conditional instructions.  We require a particular
 variant of these instructions that allows the location of the
-Load-Linked to be different from the target of the Store-Conditional:
+Load Linked to be different from the target of the Store Conditional:
 this variant is supported on the PowerPC processor family, although it
 has been deprecated in the newest chips.  This disjoint location
 capability is essential to allow us to keep a finger on one location
 while modifying another: a poor man's ``Double Compare And Swap''
-instruction.  Load-Linked/Store-Conditional also
+instruction.  Load Linked/Store Conditional also
 provides a convenient solution to the so-called ``ABA'' problem of
-Compare-And-Swap.\footnote{Store-Conditional will fail if the target
-  of the Load-Linked is written to, even if the value written is
+Compare-And-Swap.\footnote{Store Conditional will fail if the target
+  of the Load Linked is written to, even if the value written is
   identical to value previously in the location.}
 
 We will describe our algorithms in the Promela modeling language
@@ -457,7 +457,7 @@ The simplicity of commit and abort are appealing: our algorithm
 requires no complicated processing, delay, roll-back or validate
 procedure to commit or abort a transaction.
 
-We will present the other operations one-by-one.
+We will present the other operations one by one.
 
 \subsubsection{Read}\label{sec:readnt}
 
@@ -497,11 +497,11 @@ inline readNT(o, f, v) {
 The {\tt WriteNT} function does a non-transactional write of new value $nval$
 to field $f$ of object $o$.  For correctness, the thread needs to ensure that
 the reader list is empty before it does the write.  We implement this
-with a Load-Linked/Store-Conditional pair (modelled slightly
+with a Load Linked/Store Conditional pair (modelled slightly
 differently in Promela), ensuring that the write only takes effect
 so long as the reader list remains empty.\footnote{Note that a
-  standard CAS would not suffice, as the Load-Linked targets a
-  different location than the Store-Conditional.}
+  standard CAS would not suffice, as the Load Linked targets a
+  different location than the Store Conditional.}
 If it is not empty, the thread must
 call the copy-back procedure (as in {\tt readNT}), passing the
 constant {\tt kill\_all} to indicate that both transactional readers
@@ -545,7 +545,7 @@ inline writeNT(o, f, nval) {
 \figref{copyback} presents the field copy-back routine.  The thread creates a
 pseudo-version owned by a pre-aborted transaction which serves as a
 reservation on the head of the version list.  It then writes to the
-object field (with a Load-Linked/Store-Conditional pair) if and only if
+object field (with a Load Linked/Store Conditional pair) if and only if
 its pseudo-version remains at the head of the versions list.\footnote{Note
   again that a CAS does not suffice.}  We want to avoid being
 interrupted while writing back some value $A$, and having a concurrent
@@ -856,7 +856,7 @@ The second preparatory step is done once for each field we intend to write.
 The thread must perform a copy-through on each field:
 copy the object's (pre-write) field value into all the versions and
 then write \FLAG to the object's field.  We use
-Load-Linked/Store-Conditional to update versions only if the object's
+Load Linked/Store Conditional to update versions only if the object's
 field has not already been set to \FLAG behind our backs by a concurrent
 copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
@@ -997,7 +997,7 @@ for hardware support \cite{ClickTeWo05}.
 
 As a fortuitous synergy, hardware support for small transactions may
 also be used to implement the software transaction implementation's
-Load-Linked/Store-Conditional sequences, which may not
+Load Linked/Store Conditional sequences, which may not
 otherwise be available on a target processor.
 
 \secput{verification}{Verification}
@@ -1397,7 +1397,7 @@ write operations are implemented as:
 
 At the end of the atomic method, we use Compare-And-Swap to atomically
 set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
-we back-off and retry.
+we back off and retry.
 
 With our na{\"\i}ve ``small object'' functional arrays, this implementation is
 exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
@@ -1546,7 +1546,7 @@ atomic method, we use CAS to set \fref{\var{oid}}{status} to
 {\sl COMPLETE} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
 the atomic method has also executed successfully; otherwise
 $\fref{\var{oid}}{status}=\text{\sl DISCARDED}$ and we must
-back-off and retry the atomic method.  All {\tt Version} structures
+back off and retry the atomic method.  All {\tt Version} structures
 created while in the atomic method will reference \emph{oid} in
 in their {\tt owner} field.
 
@@ -1592,7 +1592,7 @@ follows:
              \addr{\fref{\var{oid}}{status}})$$
   is successful, the atomic method as a whole has completed successfully,
   and can be linearized at the location of the CAS.
-  Otherwise, the method has failed.  Back-off and retry from
+  Otherwise, the method has failed.  Back off and retry from
   \funcname{AtomicEntry}.
 \end{itemize}
 Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{AtomicRead},
