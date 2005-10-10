@@ -39,7 +39,7 @@ void *ourrealloc(void *ptr, size_t size) {
   }
   typemapdeallocate(memmap, ptr);
   typemapallocate(memmap, orr,size);
-  return otr;
+  return orr;
 }
 
 void alloc(void *ptr,int size) {
