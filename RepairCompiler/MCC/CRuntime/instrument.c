@@ -24,7 +24,9 @@ void *ourmalloc(size_t size) {
 }
 
 void ourfree(void *ptr) {
-  typemapdeallocate(memmap, ptr);
+  if (ptr!=NULL) {
+    typemapdeallocate(memmap, ptr);
+  }
   free(ptr);
 }
 
