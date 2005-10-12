@@ -6,7 +6,7 @@ import MCC.IR.*;
 import java.util.*;
 
 public class State {
-    
+
     public static State currentState = null;
 
     public static boolean failed = false;
@@ -32,9 +32,10 @@ public class State {
     public Vector vRules;
 
     public Hashtable rulenodes;
-    public Hashtable constraintnodes;    
+    public Hashtable constraintnodes;
     public Hashtable implicitrule;
     public Hashtable implicitruleinv;
+    public HashSet noupdate;
 
     public SetAnalysis setanalysis;
     State() {
@@ -52,6 +53,7 @@ public class State {
         ptSpace = null;
 	implicitrule=new Hashtable();
 	implicitruleinv=new Hashtable();
+        noupdate=new HashSet();
     }
 
     void printall() {
@@ -64,5 +66,5 @@ public class State {
 	    System.out.println(c.toString());
 	}
     }
-    
+
 }

@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.16 2005-10-02 05:13:26 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.17 2005-10-12 17:43:10 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -110,6 +110,8 @@ public class CLI {
 	    System.out.println("-omitcomp -- omit compensation updates");
 	    System.out.println("-mergenodes -- omit nodes for simpler role dependence graphs");
 	    System.out.println("-debuggraph -- add edge labels and support to debug graph");
+	    System.out.println("-rejectlengthchanges -- reject all updates which change the length of an array");
+
 	    System.exit(-1);
 	}
 
@@ -131,6 +133,8 @@ public class CLI {
 	    } else if (args[i].equals("-depthconj")) {
 		Compiler.debuggraphs.add(new DebugItem(Integer.parseInt(args[i+1]),Integer.parseInt(args[i+2]),Integer.parseInt(args[i+3])));
 		i+=3;
+            } else if (args[i].equals("-rejectlengthchanges")) {
+                Compiler.REJECTLENGTH=true;
 	    } else if (args[i].equals("-debug")) {
                 Compiler.GENERATEDEBUGHOOKS=true;
 	    } else if (args[i].equals("-time")) {
