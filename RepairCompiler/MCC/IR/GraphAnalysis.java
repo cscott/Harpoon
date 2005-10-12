@@ -723,8 +723,9 @@ public class GraphAnalysis {
 		    foundrepair=true;
 		}
    	    }
-	    if (!foundrepair)
+	    if (!foundrepair) {
 		return ERR_NOREPAIR;
+            }
 	}
 
 

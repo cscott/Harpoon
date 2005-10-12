@@ -44,12 +44,27 @@ class UpdateNode {
 	}
     }
 
-    public boolean checkupdates() {
+    public boolean checkupdates(State state) {
 	if (!checkconflicts()) /* Do we have conflicting concrete updates */
 	    return false;
+        if (!checknoupdates(state))
+            return false;
 	if (computeordering()) /* Ordering exists */
 	    return true;
 	return false;
+    }
+
+    private boolean checknoupdates(State state) {
+        Set noupdate=state.noupdate;
+        for(int i=0;i<updates.size();i++) {
+	    Updates u=(Updates)updates.get(i);
+            if (u.isAbstract())
+                continue; /* Abstract updates don't change fields */
+            Descriptor d=u.getDescriptor();
+            if (noupdate.contains(d))
+                return false;
+        }
+        return true;
     }
 
     private boolean computeordering() {

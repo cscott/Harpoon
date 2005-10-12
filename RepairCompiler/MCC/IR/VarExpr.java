@@ -83,7 +83,10 @@ public class VarExpr extends Expr {
     }
 
     public Set getRequiredDescriptors() {
-        return new HashSet();
+        Set s=new HashSet();
+        s.add(vd);
+        return s;
+
     }
 
     public VarDescriptor getVar() {

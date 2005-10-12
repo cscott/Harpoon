@@ -3,6 +3,7 @@ package MCC.IR;
 import java.util.*;
 import java.math.BigInteger;
 import MCC.State;
+import MCC.Compiler;
 
 public class SemanticChecker {
 
@@ -995,6 +996,10 @@ public class SemanticChecker {
                                 public IRErrorReporter getErrorReporter() { return er; }
                                 public SymbolTable getSymbolTable() { return stGlobals; }
                             });
+                        if (Compiler.REJECTLENGTH) {
+                            analyze_length(indexbound);
+                        }
+
 
                         if (indextype == null) {
                             ok = false;
@@ -1033,6 +1038,20 @@ public class SemanticChecker {
         // cast, i believe
 
         return ok;
+    }
+
+    private void analyze_length(Expr indexbound) {
+        Set descriptors=indexbound.getRequiredDescriptors();
+        for(Iterator it=descriptors.iterator();it.hasNext();) {
+            Descriptor d=(Descriptor)it.next();
+            if (d instanceof FieldDescriptor) {
+                state.noupdate.add(d);
+            } else if (d instanceof ArrayDescriptor) {
+                state.noupdate.add(d);
+            } else if (d instanceof VarDescriptor) {
+                state.noupdate.add(d);
+            }
+        }
     }
 
     private boolean parse_global(ParseNode pn) {

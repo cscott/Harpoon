@@ -158,6 +158,7 @@ public class DotExpr extends Expr {
         if (intindex != null) {
             v.addAll(intindex.getRequiredDescriptors());
         }
+        v.add(fd);
         return v;
     }
 

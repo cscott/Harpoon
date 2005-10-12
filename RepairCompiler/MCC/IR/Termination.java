@@ -627,7 +627,7 @@ public class Termination {
 			continue;
 		    }
 		}
-		if (!un.checkupdates()) /* Make sure we have a good update */
+		if (!un.checkupdates(state)) /* Make sure we have a good update */
 		    continue;
 
 		mun.addUpdate(un);
@@ -734,7 +734,7 @@ public class Termination {
 			goodflag=false;break;
 		    }
 		}
-		if (!un.checkupdates()) {
+		if (!un.checkupdates(state)) {
 		    goodflag=false;
 		    break;
 		}
@@ -855,7 +855,7 @@ public class Termination {
 			goodflag=false;
 		}
 
-		if (!un.checkupdates()) {
+		if (!un.checkupdates(state)) {
 		    goodflag=false;
 		    break;
 		}
@@ -914,7 +914,6 @@ public class Termination {
 				continue endloop;
 			    e=ce.getExpr();
 			}
-
 			if (!(e instanceof VarExpr)) {
 			    if (e.isValue(si.getSet().getType())) {
 				Updates up=new Updates(e,0,si.getSet().getType());
@@ -1043,7 +1042,7 @@ public class Termination {
 			debugmsg("Finished processing quantifiers")&&
 			processconjunction(un,ruleconj,setmapping)&&
 			debugmsg("Finished processing conjunction")&&
-			un.checkupdates()&&
+			un.checkupdates(state)&&
 			debugmsg("Updates checked")) {
 			mun.addUpdate(un);
 			GraphNode.Edge e=new GraphNode.Edge("abstract5"+addtocount,gn2);
