@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.8 2005-09-29 03:56:53 salcianu Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.9 2005-10-13 22:14:45 salcianu Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -75,9 +75,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     public Set<HClass> classes() {
 	if (_classes == null) {
 	    _classes = new HashSet<HClass>();
-	    for(Iterator<HClass> it = children.keySet().iterator();
-		it.hasNext(); )
-		_classes.add(it.next());
+	    for(HClass hc : children.keySet()) {
+		_classes.add(hc);
+	    }
 	    for(HClass[] ch : children.values()) {
 		for (int i=0; i<ch.length; i++)
 		    _classes.add(ch[i]);
@@ -138,7 +138,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     }
 
 
-    private Collection plusImplicitExceptions(Linker linker, Collection roots, HCodeFactory hcf) {
+    private void addImplicitExceptions(Linker linker, Collection roots, HCodeFactory hcf) {
 	// add 'implicit' exceptions to root set when analyzing QuadWithTry
 	String[] implExcName = new String[] { 
 	    "java.lang.ArrayStoreException",
@@ -152,24 +152,22 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	for (int i=0; i<implExcName.length; i++)
 	    roots.add(linker.forName(implExcName[i])
 		      .getConstructor(new HClass[0]));
-	return roots;
     }
 
     // make initial worklist from roots collection.
     private void initWorkList(State S, Collection roots) {
-	for (Iterator it = roots.iterator(); it.hasNext(); ) {
+	for (Object root : roots) {
 	    HClass rootC; HMethod rootM; boolean instantiated;
 	    
 	    // deal with the different types of objects in the roots collection
-	    Object o = it.next();
-	    if (o instanceof HMethod) {
-		rootM = (HMethod) o;
+	    if (root instanceof HMethod) {
+		rootM = (HMethod) root;
 		rootC = rootM.getDeclaringClass();
 		// let's assume non-static method roots have objects to go with 'em.
 		instantiated = !rootM.isStatic();
 	    } else { // only HMethods and HClasses in roots, so o must be HClass
 		rootM = null;
-		rootC = (HClass) o;
+		rootC = (HClass) root;
 		// no methods of an array.  so mention of an array means
 		// it is instantiated.  otherwise, it's not.
 		instantiated = rootC.isArray();
@@ -208,7 +206,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 			      Collection roots, HCodeFactory hcf) {
 	initHMethods(linker); // initialize hclass objects.
 	if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadWithTry.codename)) {
-	    roots = plusImplicitExceptions(linker, roots, hcf);
+	    addImplicitExceptions(linker, roots, hcf);
 	}
 
 	// state.
@@ -372,7 +370,10 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     }
 
     private void discoverInstantiatedClass(State S, HClass c) {
-	if (instedClasses.contains(c)) return; else instedClasses.add(c);
+	if(!instedClasses.add(c)) {
+	    // already seen class -> return
+	    return;
+	}
 	discoverClass(S, c);
 
 	// collect superclasses and interfaces.
@@ -385,8 +386,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	// pending instantiation, and clear the pending list.
 	List<HMethod> ml =
 	    new ArrayList<HMethod>(S.classMethodsPending.get(c));//copy list
-	for (Iterator<HMethod> it=ml.iterator(); it.hasNext(); )
-	    methodPush(S, it.next());
+	for (HMethod hm : ml) {
+	    methodPush(S, hm);
+	}
 
 	// if instantiated,
 	// add all called methods of superclasses/interfaces to worklist.
