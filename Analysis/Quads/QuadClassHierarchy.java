@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.10 2005-10-13 22:42:03 salcianu Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.11 2005-10-13 23:12:46 salcianu Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -428,44 +428,53 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    // we've done this guy before
 	    return;
 	}
-	discoverClass(S, m.getDeclaringClass());
+
+	// the declaring class of m should appear in the generated code
+	HClass mDeclClass = m.getDeclaringClass();
+	discoverClass(S, mDeclClass);
+
 	// Thread.start() implicitly causes a call to Thread.run()
 	if (m.equals(HMthrStart))
 	    discoverMethod(S, HMthrRun, true/*virtual*/);
+
 	if (!isVirtual) { // short-cut for non-virtual methods.
 	    S.nonvirtual.add(m);
 	    methodPush(S, m);
 	    return; // that's all folks.
 	}
+
+	assert isVirtual; // shouldn't be here otherwise.
 	// mark as pending in its own class if not already used.
-	if (!S.classMethodsUsed.get(m.getDeclaringClass()).contains(m))
-	    S.classMethodsPending.get(m.getDeclaringClass()).add(m);
+	if (!S.classMethodsUsed.get(mDeclClass).contains(m))
+	    S.classMethodsPending.get(mDeclClass).add(m);
+
 	// now add as 'used' to all instantiated children.
 	// (including itself, if its own class has been instantiated)
+	String mName = m.getName();       // get name and desc here; for some HMethod(s),
+	String mDesc = m.getDescriptor(); // these two methods are very time-expensive. 
 	WorkSet<HClass> cW = new WorkSet<HClass>();
-	cW.push(m.getDeclaringClass());
+	cW.push(mDeclClass);	
 	while (!cW.isEmpty()) {
 	    // pull a class from the worklist
 	    HClass c = cW.pull();
 	    // see if we should add method-of-c to method worklist.
-	    if (c.isInterface() || instedClasses.contains(c))
+	    if (c.isInterface() || instedClasses.contains(c)) {
 		try {
-		    HMethod nm = c.getMethod(m.getName(),
-					     m.getDescriptor());
-		    assert isVirtual; // shouldn't be here otherwise.
+		    HMethod nm = c.getMethod(mName, mDesc);
 		    if (!S.done.contains(nm))
 			methodPush(S, nm);
 		    else if (!S.nonvirtual.contains(nm))
 			continue; // nothing new to discover.
 		    else S.nonvirtual.remove(nm); // since we're virtual here.
 		} catch (NoSuchMethodError e) { }
+	    }
 	    // add all children to the worklist.
-	    Set<HClass> knownChildren = S.classKnownChildren.get(c);
-	    for (Iterator<HClass> it=knownChildren.iterator(); it.hasNext(); )
-		cW.push(it.next());
+	    for (HClass child : S.classKnownChildren.get(c))
+		cW.push(child);
 	}
 	// done.
     }
+
 
     private void methodPush(State S, HMethod m) {
 	assert !S.done.contains(m);
