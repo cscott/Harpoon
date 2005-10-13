@@ -97,7 +97,7 @@ import jpaul.Misc.BoolMCell;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SAMain.java,v 1.71 2005-10-05 16:20:46 salcianu Exp $ */
+ * @version $Id: SAMain.java,v 1.72 2005-10-13 22:12:14 salcianu Exp $ */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean OPTIMIZE = false;
@@ -611,14 +611,14 @@ public class SAMain extends harpoon.IR.Registration {
 	    handle_class_initializers();
 	}
 
-	// Class initialization is delicate in an ahead of time compiler.
-	// The JVM deals with it by explicitly testing before each each
-	// class member access whether the class is initialized or not; we
-	// try to be more effcient: we run the initializers of all the
-	// classes from the program before the main method.  Only the code
-	// of the static initializers checks for un-initialized classes;
-	// when the main method is called, all the relevant classes have
-	// been initialized.
+	// Class initialization is delicate in an ahead-of-time
+	// compiler.  The JVM deals with it by explicitly testing
+	// before each each class member access whether the class is
+	// initialized or not; we try to be more effcient: we run the
+	// initializers of all the classes from the program before the
+	// main method.  Only the code of the static initializers
+	// checks for un-initialized classes; when the main method is
+	// called, all the relevant classes have been initialized.
 	private void handle_class_initializers() {
 	    Timer timer = new Timer();
 	    message("  initializer transform ... ");
