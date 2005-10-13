@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.9 2005-10-13 22:14:45 salcianu Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.10 2005-10-13 22:42:03 salcianu Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -286,9 +286,10 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    if (q.type().isPrimitive()) return;
 
 	    discoverInstantiatedClass(S, q.type());
-	    if (q.type().getName().equals("java.lang.String"))
-	    // string constants use intern()
-	    discoverMethod(S,HMstrIntern,false/*non-virtual*/);
+	    if (q.type().getName().equals("java.lang.String")) {
+		// string constants use intern()
+		discoverMethod(S,HMstrIntern,false/*non-virtual*/);
+	    }
 	    if (q.type().getName().equals("java.lang.Class")) {
 		discoverClass(S, (HClass) q.value());
 	    }
@@ -371,18 +372,12 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 
     private void discoverInstantiatedClass(State S, HClass c) {
 	if(!instedClasses.add(c)) {
-	    // already seen class -> return
+	    // already processed instantiated class -> return
 	    return;
 	}
 	discoverClass(S, c);
 
-	// collect superclasses and interfaces.
-	// new worklist.
-	WorkSet<HClass> sW = new WorkSet<HClass>();
-	// put superclass and interfaces on worklist.
-	sW.addAll(parents(c));
-
-	// first, wake up all methods of this class that were
+	// Wake up all methods of this class that were
 	// pending instantiation, and clear the pending list.
 	List<HMethod> ml =
 	    new ArrayList<HMethod>(S.classMethodsPending.get(c));//copy list
@@ -390,8 +385,12 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    methodPush(S, hm);
 	}
 
-	// if instantiated,
-	// add all called methods of superclasses/interfaces to worklist.
+	// Push all called methods of superclasses/interfaces.
+	// worklist of superclasses and interfaces.
+	WorkSet<HClass> sW = new WorkSet<HClass>();
+	// init: put possible superclass and interfaces on worklist.
+	sW.addAll(parents(c));
+	// fixed-point:
 	while (!sW.isEmpty()) {
 	    // pull a superclass or superinterface off the list.
 	    HClass s = sW.pop();
