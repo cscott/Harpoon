@@ -20,7 +20,7 @@ import java.util.Set;
  * and methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.6 2005-09-29 03:53:41 salcianu Exp $
+ * @version $Id: ClassHierarchy.java,v 1.7 2005-10-14 19:00:56 salcianu Exp $
  */
 public abstract class ClassHierarchy {
     // tree of callable classes
@@ -143,16 +143,75 @@ public abstract class ClassHierarchy {
      */
     public abstract Set<HMethod> callableMethods();
 
-    /** Returns the set of all reachable/usable classes.  If any
-     *  method in a class is callable (including static methods), then
-     *  the class will be a member of the returned set.
-     * */
+
+    /** Returns the set of all reachable/usable classes.  
+
+	<p>More technically, this method returns the smallest set
+	<i>C</i> that satisfies the following rules:
+
+	<ul>
+
+	<li><i>C</i> contains all classes that are referenced from the
+	callable methods ({@link #callableMethods}).  This includes:
+
+	<ul>
+
+	<li>Instantiated classes (i.e., the set returned by
+	<code>classes()</code> includes the set returned by
+	<code>instantiatedClasses()</code>).
+
+	<li>Declaring classes for callable static methods.
+
+	<li>Declaring classes for accessed fields.
+
+	<li>Classes that appear in class casts or in
+	<code>instanceof</code> tests (including the implicit tests
+	that appear at the beginning of exception handlers).
+
+	</ul>
+
+	<li><i>C</i> is closed with respect to
+
+	<ul>
+
+	<li>Superclassing: if a class appears in this <i>C</i>, than
+	its superclass and all implemented interfaces (if any) appear
+	in <i>C</i> too.
+
+	<li>Array element relation: if the classs <code>T[]></code>
+	appears in <i>C</i>, <code>T</code> appears in <i>C</i> too.
+
+	</ul>
+
+	</ul>
+
+	Intuitively, these are the classes Flex will generate code
+	for.  E.g., if a static method is called, the PreciseC backend
+	of Flex will generate a <code>.c</code> file for its declaring
+	class, including the code for that static method (but not
+	including the code for other method that are not invoked by
+	the compiled application). */
     public abstract Set<HClass> classes();
 
-    /** Returns the set of all *instantiated* classes.
-     *  This is a subset of the set returned by the <code>classes()</code>
-     *  method.  A class is included in the return set only if an
-     *  object of that type is at some point created.
-     */
+
+    /** Returns the set of all *instantiated* classes.  A class is
+	included in this set only if an instance of this class may be
+	created during the execution of the compiled application.
+	This is a subset of the set returned by the
+	<code>classes()</code> method.  It includes:
+
+	<ul>
+
+	<li>Classes instantiated by the code of the Java callable
+	methods ({@link #callableMethods()}), using an instruction
+	like <code>NEW</code> or <code>ANEW</code> (array new).
+
+	<li>Classes instantiated by the native code that runs before
+	the main method is invoked, or by the native methods
+	(transitively) invoked by the callable Java methods.  Flex
+	should be informed about this classes by one of the external
+	<i>root</i> property files.
+
+	</ul> */
     public abstract Set<HClass> instantiatedClasses();
 }
