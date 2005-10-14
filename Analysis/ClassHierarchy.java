@@ -15,15 +15,20 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+
+
 /**
  * A <code>ClassHierarchy</code> enumerates reachable/usable classes
- * and methods.
+ * and callable methods.  A method is <i>callable</code> if the
+ * execution of the compiled application may invoke that method (see
+ * {@link #callableMethods()} for more info); these are the methods
+ * that Flex absolutely has to compile.  To understand which classes
+ * are <i>reachable/usable</i>, please see {@link #classes()}.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.7 2005-10-14 19:00:56 salcianu Exp $
- */
+ * @version $Id: ClassHierarchy.java,v 1.8 2005-10-14 22:09:30 salcianu Exp $ */
 public abstract class ClassHierarchy {
-    // tree of callable classes
+
     /** Returns the set of all usable/reachable children of an
      *  <code>HClass</code>.  For an interface class <code>c</code>,
      *  the children include all reachable classes which implement it
@@ -31,21 +36,23 @@ public abstract class ClassHierarchy {
      *  non-interface class, children are all reachable subclasses.
      *  Note: this method deals with direct children; i.e., it doesn't
      *  return transitive (more than one level) subclassing children.
-     *
-     *  <p>[AS 09/28/05]: TODO: DOCUMENT: what does "reachable" mean?
-     *  It's not "transitive" (see above Note).  Here is a tentative
-     *  definition: a class is reachable iff (1) it is instantiated,
-     *  or (2) it is the superclass of a reachable class.  Is this OK?
      * */
     public abstract Set<HClass> children(HClass c);
 
-    /** Return the parents of an <code>HClass</code>.
-     *  The parents of a class <code>c</code> are its superclass and 
-     *  interfaces.  The results should be complementary to the 
-     *  <code>children()</code> method:
-     *  <code>parent(c)</code> of any class <code>c</code> returned
-     *  by <code>children(cc)</code> should include <code>cc</code>.
-     */
+
+    // NOTE: children should be here (it's a whole-program property),
+    // but parents is a class local info, that would better be placed
+    // in the HClass implementation.
+
+    /** Return the parents of an <code>HClass</code>.  The set of
+     *  parents of a class <code>c</code> contain <code>c</code>'s
+     *  superclass and the interfaces <code>c</code> implements.  This
+     *  information is not transitive: we do not consider the
+     *  superclass of the superclass, nor the interfaces extended by
+     *  the directly implemented interfaces.  The result should be
+     *  complementary to the <code>children()</code> method:
+     *  <code>parent(c)</code> of any class <code>c</code> returned by
+     *  <code>children(cc)</code> should include <code>cc</code>.  */
     public final Set<HClass> parents(HClass c) {
 	// odd inheritance properties:
 	//  interfaces: all instances of an interface are also instances of
@@ -87,6 +94,7 @@ public abstract class ClassHierarchy {
 	return new ArraySet<HClass>(parents);
     }
 
+
     /** Returns a set of methods in the hierarchy (not necessary
      *  reachable methods) which override the given method
      *  <code>hm</code>.  The set does not include <code>hm</code> and
@@ -107,6 +115,7 @@ public abstract class ClassHierarchy {
     public final Set<HMethod> overrides(HMethod hm) {
 	return overrides(hm.getDeclaringClass(), hm, false);
     }
+
 
     /** Returns the set of methods, excluding <code>hm</code>, declared
      *  in classes which are instances of <code>hc</code>, which override
@@ -137,10 +146,30 @@ public abstract class ClassHierarchy {
 	return result;
     }
 
-    // other methods.
-    /** Returns set of all callable methods. 
-     *	@return <code>Set</code> of <code>HMethod</code>s.
-     */
+
+
+    /** Returns the set of all callable methods.  A Java method
+	<code>m</code> is <i>callable</i> iff
+	
+	<ul>
+
+	<li><code>m</code> is the <code>main</code> method of the application.
+
+	<li><code>m</code> is invoked by the runtime code before the
+	start of the main method (there may be such calls in order to
+	initialize some required classes).
+
+	<li><code>m</code> is the class initializer of a class from
+	the set returned by the {@link #classes()} method; these
+	classes are referenced, i.e., used, by the compiled
+	application, so their class initializers ARE executed.
+
+	<li><code>m</code> is the <code>run</code> method of a thread
+	that is started by an already callable method.
+
+	<li><code>m</code> is invoked from the an already callable method.
+
+	</ul> */
     public abstract Set<HMethod> callableMethods();
 
 
@@ -194,7 +223,7 @@ public abstract class ClassHierarchy {
     public abstract Set<HClass> classes();
 
 
-    /** Returns the set of all *instantiated* classes.  A class is
+    /** Returns the set of all <i>instantiated</i> classes.  A class is
 	included in this set only if an instance of this class may be
 	created during the execution of the compiled application.
 	This is a subset of the set returned by the
