@@ -1,6 +1,7 @@
 package MCC.IR;
 import java.util.*;
 import MCC.State;
+import MCC.Compiler;
 
 class UpdateNode {
     Vector updates;
@@ -431,9 +432,13 @@ class UpdateNode {
 	    else if (op==Opcode.LE)
 		;
 	    else throw new Error();
+
 	    if (u.isGlobal()) {
 		VarDescriptor vd=((VarExpr)u.getLeftExpr()).getVar();
 		cr.outputline(vd.getSafeSymbol()+"="+right.getSafeSymbol()+";");
+                if (Compiler.PRINTREPAIRS) {
+                    cr.outputline("printf(\""+u.getLeftExpr().toString()+"=%d\\n\","+right.getSafeSymbol()+");");
+                }
 	    } else if (u.isField()) {
 		/* NEED TO FIX */
 		Expr subexpr=((DotExpr)u.getLeftExpr()).getExpr();
@@ -441,9 +446,22 @@ class UpdateNode {
 		VarDescriptor subvd=VarDescriptor.makeNew("subexpr");
 		VarDescriptor indexvd=VarDescriptor.makeNew("index");
 		subexpr.generate(cr,subvd);
+
 		if (intindex!=null)
 		    intindex.generate(cr,indexvd);
 		FieldDescriptor fd=(FieldDescriptor)u.getDescriptor();
+                if (Compiler.PRINTREPAIRS) {
+                    if (intindex==null) {
+                        cr.outputline("printf(\"0x%x."+fd.toString()+
+                                      "=%d\\n\","+subvd.getSafeSymbol()+","+right.getSafeSymbol()+");");
+                    } else {
+                        cr.outputline("printf(\"0x%x."+fd.toString()+
+                                      "[%d]=%d\\n\","+subvd.getSafeSymbol()+
+                                      ","+indexvd.getSafeSymbol()+","+right.getSafeSymbol()+");");
+                    }
+                }
+
+
 		StructureTypeDescriptor std=(StructureTypeDescriptor)subexpr.getType();
 		Expr offsetbits = std.getOffsetExpr(fd);
 		if (fd instanceof ArrayDescriptor) {

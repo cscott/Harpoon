@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.17 2005-10-12 17:43:10 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.18 2005-10-14 18:31:41 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -111,6 +111,7 @@ public class CLI {
 	    System.out.println("-mergenodes -- omit nodes for simpler role dependence graphs");
 	    System.out.println("-debuggraph -- add edge labels and support to debug graph");
 	    System.out.println("-rejectlengthchanges -- reject all updates which change the length of an array");
+	    System.out.println("-printrepairs -- print log of repair actions");
 
 	    System.exit(-1);
 	}
@@ -127,6 +128,8 @@ public class CLI {
                 Compiler.DEBUGGRAPH=true;
 	    } else if (args[i].equals("-mergenodes")) {
                 Compiler.MERGENODES=true;
+	    } else if (args[i].equals("-printrepairs")) {
+                Compiler.PRINTREPAIRS=true;
 	    } else if (args[i].equals("-depth")) {
 		Compiler.debuggraphs.add(new DebugItem(Integer.parseInt(args[i+1]),Integer.parseInt(args[i+2])));
 		i+=2;
