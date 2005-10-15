@@ -58,7 +58,7 @@ import harpoon.IR.Quads.NEW;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.8 2004-02-08 01:53:11 cananian Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.9 2005-10-15 22:51:56 salcianu Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -133,9 +133,8 @@ public class WriteBarrierQuadPass extends
 			// add first, remove later if problems
 			ignore.add(q);
 			HClass type = ((SET)q).field().getType();
-			for (Iterator cls = s.iterator(); cls.hasNext(); ) {
-			    if (ch.parents((HClass)cls.next()).
-				contains(type)) {
+			for (Object o : s) { 
+			    if (((HClass) o).parents().contains(type)) {
 				ignore.remove(q);
 				break;
 			    }

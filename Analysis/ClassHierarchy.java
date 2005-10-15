@@ -19,14 +19,14 @@ import java.util.Set;
 
 /**
  * A <code>ClassHierarchy</code> enumerates reachable/usable classes
- * and callable methods.  A method is <i>callable</code> if the
- * execution of the compiled application may invoke that method (see
- * {@link #callableMethods()} for more info); these are the methods
- * that Flex absolutely has to compile.  To understand which classes
- * are <i>reachable/usable</i>, please see {@link #classes()}.
+ * and callable methods.  A method is <i>callable</i> if the execution
+ * of the compiled application may invoke that method (see {@link
+ * #callableMethods()} for more info); these are the methods that Flex
+ * absolutely has to compile.  To understand which classes are
+ * <i>reachable/usable</i>, please see {@link #classes()}.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.8 2005-10-14 22:09:30 salcianu Exp $ */
+ * @version $Id: ClassHierarchy.java,v 1.9 2005-10-15 22:51:55 salcianu Exp $ */
 public abstract class ClassHierarchy {
 
     /** Returns the set of all usable/reachable children of an
@@ -36,63 +36,17 @@ public abstract class ClassHierarchy {
      *  non-interface class, children are all reachable subclasses.
      *  Note: this method deals with direct children; i.e., it doesn't
      *  return transitive (more than one level) subclassing children.
-     * */
+     *
+     *  The result should be complementary to the result of the
+     *  <code>c.parents()</code> method: the parents of any class
+     *  <code>c</code> returned by <code>children(cc)</code> should
+     *  include <code>cc</code>.  */
     public abstract Set<HClass> children(HClass c);
 
 
     // NOTE: children should be here (it's a whole-program property),
     // but parents is a class local info, that would better be placed
     // in the HClass implementation.
-
-    /** Return the parents of an <code>HClass</code>.  The set of
-     *  parents of a class <code>c</code> contain <code>c</code>'s
-     *  superclass and the interfaces <code>c</code> implements.  This
-     *  information is not transitive: we do not consider the
-     *  superclass of the superclass, nor the interfaces extended by
-     *  the directly implemented interfaces.  The result should be
-     *  complementary to the <code>children()</code> method:
-     *  <code>parent(c)</code> of any class <code>c</code> returned by
-     *  <code>children(cc)</code> should include <code>cc</code>.  */
-    public final Set<HClass> parents(HClass c) {
-	// odd inheritance properties:
-	//  interfaces: all instances of an interface are also instances of
-	//              java.lang.Object, so root all interfaces there.
-	//  arrays: Integer[][]->Number[][]->Object[][]->Object[]->Object
-	//      but also Set[][]->Collection[][]->Object[][]->Object[]->Object
-	//      (i.e. interfaces are just as rooted here)
-	// note every use of c.getLinker() below is safe because c is
-	// guaranteed non-primitive in every context.
-	HClass base = HClassUtil.baseClass(c); int dims=HClassUtil.dims(c);
-	HClass su = base.getSuperclass();
-	HClass[] interfaces = base.getInterfaces();
-	boolean isObjArray = c.getDescriptor().endsWith("[Ljava/lang/Object;");
-	boolean isPrimArray = c.isArray() && base.isPrimitive();
-	// root interface inheritance hierarchy at Object.
-	if (interfaces.length==0 && base.isInterface())
-	    su = c.getLinker().forName("java.lang.Object");// c not prim.
-	// create return value array.
-	HClass[] parents = new HClass[interfaces.length +
-				      ((su!=null || isObjArray || isPrimArray)
-				       ? 1 : 0)];
-	int n=0;
-	if (su!=null)
-	    parents[n++] = HClassUtil.arrayClass(c.getLinker(),//c not prim.
-						 su, dims);
-	for (int i=0; i<interfaces.length; i++)
-	    parents[n++] = HClassUtil.arrayClass(c.getLinker(),//c not prim.
-						 interfaces[i], dims);
-	// don't forget Object[][]->Object[]->Object
-	// (but remember also Object[][]->Cloneable->Object)
-	if (isObjArray)
-	    parents[n++] = HClassUtil.arrayClass(c.getLinker(), base, dims-1);
-	// also!  int[] -> Object.
-	if (isPrimArray) // c not prim.
-	    parents[n++] = c.getLinker().forName("java.lang.Object");
-	// okay, done.  Did we size the array correctly?
-	assert n==parents.length;
-	// okay, return as Set.
-	return new ArraySet<HClass>(parents);
-    }
 
 
     /** Returns a set of methods in the hierarchy (not necessary

@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.11 2005-10-13 23:12:46 salcianu Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.12 2005-10-15 22:51:56 salcianu Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -194,13 +194,6 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
      *  a constructor or non-static method of that class to the
      *  <code>roots</code> <code>Collection</code>.<p> <code>hcf</code>
      *  must be a code factory that generates quad form. 
-
-     <p>
-     [AS 09/28/05]: TODO: why do we consider as instantiated the
-     declaring class of a non-static method root?  What if that method
-     is actually called on an instantiated SUBclass?  MORE IMPORTANT
-     QUESTION: why is it important for a class to be included in the
-     classes() set?
      */
     public QuadClassHierarchy(Linker linker,
 			      Collection roots, HCodeFactory hcf) {
@@ -362,8 +355,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    discoverClass(S, c.getComponentType());
 
 	// work through parents (superclass and interfaces)
-	for (Object pO : parents(c)) {
-	    HClass p = (HClass) pO;
+	for (HClass p : c.parents()) { 
 	    discoverClass(S, p);
 	    Set<HClass> knownChildren = S.classKnownChildren.get(p);
 	    knownChildren.add(c); // kC non-null after discoverClass.
@@ -389,13 +381,13 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	// worklist of superclasses and interfaces.
 	WorkSet<HClass> sW = new WorkSet<HClass>();
 	// init: put possible superclass and interfaces on worklist.
-	sW.addAll(parents(c));
+	sW.addAll(c.parents());
 	// fixed-point:
 	while (!sW.isEmpty()) {
 	    // pull a superclass or superinterface off the list.
 	    HClass s = sW.pop();
 	    // add superclasses/interfaces of this one to local worklist
-	    sW.addAll(parents(s));
+	    sW.addAll(s.parents());
 	    // now add called methods of s to top-level worklist.
 	    Set<HMethod> calledMethods =
 		new WorkSet<HMethod>(S.classMethodsUsed.get(s));
