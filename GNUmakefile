@@ -94,6 +94,13 @@ lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 	 Figures/Images/model-t-black.eps	\
 	 Figures/Images/model-t-redblue.eps	\
 
+# scool05 talk dependencies
+SCOOL05: \
+	$(foreach f, \
+	  funarr-0 funarr-1 funarr-2 funarr-3 funarr-4 funarr-5 funarr-6 \
+	  shallow-0 shallow-1 shallow-2 shallow-3 shallow-4 shallow-5 \
+	  shallow-6 shallow-7 multi-o2 single-o2, \
+	  Figures/$(f).emf)
 # scool05 paper dependencies
 scool05.dvi: \
 	Figures/sean_lie_6b.eps Figures/nb-single-obj.eps \

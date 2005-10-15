@@ -70,6 +70,10 @@ THlat6c2.tex: THlat6c.tex
 %.eps: %.fig
 	fig2dev -L eps $($(patsubst %.fig,FIG_MAG_%,$<)) $< > $@
 
+# default fig->emf rule
+%.emf: %.fig
+	fig2dev -L emf $< > $@
+
 #default gnu-plot to latex rule
 %.tex: %.gnuplot
 	gnuplot $< | uniq | sed -e '/setlength{.unitlength}/r head.tex' > $@

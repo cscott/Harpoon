@@ -29,4 +29,5 @@ tr-*-obj.eps
 uvsimCounterRuntime.eps
 *.pstex
 *.pstex_t
+*.emf
 .*.autosave
