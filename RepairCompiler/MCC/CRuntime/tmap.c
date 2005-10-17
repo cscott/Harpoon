@@ -80,6 +80,26 @@ bool typemapassertvalidmemory(struct typemap * thisvar, void* low, int s) {
   return typemapassertvalidmemoryB(thisvar, low,((char *)low)+toadd);
 }
 
+bool typemapassertexactmemory(struct typemap * thisvar, void* low, int s) {
+  int toadd=sizeBytes(s);
+#ifdef CHECKMEMORY
+  {
+    void * high=((char *)low)+toadd;
+    struct pair allocp=rbfind(low,high,thisvar->alloctree);
+    if (allocp.low == NULL) {
+      return false;
+    } else if ((allocp.low != low) || (allocp.high != high)) {
+    /* make sure this block exactly lines up */
+      return false;
+    } else {
+      return true;
+    }
+  }
+#else
+  return true;
+#endif
+}
+
 bool typemapassertvalidmemoryB(struct typemap * thisvar, void* low, void* high) {
 #ifdef CHECKMEMORY
   return typemapcheckmemory(thisvar, low, high);
@@ -158,6 +178,17 @@ bool typemapcheckmemory(struct typemap *thisvar, void* low, void* high) {
     return false;
   } else {
     return true;
+  }
+}
+
+void * typemapgetendofblock(struct typemap *thisvar, void* low) {
+  struct pair allocp=rbfind(low,((char*)low)+1,thisvar->alloctree);
+  if (allocp.low == NULL) {
+    return NULL;
+  } else if ((allocp.low > low)||(allocp.high <= allocp.low)) { /* make sure this block is used */
+    return NULL;
+  } else {
+    return (void *)allocp.high;
   }
 }
 

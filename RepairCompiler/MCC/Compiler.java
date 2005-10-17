@@ -31,6 +31,7 @@ public class Compiler {
     public static boolean DEBUGGRAPH=false;
     public static boolean REJECTLENGTH=false;
     public static boolean PRINTREPAIRS=false;
+    public static boolean EXACTALLOCATION=false;
 
     public static Vector debuggraphs=new Vector();
 

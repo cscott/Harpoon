@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.2 2004-11-10 05:44:00 bdemsky Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.3 2005-10-17 00:29:49 bdemsky Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -380,7 +380,7 @@ static struct rbnode * rb_lookup(const void *low, const void *high, struct rbtre
 
   /* walk x down the tree */
   while(x!=RBNULL) {
-    if (low<x->high&&
+    if (low<x->high &&
 	x->key<high)
       return x;
     if (x->left!=RBNULL && x->left->max>low)
@@ -923,33 +923,28 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.2  2004-11-10 05:44:00  bdemsky
+ * Revision 1.3  2005-10-17 00:29:49  bdemsky
+ *
+ *
+ * Hacks to allow repairs of fields used to define layouts of arrays.
+ *
+ * Revision 1.1  2005/10/10 03:30:12  bdemsky
+ *
+ *
+ * Checking in repair runtime and generated repair code for freeciv.
+ *
+ * Revision 1.2  2004/11/10 05:44:37  bdemsky
  *
  *
  * 1) Fixed some bugs in the redblack tree implementation...removing a non-present node resulted in a segfault.
  *
  * 2) Fixed bug in constructbindings method.
  *
- * Revision 1.1  2004/10/28 19:28:59  bdemsky
+ * Revision 1.1  2004/10/28 19:29:04  bdemsky
  * Checking in C runtime.
  *
- * Revision 1.2  2004/03/10 06:15:03  bdemsky
- *
- *
- * Added:
- * Concrete Interference rule that falsify a rule that quantifies over a set can't
- * remove the last element of the set.
- *
- * Concrete Interference rule that updates that definitely falsify a rule can't modify
- * the inclusion condition causing a possible addition.
- *
- * Intelligence in the GraphAnalysis package that computes must & cant remove sets.
- * Search through only unique combinations.
- *
- * Revision 1.1  2004/03/07 22:02:43  bdemsky
- *
- *
- * Still buggy, but getting closer...
+ * Revision 1.1  2004/04/06 19:57:17  bdemsky
+ * Checking in redblack sources
  *
  * Revision 1.3  2003/06/18 06:06:18  bdemsky
  *

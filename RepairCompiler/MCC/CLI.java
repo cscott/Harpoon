@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.18 2005-10-14 18:31:41 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.19 2005-10-17 00:29:13 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -112,6 +112,8 @@ public class CLI {
 	    System.out.println("-debuggraph -- add edge labels and support to debug graph");
 	    System.out.println("-rejectlengthchanges -- reject all updates which change the length of an array");
 	    System.out.println("-printrepairs -- print log of repair actions");
+	    System.out.println("-exactallocation -- application calls malloc for each struct and");
+	    System.out.println("                    allocates exactly the right amount of space.");
 
 	    System.exit(-1);
 	}
@@ -122,6 +124,8 @@ public class CLI {
                 debug = true;
 	    } else if (args[i].equals("-checkonly")) {
                 Compiler.REPAIR=false;
+	    } else if (args[i].equals("-exactallocation")) {
+                Compiler.EXACTALLOCATION=true;
 	    } else if (args[i].equals("-omitcomp")) {
                 Compiler.OMITCOMP=true;
 	    } else if (args[i].equals("-debuggraph")) {

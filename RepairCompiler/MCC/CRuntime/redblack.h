@@ -1,5 +1,5 @@
 /*
- * RCS $Id: redblack.h,v 1.1 2004-10-28 19:28:59 bdemsky Exp $
+ * RCS $Id: redblack.h,v 1.2 2005-10-17 00:29:49 bdemsky Exp $
  */
 
 /*
@@ -76,13 +76,21 @@ void rbcloselist(RBLIST *);
 /*
  *
  * $Log: redblack.h,v $
- * Revision 1.1  2004-10-28 19:28:59  bdemsky
+ * Revision 1.2  2005-10-17 00:29:49  bdemsky
+ *
+ *
+ * Hacks to allow repairs of fields used to define layouts of arrays.
+ *
+ * Revision 1.1  2005/10/10 03:30:12  bdemsky
+ *
+ *
+ * Checking in repair runtime and generated repair code for freeciv.
+ *
+ * Revision 1.1  2004/10/28 19:29:04  bdemsky
  * Checking in C runtime.
  *
- * Revision 1.1  2004/03/07 22:02:43  bdemsky
- *
- *
- * Still buggy, but getting closer...
+ * Revision 1.1  2004/04/06 19:57:17  bdemsky
+ * Checking in redblack sources
  *
  * Revision 1.2  2003/06/18 06:06:18  bdemsky
  *

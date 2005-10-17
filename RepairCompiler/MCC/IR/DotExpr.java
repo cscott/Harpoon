@@ -174,6 +174,31 @@ public class DotExpr extends Expr {
 	return intindex;
     }
 
+    private boolean exactalloc(TypeDescriptor td) {
+        if (!(td instanceof StructureTypeDescriptor))
+            return false;
+        StructureTypeDescriptor std=(StructureTypeDescriptor)td;
+        if (std.size()!=1) /* Just looking for arrays */
+            return false;
+        FieldDescriptor tmpfd=std.get(0);
+        if (!(tmpfd instanceof ArrayDescriptor))
+            return false;
+        ArrayDescriptor afd=(ArrayDescriptor)tmpfd;
+        TypeDescriptor elementdescriptor=afd.getType();
+        Expr sizeexpr=elementdescriptor.getSizeExpr();
+        if (!OpExpr.isInt(sizeexpr))
+            return false;
+        Expr indexbound=afd.getIndexBound();
+        if (indexbound instanceof DotExpr)
+            return true;
+        if ((indexbound instanceof OpExpr)&&
+            (((OpExpr)indexbound).getOpcode()==Opcode.MULT)&&
+            (((OpExpr)indexbound).getLeftExpr() instanceof DotExpr)&&
+            (((OpExpr)indexbound).getRightExpr() instanceof DotExpr))
+            return true;
+        return false;
+    }
+
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor leftd = VarDescriptor.makeNew("left");
 
@@ -300,24 +325,140 @@ public class DotExpr extends Expr {
 	    if (fd.getPtr()) {
 		writer.outputline("if ("+dest.getSafeSymbol()+")");
 		writer.startblock();
-		VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
-		if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
-		    writer.addDeclaration("bool", typevar.getSafeSymbol());
-		    writer.outputline(typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
-		    dotypecheck = true;
-		} else if (DOTYPECHECKS) {
-		    writer.addDeclaration("bool", typevar.getSafeSymbol());
-		    writer.outputline(typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
-		}
+
 
 		if (DOTYPECHECKS||DOMEMCHECKS) {
-		    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
-		    writer.startblock();
-		    writer.outputline(dest.getSafeSymbol()+"=0;");
-		    if (DONULL)
-			writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")=0;");
-		    writer.endblock();
-		}
+                    /* NEED TO CHECK IF THERE ARE VARIABLES TO PLAY WITH IN THE STRUCT!!!! */
+                    if (Compiler.EXACTALLOCATION&&exactalloc(td)) {
+                        writer.outputline("if (!assertexactmemory("+dest.getSafeSymbol()+", "+this.td.getId()+"))");
+                        {
+                            writer.startblock();
+                            /* Okay, we've failed to fit it in here */
+
+                            VarDescriptor highptr=VarDescriptor.makeNew("highptr");
+                            writer.addDeclaration("int", highptr.getSafeSymbol());
+                            writer.outputline(highptr.getSafeSymbol()+"=getendofblock("+dest.getSafeSymbol()+");");
+                            VarDescriptor size=VarDescriptor.makeNew("size");
+                            writer.addDeclaration("int", size.getSafeSymbol());
+                            writer.outputline(size.getSafeSymbol()+"="+highptr.getSafeSymbol()+"-"+dest.getSafeSymbol()+";");
+
+                            StructureTypeDescriptor std=(StructureTypeDescriptor)this.td;
+                            ArrayDescriptor afd=(ArrayDescriptor)std.get(0);
+                            TypeDescriptor elementdescriptor=afd.getType();
+                            Expr sizeexpr=elementdescriptor.getSizeExpr();
+                            int elementsize=OpExpr.getInt(sizeexpr);
+                            //convert size to bytes
+                            if (elementsize%8==0)
+                                elementsize=elementsize/8;
+                            else
+                                elementsize=(elementsize/8)+1;
+                            /* Basic sanity check */
+                            writer.outputline("if ("+size.getSafeSymbol()+"%"+
+                                              elementsize+"==0)");
+                            {
+                                writer.startblock();
+                                VarDescriptor numElements=VarDescriptor.makeNew("numberofelements");
+                                writer.addDeclaration("int", numElements.getSafeSymbol());
+                                writer.outputline(numElements.getSafeSymbol()+"="+size.getSafeSymbol()+"/"+elementsize+";");
+                                Expr indexbound=afd.getIndexBound();
+                                if  (indexbound instanceof DotExpr) {
+                                /* NEED TO IMPLEMENT */
+
+                                    VarExpr ve=new VarExpr(numElements);
+                                    numElements.setType(ReservedTypeDescriptor.INT);
+                                    ve.td=ReservedTypeDescriptor.INT;
+                                    Updates u=new Updates(indexbound,ve);
+                                    UpdateNode un=new UpdateNode(null);
+                                    un.addUpdate(u);
+                                    un.generate(writer,false,false,null,null,null,null);
+                                    writer.outputline("break;");
+                                } else if ((indexbound instanceof OpExpr)&&
+                                           (((OpExpr)indexbound).getOpcode()==Opcode.MULT)&&
+                                           (((OpExpr)indexbound).getLeftExpr() instanceof DotExpr)&&
+                                           (((OpExpr)indexbound).getRightExpr() instanceof DotExpr)) {
+
+                                    DotExpr leftexpr=(DotExpr)(((OpExpr)indexbound).getLeftExpr());
+                                    VarDescriptor leftside=VarDescriptor.makeNew("leftvalue");
+                                    writer.addDeclaration("int", leftside.getSafeSymbol());
+                                    leftexpr.generate(writer,leftside);
+                                    DotExpr rightexpr=(DotExpr)(((OpExpr)indexbound).getRightExpr());
+                                    VarDescriptor rightside=VarDescriptor.makeNew("rightvalue");
+                                    writer.addDeclaration("int", rightside.getSafeSymbol());
+                                    rightexpr.generate(writer,rightside);
+                                    writer.outputline("if ("+numElements.getSafeSymbol()+"%"+leftside.getSafeSymbol()+"==0)");
+                                    {
+                                        writer.startblock();
+                                        VarDescriptor newvalue=VarDescriptor.makeNew("newvalue");
+                                        writer.addDeclaration("int", newvalue.getSafeSymbol());
+                                        writer.outputline(newvalue.getSafeSymbol()+"="+numElements.getSafeSymbol()+"/"+leftside.getSafeSymbol()+";");
+                                        VarExpr ve=new VarExpr(newvalue);
+                                        newvalue.setType(ReservedTypeDescriptor.INT);
+                                        ve.td=ReservedTypeDescriptor.INT;
+                                        Updates u=new Updates(rightexpr,ve);
+                                        UpdateNode un=new UpdateNode(null);
+                                        un.addUpdate(u);
+                                        un.generate(writer,false,false,null,null,null,null);
+                                        writer.outputline("break;");
+                                        writer.endblock();
+                                    }
+                                    writer.outputline("else if ("+numElements.getSafeSymbol()+"%"+rightside.getSafeSymbol()+"==0)");
+                                    {
+                                        writer.startblock();
+                                        VarDescriptor newvalue=VarDescriptor.makeNew("newvalue");
+                                        writer.addDeclaration("int", newvalue.getSafeSymbol());
+                                        writer.outputline(newvalue.getSafeSymbol()+"="+numElements.getSafeSymbol()+"/"+rightside.getSafeSymbol()+";");
+                                        VarExpr ve=new VarExpr(newvalue);
+                                        newvalue.setType(ReservedTypeDescriptor.INT);
+                                        ve.td=ReservedTypeDescriptor.INT;
+                                        Updates u=new Updates(leftexpr,ve);
+                                        UpdateNode un=new UpdateNode(null);
+                                        un.addUpdate(u);
+                                        un.generate(writer,false,false,null,null,null,null);
+                                        writer.outputline("break;");
+                                        writer.endblock();
+                                    }
+
+
+                                } else throw new Error("Should be here");
+
+                                writer.endblock();
+                            }
+
+                            writer.endblock();
+                        }
+                            /*
+
+                              if (indexbound instanceof DotExpr)
+                              return true;
+                              if ((indexbound instanceof OpExpr)&&
+                              (((OpExpr)indexbound).getOpcode()==Opcode.MULT)&&
+                              (((OpExpr)indexbound).getLeftExpr() instanceof DotExpr)&&
+                              (((OpExpr)indexbound).getRightExpr() instanceof DotExpr))
+                              return true;
+                              return false;
+                            */
+
+
+                            /* Give up and null out bad pointer */
+                    }
+                    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
+                    if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
+                        writer.addDeclaration("bool", typevar.getSafeSymbol());
+                        writer.outputline(typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
+                        dotypecheck = true;
+                    } else if (DOTYPECHECKS) {
+                        writer.addDeclaration("bool", typevar.getSafeSymbol());
+                        writer.outputline(typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
+                    }
+                    if (DOMEMCHECKS||DOTYPECHECKS) {
+                        writer.outputline("if (!"+typevar.getSafeSymbol()+")");
+                        writer.startblock();
+                        writer.outputline(dest.getSafeSymbol()+"=0;");
+                        if (DONULL)
+                            writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")=0;");
+                        writer.endblock();
+                    }
+                }
 
 		writer.endblock();
 	    }

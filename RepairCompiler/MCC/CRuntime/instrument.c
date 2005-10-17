@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "tmap.h"
 #include "size.h"
+#include <string.h>
 
 struct typemap * memmap;
 
@@ -44,6 +45,14 @@ void *ourrealloc(void *ptr, size_t size) {
   return orr;
 }
 
+char *ourstrdup(const char *ptr) {
+  char *new_ptr=strdup(ptr);
+  int length=strlen(ptr)+1;
+  typemapallocate(memmap,new_ptr,length);
+  return new_ptr;
+}
+
+
 void alloc(void *ptr,int size) {
   typemapallocate(memmap, ptr,size);
 }
@@ -65,6 +74,14 @@ bool assertvalidtype(int ptr, int structure) {
 }
 bool assertvalidmemory(int ptr, int structure) {
   return typemapassertvalidmemory(memmap, (void *)ptr, structure);
+}
+
+bool assertexactmemory(int ptr, int structure) {
+  return typemapassertexactmemory(memmap, (void *)ptr, structure);
+}
+
+void * getendofblock(int ptr) {
+  return typemapgetendofblock(memmap, (void *)ptr);
 }
 
 void initializestack(void *high) {

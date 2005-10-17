@@ -20,6 +20,9 @@ void initializemmap();
 void resettypemap();
 bool assertvalidtype(int ptr, int structure);
 bool assertvalidmemory(int ptr, int structure);
+bool assertexactmemory(int ptr, int structure);
+char *ourstrdup(const char *ptr);
+void * getendofblock(int ptr);
 void initializestack(void *);
 extern struct typemap * memmap;
 #endif
