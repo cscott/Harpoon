@@ -38,7 +38,7 @@ char *arrayfile=NULL;
 int main(int argc, char **argv) {
   int i;
   if (argc<2)
-    return 0;
+    return 1;
   if (argc>=3)
     rootfile=argv[2];
   for(i=3;i<argc;i++) {
@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
   }
   process_elf_binary_data(argv[1]);
   daikon_preprocess_entry_array();
+  return 0;
 }
 
 // Pre-processes global dwarf_entry_array in order to place
