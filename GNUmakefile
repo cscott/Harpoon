@@ -102,7 +102,8 @@ SCOOL05: \
 	  shallow-6 shallow-7 multi-o2 single-o2 \
 	  scool-multi-obj-1 scool-multi-obj-2 scool-multi-obj-3 \
 	  scool-multi-obj-4 scool-multi-obj-5 scool-multi-obj-6 \
-	  scool-multi-obj-7 scool-multi-obj-8 scool-multi-obj-9,\
+	  scool-multi-obj-7 scool-multi-obj-8 scool-multi-obj-9 \
+	  scool-multi-obj-10,\
 	  Figures/$(f).emf)
 # scool05 paper dependencies
 scool05.dvi: \
