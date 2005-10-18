@@ -99,7 +99,10 @@ SCOOL05: \
 	$(foreach f, \
 	  funarr-0 funarr-1 funarr-2 funarr-3 funarr-4 funarr-5 funarr-6 \
 	  shallow-0 shallow-1 shallow-2 shallow-3 shallow-4 shallow-5 \
-	  shallow-6 shallow-7 multi-o2 single-o2, \
+	  shallow-6 shallow-7 multi-o2 single-o2 \
+	  scool-multi-obj-1 scool-multi-obj-2 scool-multi-obj-3 \
+	  scool-multi-obj-4 scool-multi-obj-5 scool-multi-obj-6 \
+	  scool-multi-obj-7 scool-multi-obj-8 scool-multi-obj-9,\
 	  Figures/$(f).emf)
 # scool05 paper dependencies
 scool05.dvi: \
