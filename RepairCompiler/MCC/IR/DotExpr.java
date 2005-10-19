@@ -385,7 +385,7 @@ public class DotExpr extends Expr {
                                     VarDescriptor rightside=VarDescriptor.makeNew("rightvalue");
                                     writer.addDeclaration("int", rightside.getSafeSymbol());
                                     rightexpr.generate(writer,rightside);
-                                    writer.outputline("if ("+numElements.getSafeSymbol()+"%"+leftside.getSafeSymbol()+"==0)");
+                                    writer.outputline("if (("+leftside.getSafeSymbol()+"!=0) &&("+numElements.getSafeSymbol()+"%"+leftside.getSafeSymbol()+"==0))");
                                     {
                                         writer.startblock();
                                         VarDescriptor newvalue=VarDescriptor.makeNew("newvalue");
@@ -401,7 +401,7 @@ public class DotExpr extends Expr {
                                         writer.outputline("break;");
                                         writer.endblock();
                                     }
-                                    writer.outputline("else if ("+numElements.getSafeSymbol()+"%"+rightside.getSafeSymbol()+"==0)");
+                                    writer.outputline("else if (("+rightside.getSafeSymbol()+"!=0)&&("+numElements.getSafeSymbol()+"%"+rightside.getSafeSymbol()+"==0))");
                                     {
                                         writer.startblock();
                                         VarDescriptor newvalue=VarDescriptor.makeNew("newvalue");
