@@ -55,7 +55,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.9 2005-10-05 16:18:53 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.10 2005-10-25 02:26:19 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -541,30 +541,9 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    newResult = true;
 	}
 
-	int oldSize = oldRes.eomO().size().right.intValue();
-	PAEdgeSet oldOutside = (PAEdgeSet) oldRes.eomO().clone();
-
 	if(oldRes.eomO().join(res.eomO())) {
 	    System.out.print("outside edges : ");
 	    newResult = true;
-
-	    /*
-	    int newSize = oldRes.eomO().size().right.intValue();
-	    System.out.println("newSize = " + newSize + "; oldSize = " + oldSize);
-	    System.out.println("oldOutside: \n" + oldOutside + "\nsize=" + oldOutside.size());
-	    System.out.println("newOutside: \n" + oldRes.eomO() + "\nsize=" + oldRes.eomO().size());
-	    
-	    if(newSize <= oldSize) {
-		assert false : 
-		    "set of outside edges should go only up!\n" + 
-		    "newSize(" + newSize + ") < oldSize(" + oldSize + ")" +
-		    "\noldOutside:\n " + oldOutside +
-		    "\nnewOutside:\n " + oldRes.eomO() + "\n";
-		System.exit(1);
-	    }
-
-	    System.out.flush();
-	    */
 	}
 	    
 	if(oldRes.eomDirGblEsc().addAll(res.eomDirGblEsc())) {
