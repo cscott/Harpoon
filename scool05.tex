@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: scool05.tex,v 1.28 2005-10-10 22:38:50 cananian Exp $
+% $Id: scool05.tex,v 1.29 2005-10-25 04:25:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csa-sig-alternate}
 \usepackage{epsfig}
@@ -647,12 +647,33 @@ must ensure that its transaction is on the reader list for the
 object.  This is straight-forward to do in a non-blocking manner as
 long as all inserts are to the head of the list.  The thread must also
 walk the versions list and abort any uncommitted transaction other
-than its own.  With sufficiently precise pointer analysis these steps
+than its own.  The {\tt ensureReader} routine in \figref{ensurereader}
+performs these two operations.
+With sufficiently precise pointer analysis these steps
 can be combined and hoisted so that they are done once before the
-first read from an object and not repeated.  Imprecision in the
+first read from an object and not repeated at every read.  Imprecision in the
 analysis may cause re-examination of the reader list.
+\begin{figure}
+\fontsize{6.5}{7.4}
+\begin{verbatim}
+/* per-object, before readT. */
+inline ensureReader(tid, o, ver) {
+  assert(tid!=NIL);
+  /* make sure we're on the readerlist */
+  ensureReaderList(tid, o)
+  /* now kill any transactions associated with uncommitted versions,
+   * except for our current transaction. */
+  findVersion(tid, o, ver);
+  /* we haven't looked up a committed version yet */
+  moveVersion(_r, NIL);
+}
+\end{verbatim}
+\caption{The per-object version-setup routine for transactional reads.}
+\label{fig:ensurereader}
+\end{figure}
 
-At read time, the thread initially reads from the original object.  If
+Then, to read a field within a transaction,
+the thread initially does the read from the original object.  If
 the value read is not \FLAG, the read value is used.  Otherwise, the
 thread uses {\tt findVersion} to look up the version object {\tt ver}
 associated with its transaction 
@@ -697,7 +718,7 @@ inline readT(tid, o, f, ver, result) {
 \begin{figure}
 \fontsize{6.5}{8}
 \begin{verbatim}
-/* per-object, before write. */
+/* per-object, before writeT. */
 inline ensureWriter(tid, o, ver) {
   assert(tid!=NIL);
   ver = NIL; _r = NIL; _rr = NIL;
@@ -839,6 +860,7 @@ inline checkWriteField(o, f) {
 \caption{The per-field copy-through routine for transactional writes.}
 \label{fig:copythrough}
 \end{figure}
+\vspace{.1cm}% put this in the next column; keep section head together
 \subsubsection{Transactional Write}
 Like the transactional read, transactional writes are split.  The
 first preparatory step is done once for each object written by the
@@ -1212,7 +1234,6 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 }
 
 
-\vspace{1cm}% put this in the next column; keep section head together
 \secput{concl}{Conclusions}%
 We have described an efficient object-based implementation of
 non-blocking software transactions, along with empirical data backing
