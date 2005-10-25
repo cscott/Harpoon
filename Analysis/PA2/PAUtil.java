@@ -51,7 +51,7 @@ import harpoon.Util.Timer;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.11 2005-10-25 02:26:19 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.12 2005-10-25 14:33:20 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -362,8 +362,8 @@ public abstract class PAUtil {
 	int[] ns = nodeStats(ar, stop);
 	return
 	    "(I:" + ns[0] + " O:" + ns[1] + " P:" + ns[2] + " t:" + ns[3] +
-	    " IE:" + ar.eomI().nbArcs() + 
-	    " OE:" + ar.eomO().nbArcs() + ")";
+	    " IE:" + ar.eomI().numArcs() + 
+	    " OE:" + ar.eomO().numArcs() + ")";
     }
 
     static boolean exceptionInitializer(HMethod hm) {

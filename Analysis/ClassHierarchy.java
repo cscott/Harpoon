@@ -6,8 +6,6 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.ArraySet;
-import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import net.cscott.jutil.WorkSet;
 
@@ -26,7 +24,7 @@ import java.util.Set;
  * <i>reachable/usable</i>, please see {@link #classes()}.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.9 2005-10-15 22:51:55 salcianu Exp $ */
+ * @version $Id: ClassHierarchy.java,v 1.10 2005-10-25 14:33:20 salcianu Exp $ */
 public abstract class ClassHierarchy {
 
     /** Returns the set of all usable/reachable children of an
@@ -42,11 +40,6 @@ public abstract class ClassHierarchy {
      *  <code>c</code> returned by <code>children(cc)</code> should
      *  include <code>cc</code>.  */
     public abstract Set<HClass> children(HClass c);
-
-
-    // NOTE: children should be here (it's a whole-program property),
-    // but parents is a class local info, that would better be placed
-    // in the HClass implementation.
 
 
     /** Returns a set of methods in the hierarchy (not necessary

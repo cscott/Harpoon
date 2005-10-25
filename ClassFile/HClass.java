@@ -46,6 +46,8 @@ import jpaul.DataStructs.NoCompTreeMap;
  * period (we call it <i>immutability epoch</i>) explicitly using
  * {@link HClass.enterImmutableEpoch()} and end it using {@link
  * HClass.exitImmutableEpoch()}.  E.g.,
+
+<p>
 <pre>
  HClass.enterImmutableEpoch();
 
@@ -55,7 +57,8 @@ import jpaul.DataStructs.NoCompTreeMap;
 
  HClass.exitImmutableEpoch();
 </pre>
- * Knowing that <code>HClass</code>es
+
+ * <p>Knowing that <code>HClass</code>es
  * are not mutated in a certain code sequence is actually tricky,
  * because most of the {@link harpoon.ClassFile.HCodeFactory
  * HCodeFactories} are lazy; a good method is to use a {@link
@@ -63,7 +66,7 @@ import jpaul.DataStructs.NoCompTreeMap;
  * already computed the code of every method of interest.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.51 2005-10-15 22:51:57 salcianu Exp $
+ * @version $Id: HClass.java,v 1.52 2005-10-25 14:33:21 salcianu Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class */
 public abstract class HClass extends HPointer
