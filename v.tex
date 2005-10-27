@@ -1,20 +1,100 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: v.tex,v 1.1 2005-10-27 14:31:04 cananian Exp $
+% $Id: v.tex,v 1.2 2005-10-27 15:22:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 \usepackage{pdffonts} % PDF-friendly fonts
+\usepackage{xspace}
+\newcommand{\vlang}{\textsf{v}\xspace}
 \author{C.~Scott~Ananian}
-\title{v: Rebuilding Java}
-\date{\today \\ $ $Revision: 1.1 $ $}
+\title{\vlang: Rebuilding Java}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 \maketitle
 
 \section{Introduction}
+The Java language, in its ``version 5'' incarnation, is a huge and
+complex language, riddled with syntax and burdened with a baroque
+albeit extremely capable type system.  Guy Steele's now-famous talk
+``Growing a Language'' \cite{steele} argued convincingly that means
+for extension must be designed into a language at a very basic level;
+this goal was not achieved for the Java language, and so each new
+iteration of the language sprouts new orthogonal features out of its
+already-impressive ball of hair.
+
+The goal of this present work is to disassemble Java and discover a
+core language of complexity similar to that of the original Java
+1.0 specification.  To this core language we will add a flexible means
+of extension to create \vlang, our small base language.  We will then use
+our extension mechanism to recreate the full hair ball of Java 5.0,
+but this time built with a means to avoid further \emph{deus ex
+  machina} iterations of the language.  From our new language built on
+\vlang, we can add any new language feature we like, with or without the
+blessing of Sun.  A thousand flowers may bloom, some in particular
+niches, and the hardiest general ones may become blessed into
+``official'' Java.
+
+Our extension mechanism must encompass both the syntax of the
+language, as well its type system.  We propose to allow extension or
+replacement of \vlang's parser, and to handle types with abstract
+interpretation.  The boundary between compile-time and run-time will
+blur, and we propose to re-establish ``compile-time'' safety (and
+other software-engineering niceties) via aggressive partial
+evaluation, both of the program and of its abstractions.  We expect
+that partial evaluations of the ``standard'' language extensions will
+be cached and special optimizations made to enable reasonably
+efficient compilation of the ``standard'' language, without precluding
+the compilation and execution of arbitrarily modified extensions and
+variations of it.
+
+\section{Thoughts}
+\begin{itemize}
+\item Classes can be built on top of a prototype-based system, so we
+  expect \vlang to be prototype-based.
+\item Creating a full meta-object protocol for \vlang will allow arbitrary
+  extension of the object inheritance and other properties of the
+  class/type system.  Special optimizations will recreate the standard
+  table-based lookup in the cases where it applies.
+\item Types are just an abstract interpretation of the program.  New
+  abstractions can be added to extend/modify the type system.  The
+  types may modify the static semantics of the language via rewriting;
+  method overloading (for example) is not a problem.  The \vlang language
+  does not include static overloading; it is implement as an extension which
+  renames method definitions and call sites according to the results
+  of a ``type analysis'' (which is really the execution of an abstract
+  version of the program).  Because the boundary between runtime and
+  compile-time is blurred, this renaming can even occur ``at
+  runtime'', although obviously the ability to generate compile-time
+  error messages about improper overloading will be sacrificed in this
+  case.  Instead the compiler may generate a warning that this
+  evaluation has been deferred to runtime (or, more precisely, that
+  the code generating the error message could not be completely
+  evaluated at compile-time).
+\item ``Grammars'' will probably be reified into the language, ala
+  Perl 6, to enable programmatic access to and modification of the
+  language.  Ideally this will be done via an integrated
+  pattern-matching system in \vlang.
+\item \vlang will probably appear as a funny type of dynamic language,
+  that happens to have a complicated macro system which lets people
+  program in a peculiar statically-typed syntax.  Most of the
+  runtime checks and dispatch mechanisms of a traditional dynamic
+  language will be optimized away.  It is not particularly
+  necessary to be able to directly extend the compiler to add
+  optimizations for new language extensions: the creation of
+  sophisticated compilers which efficiently execute common constructs
+  (read, common extensions to \vlang) will remain the domain of compiler
+  authors.   The programmer just needs to be able to define and
+  redefine their specific language; they don't always need it to run
+  fast (although we hope that general optimization techniques will
+  also allow the efficient execution of languages ``close enough'' to
+  those language variants specially targeted for optimization).
+\end{itemize}
 
 \section{Conclusion}
 
 \bibliography{harpoon}
 
 \end{document}
+
+% LocalWords:  reified programmatic
