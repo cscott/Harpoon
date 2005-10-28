@@ -1,5 +1,5 @@
 % -*- mode: latex; mode: auto-fill; mode: flyspell; -*-
-% $Id: v.tex,v 1.4 2005-10-27 20:56:29 cananian Exp $
+% $Id: v.tex,v 1.5 2005-10-28 13:30:04 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 \usepackage{pdffonts} % PDF-friendly fonts
@@ -7,7 +7,7 @@
 \newcommand{\vlang}{\textsf{v}\xspace}
 \author{C.~Scott~Ananian}
 \title{\vlang: Rebuilding Java}
-\date{\today \\ $ $Revision: 1.4 $ $}
+\date{\today \\ $ $Revision: 1.5 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -95,6 +95,19 @@ variations of it.
 \item Dynamic class loading and first-class class loaders are
   essential features of Java.  How should this be supported?  Can we
   dynamically translate bytecode in some manner?
+\item There are several \emph{interpretations} associated with the
+  program text, with one of these being the ``normal'' \emph{runtime
+  interpretation} and another being the \emph{type system
+  interpretation}.  There are portals between these; for example, the
+  macro system to implement method overloading can access the type
+  system interpretation via \texttt{type(o)} where o is some runtime
+  value.  Parts of the program text are ignored by particular
+  interpretations; for example, the runtime system completely ignores
+  the type specifications in the program text (except by explicitly
+  requesting the result of the type interpretation, which gives
+  a runtime object representing the type).  The syntax shouldn't look
+  like \texttt{type} (ie, like a non-extensible magic keyword); it
+  should look more similar to the way we invoke reflection.
 \end{itemize}
 
 \section{Conclusion}
