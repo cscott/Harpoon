@@ -1,5 +1,5 @@
 % -*- mode: latex; mode: auto-fill; mode: flyspell; -*-
-% $Id: v.tex,v 1.5 2005-10-28 13:30:04 cananian Exp $
+% $Id: v.tex,v 1.6 2005-10-31 18:01:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 \usepackage{pdffonts} % PDF-friendly fonts
@@ -7,7 +7,7 @@
 \newcommand{\vlang}{\textsf{v}\xspace}
 \author{C.~Scott~Ananian}
 \title{\vlang: Rebuilding Java}
-\date{\today \\ $ $Revision: 1.5 $ $}
+\date{\today \\ $ $Revision: 1.6 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -75,6 +75,20 @@ variations of it.
   Perl 6, to enable programmatic access to and modification of the
   language.  Ideally this will be done via an integrated
   pattern-matching system in \vlang.
+
+  The idea is that rules are methods, and grammars are classes.  There
+  is always one predefined grammar, \texttt{v.lang.Grammar}, which you
+  can subclass to override rules of.  Rules return a match object with
+  all sorts of fun properties---this would be the abstract syntax or
+  parse tree for \texttt{v.lang.Grammar}.  Rules may have parameters,
+  like methods have.
+
+  In Perl 6, subroutines may have the \texttt{is parsed(grm)} trait to
+  indicate that they should be parsed by rule \textt{grm}.
+  Subroutines may also be declared as \texttt{macros}, which just
+  means they are executed at compile-time.  Any block may be executed
+  at compile-time, which is how modifications to the current grammar
+  are made.  These modifications are lexically-scoped.
 \item \vlang will probably appear as a funny type of dynamic language,
   that happens to have a complicated macro system which lets people
   program in a peculiar statically-typed syntax.  Most of the
@@ -108,6 +122,11 @@ variations of it.
   a runtime object representing the type).  The syntax shouldn't look
   like \texttt{type} (ie, like a non-extensible magic keyword); it
   should look more similar to the way we invoke reflection.
+\item Craziness from Perl: in generally, \texttt{keyword name \{ BLOCK \}}
+  constructs can be stated as \texttt{keyword name;}, which in effect
+  causes the rest of the block or file to be treated as the \texttt{BLOCK}.
+  This removes at least one level of needless indentation from most
+  \vlang source files. (But this idea is not essential to the language.)
 \end{itemize}
 
 \section{Conclusion}
