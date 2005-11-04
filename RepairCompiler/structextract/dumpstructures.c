@@ -63,7 +63,7 @@ void daikon_preprocess_entry_array()
 }
 
 int typecount=0;
-int assigntype=0;
+int assigntype=1;
 int entry_is_type(dwarf_entry *entry) {
   if (entry->tag_name==DW_TAG_structure_type||
       entry->tag_name==DW_TAG_union_type) {
@@ -164,6 +164,7 @@ void initializeTypeArray()
     }
   }
 
+  /* Assign names */
   for (i = 0; i < dwarf_entry_array_size; i++)
     {
       cur_entry = &dwarf_entry_array[i];
@@ -173,6 +174,7 @@ void initializeTypeArray()
 	  int j=0;
 	  int offset=0;
 	  int value=0;
+	  
 	  for(j=0;j<collection_ptr->num_members;j++) {
 	    dwarf_entry *entry=collection_ptr->members[j];
 	    if (entry->tag_name==DW_TAG_inheritance) {
@@ -188,6 +190,35 @@ void initializeTypeArray()
 		value++;
 	    }
 	  }
+        }
+    }
+
+  for (i = 0; i < dwarf_entry_array_size; i++)
+    {
+      cur_entry = &dwarf_entry_array[i];
+      if (entry_is_type(cur_entry))
+        {
+	  collection_type* collection_ptr = (collection_type*)(cur_entry->entry_ptr);
+	  int j=0;
+	  int offset=0;
+	  int value=0;
+	  
+	  for(j=0;j<collection_ptr->num_members;j++) {
+	    dwarf_entry *entry=collection_ptr->members[j];
+	    if (entry->tag_name==DW_TAG_inheritance) {
+	      value++;
+	    } else {
+	      member * member_ptr=(member *)entry->entry_ptr;
+	      char *name=member_ptr->name;
+	      dwarf_entry *type=member_ptr->type_ptr;
+	      char *typestr=printname(type,GETTYPE);
+	      char *poststr=printname(type,POSTNAME);
+
+	      if (typestr!=NULL)
+		value++;
+	    }
+	  }
+
 	  if (collection_ptr->name!=NULL) {
 	    struct valuepair *vp=NULL;
 	    if (gencontains(ght,collection_ptr->name))
@@ -213,6 +244,7 @@ void initializeTypeArray()
 	cur_entry = &dwarf_entry_array[i];
 	if (entry_is_type(cur_entry)) {
 	  collection_type* collection_ptr = (collection_type*)(cur_entry->entry_ptr);
+
 	  int j=0;
 	  int offset=0;
 	  int value=0;
