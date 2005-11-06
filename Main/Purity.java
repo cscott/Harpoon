@@ -13,12 +13,12 @@ import java.net.URL;
  * <code>Purity</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Purity.java,v 1.4 2005-10-05 16:28:16 salcianu Exp $
+ * @version $Id: Purity.java,v 1.5 2005-11-06 21:16:11 salcianu Exp $
  */
 public class Purity {
 
     /** Version number for the Purity tool. */
-    public static String VERSION = "0.02";
+    public static String VERSION = "0.03";
     
     /** Convenient entry point for the purity analysis.
         <code>args[0]</code> should be the main class of the
