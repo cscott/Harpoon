@@ -2,11 +2,11 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: flex-self-test,v 1.4 2005-11-06 21:08:03 salcianu Exp $
+## $Id: flex-self-test,v 1.5 2005-11-06 21:29:50 salcianu Exp $
 
 AUX_JARS_DIR="suppJars"
 
-echo Flex analyzing its own purity\; the analysis will take many hours\!
+echo Flex analyzing its own purity\; the analysis may take one or more hours, depending on your hardware\!
 
 PKHOME=`dirname $0`
 
