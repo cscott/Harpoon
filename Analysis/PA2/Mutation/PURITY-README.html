@@ -10,7 +10,7 @@ Purity Analysis Kit
 
 <body>
 
-<h1>Purity Analysis Kit v0.02</h1>
+<h1>Purity Analysis Kit v0.03</h1>
 
 
 <b>
@@ -83,8 +83,8 @@ consider such constructors impure. ]</i>
 
 The purity analysis kit consists of a <code>.tgz</code> archive file
 that you can download from <a href="purity-kit.tgz">here</a>.  It
-unzips into a directory named <code>purity-kit</code>, containg the
-following files/subdirs:
+decompresses into a directory named <code>purity-kit</code>, containg
+the following files/subdirs:
 
 
 <ol>
@@ -98,7 +98,7 @@ following files/subdirs:
    in Prof. Rinard's group at MIT.
 
 <p>
-<li> <code>aux/</code> - Subdirectory with the two <code>.jar</code>
+<li> <code>suppJars/</code> - Subdirectory with the two <code>.jar</code>
    libraries used by the implementation of the purity analysis:
    <code>jpaul.jar</code> and <code>jutil.jar</code>.  These files are
    not really part of the purity analysis: they are provided here only
@@ -162,8 +162,8 @@ testing scripts.
 been tested on Linux (RedHat, Debian, Fedora Core 3) with the first 5
 releases of SUN JDK 1.5.0 (_01 to _05).  You should make sure that the
 <code>CLASSPATH</code> of your JVM contains the following files:
-<code>purity.jar</code>, <code>aux/jutil.jar</code>, and
-<code>aux/jpaul.jar</code>.
+<code>purity.jar</code>, <code>suppJars/jutil.jar</code>, and
+<code>suppJars/jpaul.jar</code>.
 
 <p>
 <b>Hardware:</b> a fast machine (recommended: P4 @ 3.2GHz or
@@ -224,8 +224,8 @@ minutes for the pointer and purity analysis itself).
 <a name="usage"><h2>F. Usage</h2></a>
 
 <b>Reminder:</b> Before using the purity analysis, you should make
-sure that <code>purity.jar</code>, <code>aux/jpaul.jar</code> and
-<code>aux/jutil.jar</code> are on your JVM's <code>CLASSPATH</code>.
+sure that <code>purity.jar</code>, <code>suppJars/jpaul.jar</code> and
+<code>suppJars/jutil.jar</code> are on your JVM's <code>CLASSPATH</code>.
 
 <p>
 The entry point for the purity analysis is the method 
@@ -234,6 +234,10 @@ The entry point for the purity analysis is the method
 <code>
   public static void harpoon.Main.Purity.main(String[] args)
 </code>
+
+<p>You may invoke this method in two ways: (1) programmatically (e.g.,
+from another Java class); or (2) by starting your favorite JVM with
+the class <code>harpoon.Main.Purity</code> as main class.
 
 <p>The elements of the <code>args</code> array parameter correspond to
 the command line arguments.  They should be, in order:
@@ -293,10 +297,45 @@ The classes from the GNU Classpath 0.08 Java standard library.
 
 <p>
 <li>The rest of the arguments are passed verbatim to
-<code>harpoon.Main.SAMain.main(String[] args)</code>.  Such a possible
-argument is <code>--no-jml-constructor-purity</code>: it instructs the
-analysis to consider impure the constructors that mutate the fields of
+<code>harpoon.Main.SAMain.main(String[] args)</code>.  Here are a few
+possible options you may use:
+
+<ul>
+
+<li><code>--no-jml-constructor-purity</code>: the
+analysis considers impure the constructors that mutate the fields of
 the <code>this</code> object.
+
+<li><code>--daikon-purity-file <i>&lt;fileName&gt;</i></code>: the
+analysis will output a textfile with the names of the pure methods,
+one method name per line (no empty lines).  [ Note: this option
+requires two entries in the <code>args</code> array: one for the
+string <code>&quot;--daikon-purity-file&quot;</code> and one for
+the file name. ]
+
+<p>
+The method name format in the output file is
+that produced by <code><a
+href="http://flex-master.csail.mit.edu/Harpoon/doc/harpoon/ClassFile/HMethod.html">HMethod</a>.toString()</code>,
+which is itself identical to the format produced by
+<code>javap</code>: access qualifiers, space, fully qualified result
+type, space, fully qualified class name, dot, method name, open paran,
+comma-separated list of fully qualified parameter types, closed paran,
+and (if the method throws any exceptions), space, the keyword
+<code>throws</code>, space, comma-separated list of fully qualified
+exception types.  Here is an example:
+
+<p>
+<code>
+public java.lang.String java.io.File.getCanonicalPath() throws
+java.io.IOException<br>
+public int java.util.Collections$SynchronizedCollection.size()
+</code>
+
+
+<p>This file can be passed to the Daikon invariant detector.
+
+</ul>
 
 </ol>
 
@@ -564,7 +603,8 @@ Good luck!
 <b>
 Copyright (c) 2005 - <a href="http://www.mit.edu/~salcianu">Alexandru
 Salcianu</a> &lt;salcianu@alum.mit.edu&gt;<br>
-GNU General Public Licence
+GNU General Public Licence<br>
+File CVS version: $Id: PURITY-README.html,v 1.5 2005-11-06 21:08:03 salcianu Exp $
 </b>
 
 

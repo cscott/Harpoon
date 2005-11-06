@@ -13,7 +13,7 @@ import harpoon.Util.Options.Option;
  * <code>Flags</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: Flags.java,v 1.11 2005-10-05 16:18:53 salcianu Exp $
+ * @version $Id: Flags.java,v 1.12 2005-11-06 21:08:03 salcianu Exp $
  */
 public abstract class Flags {
 
@@ -134,7 +134,7 @@ public abstract class Flags {
 	    }
 	});
 
-	opts.add(new Option("no-jml-constructor-purity", "Instructs the analysis to consider impure the constructors that mutate fields of the this object; the result is a stricter purity definition than the JML one.") {
+	opts.add(new Option("no-jml-constructor-purity", "Consider impure the constructors that mutate fields of the this object; the result is a stricter purity definition than the JML one.") {
 	    public void action() {
 		IGNORE_CONSTR_MUTATION_ON_THIS = false;
 	    }

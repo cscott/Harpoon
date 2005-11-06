@@ -2,16 +2,19 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: purity-test,v 1.6 2005-10-25 20:20:21 salcianu Exp $
+## $Id: purity-test,v 1.7 2005-11-06 21:08:03 salcianu Exp $
+
+AUX_JARS_DIR="suppJars"
+DAIKON_PURITY_FILE_EXT="pure"
 
 JAVA_OPTS=""
 
 PURITY_HOME=`dirname $0`
 
-if [ -d ${PURITY_HOME}/aux ]; then
+if [ -d ${PURITY_HOME}/${AUX_JARS_DIR} ]; then
     # Normal case: run as part of the kit
     JOLDEN_HOME=${PURITY_HOME}/jolden
-    export CLASSPATH=${PURITY_HOME}/purity.jar:${PURITY_HOME}/aux/jutil.jar:${PURITY_HOME}/aux/jpaul.jar
+    export CLASSPATH=${PURITY_HOME}/purity.jar:${PURITY_HOME}/${AUX_JARS_DIR}/jutil.jar:${PURITY_HOME}/${AUX_JARS_DIR}/jpaul.jar
 else
     echo Script run during Flex development, not from the kit
     PURITY_HOME=`dirname $0`/../../..
@@ -44,6 +47,6 @@ mkdir -p results
 for app in $JOLDEN_APPS; do
 
     subdir=`echo $app | tr [:upper:] [:lower:]`
-    java ${JAVA_OPTS} harpoon.Main.Purity $app ${JOLDEN_HOME}/$subdir | tee ./results/$app.purity.out
+    java ${JAVA_OPTS} harpoon.Main.Purity $app ${JOLDEN_HOME}/$subdir --daikon-purity-file $app.${DAIKON_PURITY_FILE_EXT} | tee ./results/$app.purity.out
 
-done; 
+done;

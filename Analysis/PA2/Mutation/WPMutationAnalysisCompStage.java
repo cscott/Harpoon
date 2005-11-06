@@ -8,9 +8,12 @@ import java.util.LinkedList;
 import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Collection;
+
+import java.io.PrintStream;
 
 import jpaul.DataStructs.Pair;
 import jpaul.DataStructs.Relation;
@@ -41,7 +44,7 @@ import harpoon.Util.Timer;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.13 2005-10-05 16:18:53 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.14 2005-11-06 21:08:03 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -75,6 +78,17 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 		STORE_RESULTS_IN_STATICS = true;
 	    }
 	});
+
+	opts.add(new Option("daikon-purity-file", "<filename>", "Output the names of the pure methods in a file (for the Daikon invariant detector)") {
+	    public void action() {
+		DAIKON_PURITY_FILENAME = getArg(0);
+		// required such that we have the methods we want to
+		// write in the Daikon purity file somewhere, once the
+		// analysis terminates
+		STORE_RESULTS_IN_STATICS = true;
+	    }
+	});
+
 	return opts;
     }
 
@@ -96,6 +110,11 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
         methods. */
     public static Map<HMethod,List<Integer>> method2SafeParams = null;
 
+    /** Name of the output file where we write the names of the pure
+        methods.  By default, <code>null</code>, i.e., no such file is
+        generated. */
+    private static String DAIKON_PURITY_FILENAME = null;
+
     public boolean enabled() {
 	return WP_MUTATION_ANALYSIS;
     }
@@ -109,8 +128,8 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	HClass.enterImmutableEpoch();
 
 	if(STORE_RESULTS_IN_STATICS) {
-	    pureMethods = new HashSet<HMethod>();
-	    method2SafeParams = new HashMap<HMethod,List<Integer>>();
+	    pureMethods = new LinkedHashSet<HMethod>();
+	    method2SafeParams = new LinkedHashMap<HMethod,List<Integer>>();
 	}
 	pa = (PointerAnalysis) attribs.get("pa");
 	assert pa != null : "cannot find the pointer analysis";
@@ -143,11 +162,16 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	System.out.println("TOTAL:     " + Stat.sum(sLib, sUser));
 	System.out.println();
 
+	if(DAIKON_PURITY_FILENAME != null) {
+	    outputDaikonPurityFile(DAIKON_PURITY_FILENAME, pureMethods);
+	}
+
 	// enable some GC
 	pa = null;
 	ma = null;
 	io = null;
 
+	// mutations to HClass objects may happen again past this point
 	HClass.exitImmutableEpoch();
     }
 
@@ -298,6 +322,22 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    index++;
 	}
 	method2SafeParams.put(hm, safeParamIndices);
+    }
+
+    private void outputDaikonPurityFile(String fileName, Set<HMethod> pureMethods) {
+	try {
+	    System.out.print("Generate Daikon purity file ... ");
+	    PrintStream ps = new PrintStream(fileName);
+	    for(HMethod hm : pureMethods) {
+		ps.println(hm);
+	    }
+	    ps.close();
+	    System.out.println("ok");
+	}
+	catch(java.io.IOException ex) {
+	    System.out.println("FATAL I/O Error");
+	    throw new RuntimeException(ex);
+	}
     }
 
 }

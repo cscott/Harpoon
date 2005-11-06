@@ -3,8 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PA2;
 
-import java.util.*;
-import java.io.PrintWriter;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.HashSet;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -45,7 +49,7 @@ import harpoon.Util.Timer;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.8 2005-10-05 16:15:29 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.9 2005-11-06 21:08:03 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 

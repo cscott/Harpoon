@@ -2,14 +2,17 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: flex-self-test,v 1.3 2005-10-05 16:28:16 salcianu Exp $
+## $Id: flex-self-test,v 1.4 2005-11-06 21:08:03 salcianu Exp $
+
+AUX_JARS_DIR="suppJars"
 
 echo Flex analyzing its own purity\; the analysis will take many hours\!
 
 PKHOME=`dirname $0`
-ANALYSIS_CODE_PATH=$PKHOME/purity.jar:$PKHOME/aux/jpaul.jar:$PKHOME/aux/jutil.jar
 
-if [ ! -f $PKHOME/purity.jar ]; then
+if [ -f $PKHOME/purity.jar ]; then
+    ANALYSIS_CODE_PATH=$PKHOME/purity.jar:$PKHOME/${AUX_JARS_DIR}/jpaul.jar:$PKHOME/${AUX_JARS_DIR}/jutil.jar
+else
     PKHOME=$PKHOME/../../..
     if [ ! -f $PKHOME/Main/Purity.java ]; then
 	echo Confused about the current directory\;
@@ -18,7 +21,6 @@ if [ ! -f $PKHOME/purity.jar ]; then
     fi
     ANALYSIS_CODE_PATH=$PKHOME:$PKHOME/Support/jpaul.jar:$PKHOME/Support/jutil.jar:$PKHOME/Support/reflect-thunk.jar:$PKHOME/Support/cpvm.jar:$PKHOME/Support/glibj-0.08-extra.jar:$PKHOME/Support/glibj-0.08.zip
 fi
-
 
 rm -f $PKHOME/out.txt
 

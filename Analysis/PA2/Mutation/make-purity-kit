@@ -2,10 +2,12 @@
 
 ## Copyright (C) 2005 Alexandru Salcianu <salcianu@alum.mit.edu>
 ## Licensed under the terms of the GNU GPL; see COPYING for details.
-## $Id: make-purity-kit,v 1.5 2005-10-08 22:30:40 salcianu Exp $
+## $Id: make-purity-kit,v 1.6 2005-11-06 21:08:03 salcianu Exp $
 
 KIT_DIR=purity-kit
 FLEX_DIR=`dirname $0`/../../..
+
+AUX_JARS_DIR="suppJars"
 
 GNU_CLASSPATH_LIB_PATH=${FLEX_DIR}/../classpath-install/share/classpath
 
@@ -96,12 +98,12 @@ fi
 
 
 # 5. copy jpaul.jar and jutil.jar
-echo Copy auxiliary jar\'s: jpaul and jutil && \
-mkdir ${KIT_DIR}/aux && \
-cp Support/jpaul.jar Support/jutil.jar ${KIT_DIR}/aux
+echo Copy supporting jar\'s: jpaul and jutil && \
+mkdir ${KIT_DIR}/${AUX_JARS_DIR} && \
+cp Support/jpaul.jar Support/jutil.jar ${KIT_DIR}/${AUX_JARS_DIR}
 
 if [ "$?" != 0 ]; then
-    echo Error copying the auxiliary jars: jpaul and jutil
+    echo Error copying the supporting jars: jpaul and jutil
     exit 6;
 fi
 
