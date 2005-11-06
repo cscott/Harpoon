@@ -17,12 +17,17 @@ import java.io.PrintStream;
  * <code>Option</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Option.java,v 1.4 2004-02-08 03:21:58 cananian Exp $
+ * @version $Id: Option.java,v 1.5 2005-11-06 21:09:28 salcianu Exp $
  */
 public abstract class Option {
 
     public Option(String optionName, String argSummary, String optArgSummary,
 		  String helpMessage) {
+	if(optionName.contains(" ")) {
+	    throw new RuntimeException("Option names should not contain spaces: \"" +
+				       optionName + "\"");
+	}
+
 	this.optionName = optionName;
 
 	if(argSummary == null) argSummary = "";
