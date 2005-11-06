@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.Collection;
 
 import java.io.PrintStream;
+import java.io.FileOutputStream;
 
 import jpaul.DataStructs.Pair;
 import jpaul.DataStructs.Relation;
@@ -44,7 +45,7 @@ import harpoon.Util.Timer;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.14 2005-11-06 21:08:03 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.15 2005-11-06 22:03:04 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -327,7 +328,7 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
     private void outputDaikonPurityFile(String fileName, Set<HMethod> pureMethods) {
 	try {
 	    System.out.print("Generate Daikon purity file ... ");
-	    PrintStream ps = new PrintStream(fileName);
+	    PrintStream ps = new PrintStream(new FileOutputStream(fileName));
 	    for(HMethod hm : pureMethods) {
 		ps.println(hm);
 	    }
