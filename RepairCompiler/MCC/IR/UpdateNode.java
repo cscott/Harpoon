@@ -52,6 +52,7 @@ class UpdateNode {
             return false;
 	if (computeordering()) /* Ordering exists */
 	    return true;
+	
 	return false;
     }
 

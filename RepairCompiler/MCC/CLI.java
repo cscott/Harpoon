@@ -12,7 +12,7 @@ import MCC.IR.RepairGenerator;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.20 2005-11-09 16:47:42 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.21 2005-11-09 21:06:29 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -104,6 +104,7 @@ public class CLI {
 	    System.out.println("-depth depthnum constraintnum -- generate dependency graph from constraintnum with depth of depthnum");
 	    System.out.println("-depthconj depthnum constraintnum conjunctionnum -- generate dependency graph from constraintnum with depth of depthnum");
 	    System.out.println("-instrument -- generate instrumentation code");
+	    System.out.println("-removeconj constr,conj");
 	    System.out.println("-aggressivesearch -- search for one repair per constraint");
 	    System.out.println("-prunequantifiernodes -- prune nodes that satisfy constraint by decreasing scope");
 	    System.out.println("-cplusplus -- properly set up c++ classes");
@@ -125,6 +126,12 @@ public class CLI {
                 debug = true;
 	    } else if (args[i].equals("-checkonly")) {
                 Compiler.REPAIR=false;
+	    } else if (args[i].equals("-removeconj")) {
+		if ((i+1)==args.length) {
+		    throw new Error("No fieldname");
+		}
+		Compiler.removeconj.add(args[i+1]);
+		i++;
 	    } else if (args[i].equals("-exactallocation")) {
                 Compiler.EXACTALLOCATION=true;
 	    } else if (args[i].equals("-omitcomp")) {

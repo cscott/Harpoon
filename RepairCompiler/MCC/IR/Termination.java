@@ -173,6 +173,9 @@ public class Termination {
 	    Constraint c=(Constraint)constraints.get(i);
 	    DNFConstraint dnf=c.dnfconstraint;
 	    for(int j=0;j<dnf.size();j++) {
+		if (Compiler.removeconj.contains(new String(i+","+j)))
+		    continue;
+
 		TermNode tn=new TermNode(c,dnf.get(j));
 		GraphNode gn=new GraphNode("Conj"+i+"A"+j,
 					   "Conj ("+i+","+j+") "+dnf.get(j).name()
@@ -186,6 +189,8 @@ public class Termination {
 	    }
 	    // Construct quantifier "conjunction" nodes
 	    for(int j=0;j<c.numQuantifiers();j++) {
+		if (Compiler.removeconj.contains(new String(i+","+(j+constraints.size()))))
+		    continue;
 		Quantifier q=c.getQuantifier(j);
 		if (q instanceof SetQuantifier) {
 		    SetQuantifier sq=(SetQuantifier)q;
@@ -195,8 +200,8 @@ public class Termination {
 		    dconst=dconst.not();
 		    TermNode tn=new TermNode(c,dconst.get(0));
 		    tn.setquantifiernode();
-		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
-					       "Conj ("+i+","+j+") "+dconst.get(0).name()
+		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+(j+constraints.size()),
+					       "Conj ("+i+","+(j+constraints.size())+") "+dconst.get(0).name()
 					       ,tn);
 		    gn.setOption(conjoption);
 		    conjunctions.add(gn);
@@ -213,8 +218,8 @@ public class Termination {
 		    dconst=dconst.not();
 		    TermNode tn=new TermNode(c,dconst.get(0));
 		    tn.setquantifiernode();
-		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
-					       "Conj ("+i+","+j+") "+dconst.get(0).name()
+		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+(j+constraints.size()),
+					       "Conj ("+i+","+(j+constraints.size())+") "+dconst.get(0).name()
 					       ,tn);
 		    gn.setOption(conjoption);
 		    conjunctions.add(gn);
