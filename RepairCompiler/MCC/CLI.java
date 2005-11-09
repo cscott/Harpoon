@@ -2,6 +2,7 @@ package MCC;
 
 import java.util.*;
 import MCC.IR.DebugItem;
+import MCC.IR.RepairGenerator;
 
 /**
  * A generic command-line interface for 6.035 compilers.  This class
@@ -11,7 +12,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.19 2005-10-17 00:29:13 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.20 2005-11-09 16:47:42 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -114,7 +115,7 @@ public class CLI {
 	    System.out.println("-printrepairs -- print log of repair actions");
 	    System.out.println("-exactallocation -- application calls malloc for each struct and");
 	    System.out.println("                    allocates exactly the right amount of space.");
-
+	    System.out.println("-name -- set name");
 	    System.exit(-1);
 	}
 
@@ -154,6 +155,10 @@ public class CLI {
                 Compiler.PRUNEQUANTIFIERS=true;
 	    } else if (args[i].equals("-cplusplus")) {
                 Compiler.ALLOCATECPLUSPLUS=true;
+	    } else if (args[i].equals("-name")) {
+		i++;
+                RepairGenerator.name=args[i];
+		RepairGenerator.postfix=args[i];
             } else if (args[i].equals("-verbose") || args[i].equals("-v")) {
                 context = 0;
                 verbose++;

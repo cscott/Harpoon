@@ -10,7 +10,8 @@ public class RepairGenerator {
     PrintWrapper outputrepair = null;
     PrintWrapper outputaux = null;
     PrintWrapper outputhead = null;
-    String name="foo";
+    public static String name="foo";
+    public static String postfix="";
     String headername;
     static VarDescriptor oldmodel=null;
     static VarDescriptor newmodel=null;
@@ -66,7 +67,7 @@ public class RepairGenerator {
 	    if (togenerate.contains(gn))
 	    for (int i=0;i<mun.numUpdates();i++) {
 		UpdateNode un=mun.getUpdate(i);
-		String name="update"+String.valueOf(count++);
+		String name="update"+RepairGenerator.name+String.valueOf(count++);
 		updatenames.put(un,name);
 	    }
 	}
@@ -274,7 +275,7 @@ public class RepairGenerator {
 	    cr.outputline(vdstate.getSafeSymbol()+"->"+vd.getSafeSymbol()+"=("+vd.getType().getGenerateType().getSafeSymbol()+")"+vd.getSafeSymbol()+";");
 	}
 	/* Insert repair here */
-	cr.outputline("doanalysis("+vdstate.getSafeSymbol()+");");
+	cr.outputline("doanalysis"+postfix+"("+vdstate.getSafeSymbol()+");");
 	globals=state.stGlobals.descriptors();
 	while (globals.hasNext()) {
 	    VarDescriptor vd=(VarDescriptor) globals.next();
@@ -543,8 +544,8 @@ public class RepairGenerator {
 	    craux.outputline("int abstractcount;");
 	}
 
-	crhead.outputline("void doanalysis(struct "+name+"_state *);");
-	craux.outputline("void doanalysis(struct "+name+"_state * thisvar)");
+	crhead.outputline("void doanalysis"+postfix+"(struct "+name+"_state *);");
+	craux.outputline("void doanalysis"+postfix+"(struct "+name+"_state * thisvar)");
   	craux.startblock();
 	craux.outputline("int highmark;"); /* This declaration is special...need it to be first */
 	craux.startBuffer();

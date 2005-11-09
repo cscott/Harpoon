@@ -371,7 +371,13 @@ public class DotExpr extends Expr {
                                     UpdateNode un=new UpdateNode(null);
                                     un.addUpdate(u);
                                     un.generate(writer,false,false,null,null,null,null);
-                                    writer.outputline("break;");
+				    writer.outputline("free"+RepairGenerator.name+"("+RepairGenerator.newmodel.getSafeSymbol()+");");
+				    writer.outputline("computesizes(thisvar);");
+				    writer.outputline(RepairGenerator.name+"_staterecomputesizes(thisvar);");
+				    writer.outputline("goto rebuild;");
+
+				    //                                    writer.outputline("break;");
+				    
                                 } else if ((indexbound instanceof OpExpr)&&
                                            (((OpExpr)indexbound).getOpcode()==Opcode.MULT)&&
                                            (((OpExpr)indexbound).getLeftExpr() instanceof DotExpr)&&
@@ -398,7 +404,11 @@ public class DotExpr extends Expr {
                                         UpdateNode un=new UpdateNode(null);
                                         un.addUpdate(u);
                                         un.generate(writer,false,false,null,null,null,null);
-                                        writer.outputline("break;");
+					writer.outputline("free"+RepairGenerator.name+"("+RepairGenerator.newmodel.getSafeSymbol()+");");
+					writer.outputline("computesizes(thisvar);");
+					writer.outputline(RepairGenerator.name+"_staterecomputesizes(thisvar);");
+					writer.outputline("goto rebuild;");
+					//                                        writer.outputline("break;");
                                         writer.endblock();
                                     }
                                     writer.outputline("else if (("+rightside.getSafeSymbol()+"!=0)&&("+numElements.getSafeSymbol()+"%"+rightside.getSafeSymbol()+"==0))");
@@ -414,7 +424,11 @@ public class DotExpr extends Expr {
                                         UpdateNode un=new UpdateNode(null);
                                         un.addUpdate(u);
                                         un.generate(writer,false,false,null,null,null,null);
-                                        writer.outputline("break;");
+					writer.outputline("free"+RepairGenerator.name+"("+RepairGenerator.newmodel.getSafeSymbol()+");");
+					writer.outputline("computesizes(thisvar);");
+					writer.outputline(RepairGenerator.name+"_staterecomputesizes(thisvar);");
+					writer.outputline("goto rebuild;");
+					//                                        writer.outputline("break;");
                                         writer.endblock();
                                     }
 
