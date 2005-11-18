@@ -1,1 +1,107 @@
-This directory contains all C source files for the runtime.
+# Alex Salcianu <salcianu@alum.mit.edu> November 2005
+# $Id: README,v 1.2 2005-11-18 01:03:55 salcianu Exp $
+
+This directory contains all C source files for the runtime.  Here is
+some small info on the content of each subdir:
+
+
+classpath/
+
+
+sunjdk/
+
+
+gc/
+
+  Implementation of several Precise Garbage Collectors by Karen K. Zee
+  and a few UROPs.  By default, Flex uses the conservative (i.e.,
+  imprecise) BDW GC (theoretically, BDW collects fewer objects,
+  because it does not know exactly which fields are pointers and which
+  are not; however, BDW is quite well tested - debugging and tuning a
+  GC is very hard ...)
+
+
+java.lang/
+
+
+java.lang.reflect/
+
+
+jni/
+
+
+
+cam/
+servo/
+
+  Runtime code for some old (2002-2003?) DARPA demo prepared involving
+  a Compaq IPaq that controls a robot with servomechanisms (for
+  mobility) and video cameras (for orientation).
+
+
+clheap/
+
+  "Cluster Heap Support": code written by C. Scott Ananian for the
+  stack and thread allocation optimizations enabled by Alex Salcianu's
+  pointer analysis implementation (see Alex's SM thesis for the pa
+  algorithm).
+
+
+dynsync/
+
+  Code written by C. Scott Ananian for the "dynamic" synchronization
+  removal optimization enabled by Alex Salcianu's pointer analysis
+  implementation.  Why "dynamic"?  The pointer analysis is purely
+  static: it modifies the allocation sites that allocate only local
+  objects to mark a special flag (with the meaning "is local") in the
+  object header.  At runtime, each sync operation tests this flag: if
+  true, the real sync code (that may be very costly) is bypassed.
+
+
+mzf/
+
+  Runtime code for C. Scott Ananian's "mostly zero fields" (mzf)
+  program optimization.
+
+
+nativeio/
+
+  Runtime code that implements (async?) I/O operations for the event
+  driven project - see Brian Demsky's master thesis (MIT, June 2001);
+  I don't think the code changed significantly since then.
+
+
+realtime/
+rtjperf/
+
+  Runtime code for Wes Beebee's implementation of the Real Time
+  Specification for Java.
+
+
+roles/
+  
+  Runtime code for Brian Demsky's role inference project (see Brian's
+  list of publications, he had an ICSE paper about this project).
+
+
+stats/
+
+  Runtime code that gathers a few statistics (most of them memory
+  stats, e.g., stack/heap alloc size)
+
+
+transact/
+
+  Runtime code for C. Scott Ananian's software transaction project
+  (please see Scott's list of publications).
+
+
+user/
+
+  Runtime code for user-level threads; relevant if the Runtime is
+  configured with --with-thread-model=user
+   
+
+
+
+
