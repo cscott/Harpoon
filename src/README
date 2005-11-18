@@ -1,5 +1,5 @@
 # Alex Salcianu <salcianu@alum.mit.edu> November 2005
-# $Id: README,v 1.3 2005-11-18 04:34:51 salcianu Exp $
+# $Id: README,v 1.4 2005-11-18 19:26:55 salcianu Exp $
 
 This directory contains all C source files for the runtime.
 
@@ -27,24 +27,6 @@ startup.c
   something like this, for your optimization / dynamic analysis).
 
 
-dump-fixup.c
-
-  [AS] UNCLEAR: Prints some info about a mysterious "fixup" mechanism.
-  Do we really need this file here?  It seems to be some remain of a
-  complex debug process.
-
-
-test-lookup.c
-
-  [AS] UNCLEAR: Tests some stack inspection mechanism.  Unclear if
-  it's really useful: there is absolutely no mention of this file in
-  any other file (including in any of the Makefiles).
-
-
-
-
-
-
 -----------------------------------------------------------------------
 
 
@@ -53,12 +35,12 @@ SUBDIRS WITH ESSENTIAL PARTS:
 
 classpath/
 
-  TODO
+  TODOCUMENT
 
 
 sunjdk/
 
-  TODO
+  TODOCUMENT
 
 
 gc/
@@ -73,23 +55,30 @@ gc/
 
 java.lang/
 
-  TODO
+  TODOCUMENT
 
 
 java.lang.reflect/
 
-  TODO
+  TODOCUMENT
 
 
 jni/
 
-  TODO
+  TODOCUMENT
 
 
 -----------------------------------------------------------------------
 
 
 SUBDIRS WITH ADDITIONAL PARTS (RELATED TO SPECIAL USES / OPTIMIZATIONS):
+
+
+debug/
+
+  Debugging code for the some stack inspecton mechanism used for
+  exception support in the native back-ends.  Irrelevant for the
+  precise-c backend ([AS]: Scott, please correct me if I'm wrong).
 
 
 cam/
