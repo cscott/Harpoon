@@ -5,3 +5,22 @@ After installing the tools, you'll want to run ./setup
 to let autoheader/autoconf/automake do their thing.
 See the INSTALL file for generic build instructions;
 the BUILDING file has more specific information.
+
+FILES & DIRECTORY STRUCTURE:
+
+AUTHORS
+BUILDING
+COPYING
+INSTALL
+README
+REQUIRED
+
+  Standard files with very explanatory names
+  
+
+PROFILING
+
+
+## $Id: README,v 1.4 2005-11-21 19:33:09 salcianu Exp $
+
+

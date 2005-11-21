@@ -8,3 +8,6 @@ automake 1.6 (currently, no other version/subversion will work: the
 libtool 1.3.4 (libtool 1.2 will *not* work)
 
 It helps to have GNU gcc and GNU ld installed on the system, too.
+
+
+## $Id: REQUIRED,v 1.4 2005-11-21 19:33:09 salcianu Exp $
