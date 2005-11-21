@@ -1,5 +1,5 @@
 # Alex Salcianu <salcianu@alum.mit.edu> November 2005
-# $Id: README,v 1.5 2005-11-21 18:58:26 salcianu Exp $
+# $Id: README,v 1.6 2005-11-21 18:59:26 salcianu Exp $
 
 This directory contains the architecture-independent C source files
 for the runtime.
@@ -26,7 +26,7 @@ startup.c
   Contains the main procedure of the generated native program.  This
   procedure executes some code and next invokes the compiled version
   of the main method of the compiled Java application.  It's a good
-  place to add some [calls to] initialization code (if you need
+  place to add [calls to] initialization code (if you need
   something like this, for your optimization / dynamic analysis).
 
 
