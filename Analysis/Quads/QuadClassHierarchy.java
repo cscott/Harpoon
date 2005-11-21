@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.12 2005-10-15 22:51:56 salcianu Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.13 2005-11-21 22:44:26 salcianu Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -138,7 +138,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     }
 
 
-    private void addImplicitExceptions(Linker linker, Collection roots, HCodeFactory hcf) {
+    private Collection addImplicitExceptions(Linker linker, Collection roots) {
 	// add 'implicit' exceptions to root set when analyzing QuadWithTry
 	String[] implExcName = new String[] { 
 	    "java.lang.ArrayStoreException",
@@ -152,7 +152,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	for (int i=0; i<implExcName.length; i++)
 	    roots.add(linker.forName(implExcName[i])
 		      .getConstructor(new HClass[0]));
+	return roots;
     }
+
 
     // make initial worklist from roots collection.
     private void initWorkList(State S, Collection roots) {
@@ -199,7 +201,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 			      Collection roots, HCodeFactory hcf) {
 	initHMethods(linker); // initialize hclass objects.
 	if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadWithTry.codename)) {
-	    addImplicitExceptions(linker, roots, hcf);
+	    roots = addImplicitExceptions(linker, roots);
 	}
 
 	// state.
