@@ -69,6 +69,13 @@ src/
   Architecture-independent source code.
 
 
+include/
+
+  C header files for the C sources from both arch/ and src/.  The
+  configuration process will create a directory symlink "asm" to the
+  relevant subdirectory of arch/ (e.g., arch/ix86).
+
+
 Contrib/
 
   External code we use in the Flex Runtime.  Currently, the only
@@ -80,9 +87,9 @@ scripts/
   Various scripts: flexrun-config.in gen-link-script hacked-java-make
   query-size.sh.
 
-  [AS] TODOCUMENT
+  [AS] TODOCUMENT much more doc is required here ...
 
 
-## $Id: README,v 1.5 2005-11-21 20:08:02 salcianu Exp $
+## $Id: README,v 1.6 2005-11-21 20:16:41 salcianu Exp $
 
 
