@@ -14,8 +14,17 @@
 #include <strings.h> /* rindex */
 #include "../java.lang.reflect/reflect-util.h" /* REFLECT_* */
 
-/* prototypes */
-static inline jboolean fni_class_isPrimitive(JNIEnv *env, jclass cls);
+
+static inline
+jboolean fni_class_isPrimitive(JNIEnv *env, jclass cls) {
+    struct claz *thisclz = FNI_GetClassInfo(cls)->claz;
+    /* primitives have null in the first slot of the display. */
+    if (thisclz->display[0]!=NULL) return JNI_FALSE;
+    /* but so do interfaces.  weed them out using the interface list. */
+    if (*(thisclz->interfaces)!=NULL) return JNI_FALSE;
+    return JNI_TRUE;
+}
+
 
 // try to wrap currently active exception as the exception specified by
 // the exclsname parameter.  if this fails, just throw the original exception.
@@ -167,15 +176,17 @@ jboolean fni_class_isArray(JNIEnv *env, jclass cls) {
     return (thisclz->component_claz==NULL) ? JNI_FALSE : JNI_TRUE;
 }
 
-static inline
-jboolean fni_class_isPrimitive(JNIEnv *env, jclass cls) {
-    struct claz *thisclz = FNI_GetClassInfo(cls)->claz;
-    /* primitives have null in the first slot of the display. */
-    if (thisclz->display[0]!=NULL) return JNI_FALSE;
-    /* but so do interfaces.  weed them out using the interface list. */
-    if (*(thisclz->interfaces)!=NULL) return JNI_FALSE;
-    return JNI_TRUE;
-}
+/* [AS] 11/23/05
+
+  static inline
+  jboolean fni_class_isPrimitive(JNIEnv *env, jclass cls)
+  
+  is defined at the top of this file.  The old solution, declaring a
+  "static inline" prototype there and giving the implementation here,
+  was not kosher with gcc (GCC) 3.4.4 20050721 and resulted in a
+  compilation error: "inlining failed in call to ...; function not
+  considered for inlining".  It's unclear why an "inline" hint to the
+  compiler results in an error, instead of just a warning. */
 
 static inline
 jstring fni_class_getName(JNIEnv *env, jclass cls) {
