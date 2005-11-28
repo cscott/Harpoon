@@ -1,14 +1,18 @@
 ## Process this file with automake to produce Makefile.in
+## $Id: Makefile.am,v 1.51 2005-11-28 06:23:48 salcianu Exp $
 MAINTAINERCLEANFILES = Makefile.in
+CLEANFILES = *~
+EXTRA_CLEANFILES = *~
 INCLUDES = @IFLAGS@
-SUBDIRS = jni java.lang java.lang.reflect \
+SUBDIRS = reflect-thunk jni java.lang java.lang.reflect \
 	$(NATIVEDIR) \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) stats cam servo $(USERDIR) \
 	dynsync transact $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) \
 	$(MZFDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
-DIST_SUBDIRS = jni java.lang java.lang.reflect sunjdk classpath \
+DIST_SUBDIRS = reflect-thunk jni java.lang java.lang.reflect \
+	sunjdk classpath \
         gc clheap nativeio stats cam servo user \
         dynsync transact realtime rtjperf roles mzf
 EXTRA_DIST = README

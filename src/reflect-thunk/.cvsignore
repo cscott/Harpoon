@@ -1,0 +1,13 @@
+Makefile
+Makefile.in
+.libs
+.deps
+*.l?
+classes
+*.jar
+java_lang_reflect_AccessibleObject.h
+java_lang_reflect_Constructor.h
+java_lang_reflect_Field.h
+java_lang_reflect_Member.h
+java_lang_reflect_Method.h
+java_lang_reflect_Modifier.h

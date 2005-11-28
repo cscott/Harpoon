@@ -1,12 +1,13 @@
 ## Process this file with automake to produce Makefile.in
+## $Id: Makefile.am,v 1.23 2005-11-28 06:23:49 salcianu Exp $
 MAINTAINERCLEANFILES = Makefile.in configure aclocal.m4 \
 		       include/config.h.in include/stamp-h.in include/asm \
 		       scripts/config.guess scripts/config.sub \
 		       scripts/install-sh scripts/ltconfig scripts/ltmain.sh \
 		       scripts/missing scripts/mkinstalldirs
 CONFIG_STATUS_DEPENDENCIES = scripts/gen-link-script
-CLEANFILES = configure.done
-EXTRA_DIST = AUTHORS COPYING INSTALL NEWS README REQUIRED \
+CLEANFILES = configure.done *~
+EXTRA_DIST = AUTHORS COPYING INSTALL README REQUIRED \
 	include/README include/config.h.in include/flexthread.h \
 	include/fni-stats.h include/fni-threadstate.h include/fni-wrap.h \
 	include/fni-ptroff.h \

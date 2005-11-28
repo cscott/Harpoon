@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.163 $)dnl
+AC_REVISION($Revision: 1.164 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -959,7 +959,9 @@ AC_OUTPUT(Makefile arch/Makefile
 	  arch/ix86/Makefile arch/mips/Makefile arch/ppc32/Makefile
 	  Contrib/Makefile
 	  src/Makefile src/jni/Makefile src/cam/Makefile
-	  src/java.lang/Makefile src/java.lang.reflect/Makefile
+	  src/java.lang/Makefile 
+	  src/java.lang.reflect/Makefile
+	  src/reflect-thunk/Makefile
 	  src/sunjdk/Makefile src/sunjdk/java.io/Makefile 
 	  src/sunjdk/java.lang/Makefile src/sunjdk/java.net/Makefile
 	  src/sunjdk/java.util/Makefile src/sunjdk/java.util.zip/Makefile
