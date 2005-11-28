@@ -1,5 +1,5 @@
 # Alex Salcianu <salcianu@alum.mit.edu> November 2005
-# $Id: README,v 1.6 2005-11-21 18:59:26 salcianu Exp $
+# $Id: README,v 1.7 2005-11-28 06:24:54 salcianu Exp $
 
 This directory contains the architecture-independent C source files
 for the runtime.
@@ -73,9 +73,18 @@ java.lang/
 
 java.lang.reflect/
 
-  Reflection-related Java classes and C native code required for
-  the support of both GNU Classpath (classpath/) and Sun JDK 1.1.8
+  Similar to java.lang: reflection-related C native code for the
+  support of both GNU Classpath (classpath/) and Sun JDK 1.1.8
   (sunjdk/) standard library.
+
+
+reflect-thunk/
+
+  Reflection-related Java classes.  These classes are compiled and
+  assembled in reflect-thunk.jar that should be placed on
+  harpoon.class.path (usually by copying it to Harpoon/Code/Support).
+  In addition, javah is used to produce the header files with the
+  prototypes of the native methods (implemented in java.lang.reflect).
 
 
 jni/
