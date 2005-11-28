@@ -4,7 +4,7 @@
 #include "config.h" /* for WITH_INIT_CHECK, WITH_TRANSACTIONS */
 #include <jni.h>
 #include <jni-private.h>
-#include "../java.lang.reflect/java_lang_reflect_Modifier.h"
+#include "../reflect-thunk/java_lang_reflect_Modifier.h"
 #ifdef WITH_TRANSACTIONS
 # include "../transact/transact.h"
 #endif

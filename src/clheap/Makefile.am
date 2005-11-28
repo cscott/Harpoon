@@ -1,5 +1,7 @@
 ## Process this file with automake to produce Makefile.in
+## $Id: Makefile.am,v 1.5 2005-11-28 06:26:28 salcianu Exp $
 MAINTAINERCLEANFILES = Makefile.in
+CLEANFILES = *~
 INCLUDES = @IFLAGS@
 LIBS =
 
