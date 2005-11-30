@@ -33,6 +33,7 @@ GNU General Public Licence
  <li><a href="#programmatic-access">G. Programmatic Access to the
  Analysis Results</a>
  <li><a href="#thorny-issues">H. Limitations / Thorny Issues</a>
+ <li><a href="#getting-the-sources">I. Getting the Source Code</a>
 </ul>
 
 
@@ -53,8 +54,9 @@ already have all the required files.
 
 This purity analysis tool is released under the terms of the GNU
 General Public Licence (GNU GPL), available online from <a
-href="COPYING">here</a>.  Please discontinue using this tool if you disagree
-with the GNU GPL.
+href="COPYING">here</a>.  Please discontinue using this tool if you
+disagree with the GNU GPL.  See <a href="#getting-the-sources">Section
+I</a> below to find out how you can obtain the source code.
 
 
 <a name="purity-def"><h2>B. Definition of <i>Purity</i></h2></a>
@@ -604,10 +606,40 @@ Good luck!
 Copyright (c) 2005 - <a href="http://www.mit.edu/~salcianu">Alexandru
 Salcianu</a> &lt;salcianu@alum.mit.edu&gt;<br>
 GNU General Public Licence<br>
-File CVS version: $Id: PURITY-README.html,v 1.6 2005-11-06 21:29:50 salcianu Exp $
+File CVS version: $Id: PURITY-README.html,v 1.7 2005-11-30 17:10:27 salcianu Exp $
 </b>
+
+
+
+<a name="getting-the-sources"><h2>I. Getting the Source Code</h2></a>
+
+The entire source code for the purity kit is available as part of the
+<a href="http://flex-master.csail.mit.edu/Harpoon">MIT Flex</a>
+compiler infrastructure.  Ideally, we should have the compiler
+infrastructure completely separated and next have the purity kit
+simply use it.  However, right now the purity analysis is part of the
+Flex source tree, together with many other things.  [ The main reason
+for this situation is that I did a lot of bug-fixes and changes in
+Flex itself so the separation was not that clear; another reason is my
+laziness and convenience. ]
+
+<p>
+To get the code, go to the <a
+href="http://flex-master.csail.mit.edu/Harpoon">Flex website</a> and
+see the instructions on getting the CVS snapshot (the <i>stable</i>
+releases are very old and irrelevant for the purity-kit; hopefully,
+one day we'll make an updated stable release).  The script
+<code>$FLEX/Analysis/PA2/Mutation/purity-kit</code> packages the
+purity analysis (and the rest of Flex) into the purity-kit.
+
+<p>
+<strong>Warning:</strong> Flex is a <strong>research
+prototype</strong> (both words are very important!); it is not a
+production-strength tool.  Understanding, changing, recompiling, and
+using Flex is very difficult, so please do not venture into it unless
+you are highly-motivated and have plenty of time.  You have been
+warned :)
 
 
 </body>
 </html>
-
