@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.HashMap;
 
 import jpaul.Graphs.DiGraph;
-import jpaul.DataStructs.CompoundIterable;
 import jpaul.DataStructs.DSUtil;
 import jpaul.DataStructs.Pair;
 
@@ -28,7 +27,7 @@ import harpoon.ClassFile.HField;
  * <code>GraphOptimizations</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: GraphOptimizations.java,v 1.5 2005-09-02 19:22:52 salcianu Exp $
+ * @version $Id: GraphOptimizations.java,v 1.6 2005-11-30 22:25:55 salcianu Exp $
  */
 public class GraphOptimizations {
 

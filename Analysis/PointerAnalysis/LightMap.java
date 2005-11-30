@@ -16,14 +16,14 @@ import java.util.LinkedList;
 import harpoon.Util.Util;
 
 import jpaul.Graphs.BinTreeUtil;
-import jpaul.Graphs.BinTreeNav;
+import jpaul.Graphs.BinTreeNavigator;
 
 /**
  * <code>LightMap</code> is a very lightweight implementation of
  the <code>java.util.Map</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@alum.mit.edu>
- * @version $Id: LightMap.java,v 1.1 2005-08-17 23:34:00 salcianu Exp $
+ * @version $Id: LightMap.java,v 1.2 2005-11-30 22:25:56 salcianu Exp $
  */
 public class LightMap<K,V> implements Map<K,V>, Cloneable, java.io.Serializable {
     // the number of mappings in this map
@@ -426,7 +426,7 @@ public class LightMap<K,V> implements Map<K,V>, Cloneable, java.io.Serializable 
 	}
     }
 
-    private final BinTreeNav<BinTreeNode<K,V>> binTreeNav = new BinTreeNav<BinTreeNode<K,V>>() {
+    private final BinTreeNavigator<BinTreeNode<K,V>> binTreeNav = new BinTreeNavigator<BinTreeNode<K,V>>() {
 	public BinTreeNode<K,V> left(BinTreeNode<K,V> node) {
 	    return node.left;
 	}

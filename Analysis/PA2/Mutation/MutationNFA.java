@@ -15,7 +15,7 @@ import jpaul.DataStructs.Pair;
 import jpaul.DataStructs.Factory;
 import jpaul.DataStructs.MapWithDefault;
 
-import jpaul.Graphs.LDiGraph.LForwardNavigator;
+import jpaul.Graphs.LabeledDiGraph.LabeledForwardNavigator;
 import jpaul.RegExps.NFA;
 import jpaul.RegExps.RegExp;
 
@@ -35,7 +35,7 @@ import harpoon.Analysis.PA2.PAEdgeSet;
  * <code>MutationNFA</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MutationNFA.java,v 1.4 2005-09-06 04:39:05 salcianu Exp $
+ * @version $Id: MutationNFA.java,v 1.5 2005-11-30 22:25:56 salcianu Exp $
  */
 public class MutationNFA extends NFA<PANode,MLabel> {
     
@@ -51,7 +51,7 @@ public class MutationNFA extends NFA<PANode,MLabel> {
 
 	addGblEscTrans(state2trans, ipar);
 
-	lFwdNav = new LForwardNavigator<PANode,MLabel>() {
+	lFwdNav = new LabeledForwardNavigator<PANode,MLabel>() {
 	    public List<Pair<PANode,MLabel>> lnext(PANode state) {
 		return state2trans.get(state);
 	    }
@@ -148,10 +148,10 @@ public class MutationNFA extends NFA<PANode,MLabel> {
 	return Collections.<PANode>singleton(acceptState); 
     }
     
-    public LForwardNavigator<PANode,MLabel> getLForwardNavigator() {
+    public LabeledForwardNavigator<PANode,MLabel> getLabeledForwardNavigator() {
 	return lFwdNav;
     }
-    private final LForwardNavigator<PANode,MLabel> lFwdNav;
+    private final LabeledForwardNavigator<PANode,MLabel> lFwdNav;
 
 
 

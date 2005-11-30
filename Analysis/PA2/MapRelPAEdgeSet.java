@@ -17,7 +17,7 @@ import harpoon.ClassFile.HField;
 
 import jpaul.DataStructs.Factory;
 import jpaul.DataStructs.Relation;
-import jpaul.DataStructs.CompoundIterable;
+import jpaul.DataStructs.ImmutableCompoundIterable;
 import jpaul.DataStructs.DSUtil;
 import jpaul.Misc.Function;
 
@@ -29,7 +29,7 @@ import jpaul.Graphs.DiGraph;
  * <code>MapRelPAEdgeSet</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: MapRelPAEdgeSet.java,v 1.4 2005-08-29 16:13:35 salcianu Exp $
+ * @version $Id: MapRelPAEdgeSet.java,v 1.5 2005-11-30 22:25:56 salcianu Exp $
  */
 public class MapRelPAEdgeSet extends PAEdgeSet {
 
@@ -146,7 +146,7 @@ public class MapRelPAEdgeSet extends PAEdgeSet {
 	    DSUtil.<PANode>unionIterable
 	    (sources(),
 	     // ... and edge targets
-	     new CompoundIterable<PANode,PANode>
+	     new ImmutableCompoundIterable<PANode,PANode>
 	     (sources(),
 	      new Function<PANode,Iterable<PANode>>() {
 		 public Iterable<PANode> f(PANode node) {
