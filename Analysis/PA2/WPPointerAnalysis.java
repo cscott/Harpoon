@@ -55,7 +55,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.10 2005-10-25 02:26:19 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.11 2005-12-01 07:54:07 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -296,7 +296,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
     private void addUnanalyzedIntraSCCCalls(SCComponent<HMethod> scc) {
 	System.out.println("SCC with unanalyzed intra-SCC CALLs");
 	PAUtil.printMethodSCC(System.out, scc, null, null);
-	for(HMethod hm : scc.nodes()) {
+	for(HMethod hm : scc.vertices()) {
 	    for(CALL cs : cg.getCallSites(hm)) {
 		if(anyCalleeInScc(cs, scc)) {
 		    unanalyzedIntraSCCCalls.add(cs);
@@ -306,7 +306,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
     }
     private boolean anyCalleeInScc(CALL cs, SCComponent<HMethod> scc) {
 	for(HMethod callee : getCallGraph().calls(Util.quad2method(cs), cs)) {
-	    if(scc.nodes().contains(callee)) return true;
+	    if(scc.vertices().contains(callee)) return true;
 	}
 	return false;
     }
@@ -361,7 +361,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	int k = (s <= 5) ? 8 : (s <= 10) ? 4 : (s <= 15) ? 2 : (s <= 30) ? 1 : 0;
 	// there seems to be good to iterate more over some special
 	// nests of mutually-recursive methods.
-	for(HMethod hm : scc.nodes()) {
+	for(HMethod hm : scc.vertices()) {
 	    String hmName = hm.getName();
 	    String hmClassName = hm.getDeclaringClass().getName();
 	    if((hmName.equals("write") || hmName.equals("read")) &&
@@ -375,13 +375,13 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
     private void _analyzeSCC(SCComponent<HMethod> scc, AnalysisPolicy ap) {
 	// refuze to analyze native methods
-	if(PAUtil.isNative(DSUtil.getFirst(scc.nodes())))
+	if(PAUtil.isNative(DSUtil.getFirst(scc.vertices())))
 	    return;
 
 	boolean skipSameSccCalls = false;
 
 	Timer tcg = new Timer();
-	for(HMethod hm : scc.nodes()) {
+	for(HMethod hm : scc.vertices()) {
 	    tcg.freshStart();
 	    hm2md.put(hm, (new MethodData(new IntraProc(hm, ap.flowSensitivity, this), ap)));
 	    if(Flags.STATS) {
@@ -390,11 +390,11 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    assert hm2result.get(hm) == null;
 	}
 
-	if(!scc.exits().isEmpty()) {
-	    workSet.addAll(scc.exits());
+	if(!scc.exitVertices().isEmpty()) {
+	    workSet.addAll(scc.exitVertices());
 	}
 	else {
-	    workSet.addAll(scc.nodes());
+	    workSet.addAll(scc.vertices());
 	}
 
 	boolean mustCheck = scc.isLoop();
@@ -412,11 +412,11 @@ public class WPPointerAnalysis extends PointerAnalysis {
 			skipSameSccCalls = true;
 			addUnanalyzedIntraSCCCalls(scc);
 			// cancel out the previous results
-			for(HMethod hm2 : scc.nodes()) {
+			for(HMethod hm2 : scc.vertices()) {
 			    hm2result.remove(hm2);
 			}
 			// make sure all methods will be re-analyzed (once)
-			workSet.addAll(scc.nodes());
+			workSet.addAll(scc.vertices());
 			continue;
 		    }
 		    else {
@@ -449,7 +449,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 	if(mustCheck) {
 	    System.out.println("Fixed-point terminated:");
-	    for(HMethod hm : scc.nodes()) {
+	    for(HMethod hm : scc.vertices()) {
 		MethodData md = hm2md.get(hm);
 		System.out.println("  #" + md.iterCount + " " + hm);
 	    }
@@ -458,7 +458,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	hm2md.clear(); // enable GC
 
 	System.out.println("Post-SCC triming");
-	for(HMethod hm : scc.nodes()) {
+	for(HMethod hm : scc.vertices()) {
 	    //if(VERBOSE) System.out.println("Trim results for \"" + hm + "\"");
 	    InterProcAnalysisResult ipar = hm2result.get(hm);
 	    ipar = GraphOptimizations.trimUnaffected(ipar);

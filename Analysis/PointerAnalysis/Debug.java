@@ -28,7 +28,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.12 2005-08-17 23:34:00 salcianu Exp $
+ * @version $Id: Debug.java,v 1.13 2005-12-01 07:54:08 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -113,7 +113,7 @@ public abstract class Debug implements java.io.Serializable {
 
 	for(SCComponent scc : ts_sccs.decrOrder()) {
 	    System.out.println("SCC" + scc.getId() + "{");
-	    Object nodes[] = scc.nodes().toArray();
+	    Object nodes[] = scc.vertices().toArray();
 	    Arrays.sort(nodes, harpoon.Util.UComp.uc);
 	    for(int i = 0; i < nodes.length; i++) 
 		show_lbb((LightBasicBlock) nodes[i]);
@@ -136,7 +136,7 @@ public abstract class Debug implements java.io.Serializable {
 
 	buffer.append("SCC" + scc.getId() + " (size " + scc.size() + ") {\n");
 
-	for(MetaMethod mm : scc.nodes()) {
+	for(MetaMethod mm : scc.vertices()) {
 	    buffer.append(" ").append(mm).append("\n");
 	    int k = 0;
 	    for(MetaMethod callee : mcg.getCallees(mm)) {
@@ -184,7 +184,7 @@ public abstract class Debug implements java.io.Serializable {
 	    if(PointerAnalysis.DEBUG_SCC)
 		System.out.print(Debug.sccToString(scc, mcg));
 	    counter++;
-	    mmethods += scc.nodes().size();
+	    mmethods += scc.vertices().size();
 	}
 	
 	if(PointerAnalysis.DEBUG_SCC)
@@ -207,8 +207,8 @@ public abstract class Debug implements java.io.Serializable {
 
 	for(SCComponent scc : scc_lbb_factory.computeSCCLBB(hm).decrOrder()) {
 	    nb_sccs++;
-	    nb_lbbs += scc.nodes().size();
-	    for(Object lbb0 : scc.nodes())
+	    nb_lbbs += scc.vertices().size();
+	    for(Object lbb0 : scc.vertices())
 		nb_instrs += ((LightBasicBlock) lbb0).getElements().length;
 	}
 

@@ -82,7 +82,7 @@ import jpaul.DataStructs.MapSetRelation;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.17 2005-08-17 23:40:52 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.18 2005-12-01 07:54:07 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -407,7 +407,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// HMethod. Of course, I don't want the next analyzed meta-method
 	// to use the types computed for this one.
 	for(SCComponent<ExactTemp> scc : md.sccs)
-	    for(ExactTemp et : scc.nodes())
+	    for(ExactTemp et : scc.vertices())
 		et.clearTypeSet();
     }
 
@@ -1003,7 +1003,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	System.out.println(md);
 	System.out.println("\nCOMPUTED TYPES:");
 	for(SCComponent<ExactTemp> scc : md.sccs) {
-	    for(ExactTemp et : scc.nodes()) {
+	    for(ExactTemp et : scc.vertices()) {
 		System.out.println("< " + et.t + ", " + 
 				   ((et.ud == ExactTemp.USE) ? "USE" : "DEF") +
 				   ", " + Util.code2str(et.q) +
@@ -1937,7 +1937,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	if(DEBUG)
 	    System.out.println("\n\nProcessing " + scc);
 	
-	W.addAll(scc.nodes());
+	W.addAll(scc.vertices());
 	while(!W.isEmpty()) {
 	    ExactTemp et = (ExactTemp) W.remove();
 
@@ -1958,12 +1958,13 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		}
 	}
 
-	if(DEBUG)
-	    for(Object etO : scc.nodes()){
+	if(DEBUG) {
+	    for(Object etO : scc.vertices()) {
 		ExactTemp et = (ExactTemp) etO;
 		System.out.println("\n##:< " + et.shortDescription() + 
 				   " -> " + et.getTypeSet() + " >\n");
 	    }
+	}
     }
 
 

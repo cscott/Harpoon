@@ -58,7 +58,7 @@ import harpoon.Util.Util;
 
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: DeepInliner.java,v 1.1 2005-08-09 22:40:35 salcianu Exp $ */
+ * @version $Id: DeepInliner.java,v 1.2 2005-12-01 07:54:08 salcianu Exp $ */
 public class DeepInliner {
 
     /** Activates some debugging messages for all the classes from
@@ -164,7 +164,7 @@ public class DeepInliner {
 		System.out.println("Warning: circular inlining!\n\tThe system will not crush, but the inlining may not be optimal.");
 	    }
 	    Integer rank = new Integer(k++);
-	    for(HMethod hm : scc.nodes()) {
+	    for(HMethod hm : scc.vertices()) {
 		hm2rank.put(hm, rank);
 	    }
 	}

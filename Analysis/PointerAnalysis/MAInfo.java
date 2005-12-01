@@ -72,7 +72,7 @@ import jpaul.Graphs.TopSortedCompDiGraph;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.24 2005-08-17 23:34:00 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.25 2005-12-01 07:54:08 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -375,7 +375,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	for(SCComponent<MetaMethod> scc : 
 		(new TopSortedCompDiGraph<MetaMethod>(mcg)).incrOrder()) {
-	    for(MetaMethod mm : scc.nodes()) {
+	    for(MetaMethod mm : scc.vertices()) {
 		HMethod hm = mm.getHMethod();
 		if(DEBUG_IC)
 		    System.out.println(hm + " -> " + counter);
@@ -1061,7 +1061,7 @@ public class MAInfo implements AllocationInformation, Serializable {
     private void extend_quad2scc(HMethod hm) {
 	for(SCComponent scc : 
 		caching_scc_lbb_factory.computeSCCLBB(hm).decrOrder()) {
-	    for(Object lbb0 : scc.nodes()) {
+	    for(Object lbb0 : scc.vertices()) {
 		LightBasicBlock lbb = (LightBasicBlock) lbb0;
 		for(HCodeElement hce : lbb.getElements())
 		    quad2scc.put(hce, scc);

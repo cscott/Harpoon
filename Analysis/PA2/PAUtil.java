@@ -51,7 +51,7 @@ import harpoon.Util.Timer;
  * <code>PAUtil</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: PAUtil.java,v 1.12 2005-10-25 14:33:20 salcianu Exp $
+ * @version $Id: PAUtil.java,v 1.13 2005-12-01 07:54:07 salcianu Exp $
  */
 public abstract class PAUtil {
 
@@ -502,7 +502,7 @@ public abstract class PAUtil {
 	ps.print("SCC" + scc.getId() + " (" + scc.size() + " method(s)");
 	if(scc.isLoop()) ps.print(" - loop");
 	ps.println(") {");
-	for(HMethod hm : scc.nodes()) {
+	for(HMethod hm : scc.vertices()) {
 	    ps.println("  " + hm + "{" + hm.getDescriptor() + "}");
 	    if(hm2scc == null) continue;
 	    for(HMethod callee : cg.calls(hm)) {

@@ -80,7 +80,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.23 2005-08-17 23:34:01 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.24 2005-12-01 07:54:08 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -556,7 +556,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    analyze_inter_proc_scc(scc);
 
 	    if(SAVE_MEMORY) {
-		for(Object mmethod : scc.nodes())
+		for(Object mmethod : scc.vertices())
 		    aamm.add((MetaMethod) mmethod);
 	    }
 	}
@@ -571,7 +571,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	if(TIMING || DEBUG) {
 	    System.out.print("SCC" + scc.getId() + 
 			     "\t (" + scc.size() + " meta-method(s)){");
-	    for(Object mm0 : scc.nodes())
+	    for(Object mm0 : scc.vertices())
 		System.out.print("\n " + ((MetaMethod) mm0));
 	    System.out.print("} ... ");
 	}
@@ -579,7 +579,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	long b_time = TIMING ? System.currentTimeMillis() : 0;
 
 	// if SCC composed of a native or abstract method, return immediately!
-	if(!analyzable(((MetaMethod) scc.nodes().iterator().next())
+	if(!analyzable(((MetaMethod) scc.vertices().iterator().next())
 		       .getHMethod())) {
 	    if(TIMING)
 		System.out.println((System.currentTimeMillis() - b_time) + 
@@ -590,12 +590,12 @@ public class PointerAnalysis implements java.io.Serializable {
 	// add only the "exit" methods to the worklist (methods that
 	// call methods from outside their SCC); the other methods
 	// will be eventually added by the fixed point alg.
-	if(scc.exits().size() != 0) {
-	    for(MetaMethod exit : scc.exits())
+	if(scc.exitVertices().size() != 0) {
+	    for(MetaMethod exit : scc.exitVertices())
 		W_inter_proc.add(exit);
 	}
 	else // special case: leaf SCC -> add all
-	    W_inter_proc.addAll(scc.nodes());
+	    W_inter_proc.addAll(scc.vertices());
 
 	while(!W_inter_proc.isEmpty()) {
 	    // grab a method from the worklist
@@ -650,7 +650,7 @@ public class PointerAnalysis implements java.io.Serializable {
 
 
     private void post_compress(SCComponent scc) {
-	for(Object mm0 : scc.nodes()) {
+	for(Object mm0 : scc.vertices()) {
 	    MetaMethod mm = (MetaMethod) mm0;
 
 	    PANode[] nodes = getParamNodes(mm);
@@ -761,7 +761,7 @@ public class PointerAnalysis implements java.io.Serializable {
     private void analyze_intra_proc_scc(SCComponent<LightBasicBlock> scc){
 	if(MEGA_DEBUG) {
 	    lbb2passes = new HashMap();
-	    for(Object lbb : scc.nodes())
+	    for(Object lbb : scc.vertices())
 		lbb2passes.put(lbb, new Integer(0));
 	}
 	if(DEBUG2 || MEGA_DEBUG)
@@ -769,12 +769,12 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	// add only the entry nodes to the worklist; the other basic
 	// blocks will be eventually added too by the fixed point alg.
-	if(scc.entries().size() > 0) {
-	    for(LightBasicBlock entry : scc.entries())
+	if(scc.entryVertices().size() > 0) {
+	    for(LightBasicBlock entry : scc.entryVertices())
 		W_intra_proc.add(entry);
 	}
 	else // special case: top SCC; no entries -> add all nodes
-	    W_intra_proc.addAll(scc.nodes());
+	    W_intra_proc.addAll(scc.vertices());
 
 	while(!W_intra_proc.isEmpty()) {
 	    // grab a Basic Block from the worklist
@@ -1384,7 +1384,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	(MetaMethod mm, TopSortedCompDiGraph<LightBasicBlock> ts_sccs) {
 
 	LightBasicBlock first_bb = (LightBasicBlock) 	    
-	    ts_sccs.decrOrder().get(0).nodes().iterator().next();
+	    ts_sccs.decrOrder().get(0).vertices().iterator().next();
 	HEADER first_hce = (HEADER) first_bb.getElements()[0];
 	METHOD m  = (METHOD) first_hce.next(1);
 
@@ -1559,7 +1559,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	TopSortedCompDiGraph<LightBasicBlock> ts_sccs = 
 	    scc_lbb_factory.computeSCCLBB(mm.getHMethod());
 	for(SCComponent/*<LightBasicBlock>*/ scc : ts_sccs.incrOrder()) {
-	    for(Object/*LightBasicBlock*/ lbb0 : scc.nodes() ) {
+	    for(Object/*LightBasicBlock*/ lbb0 : scc.vertices()) {
 		((LightBasicBlock) lbb0).user_info = null;
 	    }
 	}
