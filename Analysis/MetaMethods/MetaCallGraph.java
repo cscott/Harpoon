@@ -13,7 +13,7 @@ import harpoon.IR.Quads.CALL;
 
 import jpaul.DataStructs.Relation;
 
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 import jpaul.Graphs.ForwardNavigator;
 import jpaul.Graphs.DiGraph;
 
@@ -23,7 +23,7 @@ import jpaul.Graphs.DiGraph;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.9 2005-08-17 23:40:52 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.10 2005-12-10 17:26:39 salcianu Exp $
  */
 
 public abstract class MetaCallGraph extends DiGraph<MetaMethod>
@@ -71,10 +71,10 @@ public abstract class MetaCallGraph extends DiGraph<MetaMethod>
 	<code>this</code> meta-callgraph.  Complexity: BIG; at least
 	linear in the number of nodes and edges in the call graph.
 	Therefore, we cache its result internally. */
-    public Navigator<MetaMethod> getNavigator() {
+    public BiDiNavigator<MetaMethod> getBiDiNavigator() {
 	if(navigator == null) {
 	    final MetaAllCallers mac = new MetaAllCallers(this);   
-	    navigator = new Navigator<MetaMethod>() {
+	    navigator = new BiDiNavigator<MetaMethod>() {
 		public List<MetaMethod> next(MetaMethod mm) {
 		    return Arrays.<MetaMethod>asList(getCallees(mm));
 		}  
@@ -85,7 +85,7 @@ public abstract class MetaCallGraph extends DiGraph<MetaMethod>
 	}
 	return navigator;
     }
-    protected Navigator<MetaMethod> navigator = null;
+    protected BiDiNavigator<MetaMethod> navigator = null;
 
 
     /** Returns a forward-only navigator through <code>this</code>

@@ -57,7 +57,7 @@ import harpoon.Temp.Temp;
 
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.SCComponent;
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 import jpaul.Graphs.TopSortedCompDiGraph;
 
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
@@ -82,7 +82,7 @@ import jpaul.DataStructs.MapSetRelation;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.18 2005-12-01 07:54:07 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.19 2005-12-10 17:26:39 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -1726,10 +1726,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
 	// 2. Build the component graph and sort it topollogically.
 
-	// Navigator into the graph of ExactTemps. prev returns the ExactTemps
+	// BiDiNavigator into the graph of ExactTemps. prev returns the ExactTemps
 	// whose types influence the type of "node" ExactTemp; next returns
 	// the ExactTemps whose types are affected by the type of node.  
-	Navigator<ExactTemp> et_navigator = new Navigator<ExactTemp>() {
+	BiDiNavigator<ExactTemp> et_navigator = new BiDiNavigator<ExactTemp>() {
 	    public List<ExactTemp> next(ExactTemp et){
 		return Arrays.<ExactTemp>asList(et.next);
 	    }

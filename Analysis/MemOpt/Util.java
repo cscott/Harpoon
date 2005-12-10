@@ -26,14 +26,14 @@ import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.SCComponent;
 import jpaul.Graphs.TopSortedCompDiGraph;
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 
 
 /**
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.15 2005-12-01 07:54:07 salcianu Exp $
+ * @version $Id: Util.java,v 1.16 2005-12-10 17:26:38 salcianu Exp $
  */
 public abstract class Util {
 
@@ -73,7 +73,7 @@ public abstract class Util {
 	// 1. construct the SCCs of the subgraph rooted in entry
 	final AllCallers ac = new AllCallers(cg);
 
-	Navigator<HMethod> nav = new Navigator<HMethod>() {
+	BiDiNavigator<HMethod> nav = new BiDiNavigator<HMethod>() {
 	    public List<HMethod> next(HMethod hm) {
 		return Arrays.<HMethod>asList(cg.calls(hm));
 	    }

@@ -15,7 +15,7 @@ import java.util.HashSet;
 import java.io.PrintStream;
 
 import jpaul.Graphs.DiGraph;
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 import jpaul.Graphs.ForwardNavigator;
 import jpaul.Graphs.SCComponent;
 import jpaul.Graphs.TopSortedCompDiGraph;
@@ -55,7 +55,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.11 2005-12-01 07:54:07 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.12 2005-12-10 17:26:39 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -212,7 +212,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	// 1. find all unanalyzed callees, compute dependencies
 	// between them + find the strongly connected components
 	// (SCCs) of the dependency relation.
-	Pair<Navigator<HMethod>,TopSortedCompDiGraph<HMethod>> pair = computeMethodSCCs(hm, ap);
+	Pair<BiDiNavigator<HMethod>,TopSortedCompDiGraph<HMethod>> pair = computeMethodSCCs(hm, ap);
 	interProcDepNav = pair.left;
 	TopSortedCompDiGraph<HMethod> tsCompDiGraph = pair.right;
 	List<SCComponent<HMethod>> methodSCCs = tsCompDiGraph.incrOrder();
@@ -241,7 +241,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 
 
 
-    private Pair<Navigator<HMethod>,TopSortedCompDiGraph<HMethod>> computeMethodSCCs(final HMethod root, AnalysisPolicy ap) {
+    private Pair<BiDiNavigator<HMethod>,TopSortedCompDiGraph<HMethod>> computeMethodSCCs(final HMethod root, AnalysisPolicy ap) {
 	// methodDepDiGraph = directed graph of dependecies between analysis of different methods
 	SCComponent<HMethod> scc_root = hm2CgSCC.get(root);
 	if(scc_root == null) {
@@ -285,8 +285,8 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    new TopSortedCompDiGraph<HMethod>(methodDepDiGraph);
 	
 	return 
-	    new Pair<Navigator<HMethod>,TopSortedCompDiGraph<HMethod>>
-	    (methodDepDiGraph.getNavigator(),
+	    new Pair<BiDiNavigator<HMethod>,TopSortedCompDiGraph<HMethod>>
+	    (methodDepDiGraph.getBiDiNavigator(),
 	     tsCompDiGraph);
     }
 
@@ -319,7 +319,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	return unanalyzedIntraSCCCalls.contains(cs);
     }
 
-    private Navigator<HMethod> interProcDepNav;
+    private BiDiNavigator<HMethod> interProcDepNav;
 
 
     private static class MethodData {

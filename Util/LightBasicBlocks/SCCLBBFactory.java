@@ -12,7 +12,7 @@ import harpoon.ClassFile.HCode;
 
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.SCComponent;
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 import jpaul.Graphs.TopSortedCompDiGraph;
 
 
@@ -21,7 +21,7 @@ import jpaul.Graphs.TopSortedCompDiGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCLBBFactory.java,v 1.6 2005-08-17 17:51:04 salcianu Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.7 2005-12-10 17:26:40 salcianu Exp $
  */
 public class SCCLBBFactory implements java.io.Serializable {
 
@@ -41,8 +41,8 @@ public class SCCLBBFactory implements java.io.Serializable {
         return lbbconv;
     }
 
-    private static final Navigator<LightBasicBlock> navigator = 
-	new Navigator<LightBasicBlock>() {
+    private static final BiDiNavigator<LightBasicBlock> navigator = 
+	new BiDiNavigator<LightBasicBlock>() {
 		public List<LightBasicBlock> next(LightBasicBlock node) {
 		    return Arrays.<LightBasicBlock>asList(node.getNextLBBs());
 		}

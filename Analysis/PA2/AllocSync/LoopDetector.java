@@ -12,7 +12,7 @@ import java.util.List;
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.TopSortedCompDiGraph;
 import jpaul.Graphs.SCComponent;
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.CachingCodeFactory;
@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * <code>LoopDetector</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: LoopDetector.java,v 1.1 2005-08-10 03:03:16 salcianu Exp $
+ * @version $Id: LoopDetector.java,v 1.2 2005-12-10 17:26:39 salcianu Exp $
  */
 public class LoopDetector {
     
@@ -59,8 +59,8 @@ public class LoopDetector {
 	    getVertex2SccMap();
     }
 
-    private static Navigator<Quad> QUAD_NAVIGATOR = 
-	new Navigator<Quad>() {
+    private static BiDiNavigator<Quad> QUAD_NAVIGATOR = 
+	new BiDiNavigator<Quad>() {
 	    public List<Quad> next(Quad q) { return Arrays.asList(q.next()); }
 	    public List<Quad> prev(Quad q) { return Arrays.asList(q.prev()); }
 	};

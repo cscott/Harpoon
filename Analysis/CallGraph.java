@@ -9,7 +9,7 @@ import java.util.Arrays;
 
 import harpoon.ClassFile.HMethod;
 
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 import jpaul.Graphs.ForwardNavigator;
 import jpaul.Graphs.DiGraph;
 
@@ -21,7 +21,7 @@ import jpaul.Graphs.DiGraph;
  * call-site information.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.8 2005-09-01 00:01:42 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.9 2005-12-10 17:26:38 salcianu Exp $
  */
 public abstract class CallGraph extends DiGraph<HMethod> {
     /** Returns an array containing all possible methods called by
@@ -50,10 +50,10 @@ public abstract class CallGraph extends DiGraph<HMethod> {
 
     /** Returns a bi-directional top-down graph navigator through
         <code>this</code> callgraph.  Result is internally cached. */
-    public Navigator<HMethod> getNavigator() {
+    public BiDiNavigator<HMethod> getBiDiNavigator() {
 	if(navigator == null) {
 	    final AllCallers ac = new AllCallers(this);
-	    navigator = new Navigator<HMethod>() {
+	    navigator = new BiDiNavigator<HMethod>() {
 		public List<HMethod> next(HMethod node) {
 		    return Arrays.<HMethod>asList(calls(node));
 		}  
@@ -65,7 +65,7 @@ public abstract class CallGraph extends DiGraph<HMethod> {
 	return navigator;
     }
     /** cached bi-directional navigator */
-    protected Navigator<HMethod> navigator = null;
+    protected BiDiNavigator<HMethod> navigator = null;
 
 
     /** Returns a forward-only top-down graph navigator through

@@ -64,7 +64,7 @@ import harpoon.Analysis.MetaMethods.GenType;
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import jpaul.Graphs.SCComponent;
-import jpaul.Graphs.Navigator;
+import jpaul.Graphs.BiDiNavigator;
 import jpaul.Graphs.DiGraph;
 import jpaul.Graphs.ForwardNavigator;
 import jpaul.Graphs.TopSortedCompDiGraph;
@@ -80,7 +80,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.24 2005-12-01 07:54:08 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.25 2005-12-10 17:26:39 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -487,10 +487,10 @@ public class PointerAnalysis implements java.io.Serializable {
     public final NodeRepository getNodeRepository() { return nodes; }
 
 
-    // Navigator for the mmethod SCC building phase. The code is complicated
+    // BiDiNavigator for the mmethod SCC building phase. The code is complicated
     // by the fact that we are interested only in yet unexplored methods
     // (i.e. whose parallel interaction graphs are not yet in the cache).
-    class MM_Navigator implements Navigator<MetaMethod>, java.io.Serializable {
+    class MM_BiDiNavigator implements BiDiNavigator<MetaMethod>, java.io.Serializable {
 	public List<MetaMethod> next(MetaMethod mm) {
 	    MetaMethod[] mms  = mcg.getCallees(mm);
 	    MetaMethod[] mms2 = get_new_mmethods(mms);
@@ -524,7 +524,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
     };
 
-    private Navigator<MetaMethod> mm_navigator = new MM_Navigator();
+    private BiDiNavigator<MetaMethod> mm_navigator = new MM_BiDiNavigator();
 
     
 
