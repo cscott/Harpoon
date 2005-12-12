@@ -1,5 +1,6 @@
 ## Copyright (C) 2005 Alex Salcianu - salcianu@alum.mit.edu
 ## Licensed under the GPL; see COPYING for details.
+## $Id: build-a-lib,v 1.2 2005-12-12 20:40:58 salcianu Exp $
 #!/bin/bash
 
 ####################################################################
