@@ -31,7 +31,7 @@ Although transactions can be implemented using mutual exclusion
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
 synchronization offers a number of advantages; foremost for the
-concerns of this thesis is fault tolerance.  A process which fails
+concerns of this thesis is fault tolerance.  A process that fails
 while holding a lock within a critical region can prevent all other
 non-failing processes from ever making progress.  It is in general not
 possible to restore the locked data structures to a consistent state
@@ -1009,3 +1009,5 @@ guarantees method atomicity.
 The transaction implementations presented in this thesis will use
 non-blocking synchronization to implement atomic methods.
 
+
+% LocalWords:  atomicity transactional linearization SMP LTM UTM TCC
