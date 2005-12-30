@@ -4,14 +4,15 @@ via mutual-exclusion \defn{locks} (see, for example,
 \cite{Tanenbaum92}[p.~35]).  Although locks are easy to
 implement using test-and-set, compare-and-swap, or
 load-linked/{\bp}store-conditional instructions, they introduce a host of
-difficulties.  To avoid deadlock when locking multiple objects, the
-locks must be acquired in a consistent linear order, which makes
-programming with locks error-prone and sometimes introduces
-significant overheads in managing the lock acquisition protocol.
-Moreover, locking can introduce other overheads, because a thread must
-always grab a lock to gain exclusive access to a shared object,
-regardless of whether another thread is actually attempting to access
-the same object.
+difficulties.  Protocols to avoid deadlock when locking multiple
+objects often involve acquiring the locks in a consistent linear
+order, which may make programming with locks error-prone and introduce
+significant overheads.  The granularity of each lock must also be
+explicitly chosen: locks which are too fine introduce unnecessary
+space and time overhead, while locks which are too coarse sacrifice
+attainable parallelism (or may even deadlock).  Every access to a
+shared object must hold some lock protecting that object, regardless
+of whether another thread is actually attempting to access the same object.
 
 An alternative means of providing concurrency control is by the use of
 \defn{transactions}.
@@ -53,12 +54,12 @@ synchronization can prevent \defnlti{priority inversion} in the system
 \cite{Jones97}, although na\"{\i}ve implementations may result in
 starvation of low-priority tasks; see \charef{progress}.
 
-The transaction model is a natural means to express both desired
-atomicity and fault-tolerance properties.  In this thesis, I will also
+Both atomicity and fault-tolerance can be naturally expressed in the
+transaction model.  In this thesis, I will also
 show how transactions can be integrated into an object-oriented
-language and used for fault tolerance, backtracking,
-exception handling, and concurrency control in new programs.  I will
-also show how
+language and used for backtracking,
+exception handling, and concurrency control in new programs.  In
+addition, I will show how
 existing code might safely be ``transactified'' to fix existing
 concurrency bugs (\charef{safe-transactify}).
 
@@ -82,7 +83,15 @@ architectural means, whereas \defn{software transactional memory}
 (STM) supports atomicity through languages, compilers, and libraries.
 Researchers of both HTM and STM commonly express the opinion that
 transactions need never touch many memory locations, and hence it is
-reasonable to put a (small) bound on their size.  For HTM implementations,
+reasonable to put a (small) bound on their size.\footnote{%
+For example, \cite[section 5.2]{HerlihyMo93} states,
+``Our [HTM] implementation relies on the assumption that transactions have
+short durations and small data sets''; while 
+the STM described in \cite{HerlihyLuMoSc03} has quadratic slowdown when
+transactions touch many objects: performance is $O((R+W)R)$, where $R$
+and $W$ are the number of objects opened for reading and writing,
+respectively.}
+For HTM implementations,
 they conclude that a small piece of additional hardware---typically in
 the form of a fixed-size content-addressable memory and supporting
 logic---should suffice.  For STM implementations, some researchers
@@ -108,18 +117,96 @@ implementation designed to efficiently execute large long-lived
 transactions.
 
 \section{Motivation}
+I will motivate the transactional programming model by first
+anecdotally presenting four different common scenarios which are needlessly
+difficult using lock-based concurrency; I will then present four novel
+applications which a transactional model facilitates.  To ground the
+discussion in reality, I conclude by enumerating a few cases where
+transactions may \emph{not} be the best solution.
+
 \subsection{Four old things you can't (easily) do with locks}
-%\section{Deadlocks, ordering, and other frightening prospects}
+The difficulties encountered when programming using
+locks to manage concurrency are well-known \cite{Herlihy05}.
+In practice, locks engender fragile and complex safety protocols which
+are often expressed external to their implementations, poor modularity
+and composability, and an inability to deal gracefully with
+asynchronous events.
 
 \subsubsection{Tweak performance with localized changes}
 % global lock orders, oh my!
+Preventing deadlocks and races requires global protocols and non-local
+reasoning.  It is not enough to simply specify a lock of a certain
+granularity protecting certain data items; the order or circumstances
+in which the lock may be acquired and released must also be specified
+globally, in the context of all locks in the system, in order to
+prevent deadlocks or unexpected races.  This prevents the programmer
+from easily tuning the system using localized changes: every small
+change must be re-verified against the protocols specified in the
+whole-program context in order to prevent races and/or deadlock.
+
 % usage rules embedded in comments
-% races, lost wakeups
+Furthermore, this whole-program protocol is not typically expressed
+directly in code: with common programming languages acquire/release
+ordering and guarantees must be expressed externally, often as
+comments in the source code which easily drift out of sync with the
+implementation.  For example, in \cite{AnanianAsKuLeLi04} we counted
+the comments in the Linux filesystem layer, and found that about 15\%
+of these relate to locking protocols; often describing global
+invariants of the program which are difficult to verify.  Many
+reported kernel bugs involve races and deadlocks.
+
+% races, lost wakeups ?
+
 \subsubsection{Atomically move data between two thread-safe containers}
 % locks don't compose
+Another common programming pitfall with locks is their
+\defni{non-composability}.  For example, given two thread-safe
+container classes implemented with locks, it is impossible to
+safely compose
+the \textit{get} function of one with the \textit{put} function of
+the another to create an atomic move.  We must peek inside the
+implementation of the containers to synthesize an appropriate locking
+mechanism for such an action; for example, to acquire the appropriate
+locks on \emph{both} containers (which may be at container, element,
+or some other level) before attempting the operation -- and even then,
+we need to resort to some global lock ordering to guard against
+deadlock.  Modularity must be broken in order to synthesize the
+appropriate composed function, which may be impossible.
+
+Transactions do not suffer from the composability problem
+\cite{HarrisMaPeHe05}.
+
 \subsubsection{Create a thread-safe double-ended queue}
 % publishable result: michael/scott, 1996 PPoPP
+In \cite{Herlihy05}, Herlihy suggests creating a thread-safe
+double-ended queue using locks as ``sadistic homework'' for computer
+science students.  Although double-ended queues are an uncomplicated
+basic data structure, creating a scalable locking protocol is a
+non-trivial exercise: one wants dequeue and enqueue operations to
+complete concurrently when the ends of the queue are ``far enough''
+apart, while safely handling the interference in the small-queue case.
+In fact, the solution to this assignment was a publishable result, as
+Michael and Scott demonstrated in 1996 \cite{MichaelSc96}.
+
+The simple ``one lock'' solution to the double-ended queue
+problem, ruled out as unscalable in the locking case, is scalable and
+efficient for non-blocking transactions.
+
 \subsubsection{Handle asynchronous exceptions}
+Properly handling asynchronous events is difficult with locks, because
+it is impossible to safely go off to handle the event while holding an
+arbitrary set of locks---and it is impossible to safely drop the
+locks.  The solution implemented in the Real-Time Specification for
+Java and similar systems is to generally forbid asynchronous events within
+locked regions, allowing the programmer to explicitly specify certain
+points within the region at which execution can be interrupted,
+dropping all locks in order to do so.  Maintaining the correctness
+in the face of even explicitly-declared interruption points is still
+difficult.
+
+Transactional atomic regions handle asynchronous exceptions
+gracefully: the transaction is aborted to allow an
+event to occur.
 
 \subsection{Four new things transactions make easy}
 
@@ -168,7 +255,7 @@ reversing the {\tt next} pointer.  When the end of the list is
 reached, the reversed links are traversed to restore the list's original
 state.  
 
-Of course, I've chosen the simplest possible data structure here, but
+Of course, I have chosen the simplest possible data structure here, but
 the technique works for trees and graphs---and the reader may mentally
 substitute their favorite hairy update on a complicated data
 structure.
@@ -214,7 +301,7 @@ Introducing an explicit {\tt fail} statement allows us to use the same
 
 \subsubsection{Network flow}\label{sec:flow}\index{network flow}
 
-I'll turn our attention now to parallel codes.
+Let's now turn our attention now to parallel codes.
 Consider a serial program for computing network flow (see, for
 example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
 pushes flow across an edge by increasing the ``excess flow'' on one
@@ -285,13 +372,13 @@ This {\tt atomic} region can be implemented as a transaction, and
 with an appropriately non-blocking implementation, it
 will scale better and execute faster than the locking version
 \cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
-From the programmer's point of view, I've also eliminated the
+From the programmer's point of view, I have also eliminated the
 convoluted locking protocol, which must
 be observed rigorously everywhere the related fields are accessed if
 deadlock and races are to be avoided.
 
 Further, I can implement {\tt atomic} using the {\tt try}/{\tt else}
-exception-handling mechanism I've already introduced:
+exception-handling mechanism I have already introduced:
 \begin{inlinecode}
 for (int b=0; ; b++) {
   try {
@@ -313,11 +400,12 @@ synchronization as well.
 \note{Mention optimistic parallelism here?}
 
 \subsubsection{The \texttt{StringBuffer} class}\label{sec:stringbuffer}
-The existing \defni{monitor synchronization} methodology for Java
-implicitly associates an 
-lock with each object.  As in Java's progenitor, Emerald
+The existing \defni{monitor synchronization} methodology for Java,
+building on such features in progenitors such as Emerald
 \cite{BlackHuJuLe86,JulSt91},\index{Emerald}\footnote{See \charef{emerald}.}
-data races are prevented by
+implicitly associates an 
+lock with each object.
+Data races are prevented by
 requiring a thread to acquire an
 object's lock before touching the object's shared fields.
 However, the lack of races is not sufficient to prevent unanticipated
@@ -326,7 +414,7 @@ parallel behavior.
 Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this
 insufficiency with an
 actual bug they discovered in the Sun JDK 1.4.2 Java standard
-libraries.  The \texttt{java.lang.StringBuffer}\index{java.lang.StringBuffer@\texttt{java.lang.StringBuffer}} class,
+libraries.  The \texttt{java.lang.StringBuffer}\index{java.lang.StringBuffer@\texttt{java.\bp{}lang.\bp{}StringBuffer}} class,
 which implements a mutable string abstraction, is implemented as follows:
 \begin{inlinecode}
 public final class StringBuffer ... {
@@ -397,7 +485,8 @@ cannot replace blocking producer-consumer queues and mutual exclusion
 required to serialize I/O, although the needed locks can certainly be
 built with transactions.  Integrating I/O within a transactional
 context remains poorly understood.  However, large programs---the
-Linux kernel, for example---have been written such that locks are
+Linux kernel\note{TODO: Find citation}, for example---have been
+written such that locks are
 never held across context switches or I/O operations.  Transactions
 provide a complete solution for this limited synchronization.
 One of the goals of this thesis is to investigate better integration
@@ -425,7 +514,7 @@ plan to treat {\tt volatile} fields in this work.  See
 
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
-correctness of the benchmarks I've examined.  Moreover, as
+correctness of the benchmarks I have examined.  Moreover, as
 mentioned in \charef{stringbuffer}, it
 fixes the synchronization issue with {\tt java.lang.StringBuffer}.
 
@@ -456,7 +545,7 @@ transaction around the outermost \texttt{atomic} region.  I
 instrumented this transformed program to produce a trace of
 memory references and transaction boundaries for analysis.
 I found both large
-transactions (touching up to 8.9 million cache lines) and frequent
+transactions (involving millions of cache lines) and frequent
 transactions (up to 45 million of them).
 
 The SPECjvm98 benchmark suite represents a variety of typical Java
@@ -466,7 +555,7 @@ they use the thread-safe Java standard libraries they contain
 synchronized code which is transformed into transactions.  Because in
 this evaluation I am looking at transaction properties only, the
 multithreaded \texttt{227\_mtrt} benchmark is identical to its
-serialization, \texttt{205\_raytrace}.  For consistency, I present
+serialized version, \texttt{205\_raytrace}.  For consistency, I present
 only the latter.
 
 \begin{figure}\sis%
@@ -520,7 +609,8 @@ The expert system \texttt{202\_jess} falls in this category, as do
 small input sizes of \texttt{209\_db}, a database.  These benchmarks
 perform at least an order of magnitude more transactions than Quad
 I applications, and all of the transactions are small enough to 
-comfortably fit the known hardware transactional memory schemes, if
+comfortably fit the known hardware transactional memory schemes
+\cite[etc]{HerlihyMo93}, if
 one were to be implemented.
 
 Quad III includes \texttt{205\_raytrace}, a ray-tracing renderer.  A
@@ -528,7 +618,8 @@ small number of transactions are performed, but they may grow very
 large.  Existing bounded hardware transactional schemes will not
 suffice.  The large
 transactions may account for a large percentage of total memory
-operations, which may make software schemes impractical.
+operations, which may make software schemes
+impractical.
 
 Finally, Quad IV applications such as \texttt{209\_db} and the
 \texttt{213\_javac} Java compiler application perform a large number
@@ -545,7 +636,14 @@ implements the entire compilation process, is marked as synchronized:
 the programmer has explicitly requested that the entire compilation
 occur atomically.
 
-The \texttt{209\_db} benchmark suffers from a similar problem: at one
+The large transactions in Quad III and IV may be, as in this case, a result of
+overly-coarse--grained locking, but our goal is to
+relieve the programmer from the burden of specifying correct
+atomic regions of smaller granularity.  Performance may benefit from
+narrowing the atomic regions, but execution with coarse regions should
+be possible and not prohibitively slow.
+
+The \texttt{209\_db} benchmark suffers from a different problem: at one
 point the benchmark atomically scans an index vector and removes an
 element, creating a potentially large transaction if the index is
 large.  The size of this index is correlated in these benchmarks with
@@ -590,15 +688,16 @@ the transactified applications may contain large transactions,
 proposed hardware support for transactions is inadequate.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Related work}\label{sec:related}
+\chapter{Related work}\label{cha:related}
 
 A number of researchers have been investigating transactional memory
-systems.  This thesis will be the first to present a hybrid hardware/software
+systems.  This thesis is the first to present a hybrid hardware/software
 model-checked non-blocking
 object-oriented system which allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
+\note{Martin wants citations here: ask him about this?}
 
-\subsection{Non-blocking synchronization}\label{sec:nb-sync}
+\section{Non-blocking synchronization}\label{sec:nb-sync}
 
 Lamport presented the first alternative to synchronization via mutual
 exclusion in \cite{Lamport77}, for a limited situation involving a single
@@ -652,7 +751,7 @@ We will be concerned mainly with lock-free algorithms.%
   our three specific progress criteria, and the dissimilar
   \emph{non-blocking} for the general class.}
 
-\subsection{Efficiency}\label{sec:efficiency}
+\section{Efficiency}\label{sec:efficiency}
 Herlihy presented the first \emph{universal} method for wait-free
 concurrent implementation of an arbitrary sequential object
 \cite{Herlihy88,Herlihy91}.  This original method was based on
@@ -740,7 +839,7 @@ protocols of LaMarca and Alemany and Felten, and a
 % Afek et al have a somewhat complicated improved wait-free method.
 
 % Transactional memories?
-\subsection{Transactional Memory systems}\label{sec:tm}
+\section{Transactional Memory systems}\label{sec:tm}
 
 Transactions are described in the database context by Gray
 \cite{Gray81b}, and \cite{GrayRe93} contains a thorough treatment of
@@ -866,7 +965,7 @@ In \charef{hybrid} we present just such a system.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Language-level approaches to synchronization}
+\section{Language-level approaches to synchronization}
 \begin{figure}
 {\samepage\it\sis%
 \begin{tabular}{l}%
@@ -1010,4 +1109,4 @@ The transaction implementations presented in this thesis will use
 non-blocking synchronization to implement atomic methods.
 
 
-% LocalWords:  atomicity transactional linearization SMP LTM UTM TCC
+% LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
