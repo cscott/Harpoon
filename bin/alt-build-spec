@@ -31,7 +31,7 @@
 #
 
 echo
-echo WARNING: Alex Salcianu's ALTERNATIVE BUILD SCRIPT FOR SPECJvm98
+echo WARNING: Alex Salcianu\'s ALTERNATIVE BUILD SCRIPT FOR SPECJvm98
 echo
 
 export FLEXDIR=~/Harpoon/Code
@@ -71,7 +71,7 @@ mkdir -p tmp
 for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     tmprootset=tmp/$s.tmp-root-set.$$
     rm -f $tmprootset
-    echo "# Test" > $tmprootset
+    echo "# Produced by alt-build-spec: roots for $s" > $tmprootset
     if [ -n "$USE_SUN_JDK" ]; then
         # SUNJDK only:
 	echo "include Support/locale-root-set" >> $tmprootset
