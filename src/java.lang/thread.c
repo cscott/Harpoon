@@ -130,6 +130,9 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
     assert(!((*env)->ExceptionOccurred(env)));
     (*env)->CallStaticVoidMethod(env, thrGrpCls, thrGrpClInitID);
     assert(!((*env)->ExceptionOccurred(env)));
+
+    //printf("java.lang.ThreadGroup.<clinit> successfully executed\n");
+
     thrGrpRootID = (*env)->GetStaticFieldID(env, thrGrpCls, "root",
 					    "Ljava/lang/ThreadGroup;");
     assert(!((*env)->ExceptionOccurred(env)));

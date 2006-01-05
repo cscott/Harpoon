@@ -265,45 +265,109 @@ enum _fni_class_restrictionType { NONE, ONLY_DECLARED, ONLY_PUBLIC, ONLY_PUBLIC_
 enum _fni_class_memberType { FIELDS, METHODS, CONSTRUCTORS };
 
 /* decision helper method */
+
+
+/* Check whether the member *mptr of the class cls is of kind (which,
+   type) (e.g., a public, declared (=non-inherited), field) and has
+   type memberClass. 
+
+   Arguments:
+
+   env - JNI environment, passed around by all JNI methods
+
+   cls - class whose members we are interested in
+
+   which - Inappropriate name, should be called "modifier" instead;
+	   Tells whether we are interested in a member declared by cls
+	   (instead of just inherited), a public member, a combination
+	   of the two properties, or none of them
+
+   type - Inappropriate name, should be called "kind" instead.
+          Specifies whether we are interested in a field, a method or
+          a constructor.  I think this info is also redundant: it can
+          be reconstructed from memberClass.
+   
+   memberClass - The class of the member we are interested in.  */
 static /* not inline; used too often. */
 jboolean _fni_class_isAptMember
-  (JNIEnv *env, jclass cls, union _jmemberID *mptr,
-   enum _fni_class_restrictionType which,
-   enum _fni_class_memberType type,
-   jclass memberClass) {
-  /*filter out methods/fields/constructors which don't agree with memberClass*/
-  if (!(*env)->IsInstanceOf(env, FNI_WRAP(mptr->m.reflectinfo->method_object),
-			    memberClass))
-    return JNI_FALSE;
-  /* filter out non-public if which==ONLY_PUBLIC or ONLY_PUBLIC_DECLARED */
+    (JNIEnv *env, jclass cls, union _jmemberID *mptr,
+     enum _fni_class_restrictionType which,
+     enum _fni_class_memberType type,
+     jclass memberClass) {
+    
+    /* 1. Filter out members that don't agree with memberClass. */
+    if(!(*env)->IsInstanceOf(env, FNI_WRAP(mptr->m.reflectinfo->method_object),
+			     memberClass)) {
+	return JNI_FALSE;
+    }
+    
+    /* The next test is irrelevant. */
+    /* 2. Filter out non-public if which==ONLY_PUBLIC or ONLY_PUBLIC_DECLARED */
+    /* [AS] Apparently, current implementation does not check this.  I
+       would love to implement it correctly,but who knows that it is not
+       used in a variety of places that rely on this "feature" */
 #if 0 /* correct implementation would take into account package-visibility */
-  if ((which&ONLY_PUBLIC) &&
-      !(mptr->m.reflectinfo->modifiers & java_lang_reflect_Modifier_PUBLIC))
-    return JNI_FALSE;
+    if( (which & ONLY_PUBLIC) &&
+	!(mptr->m.reflectinfo->modifiers & java_lang_reflect_Modifier_PUBLIC) ) {
+	return JNI_FALSE;
+    }
 #endif
-  /* filter out non-local if which==ONLY_DECLARED or ONLY_PUBLIC_DECLARED */
-  if ((which&ONLY_DECLARED) &&
-      mptr->m.reflectinfo->declaring_class_object != FNI_UNWRAP_MASKED(cls))
-    return JNI_FALSE;
-  /* filter out <clinit> if type!=FIELDS */
-  if ((type!=FIELDS) && strcmp(mptr->m.name, "<clinit>")==0)
-    return JNI_FALSE;
+    
+    /* 3. Filter out non-local if which==ONLY_DECLARED or ONLY_PUBLIC_DECLARED */
+    if( (which & ONLY_DECLARED) &&
+	(mptr->m.reflectinfo->declaring_class_object != FNI_UNWRAP_MASKED(cls)) ) {
+	return JNI_FALSE;
+    }
+
+    /* [AS] why on Earth is <clinit> associated with a field? */
+    /* 4. Filter out <clinit> if type!=FIELDS */
+    if( (type != FIELDS) && (strcmp(mptr->m.name, "<clinit>") == 0) ) {
+	return JNI_FALSE;
+    }
+    
 #ifdef WITH_INIT_CHECK
-  if (type!=FIELDS) {
-    extern int initDone;
-    /* isInitCheck is true iff the name ends with "$$initcheck" */
-    char *substr = rindex(mptr->m.name, '$');
-    int isInitCheck = (substr!=NULL && substr > mptr->m.name &&
-		       strcmp(substr-1, "$$initcheck")==0);
-    /* filter out $$initcheck methods when we're done initializing;
-     * filter out non-$$initcheck methods when we're still initializing. */
-    if (initDone?isInitCheck:!isInitCheck)
-      return JNI_FALSE;
-  }
+    /* 5. Test related to our handling of the static initializers.
+       There are two epochs in the execution of a program: in the
+       first epoch, we run the static initializers of all relevant
+       classes; this code is quite slow because it has to check before
+       each access whether the declaring class has been initialized or
+       not.  In the second epoch, we run the real program, without
+       checking for class initialization (all classes have already
+       been initialized). We should make sure that in each phase we
+       return only methods that make sense in that phase. */
+    if(type!=FIELDS) {
+	extern int initDone;
+	/* isInitCheck is true iff the name ends with "$$initcheck" */
+
+	/* Checks whether the name of *mptr ends with $$initcheck. */
+	char *substr = rindex(mptr->m.name, '$');
+	int isInitCheck = 
+	    ( (substr != NULL) && // '$' is present in the name
+	      (substr > mptr->m.name) && // substr-1 makes sense
+	      (strcmp(substr-1, "$$initcheck")==0) );
+
+	/* filter out $$initcheck methods when we're done initializing;
+	 * filter out non-$$initcheck methods when we're still initializing. */
+	if(initDone) { // we finished the initialization,
+	    // and don't want to hear about the $$initcheck methods any more
+	    if(isInitCheck) {
+		return JNI_FALSE;
+	    }
+	}
+	else { // we're still initializing
+	    // and want to consider only the $$initcheck version
+	    if(!isInitCheck) {
+		return JNI_FALSE;
+	    }
+	}
+    }
 #endif /* WITH_INIT_CHECK */
-  /* congratulations! you've run the gauntlet! */
-  return JNI_TRUE;
+
+    /* congratulations! you've run the gauntlet! */
+    return JNI_TRUE;
 }
+
+
 
 static /* used too many times to inline profitably. */
 jobjectArray fni_class_getMembers
@@ -320,9 +384,12 @@ jobjectArray fni_class_getMembers
 				  (type==METHODS)?"java/lang/reflect/Method":
 				  "java/lang/reflect/Constructor");
   /* count matching members */
-  for (ptr=info->memberinfo; ptr < info->memberend; ptr++)
-    if (_fni_class_isAptMember(env, cls, ptr, which, type, memberClass))
-      count++;
+  for (ptr=info->memberinfo; ptr < info->memberend; ptr++) {
+      if (_fni_class_isAptMember(env, cls, ptr, which, type, memberClass)) {
+	  count++;
+      }
+  }
+
   /* create properly-sized and -typed array */
   result = (*env)->NewObjectArray(env, count, memberClass, NULL);
   /* now put matching members in array */
@@ -331,6 +398,7 @@ jobjectArray fni_class_getMembers
     if (_fni_class_isAptMember(env, cls, ptr, which, type, memberClass))
       (*env)->SetObjectArrayElement
 	  (env, result, count++, FNI_WRAP(ptr->m.reflectinfo->method_object));
+
   /* done */
   return result;
 }

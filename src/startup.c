@@ -303,6 +303,9 @@ int main(int argc, char *argv[]) {
 	goto skip;
     cls = (*env)->FindClass(env, *namep);
     CHECK_EXCEPTIONS(env);
+
+    printf("Getting READY FOR %s\n", FNI_GetClassInfo(cls)->name);
+
     mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
     CHECK_EXCEPTIONS(env);
     (*env)->CallStaticVoidMethod(env, cls, mid);
@@ -313,6 +316,8 @@ int main(int argc, char *argv[]) {
 
 #if defined(WITH_INIT_CHECK) && defined(WITH_THREADS)
   initDone = 1;
+  //printf("initialization completed\n"); fflush(NULL);
+
   /* start up any threads that were deferred during static initialization */
   fni_thread_startDeferredThreads(env);
 #endif /* WITH_INIT_CHECK && WITH_THREADS */
