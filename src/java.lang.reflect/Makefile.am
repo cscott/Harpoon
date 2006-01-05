@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.13 2005-11-28 06:23:51 salcianu Exp $
+## $Id: Makefile.am,v 1.14 2006-01-05 20:29:41 salcianu Exp $
 MAINTAINERCLEANFILES = Makefile.in
 CLEANFILES = *~
 # directory with the headers for the .c files from here
@@ -9,7 +9,11 @@ HDIR = ../reflect-thunk
 INCLUDES = @IFLAGS@ -I${HDIR}
 LIBS =
 
+if PRODUCE_LA_LIBS
 noinst_LTLIBRARIES = libjavalangreflect-indep.la
+else
+noinst_LIBRARIES = libjavalangreflect-indep.a
+endif
 
 libjavalangreflect_indep_la_SOURCES = \
 	java_lang_reflect_Array.c \
@@ -24,4 +28,5 @@ libjavalangreflect_indep_la_SOURCES = \
 	${HDIR}/java_lang_reflect_Modifier.h \
 	reflect-util.c reflect-util.h
 
+libjavalangreflect_indep_a_SOURCES = $(libjavalangreflect_indep_la_SOURCES)
 

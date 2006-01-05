@@ -4,7 +4,12 @@ INCLUDES = @IFLAGS@
 LIBS =
 
 # this library will be empty unless we've elected to build transaction support.
+if PRODUCE_LA_LIBS
 noinst_LTLIBRARIES = libtransact.la
+else
+noinst_LIBRARIES = libtransact.a
+endif
+
 
 TRANSACTSRC=  transact.h \
 	preproc.h flags.h objinfo.h \
@@ -36,6 +41,10 @@ endif
 # automake won't allow EXTRA_DIST to be conditionally defined, so we
 # define it even when it's not necessary (when TRANSACTIONS is set)
 EXTRA_DIST = $(TRANSACTSRC) $(GNUCP_TRANSACTSRC) $(OTHERSRC)
+
+
+libtransact_a_SOURCES = $(libtransact_la_SOURCES)
+
 
 mkflags_SOURCES = mkflags.c
 noinst_PROGRAMS = mkflags

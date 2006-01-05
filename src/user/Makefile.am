@@ -3,7 +3,13 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 LIBS =
 
+if PRODUCE_LA_LIBS
 noinst_LTLIBRARIES = libuser.la
+else
+noinst_LIBRARIES = libuser.a
+endif
+
+
 if ARM32
 ENGINE=engine-arm32-linux-1.0.c
 ENGINEH=engine-arm32-linux-1.0.h
@@ -13,3 +19,5 @@ ENGINEH=engine-i386-linux-1.0.h
 endif
 
 libuser_la_SOURCES = threads.c $(ENGINE) threads.h $(ENGINEH)
+
+libuser_a_SOURCES = $(libuser_la_SOURCES)

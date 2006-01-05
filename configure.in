@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.164 $)dnl
+AC_REVISION($Revision: 1.165 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -173,6 +173,17 @@ yes)  STATIC_FLAG="-all-static" ;;
 *)    STATIC_FLAG="-static" ;;
 esac
 AC_MSG_RESULT($with_all_static (using $STATIC_FLAG))
+
+dnl [AS] 01/05/05 - add option to use plain, static .a libs: simpler is better
+AC_ARG_WITH(plain-a-libs,
+	[ --with-plain-a-libs	Use plain .a libs to avoid possible bugs due to incorrect libtool options.  Simpler is always better! ],
+	with_plain_a_libs="$withval",
+	with_plain_a_libs="no"  dnl Off by default
+	)
+
+# we produce .la libs (using libtool) if --with-plain-a-libs is not present
+AM_CONDITIONAL(PRODUCE_LA_LIBS, test "$with_plain_a_libs" = no)
+dnl end of [AS] addition
 
 dnl are we building against sun's 1.1.x JDK, or GNU classpath?
 AC_ARG_WITH(sunjdk,
