@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     cls = (*env)->FindClass(env, *namep);
     CHECK_EXCEPTIONS(env);
 
-    printf("Getting READY FOR %s\n", FNI_GetClassInfo(cls)->name);
+    //printf("Getting READY FOR %s\n", FNI_GetClassInfo(cls)->name);
 
     mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
     CHECK_EXCEPTIONS(env);
