@@ -1,0 +1,107 @@
+#!/bin/sh
+#
+# Alternative build script for the SPECJvm98 applications Unlike in
+# the original script, the entry point for each application $s (e.g.,
+# _200_check) is the class spec.benchmarks.$s.Main
+#
+# MOTIVATION: the original script causes a lot of unused awt classes
+# to be compiled ... and the Flex runtime does not support any
+# graphics.  In particular, the produced executable fails during the
+# execution of *all* class initializers, when the static initializers
+# of some (otherwise unused) awt classes are invoked.
+#
+# Usage: alt-build-spec <backend> <start> <end>
+# where 'start' and 'end' are numbers between 1 and 10 specifying
+# a range of spec benchmarks to build.
+# 1: _200_check
+# 2: _201_compress
+# 3: _202_jess
+# 4: _205_raytrace
+# 5: _209_db
+# 6: _213_javac
+# 7: _222_mpegaudio
+# 8: _227_mtrt
+# 9: _228_jack
+#10: _999_checkit
+#
+# backend can be precisec, arm-hack, arm-pnk, mipsda, or mipsvp.
+#
+# The environment variable SPECPATH specifies the path to the
+# jvm98 directory of your Spec installation.
+#
+
+echo
+echo WARNING: Alex Salcianu's ALTERNATIVE BUILD SCRIPT FOR SPECJvm98
+echo
+
+export FLEXDIR=~/Harpoon/Code
+
+SPECPATH=${SPECPATH:-${HOME}/Spec/jvm98}
+export FLEXPATH=SupportNP/specthunk.jar:$SPECPATH
+backend=${1:="precisec"}
+while [ -n "$4" ]; do
+   SPECBUILDOPTS="$SPECBUILDOPTS $2"
+   shift
+done
+start=${2:-"1"}
+end=${3:-"10"}
+errors=
+
+case $backend in
+    precisec) 
+	suf=sa; buildscript=bin/build-precisec 
+	# [AS] drop "-O9" to go around a bug in the code generator: it
+	# generates code that depends on an unspecified behavior of
+	# gcc (definitely not something in the C language
+	# specification).  The most recent versions of gcc, when given
+	# the "-O9" option, do something different that what Flex
+	# expects (in particular, structs that are consecutive in the
+	# C source are no longer consecutive in memory)
+	export PRECISEC_CFLAGS="-g"
+	;;
+    arm-hack) suf=arm; buildscript=bin/build-arm-hack ;;
+    arm-pnk)  suf=pnk; buildscript=bin/build-arm-pnk  ;;
+    mipsda)   suf=da ; buildscript=bin/build-mipsda   ;;
+    mipsvp)   suf=vp ; buildscript=bin/build-mipsvp   ;;
+    *) echo Unknown backend $backend ; exit 1 ;;
+esac
+
+mkdir -p tmp
+
+for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
+    tmprootset=tmp/$s.tmp-root-set.$$
+    rm -f $tmprootset
+    echo "# Test" > $tmprootset
+    if [ -n "$USE_SUN_JDK" ]; then
+        # SUNJDK only:
+	echo "include Support/locale-root-set" >> $tmprootset
+    fi
+    rootset=Support/${s}-root-set    
+    if [ -f $rootset ]; then
+      echo "include $rootset" >> $tmprootset
+    fi
+    base=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`
+    dir=$base$suf$SPECSUFFIX
+    otheropts="-r $tmprootset"
+    rm -rf as$dir tmp/as$dir.comp.err tmp/as$dir.comp.out
+    $buildscript $SPECBUILDOPTS $otheropts spec.benchmarks.$s.Main $dir \
+	2> tmp/as$dir.comp.err | tee tmp/as$dir.comp.out
+    # Test the produced executable
+    (
+	cd ${SPECPATH}/spec/benchmarks/$s
+	echo
+	echo Execute $s in dir `pwd`
+	echo
+	$FLEXDIR/../Runtime/run$dir 2> $FLEXDIR/tmp/$dir.exec.err | tee $FLEXDIR/tmp/$dir.exec.out 
+	echo
+    )
+	
+    if [ $? -ne 0 ]; then
+	errors="$errors$dir "
+    fi
+done
+#rm -f $tmprootset
+if [ "$errors" != "" ]; then
+    echo FAILED: $errors
+    exit 1
+fi
