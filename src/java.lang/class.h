@@ -78,9 +78,11 @@ jclass fni_class_forName(JNIEnv *env, jstring str) {
     return result;
 
   error:
+#ifdef WITH_MISSING_ROOT_DEBUG
     // [AS] 01/06/06 added to help missing roots
     printf("WARNING: fni_class_forName: Failed attempt to load class %s\n\tCheck root set!", buf);
     fflush(NULL);
+#endif
 
     wrapNthrow(env, "java/lang/ClassNotFoundException");
     return NULL;
@@ -407,8 +409,10 @@ jobjectArray fni_class_getMembers
 	  (env, result, count++, FNI_WRAP(ptr->m.reflectinfo->method_object));
 
   if((count==0) && (type==CONSTRUCTORS)) {
+#ifdef WITH_MISSING_ROOT_DEBUG
       printf("WARNING: fni_class_getMembers: cannot find constructors for class %s\n\tCheck root set!",
 	     FNI_GetClassInfo(cls)->name);
+#endif
       fflush(NULL);
   }
 
