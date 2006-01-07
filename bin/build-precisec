@@ -53,6 +53,7 @@ if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     mv -f $dir/Java.a ${RUNTIME_DIR}/${name}-Java.a && \
     make $MAKEOPT -C ${RUNTIME_DIR} run${name} && \
     if [ -z "$KEEP_ARCHIVE" ]; then \
+	rm -rf $dir
 	rm -f ${RUNTIME_DIR}/${name}-Java.a ; \
     fi && \
     echo "EXECUTABLE left in ${RUNTIME_DIR}/run${name}." 1>&2
