@@ -43,4 +43,5 @@ spec.benchmarks._202_jess.jess._save_facts.<init>()V
 spec.benchmarks._202_jess.jess._assert_string.<init>()V
 spec.benchmarks._202_jess.jess._undefrule.<init>()V
 # this needed only if running under SpecApplication, but doesn't hurt anyway.
-spec.benchmarks._202_jess.Main.<init>()V
+# It is already added by the build-spec script 
+# spec.benchmarks._202_jess.Main.<init>()V
