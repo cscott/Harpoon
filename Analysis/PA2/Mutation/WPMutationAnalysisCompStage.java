@@ -45,7 +45,7 @@ import harpoon.Util.Timer;
  * <code>WPMutationAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPMutationAnalysisCompStage.java,v 1.15 2005-11-06 22:03:04 salcianu Exp $
+ * @version $Id: WPMutationAnalysisCompStage.java,v 1.16 2006-01-07 17:10:15 salcianu Exp $
  */
 public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 
@@ -284,7 +284,9 @@ public class WPMutationAnalysisCompStage extends CompilerStageEZ {
 	    if(ma.isPure(hm)) {
 		if(!io.doesIO(hm)) {
 		    System.out.println(indent + "PURE");
-		    pureMethods.add(hm);
+		    if(STORE_RESULTS_IN_STATICS) {
+			pureMethods.add(hm);
+		    }
 		    stat.nbPureMethods++;
 		}
 		else {

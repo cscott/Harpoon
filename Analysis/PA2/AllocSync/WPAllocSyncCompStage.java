@@ -39,7 +39,7 @@ import jpaul.Misc.BoolMCell;
  * <code>WPAllocSyncCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPAllocSyncCompStage.java,v 1.8 2005-09-19 00:44:17 salcianu Exp $
+ * @version $Id: WPAllocSyncCompStage.java,v 1.9 2006-01-07 17:10:15 salcianu Exp $
  */
 public class WPAllocSyncCompStage extends CompilerStageEZ {
 
@@ -128,7 +128,7 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	Timer timer = new Timer();
 	AllCallers allCallers = new AllCallersImpl(classHierarchy, pa.getCallGraph());
 	System.out.println("AllCallers GENERATION TIME: " + timer);
-	List<InlineChain> ics = new LinkedList<InlineChain>();	
+	List<InlineChain> ics = new LinkedList<InlineChain>();
 	LoopDetector loopDet = new LoopDetector(ccf);
 	for(Object hm : cg.transitiveSucc(mainM)) {
 	    if(pa.isAnalyzable((HMethod) hm)) {
@@ -140,6 +140,7 @@ public class WPAllocSyncCompStage extends CompilerStageEZ {
 	    }
 	}
 	int[] icCount = getIcCount(ics);
+	System.out.println("ics = " + ics);
 	System.out.print("INLINING CHAIN GENERATION TOTAL TIME: " + timer + "; " + ics.size() + " chains: ");
 	for(int i = 1; i <= MAX_SA_INLINE_LEVEL; i++) {
 	    System.out.print(i + "-" + icCount[i] + " ");
