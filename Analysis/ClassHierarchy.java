@@ -24,7 +24,7 @@ import java.util.Set;
  * <i>reachable/usable</i>, please see {@link #classes()}.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.10 2005-10-25 14:33:20 salcianu Exp $ */
+ * @version $Id: ClassHierarchy.java,v 1.11 2006-01-07 15:10:27 salcianu Exp $ */
 public abstract class ClassHierarchy {
 
     /** Returns the set of all usable/reachable children of an
@@ -150,9 +150,9 @@ public abstract class ClassHierarchy {
 
 	<ul>
 
-	<li>Superclassing: if a class appears in this <i>C</i>, than
-	its superclass and all implemented interfaces (if any) appear
-	in <i>C</i> too.
+	<li>Superclassing: if a class appears in <i>C</i>, then its
+	superclass and all implemented interfaces (if any) appear in
+	<i>C</i> too.
 
 	<li>Array element relation: if the classs <code>T[]></code>
 	appears in <i>C</i>, <code>T</code> appears in <i>C</i> too.
