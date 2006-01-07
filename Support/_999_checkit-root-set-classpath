@@ -1,0 +1,5 @@
+# For classpath, _999_checkit transitively invokes
+#   Engine.getInstance("MessageDigest", "MD5", provider)
+# that tries to instantiates the following MD5 class, via reflection
+
+gnu.java.security.provider.MD5.<init>()V
