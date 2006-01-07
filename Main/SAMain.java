@@ -22,6 +22,7 @@ import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.CallGraphImpl2;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
+import harpoon.Analysis.Quads.InitializerTransform;
 
 import net.cscott.jutil.CombineIterator;
 import net.cscott.jutil.Default;
@@ -97,7 +98,7 @@ import jpaul.Misc.BoolMCell;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: SAMain.java,v 1.72 2005-10-13 22:12:14 salcianu Exp $ */
+ * @version $Id: SAMain.java,v 1.73 2006-01-07 15:18:12 salcianu Exp $ */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean OPTIMIZE = false;
@@ -614,7 +615,7 @@ public class SAMain extends harpoon.IR.Registration {
 	// Class initialization is delicate in an ahead-of-time
 	// compiler.  The JVM deals with it by explicitly testing
 	// before each each class member access whether the class is
-	// initialized or not; we try to be more effcient: we run the
+	// initialized or not; we try to be more efficient: we run the
 	// initializers of all the classes from the program before the
 	// main method.  Only the code of the static initializers
 	// checks for un-initialized classes; when the main method is
@@ -623,10 +624,23 @@ public class SAMain extends harpoon.IR.Registration {
 	    Timer timer = new Timer();
 	    message("  initializer transform ... ");
 	    // transform the class initializers using the class hierarchy.
-	    String resource = frame.getRuntime().resourcePath
+	    String initSafeNativesFileName = frame.getRuntime().resourcePath
 		("init-safe.properties");
-	    hcf = new harpoon.Analysis.Quads.InitializerTransform
-		(hcf, classHierarchy, linker, resource).codeFactory();
+	    InitializerTransform initTransf = 
+		new InitializerTransform
+		(hcf, classHierarchy, linker, initSafeNativesFileName);
+
+	    Set<HMethod> newRoots = new HashSet<HMethod>();
+	    for(Object o : roots) {
+		if(o instanceof HMethod) {
+		    HMethod hmWithInit = initTransf.methodWithInitCheck((HMethod) o);
+		    newRoots.add(hmWithInit);
+		    //System.out.println("adding new root: " + hmWithInit);
+		}
+	    }
+	    roots.addAll(newRoots);
+
+	    hcf = initTransf.codeFactory();
 	    message("(+ redo class hierarchy) ");
 	    // recompute the hierarchy after transformation.
 	    hcf = new CachingCodeFactory(hcf);
