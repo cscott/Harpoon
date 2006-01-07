@@ -60,7 +60,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.8 2005-09-12 14:43:23 salcianu Exp $
+ * @version $Id: InitializerTransform.java,v 1.9 2006-01-07 15:11:57 salcianu Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -428,5 +428,10 @@ public class InitializerTransform
 	}
 	// done.
 	return result;
+    }
+
+    /** Return the handle for the verion of hm with "init-check" tests. */
+    public HMethod methodWithInitCheck(HMethod hm) {
+	return select(hm, CHECKED);
     }
 }
