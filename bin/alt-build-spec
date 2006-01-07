@@ -1,8 +1,9 @@
 #!/bin/sh
 #
-# Alternative build script for the SPECJvm98 applications Unlike in
+# Alternative build script for the SPECJvm98 applications.  Unlike in
 # the original script, the entry point for each application $s (e.g.,
-# _200_check) is the class spec.benchmarks.$s.Main
+# _200_check) is the class spec.benchmarks.$s.Main.  Also, the
+# precisec backend is always used.
 #
 # MOTIVATION: the original script causes a lot of unused awt classes
 # to be compiled ... and the Flex runtime does not support any
@@ -10,7 +11,7 @@
 # execution of *all* class initializers, when the static initializers
 # of some (otherwise unused) awt classes are invoked.
 #
-# Usage: alt-build-spec <backend> <start> <end>
+# Usage: alt-build-spec <start> <end>
 # where 'start' and 'end' are numbers between 1 and 10 specifying
 # a range of spec benchmarks to build.
 # 1: _200_check
@@ -38,13 +39,14 @@ export FLEXDIR=~/Harpoon/Code
 
 SPECPATH=${SPECPATH:-${HOME}/Spec/jvm98}
 export FLEXPATH=SupportNP/specthunk.jar:$SPECPATH
-backend=${1:="precisec"}
-while [ -n "$4" ]; do
-   SPECBUILDOPTS="$SPECBUILDOPTS $2"
+
+backend="precisec"
+while [ -n "$3" ]; do
+   SPECBUILDOPTS="$SPECBUILDOPTS $*"
    shift
 done
-start=${2:-"1"}
-end=${3:-"10"}
+start=${1:-"1"}
+end=${2:-"10"}
 errors=
 
 case $backend in
@@ -72,20 +74,29 @@ for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     tmprootset=tmp/$s.tmp-root-set.$$
     rm -f $tmprootset
     echo "# Produced by alt-build-spec: roots for $s" > $tmprootset
+    rootset=Support/${s}-root-set
     if [ -n "$USE_SUN_JDK" ]; then
         # SUNJDK only:
 	echo "include Support/locale-root-set" >> $tmprootset
-    fi
-    rootset=Support/${s}-root-set    
-    if [ -f $rootset ]; then
-      echo "include $rootset" >> $tmprootset
+	if [ -f $rootset ]; then
+	    echo "include $rootset" >> $tmprootset
+	fi
+    else
+	# classpath
+	echo "include Support/locale-root-set-classpath" >> $tmprootset
+	if [ -f "$rootset-classpath" ]; then
+	    echo "include $rootset-classpath" >> $tmprootset
+	elif [ -f "$rootset" ]; then
+	    echo "Warning: use the sunjdk root set file"
+	    echo "include $rootset" >> $tmprootset
+	fi
     fi
     base=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`
     dir=$base$suf$SPECSUFFIX
     otheropts="-r $tmprootset"
-    rm -rf as$dir tmp/as$dir.comp.err tmp/as$dir.comp.out
+    rm -rf as$dir tmp/$dir.comp.err tmp/$dir.comp.out
     $buildscript $SPECBUILDOPTS $otheropts spec.benchmarks.$s.Main $dir \
-	2> tmp/as$dir.comp.err | tee tmp/as$dir.comp.out
+	2> tmp/$dir.comp.err | tee tmp/$dir.comp.out
     # Test the produced executable
     (
 	cd ${SPECPATH}/spec/benchmarks/$s
@@ -100,7 +111,7 @@ for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
 	errors="$errors$dir "
     fi
 done
-#rm -f $tmprootset
+rm -f $tmprootset
 if [ "$errors" != "" ]; then
     echo FAILED: $errors
     exit 1
