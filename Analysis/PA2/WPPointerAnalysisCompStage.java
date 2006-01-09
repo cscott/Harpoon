@@ -49,7 +49,7 @@ import harpoon.Util.Timer;
  * <code>WPPointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysisCompStage.java,v 1.9 2005-11-06 21:08:03 salcianu Exp $
+ * @version $Id: WPPointerAnalysisCompStage.java,v 1.10 2006-01-09 05:14:19 salcianu Exp $
  */
 public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -118,6 +118,14 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 				  Flags.MAX_INTRA_SCC_ITER);
 	
 	attribs = attribs.put("pa", pa);
+
+	/* uncomment this if you do debugging and want all analysis done before the interactive part
+	System.out.println("\nDEBUG\nDEBUG\nDEBUG\n");
+	AnalysisPolicy ap = new AnalysisPolicy(Flags.FLOW_SENSITIVITY, -1, Flags.MAX_INTRA_SCC_ITER);
+	PAUtil.timePointerAnalysis
+	    (mainM, cg.transitiveSucc(mainM),
+	     pa, ap, "1. ");
+	*/
 
 	if(DO_ANALYSIS) {
 	    for(String method : methodsToAnalyze) {
@@ -301,7 +309,8 @@ public class WPPointerAnalysisCompStage extends CompilerStageEZ {
 
 	AnalysisPolicy ap = new AnalysisPolicy(true, -1, Flags.MAX_INTRA_SCC_ITER);
 	// make sure the inter-proc fixed-points are solved
-	pa.getInterProcResult(hm, ap);
+	InterProcAnalysisResult ipar = pa.getInterProcResult(hm, ap);
+	System.out.println("displayInfo for " + hm + "\nipar = " + ipar);
 
 	boolean oldShowIntraProcConstraints = Flags.SHOW_INTRA_PROC_CONSTRAINTS;
 	Flags.SHOW_INTRA_PROC_CONSTRAINTS = true;

@@ -48,7 +48,7 @@ import harpoon.Util.Util;
  * <code>AllocSyncOneMethod</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: AllocSyncOneMethod.java,v 1.3 2005-09-19 00:44:17 salcianu Exp $
+ * @version $Id: AllocSyncOneMethod.java,v 1.4 2006-01-09 05:14:19 salcianu Exp $
  */
 class AllocSyncOneMethod {
 
@@ -149,7 +149,9 @@ class AllocSyncOneMethod {
 		doStackAllocation(iNodes2Quads(toStackAllocate));
 	    }
 	    else {
-		ics.add(new StackAllocInlineChain(calls, iNodes2Quads(toStackAllocate)));
+		StackAllocInlineChain ic = 
+		    new StackAllocInlineChain(calls, iNodes2Quads(toStackAllocate));
+		ics.add(ic);
 	    }
 	}
 	if(escOnlyInCaller.isEmpty()) return;
@@ -247,7 +249,7 @@ class AllocSyncOneMethod {
 					       Quad q = ((INode) inode).getQuad();
 					       return 
 					       (q.getLineNumber() >= ASFlags.SA_MIN_LINE) &&
-					       (q.getLineNumber() <= ASFlags.SA_MAX_LINE);						
+					       (q.getLineNumber() <= ASFlags.SA_MAX_LINE);
 					   }
 					},
 					new LinkedList<PANode>());
@@ -283,6 +285,10 @@ class AllocSyncOneMethod {
 
 	// The null policy demands the best already computed result
 	InterProcAnalysisResult ipar = pa.getInterProcResult(hm, null);
+
+	if(ASFlags.VERY_VERBOSE) {
+	    System.out.println("ipar = " + ipar);
+	}
 
 	for(PANode inode : inodes) {
 	    if(ipar.eomAllGblEsc().contains(inode)) {
@@ -384,7 +390,10 @@ class AllocSyncOneMethod {
 
 	public void finalAction() {
 	    if(ASFlags.VERBOSE) {
-		System.out.println("Stack-allocation after inlining " + InlineChain.callsToString(copyCALLs));
+		System.out.println("Stack-allocation after inlining " + 
+				   // copyCALLs may be null in some strange debugging contexts
+				   ( (copyCALLs == null) ? "[unknown calls]" : 
+				     InlineChain.callsToString(copyCALLs) ) );
 	    }
 
 	    doStackAllocation(new HashSet<Quad>(allocs));

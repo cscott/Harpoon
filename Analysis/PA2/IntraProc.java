@@ -73,7 +73,7 @@ import harpoon.Analysis.PA2.Mutation.MutationAnalysis;
  * <code>IntraProc</code>
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: IntraProc.java,v 1.7 2005-09-20 20:01:43 salcianu Exp $
+ * @version $Id: IntraProc.java,v 1.8 2006-01-09 05:14:19 salcianu Exp $
  */
 public class IntraProc {
     
@@ -541,6 +541,10 @@ public class IntraProc {
 	uf = cs.debugGetVarUnification();
 	pw.println("IntraProc analysis results for \"" + hm + "\"");
 	final HCode hcode = hcf.convert(hm);
+
+	pw.println("\nCODE:");
+	hcode.print(pw);
+	pw.println("\n");
 
 	final MCell<EdgeSetVar> lastIVar = new MCell<EdgeSetVar>(null);
 	final MCell<NodeSetVar> lastFVar = new MCell<NodeSetVar>(null);
