@@ -55,7 +55,7 @@ import harpoon.Util.Util;
  * take a very long time.
  * 
  * @author  Alexandru Salcianu <salcianu@alum.mit.edu>
- * @version $Id: WPPointerAnalysis.java,v 1.12 2005-12-10 17:26:39 salcianu Exp $ */
+ * @version $Id: WPPointerAnalysis.java,v 1.13 2006-01-09 05:13:12 salcianu Exp $ */
 public class WPPointerAnalysis extends PointerAnalysis {
 
     private static final boolean VERBOSE = PAUtil.VERBOSE;
@@ -172,7 +172,7 @@ public class WPPointerAnalysis extends PointerAnalysis {
     public InterProcAnalysisResult getInterProcResult(HMethod hm, AnalysisPolicy ap) {
 	InterProcAnalysisResult res = null;
 	// If we use the "freshen_trick", we must un-freshen a graph before returning it.
-	// To speed up poitential clients, we cache the "unfreshed" inter-proc results.
+	// To speed up potential clients, we cache the "unfreshed" inter-proc results.
 	if(Flags.USE_FRESHEN_TRICK) {
 	    res = hm2extResult.get(hm);
 	    if(res != null) return res;
@@ -468,6 +468,16 @@ public class WPPointerAnalysis extends PointerAnalysis {
     }
 
 
+    /* used during some old debuging
+    public static void printAllGblEsc(HMethod hm, InterProcAnalysisResult ipar, String label) {
+	if(!hm.getDeclaringClass().getName().equals("spec.benchmarks._213_javac.IdentifierExpression") ||
+	   !hm.getName().equals("inlineLHS")) return;
+
+	System.out.println(label + " allGblEsc = " + ipar.eomAllGblEsc());
+    }
+    */
+
+
     private InterProcAnalysisResult analyzeMethod(HMethod hm, MethodData md) {
 	System.out.println("Analyze (" + md.iterCount + ") \"" + hm + "\"" + "; " + hm.getDescriptor());
 	
@@ -565,6 +575,10 @@ public class WPPointerAnalysis extends PointerAnalysis {
 	    System.out.print("eomWrites : ");
 	    newResult = true;
 	}
+
+	// don't forget to join this info, even if it doesn't matter
+	// for comparison purposes
+	oldRes.eomAllGblEsc().addAll(res.eomAllGblEsc());
 	
 	if(newResult) {
 	    oldRes.invalidateCaches();
