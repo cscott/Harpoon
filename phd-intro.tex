@@ -1,5 +1,6 @@
 \index{locks!problems with}
-Conventionally, atomicity in shared-memory multiprocessors is provided
+Atomicity in shared-memory multiprocessors is 
+conventionally provided
 via mutual-exclusion \defn{locks} (see, for example,
 \cite{Tanenbaum92}[p.~35]).  Although locks are easy to
 implement using test-and-set, compare-and-swap, or
@@ -14,8 +15,8 @@ attainable parallelism (or may even deadlock).  Every access to a
 shared object must hold some lock protecting that object, regardless
 of whether another thread is actually attempting to access the same object.
 
-An alternative means of providing concurrency control is by the use of
-\defn{transactions}.
+\defn{Transactions} are
+an alternative means of providing concurrency control.
 A transaction can be thought of as a sequence of loads and stores
 performed as part of a program which either
 \defn{commits} or \defn{aborts}.  If a transaction
@@ -43,16 +44,16 @@ system.
 
 Implementing transactions using
 non-blocking synchronization offers performance benefits as well.
-Even in a failure-free system, page faults, cache misses, context
+When mutual exclusion is used to enforce atomicity, page
+page faults, cache misses, context
 switches, I/O, and other unpredictable events may result in delays to the
-entire system when mutual exclusion is used to guarantee the atomicity
-of operation sequences; non-blocking
+entire system. Non-blocking
 synchronization allows undelayed processes or processors to continue
 to make progress.
 Similarly, in real-time systems, the use of non-blocking
 synchronization can prevent \defnlti{priority inversion} in the system
 \cite{Jones97}, although na\"{\i}ve implementations may result in
-starvation of low-priority tasks; see \charef{progress}.
+starvation of low-priority tasks (see \charef{progress} for a discussion).
 
 Both atomicity and fault-tolerance can be naturally expressed in the
 transaction model.  In this thesis, I will also
@@ -83,7 +84,8 @@ architectural means, whereas \defn{software transactional memory}
 (STM) supports atomicity through languages, compilers, and libraries.
 Researchers of both HTM and STM commonly express the opinion that
 transactions need never touch many memory locations, and hence it is
-reasonable to put a (small) bound on their size.\footnote{%
+reasonable to put a (small) bound on their
+size~\cite{HerlihyMo93,HerlihyLuMoSc03}.\footnote{%
 For example, \cite[section 5.2]{HerlihyMo93} states,
 ``Our [HTM] implementation relies on the assumption that transactions have
 short durations and small data sets''; while 
