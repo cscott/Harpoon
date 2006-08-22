@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.20 2005-12-12 18:09:10 cananian Exp $
+% $Id: phd-thesis.tex,v 1.21 2006-08-22 21:50:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 \usepackage[light,first,bottomafter,timestamp]{draftcopy}
 \usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.20 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.21 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2005}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.20 $ $}
+\date{\subdate \\ $ $Revision: 1.21 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -38,12 +38,7 @@
 \input{phd-intro}
 
 \chapter{Challenges}
-\section{Performance isolation}
-\note{Cite WDDD here.}
-\section{Progress guarantees}\label{sec:progress}
-\section{The semantic gap}\label{sec:semantic}
-\section{I/O}
-\section{OS interactions}
+\input{phd-chall}
 
 \chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:softimpl}
 \input{phd-stm}
@@ -64,22 +59,20 @@ it.}{\textit{Alan Kay}}}
 \input{phd-hybrid}
 
 \chapter[Extending transactions]{Extending transactions: beyond atomic power}
-
-\section{Nesting}
-\section{Exchange and merging}
-\section{Loopholes and NITs}
-\section{Opportunistic parallelism}
+\input{phd-ext}
 
 \chapter[Optimizations and type systems]{Compiler optimizations and type systems}
-\section{Closing the semantic gap}\label{sec:safe-transactify}
+\input{phd-opt}
 
 \chapter{Conclusion}
+\input{phd-concl}
+
 \appendix
 \chapter[Model-checking the implementation]{Model-checking the software implementation}\label{sec:full-model}
 \input{phd-ver}
 
-\chapter{Formal equivalence proof of UTM/xstate}\label{sec:hw-proof}
-\input{phd-utm-impl}
+%\chapter{Formal equivalence proof of UTM/xstate}\label{sec:hw-proof}
+%\input{phd-utm-impl}
 
 %\chapter[Precise garbage-collectable C]{Compiling to precise garbage-collectable C code}
 
