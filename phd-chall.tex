@@ -1,7 +1,52 @@
 % 'Challenges' chapter.
+In this section we will review objections that have been raised to
+straightforward or na{\"\i}ve transaction implementations.
+Some of these objections do not apply to our implementation;
+discussion of these may further illuminate our design choices.
+Others apply to certain situations, and should be kept in mind when
+creating applications.  Some of the problems raised remain unsolved,
+and are the subject of future work; for these we will attempt to sketch
+research directions.
+
 \section{Performance isolation}
-\note{Cite WDDD here.}
-\section{Progress guarantees}\label{sec:progress}
+Zilles and Flint~\cite{ZillesFl05} identified
+\defn{\indexed{performance isolation}} as a potential issue for
+transaction implementations.  In a system with performance isolation,
+the execution of one task (process, thread, transaction) should
+complete in an amount of time which is independent of the execution of
+other tasks (processes, threads, transactions) in the system.  For
+a system with N processors, it is ideal if a task is guaranteed to
+complete at least as quickly as it would running alone on 1
+processor.
+
+It is obvious that most common systems do not provide any guarantee of
+performance isolation: on a typical multi-user system, the execution
+of a given task can be made arbitrarily slow by the concurrent
+execution of competing tasks.\footnote{Grunwald and Ghiasi call this a
+``microarchitectural denial of service'' attack~\cite{GrunwaldGh02}.}
+However, a nontransactional system can
+be constructed with a good deal of performance isolation by
+appropriately restricting the processes that can be run and the
+resources they consume.
+
+Zilles and Flint object that many transactional systems are
+constructed such that a single large transaction may monopolize the
+atomicity resources such that no other transactions may commit.  By
+opening a transaction, touching a large number of memory locations,
+and then never closing the transaction, a malicious application may
+deny service to all concurrent applications in a transaction system.
+
+Transaction systems provide a solution not available to systems with
+lock-based concurrency, however: the offending transaction can be
+safely aborted at any point to allow the other transactions to
+progress.
+
+\section{Progress guarantees}\label{sec:progress}\index{progress guarantees}
+Progress guarantees are closely related to performance isolation, and
+Zilles and Flint examine these in the same paper.
+
 \section{The semantic gap}\label{sec:semantic}
+Blundell, Lewis, and Martin~\cite{BlundellLeMa05}\ldots
+
 \section{I/O}
 \section{OS interactions}
