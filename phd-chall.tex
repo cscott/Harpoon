@@ -77,9 +77,70 @@ needed.  The hybrid scheme can abort and fail-over to software if
 sufficient resources are not available.
 
 \section{The semantic gap}\label{sec:semantic}\index{semantic gap}
+In a vein of optimism, transactions are often casually said to be
+``compatible'' with locks: transform your lock acquisition and release
+statements to begin-transaction and end-transaction, respectively, and
+your application is transformed.  We might even claim that your
+application will suddenly be faster/more parallel and that some
+lingering locking bugs and race conditions will be cured by the change
+as well.
 
-Blundell, Lewis, and Martin~\cite{BlundellLeMa05} draw attention to 
+It is the latter part of the claim that draws first scrutiny: if
+you've ``fixed'' my race conditions, haven't you altered the semantics
+of my program?  What other behaviors might have changed?
+
+Blundell, Lewis, and Martin~\cite{BlundellLeMa05} describe the
+``semantic gap'' opened between the locking and
+na{\"\i}vely-transactified code.  They point out that programs with
+data races -- even ``benign'' ones -- may deadlock when converted to
+use transactions, since the data race will never occur.  One may even
+wrap every access with a location-specific lock to ``remove'' the race
+(for some definitions) without altering the behavior of the locking
+code or the deadlock for the transactional version.
+
+This concern is valid, and claims of automatic transactification
+should not be taken too lightly.  However, most ``best-practices''
+concurrent code \emph{will} behave as expected, and (unlike
+timing-dependent code with races) deadlocks make it very obvious where
+things go wrong.  Further, type systems are capable of detecting the
+deadlocks in transactified code\note{Need citation here.} and alerting
+the programmer of the problem.
+
+Blundell, Lewis, and Martin also point out that some transaction
+implementations ignore ``non-transactional'' accesses -- even if these
+are to locations which are currently involved in a transaction.  This
+leads to additional alterations in the semantics of the code.  In the
+implementations described in this thesis, we are careful to ensure
+that ``non-transactional'' code still executes as if each statement
+was its own individual transaction, what Blundell, Lewis, and Martin
+term \defn{\indexed{strong atomicitity}}.
 
 \section{I/O}
+To be useful, computing systems must be connected to the outside world
+in some fashion.  This creates a discontinuity in the transactional model:
+real world events can not be rolled back in the same way as changes
+to program state.
+
+\subsection{Forbidding I/O}
+\subsection{Integrating do/undo}
+\subsection{Mutual exclusion}
+\subsection{Postponing I/O}
+
+Ways to deal with this:
+ * forbid transactions - use type system or etc; programmer must
+   explicitly end a transaction in order to do i/o.  Write I/O as
+   communications with a concurrent thread.
+ * integrate do/undo model.  libraries can be built up,
+   i.e. ``transactional disk i/o'' based on journalling.
+ * use mutual exclusion: once we start an i/o activity, the
+   transaction is uninterruptible.
+ * postpone i/o and fire it off (uninterruptibly) when the transaction
+   commits.  Modern I/O devices (designed for mulitasking systems)
+   typically work something like this: create a command buffer, then
+   do a single I/O operation to ``do it''.
 
 \section{OS interactions}
+Some parts here are related to I/O issues.  Classify system calls as
+``safe'' or not.  But also -- transactions in different processes can
+interact with each other through the OS, even things like requesting
+additional memory.
