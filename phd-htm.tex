@@ -772,12 +772,14 @@ found efficiently by following the block's log pointer to an entry and
 traversing the linked list found there, which enumerates all entries
 for that block in all transaction logs.
 
+\punt{
 \note{KA: I wanted to say this but don't actually believe it's true:
 A transactional load or store operation may result in the processor
 performing many memory accesses to the xstate structure, but the data
 structure is designed to allow these to be arbitrarily interleaved
 with memory accesses from other ongoing transactions.}
 % CSA: i don't think it's true either; at least not obviously.
+}
 
 \subsubsection{Caching}
 
