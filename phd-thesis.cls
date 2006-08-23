@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.10 2005-06-22 21:13:37 cananian Exp $
+% $Id: phd-thesis.cls,v 1.11 2006-08-23 20:47:28 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -29,8 +29,8 @@
 % definitions
 \newcommand{\defn}[1]           {{\textbf{\boldmath\defnlt{#1}}}}
 \newcommand{\defnlt}[1]         {{\textit{#1}}}
-\newcommand{\defni}[1]          {\defn{#1}\index{#1}}
-\newcommand{\defnlti}[1]        {\defnlt{#1}\index{#1}}
+\newcommand{\defni}[1]          {\defn{\MakeLowercase{#1}}\index{#1}}
+\newcommand{\defnlti}[1]        {\defnlt{\MakeLowercase{#1}}\index{#1}}
 
 \newcommand{\indexed}[1] {#1\index{#1}}
 % A breaking non-space for URLs

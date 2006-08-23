@@ -1,4 +1,4 @@
-\index{locks!problems with}
+\index{Lock(s)!problems with}
 Atomicity in shared-memory multiprocessors is 
 conventionally provided
 via mutual-exclusion \defn{locks} (see, for example,
@@ -29,7 +29,7 @@ backoff algorithm to preclude live-lock.
 
 Although transactions can be implemented using mutual exclusion
 (locks), our algorithms will utilize non-blocking synchronization
-\index{non-blocking synchronization}
+\index{Non-blocking synchronization}\index{Synchronization!non-blocking}
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
 synchronization offers a number of advantages; foremost for the
@@ -51,7 +51,8 @@ entire system. Non-blocking
 synchronization allows undelayed processes or processors to continue
 to make progress.
 Similarly, in real-time systems, the use of non-blocking
-synchronization can prevent \defnlti{priority inversion} in the system
+synchronization can prevent \defnlti{Priority inversion}
+\index{Lock(s)!priority inversion} in the system
 \cite{Jones97}, although na\"{\i}ve implementations may result in
 starvation of low-priority tasks (see \charef{progress} for a discussion).
 
@@ -67,7 +68,7 @@ concurrency bugs (\charef{safe-transactify}).
 I will present both software and hardware implementations of the
 transaction model.
 Previous implementation work has concentrated on the
-\defni{transactional memory} abstraction
+\defni{Transactional memory} abstraction
 \cite{Knight86,HerlihyMo93,StoneStHe93,RajwarGo02,ShavitTo95,HerlihyLuMoSc03},
 which has
 been proposed as a general and flexible way to allow programs to read
@@ -162,7 +163,8 @@ reported kernel bugs involve races and deadlocks.
 \subsubsection{Atomically move data between two thread-safe containers}
 % locks don't compose
 Another common programming pitfall with locks is their
-\defni{non-composability}.  For example, given two thread-safe
+\defn{non-composability}.\index{Lock(s)!non-composability}
+For example, given two thread-safe
 container classes implemented with locks, it is impossible to
 safely compose
 the \textit{get} function of one with the \textit{put} function of
@@ -298,10 +300,10 @@ when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
 Introducing an explicit {\tt fail} statement allows us to use the same
-{\tt try}/{\tt else} for backtracking search.\index{backtracking}
+{\tt try}/{\tt else} for backtracking search.\index{Backtracking}
 \note{Insert example here?}
 
-\subsubsection{Network flow}\label{sec:flow}\index{network flow}
+\subsubsection{Network flow}\label{sec:flow}\index{Network flow}
 
 Let's now turn our attention now to parallel codes.
 Consider a serial program for computing network flow (see, for
@@ -402,7 +404,7 @@ synchronization as well.
 \note{Mention optimistic parallelism here?}
 
 \subsubsection{The \texttt{StringBuffer} class}\label{sec:stringbuffer}
-The existing \defni{monitor synchronization} methodology for Java,
+The existing \defni{Monitor synchronization}\index{Synchronization!monitor} methodology for Java,
 building on such features in progenitors such as Emerald
 \cite{BlackHuJuLe86,JulSt91},\index{Emerald}\footnote{See \charef{emerald}.}
 implicitly associates an 
@@ -999,7 +1001,7 @@ In \charef{hybrid} we present just such a system.
 \end{tabular}
 }
 \caption{A directory object in Emerald, from \cite{BlackHuJuLe86},
-  illustrating the use of monitor synchronization.\index{monitor synchronization}}
+  illustrating the use of monitor synchronization.\index{Monitor synchronization}\index{Synchronization!monitor}}
 \label{fig:emerald-dir}
 \end{figure}
 
@@ -1043,7 +1045,7 @@ synchronization in an object-oriented framework.
 
 \index{Emerald|(}\label{sec:emerald}
 The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
-\defnlti{monitored objects} for synchronization.  Emerald code to
+\defnlti{Monitored objects} for synchronization.  Emerald code to
 implement a simple directory object is shown in
 Figure~\ref{fig:emerald-dir}.  Each object is associated with
 Hoare-style monitor, which provides mutual exclusion and process
@@ -1083,7 +1085,7 @@ the whole \cite{FlanaganQa03}.
 \index{Emerald|)}
 
 This suggests that a better model for synchronization in
-object-oriented systems is \defnlti{atomicity}.  Figure~\ref{fig:atomic}
+object-oriented systems is \defnlti{Atomicity}.  Figure~\ref{fig:atomic}
 shows Java extended with an \atomic keyword to implement an
 object representing a bank account.  Rather than explicitly
 synchronizing on locks, I simply require that the methods marked
@@ -1091,7 +1093,7 @@ synchronizing on locks, I simply require that the methods marked
 system; that is, that every execution of the program computes the same
 result as some execution where all atomic methods were run \emph{in
   isolation} at a certain point in time, called the
-\defni{linearization point}, between their invocation and return.
+\defni{Linearization point}, between their invocation and return.
 Note that
 atomic methods invoked directly or indirectly from an atomic
 method are subsumed by it: if the outermost method appears atomic,
