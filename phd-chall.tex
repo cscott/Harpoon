@@ -22,8 +22,9 @@ processor.
 It is obvious that most common systems do not provide any guarantee of
 performance isolation: on a typical multi-user system, the execution
 of a given task can be made arbitrarily slow by the concurrent
-execution of competing tasks.\footnote{Grunwald and Ghiasi call this a
-``microarchitectural denial of service'' attack~\cite{GrunwaldGh02}.}
+execution of competing tasks.\footnote{Grunwald and
+  Ghiasi~\cite{GrunwaldGh02} call this a ``microarchitectural denial
+  of service'' attack.}
 However, a nontransactional system can
 be constructed with a good deal of performance isolation by
 appropriately restricting the processes that can be run and the
@@ -36,17 +37,49 @@ opening a transaction, touching a large number of memory locations,
 and then never closing the transaction, a malicious application may
 deny service to all concurrent applications in a transaction system.
 
-Transaction systems provide a solution not available to systems with
-lock-based concurrency, however: the offending transaction can be
-safely aborted at any point to allow the other transactions to
-progress.
+For this reason, it is important that there are no global resources
+required to complete a transaction.  Our UTM hardware implementation
+achieves this end, but the LTM design uses a per-processor overflow
+table.  If an LTM design is implemented with a snoopy bus for
+coherence traffic, overflows on one processor can impact the
+performance of all other processors on the bus.  A directory-based
+coherence protocol (as we have described in this thesis) eliminates
+this problem.  Hybrid schemes based on LTM also eliminate the problem,
+because an overflowing transaction can be aborted and retried in
+software, which requires no global resources.
+
+Concerns about performance isolation are not limited to transaction
+systems.  Transaction systems provide a solution not available to
+systems with lock-based concurrency, however: the offending
+transaction can be safely aborted at any point to allow the other
+transactions to progress.
 
 \section{Progress guarantees}\label{sec:progress}\index{progress guarantees}
-Progress guarantees are closely related to performance isolation, and
-Zilles and Flint examine these in the same paper.
+Aborting troublesome transactions raises another potential pitfall:
+how do we guarantee that our system will make forward progress?
+Zilles and Flint~\cite{ZillesFl05} note that transaction systems are
+subject to an ``all-or-nothing'' problem: it's fine to abort a
+troublesome large transaction to allow other work to complete, but
+then we throw away any progress in that transaction.  The operating
+system is forced to either allocate a large transaction all the
+resources it requires, or to refuse to make any progress on the
+transaction; there is no middle ground.
 
-\section{The semantic gap}\label{sec:semantic}
-Blundell, Lewis, and Martin~\cite{BlundellLeMa05}\ldots
+This criticism applies to the LTM hardware scheme.  In an LTM system, it is the
+programmer's responsibility to structure transactions such that the
+application is likely to complete.  The operating system will deny
+progress when necessary to prevent priority inversion.
+
+The UTM, hybrid, and software-only implementations do not suffer the
+same problem.  UTM and software-only implementations can represent all
+transaction state in memory, which can be paged in incrementally as
+needed.  The hybrid scheme can abort and fail-over to software if
+sufficient resources are not available.
+
+\section{The semantic gap}\label{sec:semantic}\index{semantic gap}
+
+Blundell, Lewis, and Martin~\cite{BlundellLeMa05} draw attention to 
 
 \section{I/O}
+
 \section{OS interactions}
