@@ -66,16 +66,19 @@ system is forced to either allocate a large transaction all the
 resources it requires, or to refuse to make any progress on the
 transaction; there is no middle ground.
 
-This criticism applies to the LTM hardware scheme.  In an LTM system, it is the
+This criticism applies to the LTM hardware scheme and other
+unvirtualized transaction implementation.  In an LTM system, it is the
 programmer's responsibility to structure transactions such that the
 application is likely to complete.  The operating system will deny
 progress when necessary to prevent priority inversion.
 
 The UTM, hybrid, and software-only implementations do not suffer the
-same problem.  UTM and software-only implementations can represent all
-transaction state in memory, which can be paged in incrementally as
-needed.  The hybrid scheme can abort and fail-over to software if
-sufficient resources are not available.
+same problem.  UTM and software-only implementations can virtualize
+the transaction, as all transaction state is in memory.  This allows
+the resources required to be paged in incrementally as
+needed.  The hybrid scheme, even when built on an unvirtualized
+mechanism such as LTM, can abort and fail-over to a virtualized
+software system if sufficient resources are not available.
 
 \section{The semantic gap}\label{sec:semantic}
 \index{Transaction(s)!semantic gap with locks}
@@ -237,6 +240,8 @@ undesirable.
 
 \index{Transaction(s)!I/O, issues with|)}
 \section{OS interactions}
+\index{Transaction(s)!operating system interactions with}
+\index{Operating system(s)!interactions with transactions}
 While transaction-style synchronization has been successfully used to
 structure interactions within an operating system~\cite{MassalinPu91},
 transactions crossing the boundary between operating system and
@@ -287,6 +292,17 @@ A more sophisticated approach with explicit OS management of
 transactions may be able to provide better transparency of
 OS/transaction interactions for the application programmer and
 improved performance.
+
+\section{Recommendations for future work}
+Based on the discussion in this section, a virtualizable transaction
+mechanism is recommended: if LTM is implemented in hardware, a hybrid
+scheme should support it in order to provide performance isolation and
+progress guarantees.  A do/undo mechanism for transactions allows
+better management of critical regions where mutual exclusion must be
+integrated with the transaction mechanism to support I/O and certain
+OS interactions.  All OS interactions can then be performed in
+\texttt{do} block so that mutual exclusion need not be extended across
+the OS boundary.
 
 % LocalWords:  interruptible uninterruptible uninterruptibly transactification
 % LocalWords:  LTM UTM
