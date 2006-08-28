@@ -193,9 +193,12 @@ do/undo blocks may be nested within transactions.  A \texttt{do} block
 executes uninterruptibly.  If a transaction aborts before it reaches a
 \texttt{do} block, rollback occurs conventionally.  If it aborts after it
 has executed a \texttt{do} block, then the \texttt{undo} block is
-executed uninterruptibly as part of transactional rollback.
+executed uninterruptibly as part of transactional rollback.  Note that
+mutual exclusion must still be used in portions of the transaction
+processing; ideally the critical regions are short and infrequently
+invoked.
 
-This behavior allows sophisticated exception processing: an
+The do/undo behavior allows sophisticated exception processing: an
 \texttt{undo} block may emit a backspace to the terminal after
 \texttt{do} emits a character, or it may send an apology email after
 an email is sent irrevocably in a \texttt{do} block.  The do/undo is
@@ -234,10 +237,56 @@ undesirable.
 
 \index{Transaction(s)!I/O, issues with|)}
 \section{OS interactions}
-Some parts here are related to I/O issues.  Classify system calls as
-``safe'' or not.  But also -- transactions in different processes can
-interact with each other through the OS, even things like requesting
-additional memory.
+While transaction-style synchronization has been successfully used to
+structure interactions within an operating system~\cite{MassalinPu91},
+transactions crossing the boundary between operating system and
+application present additional challenges.  Some operating system
+requests are either I/O operations or can be handled with the same
+mechanism used to handle I/O within transactions, as discussed in the
+previous section.  Using memory allocation as an example of an OS
+request, transactions can be forbidden to allocate memory, required to
+take a lock, forced to preallocate all required memory,\footnote{A
+retry mechanism can be used to incrementally increase the
+preallocation until the transaction can successfully complete.}, or
+use a compensation mechanism to deallocate requested memory in case of
+abort.
+
+Since the role of an operating system is to adminster shared
+resources, special care must be taken that transactions involving
+operating system requests do not ``contaminate'' other processes.
+In particular, if data in kernel space is to be included in a
+transaction:
+\begin{itemize}
+\item If mutual exclusion may used to implement any part of the
+transaction semantics (as in the various I/O schemes above), then it
+may be possible to tie up the entire system (including unrelated
+processes) until a transaction touching kernel structures commits.
+\item If transaction state if to be tracked in the cache, the
+kernel address space must be reserved from the application memory map
+ on architectures with virtually-addressed caches.
+\item It may be desirable to include some loophole mechanism
+ so that kernel data structures may be released from the transaction.
+ Similarly, the operating system may wish to use transactions within
+ itself; it may be desirable for these transactions to be independent
+ from the application's invoking transaction.  Motivating examples
+ include fault handlers and the paging mechanism, which ought to be
+ transparent to the application's transaction.  Section~\ref{sec:nit}
+ discusses possible mechanisms.
+\end{itemize}
+
+It is possible to handle these challenges simply, for example by
+forbidding OS calls within a transaction and aborting transactions if
+necessary on context switches or faults.  Such an approach raises
+hurdles for the application programmer but simplifies the operating
+system's task considerably.  In unvirtualized transaction
+implementations such as LTM, this approach also limits the maximum
+duration of a transaction to a single time slice, although the OS may
+be able to stretch a processes time slice when necessary.
+
+A more sophisticated approach with explicit OS management of
+transactions may be able to provide better transparency of
+OS/transaction interactions for the application programmer and
+improved performance.
 
 % LocalWords:  interruptible uninterruptible uninterruptibly transactification
 % LocalWords:  LTM UTM
