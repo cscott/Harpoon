@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.23 2006-08-23 16:24:42 cananian Exp $
+% $Id: phd-thesis.tex,v 1.24 2006-08-30 19:07:11 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.23 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.24 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2006}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.23 $ $}
+\date{\subdate \\ $ $Revision: 1.24 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -65,6 +65,9 @@ it.}{\textit{Alan Kay}}}
 \chapter[Optimizations and type systems]{Compiler optimizations and type systems}
 \input{phd-opt}
 }
+
+\chapter{Related work}\label{cha:related}
+\input{phd-related}
 
 \chapter{Conclusion}
 \input{phd-concl}
