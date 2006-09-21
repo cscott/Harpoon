@@ -4,19 +4,62 @@ reiterated the difficulty of creating correct implementations of
 concurrent and fault-tolerant constructs.  Automatic model checking is
 a prerequisite to achieving confidence in the design and implementation.
 Versions of the software transaction system have been modelled in
-Promela using Spin 4.1.0 and verified on an SGI 64-processor MIPS
+Promela using \Spin 4.1.0 and verified on an SGI 64-processor MIPS
 machine with 16G of main memory.
 
 Sequences of transactional and non-transactional load and store
 operations were checked using two concurrent processes, and all possible
-interleavings were found to produce correct results consistent with
-the semantic atomicity of the transactions.  A number of subtle race
-conditions were discovered and corrected during this process.
-In particular, early versions of the algorithms sometimes allowed
-readers to escape being aborted while racing a writer in
-createVersion, and could allow inconsistent reads.
+interleavings were found to produce results consistent with
+the semantic atomicity of the transactions.  
+Several test scripts were run against the
+model using separate processors of the verification machine (\Spin
+cannot otherwise exploit SMP).  Some representative costs include:
+\begin{itemize}
+\item testing two concurrent {\tt writeT} operations (including
+  ``false flag'' conditions) against a single object required $3.8\times
+  10^6$ states and $170$M memory;
+\item testing sequences of transactional and non-transactional reads
+  and writes against two objects (checking that all views of the two
+  objects were consistent) required $4.6\times 10^6$ states and $207$M
+  memory; and
+\item testing a pair of concurrent increments at values bracketing the
+  \FLAG value to 99.8\% coverage of the state space required
+  $7.6\times 10^7$ states and $4.3$G memory.  Simultaneously
+  model-checking a range of values caused the state space explosion
+  in this case.
+\end{itemize}
+\Spin's unreachable code reporting was used to ensure that our test
+cases exercised every code path, although this doesn't guarantee that
+every interesting interaction is checked.
 
-Spin is not particularly suited to checking models with dynamic
+In the process one bug in \Spin was discovered\footnote{Breadth-first
+search of atomic regions was performed incorrectly in \Spin 4.0.7;
+this was fixed in \Spin 4.1.0.}
+and a number of subtle race conditions in the model were discovered and
+corrected.  These included a number of modelling artifacts: in
+particular, we were extremely aggressive about reference-counting and
+deallocating objects in order to control the size of the state space,
+and this proved difficult to do correctly.  We also discovered some
+subtle-but-legitimate race conditions in the transactions algorithm.
+For example:
+\begin{itemize}
+\item A race allowed conflicting readers to be created while a writer
+  was inside {\tt ensureWriter} creating a new version object.
+\item Allowing already-committed version objects to be mutated when {\tt
+    writeT} or {\tt writeNT} was asked to store a ``false flag'' produced
+  races between {\tt ensureWriter} and {\tt
+    copyBackField}.  The code that was expected to manage these races
+  had unexpected corner cases.
+\item Using a bitmask to provide per-field granularity
+  to the list of readers proved unmanageable as there were three-way
+  races between the bitmask, the readers list, and the version tree.
+\end{itemize}
+In addition, the model-in-progress proved a valuable design tool, as
+portions of the algorithm could readily be mechanically checked to
+validate (or discredit) the designer's reasoning about the concurrent
+system.  Humans do not excel at exhaustive state space exploration.
+
+\Spin is not particularly suited to checking models with dynamic
 allocation and deallocation.  In particular, it considers the
 location of objects part of the state space, and allocating object
 A before object B produces a different state than if object B
@@ -86,8 +129,8 @@ functions with names starting with {\tt move} are simple assignments;
 they've been turned into macros so that reference counting
 can be performed.
 
-\subsection{Spin model for software transaction system}
-The complete Spin 4.1.0 model for the FLEX software transaction system is
+\subsection{\Spin model for software transaction system}
+The complete \Spin 4.1.0 model for the FLEX software transaction system is
 available for download at
 \url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
 

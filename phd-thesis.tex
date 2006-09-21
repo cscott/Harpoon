@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.24 2006-08-30 19:07:11 cananian Exp $
+% $Id: phd-thesis.tex,v 1.25 2006-09-21 22:46:05 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.24 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.25 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2006}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.24 $ $}
+\date{\subdate \\ $ $Revision: 1.25 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -25,6 +25,8 @@
 \newcommand{\fref}[2]{\ensuremath{#1\text{\tt .#2}}}
 \newcommand{\addr}[1]{\ensuremath{\text{\tt \&}(#1)}}
 \newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
+\newcommand{\FLAG}{\texttt{FLAG}\xspace}
+\newcommand{\Spin}{\textsc{Spin}\xspace}
 
 \begin{document}
 \bibliographystyle{abbrv}

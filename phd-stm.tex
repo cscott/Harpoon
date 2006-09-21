@@ -141,7 +141,7 @@ syntax and semantics.
   Each object contains two extra fields: {\it readers}, a
   singly-linked list of transactions which have read this object; and
   {\it versions} a linked list of version objects.  If an object field
-  is FLAG, then the value for the field is obtained from the
+  is \FLAG, then the value for the field is obtained from the
   appropriate linked version object.}
 \figref{tr-multi-obj} illustrates the basic data structures of our
 software transaction implementation.  Objects are extended with two
@@ -158,18 +158,18 @@ field is used to ensure that a transaction does not operate with
 out-of-date values if the object is later written
 non-transactionally.
 
-There is a special flag value, here denoted by {\tt FLAG}.  It should be
+There is a special flag value, here denoted by \FLAG.  It should be
 an uncommon value, i.e. not a small positive or negative integer
 constant, nor zero.  In our implementation, we have chosen the byte
 \texttt{0xCA} to be our flag value, repeated as necessary to fill out
 the width of the appropriate type.
 The semantic value of an object field is the value in the original
-object structure, \emph{unless that value is \texttt{FLAG}}, in which
+object structure, \emph{unless that value is \FLAG}, in which
 case the field's value is the value of the field in the first
 committed transaction in the object's version list.  A ``false flag''
-occurs when the application wishes to ``really'' store the value FLAG
+occurs when the application wishes to ``really'' store the value \FLAG
 in a field; this is handled by creating a fully-committed version
-attached to the object and storing FLAG in that version as well as in
+attached to the object and storing \FLAG in that version as well as in
 the object field.
 
 \subsection{Operations}%ops
@@ -191,12 +191,12 @@ We will present the other operations one-by-one.
 The {\tt ReadNT} function does a non-transactional read of field $f$ from
 object $o$, putting the result in $v$.
 In the common case, the only overhead is to check that
-the read value is not FLAG.  However, if the value read \emph{is}
-FLAG, we copy back the field value 
+the read value is not \FLAG.  However, if the value read \emph{is}
+\FLAG, we copy back the field value 
 from the most-recently committed transaction (aborting all other
 transactions) and try again.  The copy-back procedure will notify
 us if this is a ``false flag'', in which case the value of this
-field really is FLAG.  We pass the {\tt kill\_writers} constant
+field really is \FLAG.  We pass the {\tt kill\_writers} constant
 to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
@@ -236,7 +236,7 @@ constant {\tt kill\_all} to indicate that both transactional readers
 and writers should be aborted during the copy-back.  The copy-back
 procedure leaves the reader list empty.
 
-If the value to be written is actually the FLAG value, things get a
+If the value to be written is actually the \FLAG value, things get a
 little bit trickier.  This case does not occur often, and so the
 simplest correct implementation is to treat this non-transactional
 write as a short transactional write, creating a new transaction for
@@ -378,7 +378,7 @@ than our own.  These steps can be combined and hoisted so that they
 are done once before the first read from an object and not repeated.
 
 At read time, we initially read from the original object.  If the
-value read is not FLAG, we use it.  Otherwise, we look up the version
+value read is not \FLAG, we use it.  Otherwise, we look up the version
 object associated with our transaction (this will typically be at the
 head of the version list) and read the appropriate value from that
 version.  Note that the initial read-and-check can be omitted if we
@@ -568,9 +568,9 @@ This is shown in the {\tt ensureWriter} routine in \figref{ensurewriter}.
 
 Once for each field we intend to write, we must perform a
 copy-through: copy the object's field value into all the versions and
-then write FLAG to the object's field.  We use
+then write \FLAG to the object's field.  We use
 load-linked/store-conditional to update versions only if the object's
-field has not already been set to FLAG behind our backs by another
+field has not already been set to \FLAG behind our backs by another
 copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
 
