@@ -677,6 +677,17 @@ system.}
 %    0     somewhere   -- read by a single transaction.
 %    1       0         -- read by multiple transactions
 %    1     somewhere   -- written by a (single) transaction.
+
+% CSA: we can flip the 'somewhere' cases to make the bit RW again:
+% now the key is to allow/recognize the 'read but log pointer 0' case.
+%    0       0         -- not involved in xaction.
+%    1     somewhere   -- read by a single transaction.
+%    1       0         -- read by multiple transactions
+%    0     somewhere   -- written by a (single) transaction.
+
+%% XXX: how do i identify the 'mutliple transactions' if the log
+%% pointer is null??
+
 % this is likely out-of-scope of this paper.
 % the RW bit does not distinguish the 'read by single xaction' and
 % 'read by multiple xactions' cases, which is important because we
