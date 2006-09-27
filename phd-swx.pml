@@ -3,7 +3,7 @@
  * Checking for safety and correctness properties.  Not too worried about
  * liveness at the moment.
  *
- * (C) 2003 C. Scott Ananian <cananian@alumni.princeton.edu>
+ * (C) 2006 C. Scott Ananian <cananian@alumni.princeton.edu>
  ************************************************************************/
 
 /* CURRENT ISSUES:
