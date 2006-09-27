@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.25 2006-09-21 22:46:05 cananian Exp $
+% $Id: phd-thesis.tex,v 1.26 2006-09-27 19:35:45 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{epigraph}
@@ -9,14 +9,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.25 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.26 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2006}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.25 $ $}
+\date{\subdate \\ $ $Revision: 1.26 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -54,6 +54,10 @@ it.}{\textit{Alan Kay}}}
 \input{phd-htm}
 
 \chapter{A hybrid transaction implementation}\label{sec:hybrid}
+\epigraphhead[70]{\epigraph{%
+Hybrids are often named by the portmanteau method, combining the names
+of the two parent species. For example, a zeedonk is a cross between a
+zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
 % dual-path coding: publishable paper: try in hw, fall back to sftware
 \input{phd-hybrid}
 
