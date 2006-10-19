@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.27 2006-09-27 19:46:57 cananian Exp $
+% $Id: phd-thesis.tex,v 1.28 2006-10-19 22:11:02 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{verbatim}
@@ -10,14 +10,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.27 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.28 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{September XX, 2006}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.27 $ $}
+\date{\subdate \\ $ $Revision: 1.28 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -28,6 +28,8 @@
 \newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
 \newcommand{\FLAG}{\texttt{FLAG}\xspace}
 \newcommand{\Spin}{\textsc{Spin}\xspace}
+
+\newcommand{\contribution}[1]{\begin{quote}\textbf{\textsf{#1}}\end{quote}}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -69,9 +71,10 @@ zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
 \chapter[Extending transactions]{Extending transactions: beyond atomic power}
 \input{phd-ext}
 
+}
 \chapter[Optimizations and type systems]{Compiler optimizations and type systems}
 \input{phd-opt}
-}
+
 
 \chapter{Related work}\label{cha:related}
 \input{phd-related}

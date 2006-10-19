@@ -1,15 +1,15 @@
 %% This is the abstract of my thesis.
 
-Transactions are coming into vogue as a flexible synchronization
-primitive which maps naturally to human intuition about the desired
-behavior of concurrent systems.  This thesis presents efficient
-implementations of transactions in an object-oriented
-software-only system, in scalable hardware systems, and in a hybrid
-of the two systems, obtaining the benefits of both.  I also present
-formal models of the implementation which have been mechanically
-checked for correct behavior.
+Transactions map naturally to human intuition of atomic action in
+concurrent systems, eliminating the necessity of locking discipline.
+This thesis presents efficient implementations of transactions for
+three platforms: an object-oriented software-only system, a scalable
+system using a custom processor extension, and in a hybrid of the two
+systems, obtaining the benefits of both.  I also present formal models
+of the implementation which have been mechanically checked for correct
+behavior.
 
-I also explore the implications on available, efficient, and usable
+I also explore the implications of available, efficient, and usable
 transactions on high-level language design, presenting solutions for
 transaction nesting, merging, and loophole mechanisms.  This presents
 a solution to the vexing ``I/O'' and modularity problems with

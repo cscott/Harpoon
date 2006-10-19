@@ -24,8 +24,28 @@ commits, then all of the loads and stores appear to have run
 atomically with respect to other transactions.  That is, the
 transaction's operations are not interleaved with those of other
 transactions.  If a transaction aborts, then none of its stores take
-effect and the transaction may be restarted, typically using a
-backoff algorithm to preclude live-lock.
+effect and the transaction may be restarted, with some mechanism to
+ensure forward progress.
+
+\contribution{This thesis will provide efficient implementations of
+transaction primitives, enabling their general use.}
+
+By structuring concurrency at a high-level with transactions, human
+programmers no longer have to manage the details required to ensure
+atomicity.  Programmers have difficulty correctly understanding the global
+interactions between multiple threads, each holding its own set of
+locks, and a full mental model of the global concurrency structure
+must be kept in mind when writing synchronization code.
+The simpler ``global atomicity'' guaranteed under the
+transactional model eliminates errors and simplifies the conceptual
+model of the system, making future modifications safer as
+well.  Previously, implementations of transactions were too slow for
+general use.
+
+\contribution{The transaction
+primitives presented in this thesis can exploit optimistic
+concurrency, provide fault tolerance, and prevent delays by using
+non-blocking synchronization.}
 
 Although transactions can be implemented using mutual exclusion
 (locks), our algorithms will utilize non-blocking synchronization
@@ -56,17 +76,25 @@ synchronization can prevent \defnlti{Priority inversion}
 \cite{Jones97}, although na\"{\i}ve implementations may result in
 starvation of low-priority tasks (see \charef{progress} for a discussion).
 
-Both atomicity and fault-tolerance can be naturally expressed in the
-transaction model.  In this thesis, I will also
-show how transactions can be integrated into an object-oriented
-language and used for backtracking,
-exception handling, and concurrency control in new programs.  In
-addition, I will show how
-existing code might safely be ``transactified'' to fix existing
-concurrency bugs (\charef{safe-transactify}).
+\contribution{
+In this thesis I will show how transactions can be integrated into an
+object-oriented language and used for backtracking, exception
+handling, and concurrency control in new programs, in addition to
+expressing atomicity and fault-tolerance.}
 
-I will present both software and hardware implementations of the
-transaction model.
+One of the common synchronization mistakes made in lock-based
+object-oriented code is
+the ``multiple object problem'': when lock A protects object A, and
+lock B protects object B, it is easy to get into trouble when writing
+routines which involve both objects A and B.  Either insufficient
+locks are taken, or both locks are taken without carefully considering
+deadlock, or else one object's locks are released and reacquired during the
+operation allowing atomicity to be broken.
+
+\contribution{In \charef{safe-transactify} I will describe a technique
+for ``transactifying'' existing lock-based code
+to identify or fix existing concurrency bugs.}
+
 Previous implementation work has concentrated on the
 \defni{Transactional memory} abstraction
 \cite{Knight86,HerlihyMo93,StoneStHe93,RajwarGo02,ShavitTo95,HerlihyLuMoSc03},
@@ -83,6 +111,10 @@ records on disk.
 architectural means, whereas \defn{software transactional memory}
 \index{Software Transactional Memory}
 (STM) supports atomicity through languages, compilers, and libraries.
+
+\contribution{I will present both software and hardware implementations of the
+transaction model.}
+
 Researchers of both HTM and STM commonly express the opinion that
 transactions need never touch many memory locations, and hence it is
 reasonable to put a (small) bound on their
@@ -102,11 +134,13 @@ argue additionally that transactions occur infrequently, and hence the
 software overhead would be dwarfed by the other processing done by an
 application.
 
-In contrast, this thesis will assume that transactions may be of
+\contribution{In contrast, this thesis will assume that transactions may be of
 arbitrary size and duration, and that details of the implementation
-should not be exposed to the programmer of the system.  My goal is to
-make concurrent and fault-tolerant programming easier, hopefully
-without incurring much overhead in the process.  The target is
+should not be exposed to the programmer of the system.}
+
+My goal is to
+make concurrent and fault-tolerant programming easier,
+without incurring excessive overhead.  I support
 unbounded transactions because neither programmers nor compilers can
 easily cope when an architecture imposes a hard limit on transaction
 size.  An implementation might be optimized for transactions below a
@@ -114,10 +148,15 @@ certain size, but must still operate correctly for larger
 transactions.  The size of transactional hardware should be an
 implementation parameter, like cache size or memory size, which can
 vary without affecting the portability of binaries.
-\charef{hybrid} will show how a fast hardware implementation for
+
+\contribution{In \charef{hybrid} I will show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
-transactions.
+transactions.}
+
+The hybrid approach allows more sophisticated transaction models to be
+implemented, while allowing a simpler hardware transaction mechanism
+to provide speed in the common case.
 
 \section{Motivation}
 I will motivate the transactional programming model by first
@@ -128,12 +167,11 @@ discussion in reality, I conclude by enumerating a few cases where
 transactions may \emph{not} be the best solution.
 
 \subsection{Four old things you can't (easily) do with locks}
-The difficulties encountered when programming using
-locks to manage concurrency are well-known \cite{Herlihy05}.
-In practice, locks engender fragile and complex safety protocols which
+Locks engender fragile and complex safety protocols which
 are often expressed external to their implementations, poor modularity
 and composability, and an inability to deal gracefully with
-asynchronous events.
+asynchronous events.  These limitations of locks are well-known
+\cite{Herlihy05}.
 
 \subsubsection{Tweak performance with localized changes}
 % global lock orders, oh my!
@@ -176,6 +214,8 @@ or some other level) before attempting the operation -- and even then,
 we need to resort to some global lock ordering to guard against
 deadlock.  Modularity must be broken in order to synthesize the
 appropriate composed function, which may be impossible.
+
+{\bf XXX Reference \cite{Rinard98} here.}
 
 Transactions do not suffer from the composability problem
 \cite{HarrisMaPeHe05}.
