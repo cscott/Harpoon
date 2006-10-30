@@ -27,10 +27,9 @@ transactions.  If a transaction aborts, then none of its stores take
 effect and the transaction may be restarted, with some mechanism to
 ensure forward progress.
 
-\contribution{This thesis will provide efficient implementations of
-transaction primitives, enabling their general use.}
-
-By structuring concurrency at a high-level with transactions, human
+This thesis will provide efficient implementations of
+transaction primitives to enable their general use.
+By structuring concurrency at a high level with transactions, human
 programmers no longer have to manage the details required to ensure
 atomicity.  Programmers have difficulty correctly understanding the global
 interactions between multiple threads, each holding its own set of
@@ -42,11 +41,9 @@ model of the system, making future modifications safer as
 well.  Previously, implementations of transactions were too slow for
 general use.
 
-\contribution{The transaction
-primitives presented in this thesis can exploit optimistic
-concurrency, provide fault tolerance, and prevent delays by using
-non-blocking synchronization.}
-
+The transaction primitives presented in this thesis can exploit
+optimistic concurrency, provide fault tolerance, and prevent delays by
+using non-blocking synchronization.
 Although transactions can be implemented using mutual exclusion
 (locks), our algorithms will utilize non-blocking synchronization
 \index{Non-blocking synchronization}\index{Synchronization!non-blocking}
@@ -76,11 +73,10 @@ synchronization can prevent \defnlti{Priority inversion}
 \cite{Jones97}, although na\"{\i}ve implementations may result in
 starvation of low-priority tasks (see \charef{progress} for a discussion).
 
-\contribution{
 In this thesis I will show how transactions can be integrated into an
 object-oriented language and used for backtracking, exception
 handling, and concurrency control in new programs, in addition to
-expressing atomicity and fault-tolerance.}
+expressing atomicity and fault-tolerance.
 
 One of the common synchronization mistakes made in lock-based
 object-oriented code is
@@ -90,10 +86,9 @@ routines which involve both objects A and B.  Either insufficient
 locks are taken, or both locks are taken without carefully considering
 deadlock, or else one object's locks are released and reacquired during the
 operation allowing atomicity to be broken.
-
-\contribution{In \charef{safe-transactify} I will describe a technique
+In \charef{safe-transactify} I will describe a technique
 for ``transactifying'' existing lock-based code
-to identify or fix existing concurrency bugs.}
+to identify or fix some existing concurrency bugs.
 
 Previous implementation work has concentrated on the
 \defni{Transactional memory} abstraction
@@ -111,9 +106,8 @@ records on disk.
 architectural means, whereas \defn{software transactional memory}
 \index{Software Transactional Memory}
 (STM) supports atomicity through languages, compilers, and libraries.
-
-\contribution{I will present both software and hardware implementations of the
-transaction model.}
+I will present both software and hardware implementations of the
+transaction model.
 
 Researchers of both HTM and STM commonly express the opinion that
 transactions need never touch many memory locations, and hence it is
@@ -133,10 +127,9 @@ logic---should suffice.  For STM implementations, some researchers
 argue additionally that transactions occur infrequently, and hence the
 software overhead would be dwarfed by the other processing done by an
 application.
-
-\contribution{In contrast, this thesis will assume that transactions may be of
+In contrast, this thesis will assume that transactions may be of
 arbitrary size and duration, and that details of the implementation
-should not be exposed to the programmer of the system.}
+should not be exposed to the programmer of the system.
 
 My goal is to
 make concurrent and fault-tolerant programming easier,
@@ -149,18 +142,47 @@ transactions.  The size of transactional hardware should be an
 implementation parameter, like cache size or memory size, which can
 vary without affecting the portability of binaries.
 
-\contribution{In \charef{hybrid} I will show how a fast hardware implementation for
+In \charef{hybrid} I will show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
-transactions.}
-
+transactions.
 The hybrid approach allows more sophisticated transaction models to be
 implemented, while allowing a simpler hardware transaction mechanism
 to provide speed in the common case.
 
+%%%%%%%%%%%%% LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
+\begin{itemize}
+\item This thesis will provide efficient implementations of
+transaction primitives to enable their general use.
+%%%%%%% MORE ACCURACY FOR THE ABOVE CLAIM?
+\item The transaction
+primitives presented in this thesis can exploit optimistic
+concurrency, provide fault tolerance, and prevent delays by using
+non-blocking synchronization.
+\item 
+In this thesis I will show how transactions can be integrated into an
+object-oriented language and used for backtracking, exception
+handling, and concurrency control in new programs, in addition to
+expressing atomicity and fault-tolerance.
+\item In \charef{safe-transactify} I will describe a technique
+for ``transactifying'' existing lock-based code
+to identify or fix existing concurrency bugs.
+\item I will present both software and hardware implementations of the
+transaction model.
+\item In contrast, this thesis will assume that transactions may be of
+arbitrary size and duration, and that details of the implementation
+should not be exposed to the programmer of the system.
+\item In \charef{hybrid} I will show how a fast hardware implementation for
+frequent short transactions can gracefully fail over to a software
+implementation designed to efficiently execute large long-lived
+transactions.
+\end{itemize}
+%%%%%%%%%%%%% END LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
+
+
 \section{Motivation}
-I will motivate the transactional programming model by first
-anecdotally presenting four different common scenarios which are needlessly
+I will motivate the transactional programming model by
+presenting four different common scenarios which are needlessly
 difficult using lock-based concurrency; I will then present four novel
 applications which a transactional model facilitates.  To ground the
 discussion in reality, I conclude by enumerating a few cases where
