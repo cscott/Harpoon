@@ -150,9 +150,13 @@ The hybrid approach allows more sophisticated transaction models to be
 implemented, while allowing a simpler hardware transaction mechanism
 to provide speed in the common case.
 
+
 %%%%%%%%%%%%% LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
+\section{Contributions}
+This thesis makes the following contributions:
+
 \begin{itemize}
-\item This thesis will provide efficient implementations of
+\item We provide efficient implementations of
 transaction primitives to enable their general use.
 %%%%%%% MORE ACCURACY FOR THE ABOVE CLAIM?
 \item The transaction
@@ -160,16 +164,18 @@ primitives presented in this thesis can exploit optimistic
 concurrency, provide fault tolerance, and prevent delays by using
 non-blocking synchronization.
 \item 
-In this thesis I will show how transactions can be integrated into an
+I will show how transactions can be integrated into an
 object-oriented language and used for backtracking, exception
 handling, and concurrency control in new programs, in addition to
 expressing atomicity and fault-tolerance.
+\punt{
 \item In \charef{safe-transactify} I will describe a technique
 for ``transactifying'' existing lock-based code
 to identify or fix existing concurrency bugs.
+}
 \item I will present both software and hardware implementations of the
 transaction model.
-\item In contrast, this thesis will assume that transactions may be of
+\item Unlike some previous work, this thesis will assume that transactions may be of
 arbitrary size and duration, and that details of the implementation
 should not be exposed to the programmer of the system.
 \item In \charef{hybrid} I will show how a fast hardware implementation for
