@@ -1,5 +1,5 @@
 % -*- mode: latex; mode: auto-fill; mode: flyspell; -*-
-% $Id: v.tex,v 1.7 2005-11-03 18:44:17 cananian Exp $
+% $Id: v.tex,v 1.8 2006-11-14 15:34:19 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 \usepackage{pdffonts} % PDF-friendly fonts
@@ -8,7 +8,7 @@
 \newcommand{\reasoning}{\par\textbf{Reasoning:}\xspace}
 \author{C.~Scott~Ananian}
 \title{\vlang: Rebuilding Java}
-\date{\today \\ $ $Revision: 1.7 $ $}
+\date{\today \\ $ $Revision: 1.8 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -143,6 +143,10 @@ variations of it.
   This removes at least one level of needless indentation from most
   \vlang source files. (But this idea is not essential to the
   language; should this be a sample syntax extension?)
+\item From Java closures stuff: syntax like ``if (foo) \{ \ldots \}'' is
+  just an invocation of a ``function taking a closure'' --- in this case,
+  \texttt{void if(boolean test, void(void) closure)}.  Perhaps parameterized
+  types are just types with closures, too?
 \end{itemize}
 
 \section{Conclusion}
