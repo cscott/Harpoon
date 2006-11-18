@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.28 2006-10-19 22:11:02 cananian Exp $
+% $Id: phd-thesis.tex,v 1.29 2006-11-18 00:24:18 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{verbatim}
@@ -10,14 +10,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.28 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.29 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
-\newcommand{\subdate}{September XX, 2006}
+\newcommand{\subdate}{November XX, 2006}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.28 $ $}
+\date{\subdate \\ $ $Revision: 1.29 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -56,12 +56,24 @@ it.}{\textit{Alan Kay}}}
 
 \input{phd-htm}
 
+\chapter{Extending the hardware}\label{sec:htmplus}
+\epigraphhead[70]{\epigraph{%
+To create a new standard, it takes something that's not just a little
+bit different; it takes something that's really new and really
+captures people's imagination\ldots.}{\textit{Bill Gates}, 1984.}
+\input{phd-htmplus}
+
 \chapter{A hybrid transaction implementation}\label{sec:hybrid}
 \epigraphhead[70]{\epigraph{%
 Hybrids are often named by the portmanteau method, combining the names
 of the two parent species. For example, a zeedonk is a cross between a
 zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
+\epigraphhead[70]{\epigraph{%
+You have a hardware or a software problem.
+}{\textit{Service manual for Gestetner 3240}}
+
 % dual-path coding: publishable paper: try in hw, fall back to sftware
+
 \input{phd-hybrid}
 
 \chapter{Challenges}
