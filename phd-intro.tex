@@ -243,17 +243,30 @@ we need to resort to some global lock ordering to guard against
 deadlock.  Modularity must be broken in order to synthesize the
 appropriate composed function, which may be impossible.
 
-{\bf XXX Reference \cite{Rinard98} here.}
+In the Java programming language, Martin Rinard presented a partial
+solution using ``implicitly synchronized'' objects.  Lock acquistion
+for each module is exposed in the module's API as an executable
+``access declaration.''  Operation composition is accomplished by
+creating an access declaration for the composed operation which
+invokes the appropriate access declarations for the components.  The
+runtime system orders the lock acquisitions to prevent deadlock.  This
+process suffices for conservative mutual exclusion, but it is limited in its
+ability to express alternative operation orders which preserve
+atomicity of the composed operation while overlapping its components
+\cite[p14]{Rinard98}.
 
 Transactions do not suffer from the composability problem
-\cite{HarrisMaPeHe05}.
+\cite{HarrisMaPeHe05}.  Because transactions only specify the atomicity
+properties, not the locks required, the programmer's job is eased and
+implementations are free to order operations in any way which
+preserves atomicity.
 
 \subsubsection{Create a thread-safe double-ended queue}
 % publishable result: michael/scott, 1996 PPoPP
-In \cite{Herlihy05}, Herlihy suggests creating a thread-safe
-double-ended queue using locks as ``sadistic homework'' for computer
-science students.  Although double-ended queues are an uncomplicated
-basic data structure, creating a scalable locking protocol is a
+Herlihy suggests creating a thread-safe double-ended queue using locks
+as ``sadistic homework'' for computer science students \cite{Herlihy05}.
+Although double-ended queues are a simple data structure,
+creating a scalable locking protocol is a
 non-trivial exercise: one wants dequeue and enqueue operations to
 complete concurrently when the ends of the queue are ``far enough''
 apart, while safely handling the interference in the small-queue case.
@@ -570,9 +583,9 @@ an aborting transaction.
 \section{Finding transactions}\label{sec:auto}
 One of the difficulties of proposing a novel language feature is the
 lack of benchmarks for its evaluation.  Although there is no body of
-code yet using {\tt atomic} regions, there is a substantial body of
+code that uses {\tt atomic} regions, there is a substantial body of
 code which uses Java (locking) synchronization.  This thesis will
-utilize the Flex compiler to
+utilize the Flex compiler \cite{Flex} to
 substitute {\tt atomic} blocks (methods) for {\tt
   synchronized} blocks (methods) in order to evaluate the properties
 Java transactions are likely to have.  Note that the semantics are not
@@ -605,8 +618,7 @@ does not support this style of operation.
 The initial results of this thesis
 explore the implications of exposing the transaction
 mechanism to user-level code through a compiler.
-I compiled the SPECjvm98 benchmark suite with the FLEX Java compiler
-\cite{Flex},
+I compiled the SPECjvm98 benchmark suite with the FLEX Java compiler,
 modified to turn synchronized blocks and methods into transactions,
 in order to investigate the properties of the transactions in such
 ``automatically converted'' code.
@@ -758,5 +770,35 @@ that a factor of 4 increase in concurrency can be obtained
 by doing nothing more than converting locks to transactions.  Since
 the transactified applications may contain large transactions,
 proposed hardware support for transactions is inadequate.
+
+
+\section{Organization of Thesis}
+\note{XXX: fix me!}
+
+In the next chapter, I will present an efficient software
+implementation of transactions. This may be too slow in some circumstances.
+
+In Chapter XYZ, I will present hardware which enables very fast
+transactions.  These may not be capable enough, but the hardware is
+easy to build.
+
+In Chapter ABC, I will present extensions to the hardware which allow
+more capable transactions.  This may be the wrong approach.
+
+In Chapter DEF, I present an \defn{hybrid} transaction implementation,
+which builds on the strengths of simple hardware support, while
+allowing software fallback to support a robust and capable transaction
+mechanism.
+
+In the following chapter, we discuss some ways compilers can further
+optimize software and hybrid transaction systems.  These opportunities
+may not be available to pure-hardware implementations.
+
+In the next chapter, we discuss remaining challenges to the use of
+ubiquitous transactions for synchronization.
+
+Chapter ASD discusses related work, and our final chapter summarizes
+our findings and draws conclusions.
+
 
 % LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
