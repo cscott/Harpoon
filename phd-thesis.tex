@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.30 2006-11-19 02:54:24 cananian Exp $
+% $Id: phd-thesis.tex,v 1.31 2006-11-21 00:30:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{verbatim}
@@ -10,14 +10,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.30 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.31 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{November XX, 2006}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.30 $ $}
+\date{\subdate \\ $ $Revision: 1.31 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -78,6 +78,9 @@ You have a hardware or a software problem.
 
 \input{phd-hybrid}
 
+\chapter[Optimizations and type systems]{Compiler optimizations and type systems}
+\input{phd-opt}
+
 \chapter{Challenges}
 \input{phd-chall}
 
@@ -86,9 +89,6 @@ You have a hardware or a software problem.
 \input{phd-ext}
 
 }
-\chapter[Optimizations and type systems]{Compiler optimizations and type systems}
-\input{phd-opt}
-
 
 \chapter{Related work}\label{cha:related}
 \input{phd-related}
