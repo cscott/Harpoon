@@ -179,8 +179,8 @@ works around the disadvantages of mutual exclusion in some cases, but
 a single misplaced debugging statement can still force serialization.
 
 It is worth noting that modern interface hardware is often designed
-such that it works well with this approach.  For example, a 3d
-graphics or network card will take commands from or deliver input to a
+such that it works well with this approach.  For example, a GPU
+or network card will take commands from or deliver input to a
 buffer; a single operation is sufficient to hand over a buffer to
 the card to commence I/O.  This single I/O action may be made atomic
 with the transaction commit.
@@ -252,7 +252,7 @@ previous section.  Using memory allocation as an example of an OS
 request, transactions can be forbidden to allocate memory, required to
 take a lock, forced to preallocate all required memory,\footnote{A
 retry mechanism can be used to incrementally increase the
-preallocation until the transaction can successfully complete.}, or
+preallocation until the transaction can successfully complete.} or
 use a compensation mechanism to deallocate requested memory in case of
 abort.
 
