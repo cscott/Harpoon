@@ -18,7 +18,7 @@ software transaction system of this thesis.
 \subsection{Object-oriented vs. flat TM}
 This transaction system, unlike all current proposals
 \cite{HarrisFr03,HerlihyMo93}\note{Include more} (including the
-hardware system presented in \charef{hardimpl}), uses an
+hardware system presented in \charef{htm}), uses an
 ``object-oriented'' design.  Current research is focused on
 implementing a flat (transactional) memory abstraction in software,
 primarily because this solves some of the issues we will present in
@@ -622,14 +622,13 @@ added complexity.
 
 Of course, Chuang's algorithm is not lock free.
 The crucial operation is a rotation of a \emph{difference node} with the
-main body of the array.  Elsewhere we present a lock-free version of
-Chuang's algorithm~\cite{Ananian05}; for the purposes of the present paper we
-can obtain a trivial implementation using some
-existing small-transaction HTM.
-%% XXX
+main body of the array.  We will present a lock-free version of
+Chaung's algorithm later.  We will begin by
+reformulating transactions on objects in terms of concurrent
+operations on functional arrays.
 
-\subsection{A simple implementation of functional arrays}
-Our atomic method implementation will use \emph{functional arrays} as
+\subsection{Basic operations on functional arrays}
+Our large object support will use \emph{functional arrays} as
 a building block.  Functional arrays are \emph{persistent}; that is,
 after an element is updated both the new and the old contents of the
 array are available for use.  Since arrays are simply maps from
@@ -640,19 +639,20 @@ functional arrays.
 However, the distinguishing characteristic of an imperative array is its
 theoretical complexity: $O(1)$ access or update of any element.
 Implementing functional arrays with a functional balanced tree yields
-$O(\lg n)$ worst-case access or update.
-% We will address this
-% discrepancy in Section~\ref{sec:large-obj}.
+$O(\lg n)$ worst-case access or update.\footnote{We will return to
+consider operation complexity in \charef{large-obj}.}
 
 For concreteness, functional arrays have the following three
 operations defined:
 \begin{itemize}
-\item $\funcname{FA-Create}(n)$: Return an array of size $n$.  The contents of
-  the array are initialized to zero.
-\item $\funcname{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ which is
-  functionally identical to array $A_j$ except that $A_{j'}(i)=v$.
-  Array $A_j$ is not destroyed and can be accessed further.
-\item $\funcname{FA-Read}(A_j, i)$: Return $A_j(i)$.
+\item $\funcname{FA-Create}(n)$: Return an array $A$ of size $n$.  The
+  contents of the array are initialized to zero.
+\item $\funcname{FA-Update}(A, i, v)$: Return an array $A'$ which is
+  functionally identical to array $A$ except that
+  $\funcname{FA-Read}(A', i)=v$.
+  Array $A$ is not destroyed and can be accessed further.
+\item $\funcname{FA-Read}(A, i)$: Return $A(i)$ (that is, the
+  value of the $i$th element of array $A$).
 \end{itemize}
 We allow any of these operations to \emph{fail}.  Failed operations
 can be safely retried, as all operations are idempotent by definition.
@@ -661,9 +661,9 @@ For the moment, consider the following na{\"\i}ve implementation:
 \begin{itemize}
 \item $\funcname{FA-Create}(n)$: Return an ordinary imperative array of size
   $n$.
-\item $\funcname{FA-Update}(A_j, i, v)$: Create a new imperative array
-  $A_{j'}$ and copy the contents of $A_j$ to $A_{j'}$.  Return $A_{j'}$.
-\item $\funcname{FA-Read}(A_j, i)$: Return $A_j[i]$.
+\item $\funcname{FA-Update}(A, i, v)$: Create a new imperative array
+  $A'$ and copy the contents of $A$ to $A'$.  Set $A'[i]=v$. Return $A'$.
+\item $\funcname{FA-Read}(A, i)$: Return $A[i]$.
 \end{itemize}
 This implementation has $O(1)$ read and $O(n)$ update, so it matches
 the performance of imperative arrays only when $n=O(1)$.  We will
@@ -680,9 +680,9 @@ never mutated after they are created.
 \label{fig:single-o}
 \end{figure}
 Given a non-blocking implementation of functional arrays, we can
-construct an implementation of \atomic for single objects.  In
+construct a transaction implementation for single objects.  In
 this implementation, fields of at most one object may be referenced
-during the execution of the atomic method.
+during the execution of the transaction.
 
 We will consider the following two operations on objects:
 \begin{itemize}
@@ -699,10 +699,10 @@ field in the object.  Because the {\tt type} field is never changed
 after object creation, non-blocking implementations of operations on
 the {\tt type} field are trivial.
 
-As Figure~\ref{fig:single-o} shows, our single-object implementation
-of \atomic represents objects as a pair, combining {\tt type} and a
-reference to a functional array.  When not inside an atomic
-method, object reads and writes are implemented using the
+As Figure~\ref{fig:single-o} shows, our single-object transaction
+implementation represents objects as a pair, combining {\tt type} and a
+reference to a functional array.  When not inside a transaction,
+object reads and writes are implemented using the
 corresponding functional array operation, with the array reference in
 the object being updated appropriately:
 \begin{itemize}
@@ -713,22 +713,22 @@ the object being updated appropriately:
   $\funcname{FA-Update}(\fref{o}{fields}, \fref{f}{index}, v)$.
 \end{itemize}
 
-The interesting cases are reads and writes inside an atomic method.
-At entry to our atomic method which will access (only) object $o$, we
+The interesting cases are reads and writes inside a transaction.
+At entry to our transaction which will access (only) object $o$, we
 store \fref{o}{fields} in a local variable $u$.  We create another
 local variable $u'$ which we initialize to $u$.  Then our read and
 write operations are implemented as:
 \begin{itemize}
-\item $\funcname{ReadAtomic}(o, f)$:
+\item $\funcname{ReadT}(o, f)$:
   Return $\funcname{FA-Read}(u', \fref{f}{index})$.
-\item $\funcname{WriteAtomic}(o, f, v)$:
+\item $\funcname{WriteT}(o, f, v)$:
   Update variable $u'$ to the result of \linebreak
   $\funcname{FA-Update}(u', \fref{f}{index}, v)$.
 \end{itemize}
 
-At the end of the atomic method, we use Compare-And-Swap to atomically
+At the end of the transaction, we use Compare-And-Swap to atomically
 set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
-we back off and retry.
+we the transaction is aborted (we simply discard $u'$) and we retry.
 
 With our na{\"\i}ve ``small object'' functional arrays, this implementation is
 exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
@@ -736,7 +736,8 @@ Herlihy's protocol is rightly criticized for an excessive amount of
 copying.  We will address this with a better implementation of
 functional arrays in Section~\ref{sec:large-obj}.
 However, the restriction that only one object
-may be referenced within an atomic method is overly limiting.
+may be referenced within a transaction is overly limiting.  We will
+first fix this problem.
 
 \subsection{Extension to multiple objects}
 \begin{figure}[t]\centering
@@ -744,8 +745,8 @@ may be referenced within an atomic method is overly limiting.
 \caption[Data structures to support non-blocking multi-object
   concurrent operations.]{Data structures to support non-blocking multi-object
   concurrent operations.  Objects point to a linked list of versions,
-  which reference operation identifiers.  Versions created within the
-  same execution of an atomic method share the same operation
+  which reference transaction identifiers.  Versions created within the
+  same execution of a transaction share the same transaction
   identifier.  Version structure also contain pointers to functional
   arrays, which record the values for the fields of the object.
   If no modifications have been made to the object, multiple versions
@@ -774,7 +775,7 @@ retry:\\
 \>return $\funcname{FA-Read}(a, \fref{f}{index})$ \com{Do the read}\\
 end\\
 \\
-$\funcname{ReadAtomic}(o, f)$:\\
+$\funcname{ReadT}(o, f)$:\\
 begin\\
 \>$u \gets \fref{o}{versions}$\\
 \>if ($\var{oid} = \fref{u}{owner}$) \com{My OID should be first}\\
@@ -799,7 +800,7 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
-\caption{\funcname{Read} and \funcname{ReadAtomic} implementations for the
+\caption{\funcname{Read} and \funcname{ReadT} implementations for the
   multi-object protocol.}\label{fig:reads}
 \end{figure}
 
@@ -828,7 +829,7 @@ retry:\\
 \>goto retry\\
 end\\
 \\
-$\funcname{WriteAtomic}(o, f, v)$:\\
+$\funcname{WriteT}(o, f, v)$:\\
 begin\\
 \>$u  \gets \fref{o}{versions}$\\
 \>if ($oid = \fref{u}{owner}$) \com{My OID should be first}\\
@@ -852,54 +853,55 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
-\caption{\funcname{Write} and \funcname{WriteAtomic} implementations for the
+\caption{\funcname{Write} and \funcname{WriteT} implementations for the
   multi-object protocol.}\label{fig:writes}
 \end{figure}
 
-We now extend the implementation to allow the fields of any number of
-objects to be accessed during the atomic method.
+We extend the implementation to allow the fields of any number of
+objects to be accessed during the transaction.
 Figure~\ref{fig:multi-o} shows our new object representation.
 Objects consist of two slots, and the first represents the immutable
 {\tt type}, as before.  The second field, {\tt versions}, points to a
 linked list of {\tt Version} structures.  The {\tt Version} structures
 contain a pointer {\tt fields} to a functional array, and a pointer
-{\tt owner} to an \emph{operation identifier}.  The operation
+{\tt owner} to an \emph{transaction identifier}.  The transaction
 identifier contains a single field, {\tt status}, which can be set to
-one of three values: \textsl{COMPLETE}, \textsl{IN-PROGRESS}, or
-\textsl{DISCARDED}.  When the operation identifier is created, the
+one of three values: \textsl{COMMITTED}, \textsl{IN-PROGRESS}, or
+\textsl{ABORTED}.  When the transaction identifier is created, the
 status field is initialized to \textsl{IN-PROGRESS}, and it will be
-updated exactly once thereafter, to either \textsl{COMPLETE} or
-\textsl{DISCARDED}.  A \textsl{COMPLETE} operation identifier never
-later becomes \textsl{IN-PROGRESS} or \textsl{DISCARDED}, and
-a \textsl{DISCARDED} operation identifier never becomes
-\textsl{COMPLETE} or \textsl{IN-PROGRESS}.
+updated exactly once thereafter, to either \textsl{COMMITTED} or
+\textsl{ABORTED}.  A \textsl{COMMITTED} transaction identifier never
+later becomes \textsl{IN-PROGRESS} or \textsl{ABORTED}, and
+a \textsl{ABORTED} transaction identifier never becomes
+\textsl{COMMITTED} or \textsl{IN-PROGRESS}.
 
-We create an operation identifier when we begin or restart an atomic
-method and place it in a local variable \emph{oid}.  At the end of the
-atomic method, we use CAS to set \fref{\var{oid}}{status} to
-{\sl COMPLETE} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
-the atomic method has also executed successfully; otherwise
-$\fref{\var{oid}}{status}=\text{\sl DISCARDED}$ and we must
-back off and retry the atomic method.  All {\tt Version} structures
-created while in the atomic method will reference \emph{oid} in
+We create an transaction identifier when we begin or restart a transaction
+and place it in a local variable \emph{tid}.  At the end of the
+transaction, we use CAS to set \fref{\var{tid}}{status} to
+{\sl COMMITTED} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
+the transaction has also executed successfully; otherwise
+$\fref{\var{tid}}{status}=\text{\sl ABORTED}$ (which indicates that
+our transaction has been aborted) and we must back off and retry.
+All {\tt Version} structures
+created while in the transaction will reference \emph{tid} in
 in their {\tt owner} field.
 
 Semantically, the current field values for the object will be given by
 the first version in 
-the versions list whose operation identifier is {\sl COMPLETE}.
+the versions list whose transaction identifier is {\sl COMMITTED}.
 This allows us to link {\sl IN-PROGRESS} versions in at the head of
 multiple objects' versions lists and atomically change the values of
-all these objects by setting the one common operation identifier to
-{\sl COMPLETE}.  We only allow one {\sl IN-PROGRESS} version on the
+all these objects by setting the one common transaction identifier to
+{\sl COMMITTED}.  We only allow one {\sl IN-PROGRESS} version on the
 versions list, and it must be at the head, so
-Therefore, before we can link a new version at the head, we
-must ensure that every other version on the list is {\sl DISCARDED} or
-{\sl COMPLETE}.
+before we can link a new version at the head we
+must ensure that every other version on the list is {\sl ABORTED} or
+{\sl COMMITTED}.
 
-Since we will never look past the first {\sl COMPLETE} version in the
+Since we will never look past the first {\sl COMMITTED} version in the
 versions list, we can free all versions past that point.  In our
 presentation of the algorithm, we do this by explicitly setting the
-{\tt next} field of every {\sl COMPLETE} version we see to {\bf null};
+{\tt next} field of every {\sl COMMITTED} version we see to {\bf null};
 this allows the versions past that point to be garbage collected.
 An optimization would be to have the garbage collector do the list
 trimming for us when it does a collection.
@@ -907,30 +909,30 @@ trimming for us when it does a collection.
 % get caught with a null pointer from a version that just committed.
 
 We don't want to inadvertently chase the null {\tt next} pointer
-of a {\sl COMPLETE} version, so we always load the {\tt next}
+of a {\sl COMMITTED} version, so we always load the {\tt next}
 field of a version \emph{before} we load {\tt owner.status}.  Since
-the writes occur in the reverse order ({\sl COMPLETE} to
+the writes occur in the reverse order ({\sl COMMITTED} to
 {\tt owner.status}, then {\bf null} to {\tt next}) we have ensured that
-our {\tt next} pointer is valid whenever the status is not {\sl COMPLETE}.
+our {\tt next} pointer is valid whenever the status is not {\sl COMMITTED}.
 
-We begin an atomic method with \funcname{AtomicEntry} and attempt to
-complete an atomic method with \funcname{AtomicExit}.  They are defined as
+We begin an atomic method with \funcname{TransStart} and attempt to
+complete an atomic method with \funcname{TransEnd}.  They are defined as
 follows:
 \begin{itemize}
-\item $\funcname{AtomicEntry}$: create a new operation identifier, with
+\item $\funcname{TransStart}$: create a new transaction identifier, with
   its status initialized to {\sl IN-PROGRESS}.  Assign it to the
-  thread-local variable \var{oid}.
-\item $\funcname{AtomicExit}$:
+  thread-local variable \var{tid}.
+\item $\funcname{TransEnd}$:
   If
- $$\text{CAS}(\text{\sl IN-PROGRESS}, \text{\sl COMPLETE},
-             \addr{\fref{\var{oid}}{status}})$$
-  is successful, the atomic method as a whole has completed successfully,
+ $$\text{CAS}(\text{\sl IN-PROGRESS}, \text{\sl COMMITTED},
+             \addr{\fref{\var{tid}}{status}})$$
+  is successful, the transaction as a whole has completed successfully,
   and can be linearized at the location of the CAS.
-  Otherwise, the method has failed.  Back off and retry from
-  \funcname{AtomicEntry}.
+  Otherwise, the transaction has been aborted.  Back off and retry from
+  \funcname{TransStart}.
 \end{itemize}
-Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{AtomicRead},
-and \funcname{AtomicWrite} is presented in Figures~\ref{fig:reads} and
+Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{ReadT},
+and \funcname{WriteT} is presented in Figures~\ref{fig:reads} and
 \ref{fig:writes}.  In the absence of contention, all operations take
 constant time plus an invocation of \funcname{FA-Read} or
 \funcname{FA-Update}.
@@ -944,7 +946,7 @@ constant time plus an invocation of \funcname{FA-Read} or
 \end{figure}
 In this section we will present a lock-free implementation of functional
 arrays with $O(1)$ performance in the absence of contention.  This
-will complete our implementation of non-blocking \atomic methods for Java.
+will complete our implementation of non-blocking transactions for Java.
 
 There have been a number of proposed implementations of functional
 arrays, starting from the ``classical'' functional binary tree
@@ -1173,12 +1175,14 @@ using this six-step approach.
 %% unreachable from other threads until the operation is committed.
 %% We can add a field {\tt creator} to the {\tt Array} object which records what
 %% operation created that version.  If the {\tt creator} field of both
-%% $A$ and $B$ contains our own \var{oid} when we begin a rotate, we know
+%% $A$ and $B$ contains our own \var{tid} when we begin a rotate, we know
 %% that these versions are both thread local
 
 %% .. uh, no.  This doesn't work.
 
 %% % scales method of tagging fields.
 
+\subsection{Performance of functional array implementation}
 
+XXX: continue previous microbenchmarks, as function of object size.
 
