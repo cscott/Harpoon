@@ -1,4 +1,3 @@
-%\chapter{Related work}\label{cha:related}
 
 A number of researchers have been investigating transactional memory
 systems.  This thesis is the first to present a hybrid hardware/software
@@ -197,7 +196,7 @@ Consistency} (TCC)~\cite{HammondWoCh04} is also relevant to our work.
 TCC uses a broadcast bus to implement the transaction protocols,
 performing all the writes of a particular transaction in one atomic
 bus operation.  This strategy limits scalability, whereas both the UTM and
-LTM proposals in \charef{hardimpl}
+LTM proposals in \charef{htm}
 can employ scalable cache-consistency protocols to implement
 transactions.  TCC affirms the conclusion we draw from our own
 \figref{tr-sz-all}: most transactions are small, but some are very large.  TCC
@@ -261,7 +260,7 @@ concurrent non-transactional operations on locations involved in a
 transaction.  Java synchronization allows such concurrent operations,
 with semantics given by the Java memory model \cite{MansonPu02}.
 We support these operations safely using the mechanisms presented in
-\charef{softimpl}.
+\charef{stm}.
 
 Programmers will be reluctant to use transactions to synchronize their
 code when it results in their code running more slowly on the uniprocessor

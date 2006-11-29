@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.31 2006-11-21 00:30:00 cananian Exp $
+% $Id: phd-thesis.tex,v 1.32 2006-11-29 23:29:36 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{verbatim}
@@ -10,14 +10,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.31 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.32 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
 \newcommand{\subdate}{November XX, 2006}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.31 $ $}
+\date{\subdate \\ $ $Revision: 1.32 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -42,10 +42,10 @@
 %\section{Transactions and transactional memory}
 \input{phd-intro}
 
-\chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:softimpl}
+\chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:stm}
 \input{phd-stm}
 
-\chapter[Transactions in hardware]{Transactions in hardware: Unbounded Transactional Memory}\label{sec:hardimpl}
+\chapter[Transactions in hardware]{Transactions in hardware: Unbounded Transactional Memory}\label{sec:htm}
 \epigraphhead[70]{\epigraph{%
 People who are really serious about software should make their own hardware.
 
@@ -81,7 +81,7 @@ You have a hardware or a software problem.
 \chapter[Optimizations and type systems]{Compiler optimizations and type systems}
 \input{phd-opt}
 
-\chapter{Challenges}
+\chapter{Challenges}\label{sec:chall}
 \input{phd-chall}
 
 \punt{
@@ -90,7 +90,7 @@ You have a hardware or a software problem.
 
 }
 
-\chapter{Related work}\label{cha:related}
+\chapter{Related work}\label{sec:related}
 \input{phd-related}
 
 \chapter{Conclusion}
