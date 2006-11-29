@@ -775,31 +775,42 @@ proposed hardware support for transactions is inadequate.
 \section{Organization of Thesis}
 \note{XXX: fix me!}
 
-In the next chapter, I will present an efficient software
-implementation of transactions. This may be too slow in some circumstances.
+% \charef{stm}
+In the next chapter, I will present an efficient software-only
+implementation of transactions.  Software-only transactions can be
+implemented on current hardware, and can easily accomodate many
+different transaction and nesting models.  Software transactions excel
+at certain long-lived transactions, where the constant overhead is
+small compared to the transaction execution time.
 
-In Chapter XYZ, I will present hardware which enables very fast
-transactions.  These may not be capable enough, but the hardware is
-easy to build.
+In \charef{htm}, I will present hardware which enables very fast
+short transactions.  The transaction model is more limited, but short
+committing transactions may execute with no overhead.  The additional
+hardware is small and easily added to current processor and memory
+system designs.
 
-In Chapter ABC, I will present extensions to the hardware which allow
-more capable transactions.  This may be the wrong approach.
+In \charef{htmplus}, I will present extensions to the hardware which allow
+more capable virtualized transactions.  These extensions address the
+major limitations of the scheme presented in \charef{htm}, but the
+required hardware is more complicated.  Further, we must still chose
+particular solutions to open problems in transactional memory systems
+(for example, nesting); it may not be desirable to hardwire specific
+choices before the community has more experience with the
+transactional approach to writing software.
 
-In Chapter DEF, I present an \defn{hybrid} transaction implementation,
+In \charef{hybrid}, I present an \defn{hybrid} transaction implementation,
 which builds on the strengths of simple hardware support, while
 allowing software fallback to support a robust and capable transaction
-mechanism.
-
+mechanism.  Unlike the extended hardware scheme, the transaction model
+is still easy to change and update; the hardware primarily supports
+fast small transactions and conflict checking in the common case.
 In the following chapter, we discuss some ways compilers can further
 optimize software and hybrid transaction systems.  These opportunities
 may not be available to pure-hardware implementations.
 
-In the next chapter, we discuss remaining challenges to the use of
+In \charef{chall}, we discuss remaining challenges to the use of
 ubiquitous transactions for synchronization, and present some ideas
-toward solutions.
-
-Chapter ASD discusses related work, and our final chapter summarizes
-our findings and draws conclusions.
-
+toward solutions. \charef{related} discusses related work, and our
+final chapter summarizes our findings and draws conclusions.
 
 % LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
