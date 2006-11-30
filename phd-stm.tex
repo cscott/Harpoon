@@ -1,19 +1,21 @@
-In this chapter we will specifically describe the implementation of
-our software transaction system.  We will first outline the design
-properties of the system, using quantitative data to validate our
-goals.  Then we will formally describe an implementation which meets those
-design goals, using the modelling language SPIN for concreteness.  We
+In this chapter I will specifically describe the implementation of
+my software transaction system.  I will first outline the design
+properties of the system, using quantitative data to validate my
+goals.  Then I will formally describe an implementation which meets those
+design goals, using the modelling language SPIN for concreteness.  I
 will evaluate the performance of the basic implementation, and point
 out some deficiencies.  By recasting the basic implementation as a
-``small object protocol'', we will show how to extend it to a ``large
+``small object protocol'', I will show how to extend it to a ``large
 object protocol'', in the process addressing these performance
 problems.
 
 \section{Designing efficient transactions}\label{sec:efficient}
 
 In this section I briefly describe some desired properties of the
-software transaction system of this thesis.
-\note{Work on this transition.}
+software transaction system of this thesis.  Where possible I will
+justify these desiderata using quantitative data obtained from
+analyses of the SpecJVM98 benchmarks, which I implemented using the
+Flex Java compiler framework.
 
 \subsection{Object-oriented vs. flat TM}
 This transaction system, unlike all current proposals
@@ -21,7 +23,7 @@ This transaction system, unlike all current proposals
 hardware system presented in \charef{htm}), uses an
 ``object-oriented'' design.  Current research is focused on
 implementing a flat (transactional) memory abstraction in software,
-primarily because this solves some of the issues we will present in
+primarily because this solves some of the issues I will present in
 \charef{largeobj}.  However, the object-oriented approach offers
 several benefits:
 \begin{description}
@@ -95,8 +97,8 @@ reserving the extra allocation effort for transactional writes.
 \note{Missing: performance numbers for adding check.  Use ``no trans''
 version of transaction app and add check into the access functions.}
 \note{No: use microbenchmark from later section.}
-We would like non-transactional code to execute with minimal overhead,
-however, transactions should still appear atomic to non-transactional
+I would like non-transactional code to execute with minimal overhead,
+but transactions should still appear atomic to non-transactional
 code.  My basic mechanism is loosely based on the
 distributed shared memory implementation of Scales and Gharachorloo
 \cite{ScalesGh97}.  I pick a special ``flag'' value, and
@@ -112,13 +114,13 @@ another design goal of the system.  This eases ``transactification''
 of legacy code (but see \charef{semantic}!).
 
 \section{Specifying the basic mechanism}
-We now present an algorithm which has these desired properties.
-Our algorithms will be completely non-blocking, which allows good
+I now present an algorithm which has these desired properties.
+My algorithms will be completely non-blocking, which allows good
 scaling and proper fault-tolerant behavior: one faulty or slow
 processor cannot hold up the remaining good processors.
 
-We will implement the synchronization required by our algorithm using
-load-linked/store-conditional instructions.  We require a particular
+I will implement the synchronization required by my algorithm using
+load-linked/store-conditional instructions.  I require a particular
 variant of these instructions which allows the location of the
 load-linked to be different from the target of the store-conditional:
 this variant is supported on the PowerPC processor family, although it
@@ -127,9 +129,9 @@ capability is essential to allow us to keep a finger on one location
 while modifying another: a poor man's ``Double Compare And Swap''
 instruction.
 
-We will describe our algorithms in the Promela modeling language
+I will describe my algorithms in the Promela modeling language
 \cite{Holzmann03},
-which we used to allow mechanical model checking of the race-safety
+which I used to allow mechanical model checking of the race-safety
 and correctness of the design.  Portions of the model have been
 abbreviated for this presentation;  the full Promela model is
 given in \appref{full-model}, along with a brief primer on Promela
@@ -146,7 +148,7 @@ syntax and semantics.
   {\it versions} a linked list of version objects.  If an object field
   is \FLAG, then the value for the field is obtained from the
   appropriate linked version object.}
-\figref{tr-multi-obj} illustrates the basic data structures of our
+\figref{tr-multi-obj} illustrates the basic data structures of my
 software transaction implementation.  Objects are extended with two
 additional fields.  The first field, {\tt versions}, points to a
 singly-linked list of object versions.  Each one contains field values
@@ -163,7 +165,7 @@ non-transactionally.
 
 There is a special flag value, here denoted by \FLAG.  It should be
 an uncommon value, i.e. not a small positive or negative integer
-constant, nor zero.  In our implementation, we have chosen the byte
+constant, nor zero.  In my implementation, I have chosen the byte
 \texttt{0xCA} to be our flag value, repeated as necessary to fill out
 the width of the appropriate type.
 The semantic value of an object field is the value in the original
@@ -206,14 +208,14 @@ typedef TransID {
 \figref{promdecl} declares these object structures in Promela.
 
 \subsection{Operations}%ops
-We support transactional read/write and non-transactional read/write
+I support transactional read/write and non-transactional read/write
 as well as transaction begin, transaction abort, and transaction
 commit.  Transaction begin simply involves the creation of a new
 transaction identifier object.  Transaction commit and abort are simply
 compare-and-swap operations which atomically set the transaction object's {\tt
   status} field appropriately if and only if it was previously in the
 WAITING state.
-The simplicity of commit and abort are appealing: our algorithm
+The simplicity of commit and abort are appealing: my algorithm
 requires no complicated processing, delay, roll-back or validate
 procedure to commit or abort a transaction.
 
@@ -221,10 +223,10 @@ Note that we could support non-transactional read and write (that is,
 reads and writes which take place outside of any transaction) by
 creating a new very short transaction which encloses only the single
 read or write.  Non-transactional accesses to objects can be very
-frequent, however, so we provide more efficient implementations with
+frequent, however, so I provide more efficient implementations with
 the same semantics.
 
-We will present the operations one-by-one.
+I will present the operations one-by-one.
 
 \subsubsection{Non-transactional read}
 
@@ -240,7 +242,7 @@ field really is \FLAG.  We pass the {\tt kill\_writers} constant
 to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
-All possible races are confined to the copy-back procedure, which we
+All possible races are confined to the copy-back procedure, which I
 will describe on page \pageref{sec:copyback}.
 
 \begin{figure}
@@ -296,7 +298,7 @@ Promela.
 \subsubsection{Non-transactional write}
 The {\tt WriteNT} function does a non-transactional write of new value $nval$
 to field $f$ of object $o$.  For correctness, we need to ensure that
-the reader list is empty before we do the write.  We implement this
+the reader list is empty before we do the write.  I implement this
 with a load-linked/store-conditional pair, which is modelled in
 Promela slightly differently, ensuring that our write only succeeds
 so long as the reader list remains empty.\footnote{Note that a
@@ -659,16 +661,16 @@ FLAGS'' section.
   smaller than a given size.}
 \label{fig:tr-w}%
 \end{figure}%
-Our software transactions implementation clones objects on
+My software transactions implementation clones objects on
 transactional writes, so that the previous state of the object can be
 restored if the transaction aborts.  \figref{tr-w} shows the object
 size distribution of transactional writes for SPECjvm98, and
 indicates that over 10\% of writes may be to large objects.
 Obviously the copying cost would be prohibitive.
 
-Our solution is to represent large objects as \defn{functional
+My solution is to represent large objects as \defn{functional
   arrays}.  O'Neill and Burton \cite{ONeillBu97} give a fairly
-inclusive overview of such algorithms; we've chosen Tyng-Ruey Chuang's
+inclusive overview of such algorithms; I've chosen Tyng-Ruey Chuang's
 version \cite{Chuang94} of \emph{shallow binding}, which uses
 randomized cuts to the version tree to limit the cost of a read to
 $O(n)$ in the worst case.  Single-threaded accesses to the array are
@@ -679,13 +681,13 @@ added complexity.
 
 Of course, Chuang's algorithm is not lock free.
 The crucial operation is a rotation of a \emph{difference node} with the
-main body of the array.  We will present a lock-free version of
-Chaung's algorithm later.  We will begin by
+main body of the array.  I will present a lock-free version of
+Chaung's algorithm later.  I will begin by
 reformulating transactions on objects in terms of concurrent
 operations on functional arrays.
 
 \subsection{Basic operations on functional arrays}
-Our large object support will use \emph{functional arrays} as
+My large object support will use \emph{functional arrays} as
 a building block.  Functional arrays are \emph{persistent}; that is,
 after an element is updated both the new and the old contents of the
 array are available for use.  Since arrays are simply maps from
@@ -696,7 +698,7 @@ functional arrays.
 However, the distinguishing characteristic of an imperative array is its
 theoretical complexity: $O(1)$ access or update of any element.
 Implementing functional arrays with a functional balanced tree yields
-$O(\lg n)$ worst-case access or update.\footnote{We will return to
+$O(\lg n)$ worst-case access or update.\footnote{I will return to
 consider operation complexity in \charef{large-obj}.}
 
 For concreteness, functional arrays have the following three
@@ -723,7 +725,7 @@ For the moment, consider the following na{\"\i}ve implementation:
 \item $\funcname{FA-Read}(A, i)$: Return $A[i]$.
 \end{itemize}
 This implementation has $O(1)$ read and $O(n)$ update, so it matches
-the performance of imperative arrays only when $n=O(1)$.  We will
+the performance of imperative arrays only when $n=O(1)$.  I will
 therefore call these \emph{small object functional arrays}.  Operations
 in this implementation never fail.  Every operation is non-blocking
 and no synchronization is necessary, since the imperative arrays are
@@ -741,7 +743,7 @@ construct a transaction implementation for single objects.  In
 this implementation, fields of at most one object may be referenced
 during the execution of the transaction.
 
-We will consider the following two operations on objects:
+I will consider the following two operations on objects:
 \begin{itemize}
 \item $\funcname{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
   there is a constant mapping function which given a field name
@@ -790,10 +792,10 @@ we the transaction is aborted (we simply discard $u'$) and we retry.
 With our na{\"\i}ve ``small object'' functional arrays, this implementation is
 exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
 Herlihy's protocol is rightly criticized for an excessive amount of
-copying.  We will address this with a better implementation of
+copying.  I will address this with a better implementation of
 functional arrays in Section~\ref{sec:large-obj}.
 However, the restriction that only one object
-may be referenced within a transaction is overly limiting.  We will
+may be referenced within a transaction is overly limiting.  I will
 first fix this problem.
 
 \subsection{Extension to multiple objects}
@@ -914,7 +916,7 @@ end\\
   multi-object protocol.}\label{fig:writes}
 \end{figure}
 
-We extend the implementation to allow the fields of any number of
+I extend the implementation to allow the fields of any number of
 objects to be accessed during the transaction.
 Figure~\ref{fig:multi-o} shows our new object representation.
 Objects consist of two slots, and the first represents the immutable
@@ -1001,7 +1003,7 @@ constant time plus an invocation of \funcname{FA-Read} or
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
 \end{figure}
-In this section we will present a lock-free implementation of functional
+In this section I will present a lock-free implementation of functional
 arrays with $O(1)$ performance in the absence of contention.  This
 will complete our implementation of non-blocking transactions for Java.
 
@@ -1042,7 +1044,7 @@ accesses are $O(1)$.
 Our use of functional arrays is single-threaded in the common case,
 when transactions do not abort.  Chuang's scheme is attractive because
 it limits the worst-case cost of an abort, with very little added
-complexity.   In this section we will present a lock-free version of
+complexity.   In this section I will present a lock-free version of
 Chuang's randomized algorithm.
 
 In shallow binding, only one version of the functional array (the
