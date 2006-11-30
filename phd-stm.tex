@@ -172,6 +172,36 @@ in a field; this is handled by creating a fully-committed version
 attached to the object and storing \FLAG in that version as well as in
 the object field.
 
+\begin{figure}
+\sis\fontsize{9}{10}
+\begin{verbatim}
+#define FLAG 202 /* special value to represent 'not here' */
+
+typedef Object {
+  byte version;
+  byte readerList; /* we do LL and CAS operations on this field */
+  pid fieldLock[NUM_FIELDS]; /* we do LL operations on fields */
+  byte field[NUM_FIELDS];
+};
+typedef Versi0n { /* 'Version' misspelled because SPIN #define's it. */
+  byte owner;
+  byte next;
+  byte field[NUM_FIELDS];
+};
+typedef ReaderList {
+  byte transid;
+  byte next;
+};
+mtype = { waiting, committed, aborted };
+typedef TransID {
+  mtype status;
+};
+\end{verbatim}
+\caption{Declaring objects with version lists in Promela.}\label{fig:promdecl}
+\end{figure}
+
+\figref{promdecl} declares these object structures in Promela.
+
 \subsection{Operations}%ops
 We support transactional read/write and non-transactional read/write
 as well as transaction begin, transaction abort, and transaction
@@ -184,12 +214,19 @@ The simplicity of commit and abort are appealing: our algorithm
 requires no complicated processing, delay, roll-back or validate
 procedure to commit or abort a transaction.
 
-We will present the other operations one-by-one.
+Note that we could support non-transactional read and write (that is,
+reads and writes which take place outside of any transaction) by
+creating a new very short transaction which encloses only the single
+read or write.  Non-transactional accesses to objects can be very
+frequent, however, so we provide more efficient implementations with
+the same semantics.
 
-\subsubsection{Read}
+We will present the operations one-by-one.
+
+\subsubsection{Non-transactional read}
 
 The {\tt ReadNT} function does a non-transactional read of field $f$ from
-object $o$, putting the result in $v$.
+object $o$, putting the result in $v$.  
 In the common case, the only overhead is to check that
 the read value is not \FLAG.  However, if the value read \emph{is}
 \FLAG, we copy back the field value 
@@ -200,8 +237,10 @@ field really is \FLAG.  We pass the {\tt kill\_writers} constant
 to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
-All possible races are confined to the copy-back procedure.
+All possible races are confined to the copy-back procedure, which we
+will describe on page \pageref{sec:copyback}.
 
+\begin{figure}
 \begin{inlinecode}
 inline readNT(o, f, v) {
   do
@@ -219,31 +258,7 @@ inline readNT(o, f, v) {
      fi
   od
 }
-\end{inlinecode}
 
-\subsubsection{Write}
-The {\tt WriteNT} function does a non-transactional write of new value $nval$
-to field $f$ of object $o$.  For correctness, we need to ensure that
-the reader list is empty before we do the write.  We implement this
-with a load-linked/store-conditional pair, which is modelled in
-Promela slightly differently, ensuring that our write only succeeds
-so long as the reader list remains empty.\footnote{Note that a
-  standard CAS would not suffice, as the load-linked targets a
-  different location than the store-conditional.}
-If it is not empty, we
-call the copy-back procedure (as in {\tt readNT}), passing the
-constant {\tt kill\_all} to indicate that both transactional readers
-and writers should be aborted during the copy-back.  The copy-back
-procedure leaves the reader list empty.
-
-If the value to be written is actually the \FLAG value, things get a
-little bit trickier.  This case does not occur often, and so the
-simplest correct implementation is to treat this non-transactional
-write as a short transactional write, creating a new transaction for
-this one write, and attempting to commit it immediately after the
-write.  This is slow, but adequate for this uncommon case.
-
-\begin{inlinecode}
 inline writeNT(o, f, nval) {
   if
   :: (nval != FLAG) ->
@@ -269,8 +284,38 @@ inline writeNT(o, f, nval) {
   fi;
 }
 \end{inlinecode}
+\caption{Promela specification of non-transactional read and write operations.}
+\label{fig:promrwnt}
+\end{figure}
+The top of \figref{promrwnt} specifies the non-transactional read operation in
+Promela.
 
-\subsubsection{Field Copy-Back}
+\subsubsection{Non-transactional write}
+The {\tt WriteNT} function does a non-transactional write of new value $nval$
+to field $f$ of object $o$.  For correctness, we need to ensure that
+the reader list is empty before we do the write.  We implement this
+with a load-linked/store-conditional pair, which is modelled in
+Promela slightly differently, ensuring that our write only succeeds
+so long as the reader list remains empty.\footnote{Note that a
+  standard CAS would not suffice, as the load-linked targets a
+  different location than the store-conditional.}
+If it is not empty, we
+call the copy-back procedure (as in {\tt readNT}), passing the
+constant {\tt kill\_all} to indicate that both transactional readers
+and writers should be aborted during the copy-back.  The copy-back
+procedure leaves the reader list empty.
+
+If the value to be written is actually the \FLAG value, things get a
+little bit trickier.  This case does not occur often, and so the
+simplest correct implementation is to treat this non-transactional
+write as a short transactional write, creating a new transaction for
+this one write, and attempting to commit it immediately after the
+write.  This is slow, but adequate for this uncommon case.
+
+The bottom of \figref{promrwnt} specifies the non-transactional
+write operation in Promela.
+
+\subsubsection{Field Copy-Back}\label{sec:copyback}
 \begin{figure}
 \sis\fontsize{6.5}{7.4}
 \begin{verbatim}
@@ -384,6 +429,7 @@ head of the version list) and read the appropriate value from that
 version.  Note that the initial read-and-check can be omitted if we
 know that we have already written to this field inside this transaction.
 
+\begin{figure}
 \begin{inlinecode}
 inline readT(tid, o, f, ver, result) {
   do
@@ -412,7 +458,17 @@ inline readT(tid, o, f, ver, result) {
      fi
   od
 }
+
+inline writeT(ver, f, nval) {
+  /* easy enough: */
+  version[ver].field[f] = nval;
+}
 \end{inlinecode}
+\caption{Promela specification of transactional read and write operations.}
+\label{fig:promrwt}
+\end{figure}
+The top of \figref{promrwt} specifies the transactional read operation in
+Promela.
 
 \begin{figure}
 \sis\fontsize{6.5}{8}
@@ -574,16 +630,11 @@ field has not already been set to \FLAG behind our backs by another
 copy-through.  The {\tt checkWriteField} routine is shown in
 \figref{copythrough}.
 
-Then, for each write, we simply write to the identified version.
-\begin{inlinecode}
-inline writeT(ver, f, nval) {
-  /* easy enough: */
-  version[ver].field[f] = nval;
-}
-\end{inlinecode}
+Then, for each write, we simply write to the identified version, as
+shown at the bottom of \figref{promrwt}.
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Performance of the basic implementation}
 \note{Fix me}
 
