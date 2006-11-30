@@ -79,6 +79,8 @@ program & memory ops    & stores \% \\\hline
 \label{fig:writepercent}
 \end{figure}
 \subsection{Designing for reads vs. writes}
+I also measured the number and types of reads and writes for the
+SpecJVM98 benchmarks.
 \figref{writepercent} shows that transactional reads typically
 outnumber transactional writes by at least 4 to 1; in some cases reads
 outnumber writes by over 100 to 1.  It is worthwhile, therefore, to
@@ -92,6 +94,7 @@ reserving the extra allocation effort for transactional writes.
 
 \note{Missing: performance numbers for adding check.  Use ``no trans''
 version of transaction app and add check into the access functions.}
+\note{No: use microbenchmark from later section.}
 We would like non-transactional code to execute with minimal overhead,
 however, transactions should still appear atomic to non-transactional
 code.  My basic mechanism is loosely based on the
@@ -642,7 +645,10 @@ XXX: microbenchmarks showing basic performance.
 
 XXX: microbenchmark showing improving performance with transaction
 length.  Ideally, contrast this with hardware performance?
-%% XXX
+
+XXX: also benchmark the added read check, for ``The big idea, waving
+FLAGS'' section.
+
 
 \section{Arrays and large objects}\label{sec:largeobj}
 \begin{figure}
