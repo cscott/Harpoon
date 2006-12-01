@@ -202,7 +202,11 @@ typedef TransID {
   mtype status;
 };
 \end{verbatim}
-\caption{Declaring objects with version lists in Promela.}\label{fig:promdecl}
+\caption{Declaring objects with version lists in Promela.  Note that
+  we are using the \texttt{byte} datatype to encode pointers.
+  The \texttt{fieldLock} field assists in the implementation of the
+  load-linked/store-conditional pair of operations in Promela.}
+\label{fig:promdecl}
 \end{figure}
 
 \figref{promdecl} declares these object structures in Promela.
