@@ -4,7 +4,7 @@
 #define NUM_FIELDS 5
 #define REPETITIONS 1000000000
 
-typedef int field_t;
+typedef int32_t field_t;
 
 struct oobj {
     struct version *version;
@@ -47,7 +47,8 @@ static inline field_t read(struct transid *tid, struct oobj *obj, int idx) {
 void writeT(struct transid *tid, struct oobj *obj, int idx, field_t val) { assert(0); }
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
     if (__builtin_expect(val==0xCACACACA, 0)) writeT(tid,obj,idx,val);
-    else obj->field[idx] = val;
+    else if (__builtin_expect(NULL == LL(&(obj->readerList)), 1))
+      SC(&(obj->field[idx]), val);
 }
 #else /* base case */
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
