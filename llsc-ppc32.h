@@ -10,13 +10,14 @@ static inline int32_t load_linked(volatile int32_t *ptr) {
   __asm__ volatile ("lwarx %0,0,%1" : "=r"(result) : "r"(ptr));
   return result;
 }
+/* this can/ought to be done so we branch only iff we fail. */
 static inline int store_conditional(volatile int32_t *ptr, int32_t val) {
   int result;
   __asm__ ("\
 	stwcx. %2,0,%1\n\
 	li %0,0\n\
 	bne- 0f\n\
-	addi %0,1\n\
+	li %0,1\n\
 0:\n\
 " : "=r"(result) : "r"(ptr), "r"(val) : "cr0", "memory");
   return result;
@@ -33,7 +34,7 @@ static inline int store_conditional_double(volatile int64_t *ptr, int64_t val){
 	stdcx. %2,0,%1\n\
 	li %0,0\n\
 	bne- 0f\n\
-	addi %0,1\n\
+	li %0,1\n\
 0:\n\
 " : "=r"(result) : "r"(ptr), "r"(val) : "cr0", "memory");
   return result;
