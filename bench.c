@@ -1,5 +1,11 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
+#ifdef __POWERPC__
+# include "llsc-ppc32.h"
+#else
+# include "llsc-unimpl.h"
+#endif
 
 #define NUM_FIELDS 5
 #define REPETITIONS 1000000000
