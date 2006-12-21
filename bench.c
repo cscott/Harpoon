@@ -1,7 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
-#ifdef __POWERPC__
+#include <stdio.h>
+#ifdef _ARCH_PPC
 # include "llsc-ppc32.h"
 #else
 # include "llsc-unimpl.h"
@@ -52,9 +53,14 @@ static inline field_t read(struct transid *tid, struct oobj *obj, int idx) {
 #ifdef WCHECK
 void writeT(struct transid *tid, struct oobj *obj, int idx, field_t val) { assert(0); }
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
-    if (__builtin_expect(val==0xCACACACA, 0)) writeT(tid,obj,idx,val);
-    else if (__builtin_expect(NULL == LL(&(obj->readerList)), 1))
-      SC(&(obj->field[idx]), val);
+    if (__builtin_expect(val==0xCACACACA, 0) ||
+	__builtin_expect(NULL != LL(&(obj->readerList)), 0))
+      writeT(tid,obj,idx,val);
+    else if (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0))
+      /* XXX: SC failure is reasonably common.  Recode this inner loop 
+       * (not including val check: just the LL, compare, SC, and loop)
+       * in assembly. */
+      printf("%d\n", (int)val);
 }
 #else /* base case */
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
