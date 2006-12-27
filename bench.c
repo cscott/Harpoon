@@ -16,7 +16,7 @@ typedef int32_t field_t;
 
 struct oobj {
     struct version *version;
-    struct readerList *readerList;
+    struct readerList * volatile readerList;
     volatile field_t field[NUM_FIELDS];
 };
 struct version {
@@ -56,12 +56,30 @@ void writeT(struct transid *tid, struct oobj *obj, int idx, field_t val) { asser
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
     if (__builtin_expect(val==FLAG, 0))
 	writeT(tid,obj,idx,val); // not quite right
-    else do { // XXX: this loop can be tighter in assembly
-	if (__builtin_expect(NULL != LL(&(obj->readerList)), 0)) {
-	    writeT(tid,obj,idx,val); // not quite right
-	    break;
-	}
-    } while (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0));
+    else {
+#if defined(_ARCH_PPC) && !defined(UNOPT)
+	struct readerList *rl;
+	__asm__ ("0:\n\
+                  lwarx %[tmp],0,%[rlt]\n\
+                  cmpwi %[tmp],0\n\
+                  beq+ 1f\n\
+                  b . # xxx: branch to handler\n\
+1:                stwcx. %[val],0,%[fld]\n\
+                  bne- 0b\n\
+2:\n" :
+		 [tmp] "=&r"(rl), "=m" (obj->field[idx]) :
+		 [fld] "r"(&(obj->field[idx])), [val] "r"(val),
+		 [rlt] "r"(&(obj->readerList)), "m" (obj->readerList) :
+		 "cr0");
+#else /* unoptimized version */
+	do { // XXX: this loop can be tighter in assembly
+	    if (__builtin_expect(NULL != LL(&(obj->readerList)), 0)) {
+		writeT(tid,obj,idx,val); // not quite right
+		break;
+	    }
+	} while (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0));
+#endif
+    }
 }
 #else /* base case */
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
