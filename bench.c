@@ -10,6 +10,7 @@
 
 #define NUM_FIELDS 5
 #define REPETITIONS 1000000000
+#define FLAG 0xFFFFCACA
 
 typedef int32_t field_t;
 
@@ -40,7 +41,7 @@ field_t readT(struct transid *tid, struct oobj *obj, int idx) { assert(0); }
 /* simple check-before-read/write */
 static inline field_t read(struct transid *tid, struct oobj *obj, int idx) {
     field_t val = obj->field[idx];
-    if (__builtin_expect(val==0xCACACACA, 0)) return readT(tid,obj,idx);
+    if (__builtin_expect(val==FLAG, 0)) return readT(tid,obj,idx);
     else return val;
 }
 #else /* base case */
@@ -53,7 +54,7 @@ static inline field_t read(struct transid *tid, struct oobj *obj, int idx) {
 #ifdef WCHECK
 void writeT(struct transid *tid, struct oobj *obj, int idx, field_t val) { assert(0); }
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
-    if (__builtin_expect(val==0xCACACACA, 0) ||
+    if (__builtin_expect(val==FLAG, 0) ||
 	__builtin_expect(NULL != LL(&(obj->readerList)), 0))
       writeT(tid,obj,idx,val);
     else if (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0))
