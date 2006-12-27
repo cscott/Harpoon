@@ -73,3 +73,13 @@ RCHECK 8.16
 WCHECK 19.36
 RWCHECK 21.34
 --- Run complete ---
+
+--- Run started: Wed Dec 27 15:44:39 EST 2006
+/* hand-coded loop does RWCHECK, renamed RWCHECKOPT. */
+BASE 7.14
+RCHECK 8.17
+WCHECK 20.40
+RWCHECK 21.42
+RWCHECKOPT 20.37
+--- Run complete ---
+

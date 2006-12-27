@@ -1,4 +1,4 @@
-VAR=BASE RCHECK WCHECK RWCHECK
+VAR=BASE RCHECK WCHECK RWCHECK RWCHECKOPT
 
 all: $(foreach v,$(VAR),bench-$(v).s bench-$(v))
 
