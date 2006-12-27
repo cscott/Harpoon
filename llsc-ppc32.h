@@ -7,19 +7,20 @@
 
 static inline int32_t load_linked(volatile int32_t *ptr) {
   uint32_t result;
-  __asm__ volatile ("lwarx %0,0,%1" : "=r"(result) : "r"(ptr));
+  __asm__ volatile ("lwarx %[result],0,%[ptr]" :
+                    [result] "=r"(result) : [ptr] "r"(ptr), "m"(*ptr));
   return result;
 }
 /* this can/ought to be done so we branch only iff we fail. */
 static inline int store_conditional(volatile int32_t *ptr, int32_t val) {
   int result;
-  __asm__ ("\
-	stwcx. %2,0,%1\n\
-	li %0,0\n\
+  __asm__ volatile ("\
+	stwcx. %[val],0,%[ptr]\n\
+	li %[result],0\n\
 	bne- 0f\n\
-	li %0,1\n\
+	li %[result],1\n\
 0:\n\
-" : "=r"(result) : "r"(ptr), "r"(val) : "cr0", "memory");
+" : [result] "=r"(result), "=m"(*ptr) : [ptr] "r"(ptr), [val] "r"(val) : "cr0");
   return result;
 }
 

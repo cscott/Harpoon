@@ -54,14 +54,14 @@ static inline field_t read(struct transid *tid, struct oobj *obj, int idx) {
 #ifdef WCHECK
 void writeT(struct transid *tid, struct oobj *obj, int idx, field_t val) { assert(0); }
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
-    if (__builtin_expect(val==FLAG, 0) ||
-	__builtin_expect(NULL != LL(&(obj->readerList)), 0))
-      writeT(tid,obj,idx,val);
-    else if (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0))
-      /* XXX: SC failure is reasonably common.  Recode this inner loop 
-       * (not including val check: just the LL, compare, SC, and loop)
-       * in assembly. */
-      printf("%d\n", (int)val);
+    if (__builtin_expect(val==FLAG, 0))
+	writeT(tid,obj,idx,val); // not quite right
+    else do { // XXX: this loop can be tighter in assembly
+	if (__builtin_expect(NULL != LL(&(obj->readerList)), 0)) {
+	    writeT(tid,obj,idx,val); // not quite right
+	    break;
+	}
+    } while (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0));
 }
 #else /* base case */
 static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {

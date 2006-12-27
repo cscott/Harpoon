@@ -11,7 +11,7 @@ bench-%: bench-%.s
 clean:
 	$(RM) bench-*.s
 	$(RM) bench-*[A-Z]
-run: run-init $(foreach v,$(VAR),run-$(v)) run-done
+run: all run-init $(foreach v,$(VAR),run-$(v)) run-done
 run-init:
 	touch results.txt
 	echo >> results.txt

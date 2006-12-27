@@ -1,0 +1,49 @@
+Benchmarks run on:
+
+processor	: 0
+cpu		: 7447/7457, altivec supported
+clock		: 765.000000MHz
+revision	: 0.1 (pvr 8002 0101)
+bogomips	: 36.73
+timebase	: 18432000
+platform	: PowerMac
+machine		: PowerBook6,2
+motherboard	: PowerBook6,2 MacRISC3 Power Macintosh
+detected as	: 287 (PowerBook G4)
+pmac flags	: 0000001a
+L2 cache	: 512K unified
+pmac-generation	: NewWorld
+MemTotal:       515264 kB
+MemFree:         23392 kB
+Buffers:         16416 kB
+Cached:         253908 kB
+SwapCached:         32 kB
+Active:         346880 kB
+Inactive:       103688 kB
+HighTotal:           0 kB
+HighFree:            0 kB
+LowTotal:       515264 kB
+
+--- Run started: Wed Dec 27 13:12:28 EST 2006
+/* with CACACACA flag value */
+BASE 7.16
+RCHECK 8.14
+Command terminated by signal 6
+WCHECK 25.47
+Command terminated by signal 6
+RWCHECK 22.52
+--- Run complete ---
+
+--- Run started: Wed Dec 27 13:16:58 EST 2006
+/* with FFFFCACA flag value */
+BASE 7.12
+RCHECK 8.14
+--- Run complete ---
+
+--- Run started: Wed Dec 27 14:17:54 EST 2006
+/* unoptimized LL/SC in non-transactional write */
+BASE 7.14
+RCHECK 8.15
+WCHECK 21.40
+RWCHECK 22.45
+--- Run complete ---
