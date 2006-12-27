@@ -91,10 +91,33 @@ void do_bench(struct oobj *obj, struct transid *tid) __attribute__((noinline));
 void do_bench(struct oobj *obj, struct transid *tid) {
     int i;
     for (i=0; i<REPETITIONS; i++) {
+#if defined(WCHECK) && !defined(RCHECK)
+	struct readerList *rl;
+	int idx = 0;
+	field_t v1, v2;
+	__asm__ ("0:\n\
+                  lwarx %[rl],0,%[rlp]\n\
+                  lwz %[v1], 0(%[fld])\n\
+                  addi %[v2], %[v1], 1\n\
+                  cmpwi 0, %[rl],0\n\
+                  cmpwi 1, %[v1], 0xFFFFCAC9\n\
+                  bne- 0, 0b # xxx: should do copyback\n\
+                  beq- 1, 0b # xxx: should do transactional write\n\
+                  stwcx. %[v2],0,%[fld]\n\
+                  bne- 0b\n" :
+		 [rl] "=&r"(rl), "=m" (obj->field[idx]),
+		 [v1] "=&r" (v1), [v2] "=&r" (v2) :
+		 [fld] "r"(&(obj->field[idx])),
+		 [rlp] "r"(&(obj->readerList)),
+		 "m" (obj->readerList), "m" (obj->field[idx]) :
+		 "cr0", "cr1");
+	
+#else
 	// xxx optionally create new transaction here.
 	field_t v = read(tid, obj, 0);
 	v++;
 	write(tid, obj, 0, v);
+#endif
     }
     assert(read(tid,obj,0)==REPETITIONS);
 }

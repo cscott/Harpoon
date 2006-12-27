@@ -47,3 +47,29 @@ RCHECK 8.15
 WCHECK 21.40
 RWCHECK 22.45
 --- Run complete ---
+
+--- Run started: Wed Dec 27 14:58:21 EST 2006
+/* hand-coded tight transactional write loop, with taken branch over
+ * (stub) copyback invocation */
+BASE 7.12
+RCHECK 8.16
+WCHECK 20.39
+RWCHECK 21.43
+--- Run complete ---
+
+--- Run started: Wed Dec 27 15:07:01 EST 2006
+/* same, removing taken branch to see what effect it has (not much) */
+BASE 7.14
+RCHECK 8.14
+WCHECK 20.34
+RWCHECK 21.30
+--- Run complete ---
+
+--- Run started: Wed Dec 27 15:33:19 EST 2006
+/* hand-coded WCHECK inner loop, with the increment moved inside the LL
+ * RCHECK, RWCHECK unchanged */
+BASE 7.14
+RCHECK 8.16
+WCHECK 19.36
+RWCHECK 21.34
+--- Run complete ---
