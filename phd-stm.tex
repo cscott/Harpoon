@@ -167,7 +167,12 @@ There is a special flag value, here denoted by \FLAG.  It should be
 an uncommon value, i.e. not a small positive or negative integer
 constant, nor zero.  In my implementation, I have chosen the byte
 \texttt{0xCA} to be our flag value, repeated as necessary to fill out
-the width of the appropriate type.
+the width of the appropriate type.\footnote{Since the PowerPC instruction
+format fits only a 16-bit signed immediate, we use \texttt{0xFFFF CACA}
+and \texttt{0xFFFF FFFF FFFF CACA} as our word- and double word-width flag
+values on that architecture.  This allows us to avoid allocating a
+register for the flag value when doing comparisons, and saves the two
+(hoistable) instructions required to load the flag value into the register.}
 The semantic value of an object field is the value in the original
 object structure, \emph{unless that value is \FLAG}, in which
 case the field's value is the value of the field in the first
