@@ -92,26 +92,27 @@ void do_bench(struct oobj *obj, struct transid *tid) {
 #if defined(RWCHECKOPT)
 	struct readerList *rl;
 	int idx = 0, i=REPETITIONS;
-	field_t v1, v2;
+	field_t v1, v2, v3;
 	__asm__ ("0:\n\
                   lwarx %[rl],0,%[rlp]\n\
                   lwz %[v1], 0(%[fld])\n\
+1:                ori %[v3], %[v1], 3\n\
                   addi %[v2], %[v1], 1\n\
                   cmpwi 1, %[rl],0\n\
-                  cmpwi 2, %[v1], 0xFFFFCACA\n\
-                  cmpwi 3, %[v1], 0xFFFFCAC9\n\
+                  cmpwi 2, %[v3], 0xFFFFCACB\n\
                   bne- 1, 0b # xxx: should do copyback\n\
-                  beq- 2, 0b # xxx: should do copyback, then retry read\n\
-                  beq- 3, 0b # xxx: should do transactional write\n\
+                  beq- 2, 0b # xxx: should do copyback or transactional write\n\
                   stwcx. %[v2],0,%[fld]\n\
-                  bne- 0, 0b\n\
-                  bdnz 0b\n" :
+                  lwarx %[rl],0,%[rlp]\n\
+                  lwz %[v1], 0(%[fld])\n\
+                  bne- 0, 1b\n\
+                  bdnz 1b\n" :
 		 [rl] "=&r"(rl), "=m" (obj->field[idx]), "+c" (i),
-		 [v1] "=&r" (v1), [v2] "=&r" (v2) :
+		 [v1] "=&r" (v1), [v2] "=&r" (v2), [v3] "=&r" (v3) :
 		 [fld] "r"(&(obj->field[idx])),
 		 [rlp] "r"(&(obj->readerList)),
 		 "m" (obj->readerList), "m" (obj->field[idx]) :
-		 "cr0", "cr1");
+		 "cr0", "cr1", "cr2");
 #else
     int i;
     for (i=0; i<REPETITIONS; i++) {

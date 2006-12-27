@@ -83,3 +83,11 @@ RWCHECK 21.42
 RWCHECKOPT 20.37
 --- Run complete ---
 
+--- Run started: Wed Dec 27 17:10:00 EST 2006
+/* tune RWCHECKOPT to relieve tight dependencies */
+BASE 7.14
+RCHECK 8.14
+WCHECK 20.29
+RWCHECK 21.34
+RWCHECKOPT 17.33
+--- Run complete ---
