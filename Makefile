@@ -22,3 +22,4 @@ run-done:
 run-%: bench-%
 	-./bench-$* # warm up cache
 	-/usr/bin/time -f $*" %U" -o results.txt -a ./bench-$*
+	tail -1 results.txt
