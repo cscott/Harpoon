@@ -129,8 +129,10 @@ phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex \
 #    figure dependencies
 phd-thesis.dvi: \
 	Figures/uvsimCounterRuntime.eps \
+	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
+	Figures/chuang.eps Figures/funarr.eps Figures/bloat.eps \
 	$(foreach f, \
-	cachemods snapshot datastruct-entry,\
+	cachemods snapshot datastruct-entry tr-quad tr-multi-obj,\
 	Figures/$(f).pstex Figures/$(f).pstex_t)
 
 
