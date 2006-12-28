@@ -123,8 +123,25 @@ I will implement the synchronization required by my algorithm using
 load-linked/store-conditional instructions.  I require a particular
 variant of these instructions which allows the location of the
 load-linked to be different from the target of the store-conditional:
-this variant is supported on the PowerPC processor family, although it
-has been deprecated in the newest chips.  This disjoint location
+this variant is supported on many chips in the PowerPC processor family,
+although it has been deprecated in version 2.02 of the PowerPC
+architecture standard.\footnote{Version 2.02 of the PowerPC
+architecture standard says, ``If a reservation exists but the storage
+location specified by the \texttt{stdcx.} is not the same as the
+location specified by the \textit{Load And Reserve} instruction that
+established the reservation\ldots it is undefined whether [the operand
+is] stored into the word in storage addressed by [the specified
+effective address]'' and states that the condition code indicating a
+successful store is also undefined in this circumstance \cite[p 25]{PPCII202}.
+The user manual for the MPC7447/7457 (``G4'') PowerPC chips states,
+however, ``The \texttt{stwcx.} instruction does not check the
+reservation for a matching address.  The \texttt{stwcx.} instruction
+is only required to determine whether a reservation exists.  The
+\texttt{stwcx.} instruction performs a store word operation only if
+the reservation exists,'' \cite[Chapter 3.3.3.6]{MPC7450UM} which is
+the behavior we require.  I believe version 1.10 of the PowerPC
+Architecture specification required this behavior, although I have not
+been able to confirm this.}  This disjoint location
 capability is essential to allow us to keep a finger on one location
 while modifying another: a poor man's ``Double Compare And Swap''
 instruction.
