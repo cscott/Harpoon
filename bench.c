@@ -93,18 +93,22 @@ void do_bench(struct oobj *obj, struct transid *tid) {
 	struct readerList *rl;
 	int idx = 0, i=REPETITIONS;
 	field_t v1, v2, v3;
-	__asm__ ("0:\n\
-                  lwarx %[rl],0,%[rlp]\n\
-                  lwz %[v1], 0(%[fld])\n\
-1:                ori %[v3], %[v1], 3\n\
-                  addi %[v2], %[v1], 1\n\
-                  cmpwi 1, %[rl],0\n\
-                  cmpwi 2, %[v3], 0xFFFFCACB\n\
+	__asm__ ("b 0f\n\
+                  .align 0x10 # align to 16-byte cache-line boundary\n\
+                  nop\n\
+                  nop\n\
+0:                lwarx %[rl],0,%[rlp] # 3{e} (must be oldest to begin)\n\
+                  lwz %[v1], 0(%[fld]) # 3:1\n\
+1:                ori %[v3], %[v1], 3 # 1\n\
+                  addi %[v2], %[v1], 1 # 1\n\
+                  cmpwi 1, %[rl],0 # 1\n\
+                  cmpwi 2, %[v3], 0xFFFFCACB # 1\n\
                   bne- 1, 0b # xxx: should do copyback\n\
                   beq- 2, 0b # xxx: should do copyback or transactional write\n\
-                  stwcx. %[v2],0,%[fld]\n\
+                  stwcx. %[v2],0,%[fld] # 3:1{s} no forwarding from stwcx\n\
                   lwarx %[rl],0,%[rlp]\n\
                   lwz %[v1], 0(%[fld])\n\
+                  nop\n\
                   bne- 0, 1b\n\
                   bdnz 1b\n" :
 		 [rl] "=&r"(rl), "=m" (obj->field[idx]), "+c" (i),
