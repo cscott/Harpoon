@@ -1,7 +1,7 @@
 # additional rules for making java archives.
 # define $(JAVASRC) and $(JARFILE) before including this.
 
-CLEANFILES = $(JARFILE) $(EXTRA_CLEANFILES)
+#CLEANFILES = $(JARFILE) $(EXTRA_CLEANFILES)
 if BUILD_JAVA_SOURCE
 noinst_DATA=$(JARFILE)
 endif

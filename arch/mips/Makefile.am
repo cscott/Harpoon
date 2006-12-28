@@ -4,8 +4,8 @@ EXTRA_DIST = Flex_MIPS.pl
 #CFLAGS=
 LIBS =
 # The following is a hack, but it works...
-CCAS=$(CC)
-CCASFLAGS=@CFLAGS@ -I../../include -Dmips
+AM_CCAS=$(CC)
+AM_CCASFLAGS=@CFLAGS@ -I../../include -Dmips
 
 # changing libheader.la to libheader.lo fixes a lot of problems, but
 # automake complains.

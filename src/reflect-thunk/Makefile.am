@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-## $Id: Makefile.am,v 1.1 2005-11-28 06:23:51 salcianu Exp $
+## $Id: Makefile.am,v 1.2 2006-12-28 17:05:22 cananian Exp $
 MAINTAINERCLEANFILES = Makefile.in
-EXTRA_CLEANFILES = *~ $(JAVAHDR)
+CLEANFILES = $(JAVAHDR)
 INCLUDES = @IFLAGS@
 LIBS =
 

@@ -2,7 +2,7 @@
 MAINTAINERCLEANFILES = Makefile.in
 EXTRA_DIST = README
 # The following is a hack, but it works...
-CCASFLAGS=@CFLAGS@ -I../../include -Darm32
+AM_CCASFLAGS=@CFLAGS@ -I../../include -Darm32
 
 # changing libheader.la to libheader.lo fixes a lot of problems, but
 # automake complains.

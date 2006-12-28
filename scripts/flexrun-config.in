@@ -22,6 +22,7 @@ libdir="@libdir@"
 localstatedir="@localstatedir@"
 sysconfdir="@sysconfdir@"
 datadir="@datadir@"
+datarootdir="@datarootdir@"
 libexecdir="@libexecdir@"
 sbindir="@sbindir@"
 bindir="@bindir@"
@@ -135,6 +136,7 @@ if test $# -gt 0; then
         echo "localstatedir = ${localstatedir}"
         echo "sysconfdir = ${sysconfdir}"
         echo "datadir = ${datadir}"
+        echo "datarootdir = ${datarootdir}"
         echo "libexecdir = ${libexecdir}"
         echo "sbindir = ${sbindir}"
         echo "bindir = ${bindir}"
@@ -179,6 +181,9 @@ if test $# -gt 0; then
             ;;
           datadir)
             echo ${datadir}
+            ;;
+          datarootdir)
+            echo ${datarootdir}
             ;;
           libexecdir)
             echo ${libexecdir}

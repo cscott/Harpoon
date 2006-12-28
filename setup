@@ -1,13 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 #  build the automake/autoconf magic needed to build the rest of the runtime.
 test -f include/stamp-h.in || touch include/stamp-h.in
 test -f ChangeLog || touch ChangeLog
-rm INSTALL COPYING scripts/{install-sh,mkinstalldirs,missing}
+rm INSTALL COPYING scripts/{install-sh,mkinstalldirs,missing,config.*,depcomp,ltmain.sh}
 
 libtoolize --automake --copy -f
-aclocal-1.6
+aclocal-1.9
 autoheader
-automake-1.6 --add-missing --copy
+automake-1.9 --add-missing --copy
 autoconf
 test -f config.cache && rm -f config.cache
 set +x
