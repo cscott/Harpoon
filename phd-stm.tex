@@ -141,7 +141,12 @@ is only required to determine whether a reservation exists.  The
 the reservation exists,'' \cite[Chapter 3.3.3.6]{MPC7450UM} which is
 the behavior we require.  I believe version 1.10 of the PowerPC
 Architecture specification required this behavior, although I have not
-been able to confirm this.}  This disjoint location
+been able to confirm this.  The Cell architecture specification
+follows version 2.02 of the PowerPC specification, although it adds
+cache-line reservation operations which can also be used to
+implement our algorithm for reasonably-sized objects aligned within
+cache lines; see \cite{WitchelLaAnAs01} for an implementation of Java
+I created which observes the appropriate alignments.}  This disjoint location
 capability is essential to allow us to keep a finger on one location
 while modifying another: a poor man's ``Double Compare And Swap''
 instruction.
