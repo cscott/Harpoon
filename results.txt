@@ -88,6 +88,42 @@ RWCHECKOPT 20.37
 BASE 7.14
 RCHECK 8.14
 WCHECK 20.29
-RWCHECK 21.34
-RWCHECKOPT 17.33
+RWCHECK 21.34 (2.99x)
+RWCHECKOPT 17.33 (2.43x)
+--- Run complete ---
+
+--- Run started: Wed Dec 27 23:07:35 EST 2006
+/* More RWCHECKOPT tuning: align instruction block to cache line */
+BASE 6.90
+RCHECK 7.83
+WCHECK 19.39
+RWCHECK 20.41 (2.96x)
+RWCHECKOPT 16.59 (2.40x)
+--- Run complete ---
+
+--- Run started: Tue Feb  6 13:39:12 EST 2007
+/* Same version as previous; investigating variance. */
+BASE 7.10
+RCHECK 8.16
+WCHECK 20.36
+RWCHECK 21.35 (3.01x)
+RWCHECKOPT 17.30 (2.44x)
+--- Run complete ---
+
+--- Run started: Tue Feb  6 13:43:19 EST 2007
+/* Same version as previous; investigating variance. */
+BASE 7.14
+RCHECK 8.15
+WCHECK 20.40
+RWCHECK 21.38 (2.99x)
+RWCHECKOPT 17.27 (2.42x)
+--- Run complete ---
+
+--- Run started: Tue Feb  6 13:52:07 EST 2007
+/* Add extra nop before last bne- in RWCHECKOPT.  */
+BASE 7.13
+RCHECK 8.15
+WCHECK 20.37
+RWCHECK 21.33
+RWCHECKOPT 18.30
 --- Run complete ---
