@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Usage: build-spec <backend> <start> <end>
 # where 'start' and 'end' are numbers between 1 and 10 specifying
 # a range of spec benchmarks to build.
