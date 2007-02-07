@@ -2,8 +2,8 @@
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_Class.h"
-#include "../../java.lang.reflect/java_lang_reflect_Member.h"
-#include "../../java.lang.reflect/java_lang_reflect_Modifier.h"
+#include "../../reflect-thunk/java_lang_reflect_Member.h"
+#include "../../reflect-thunk/java_lang_reflect_Modifier.h"
 #include "../../java.lang.reflect/reflect-util.h"
 #ifdef WITH_TRANSACTIONS
 # include "../../transact/transact.h"
