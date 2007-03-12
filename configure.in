@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.168 $)dnl
+AC_REVISION($Revision: 1.169 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -19,6 +19,7 @@ AC_SUBST(CFLAGS) CFLAGS='-g -Wall -O'
 AC_SUBST(IFLAGS) IFLAGS='' 
 AC_SUBST(GC_LIB) GC_LIB='' 
 AC_SUBST(BDWFLAGS) BDWFLAGS='' dnl for B-D-W garbage collector build.
+AC_SUBST(BOOTCP) BOOTCP='/usr/share/classpath/glibj.zip' dnl bootclasspath
 
 dnl Checks for programs.
 AC_PROG_CC # also sets cross_compiling variable
@@ -45,7 +46,7 @@ with_javac="$withval", with_javac="auto")
 AC_MSG_RESULT($with_javac)
 case "$with_javac" in
 none) JAVAC=not-found ;;
-auto) AC_CHECK_PROGS(JAVAC, jikes-classpath jikes javac, not-found) ;;
+auto) AC_CHECK_PROGS(JAVAC, jikes javac, not-found) ;;
 *)    AC_CHECK_PROG(JAVAC, "$with_javac", "$with_javac", not-found) ;;
 esac
 AC_SUBST(JAVAC)
@@ -113,6 +114,11 @@ if test "$flexrun_cv_asm_underscores" = no; then
 fi
 
 dnl Checks for aout-style or elf-style segment declarations
+dnl [gcc4.1 on powerpc has an odd issue if you compile these tests with -g -O;
+dnl  it can't generate a sensible debug record (and dies).  To workaround
+dnl  this we temporarily unset CFLAGS.]
+oldcflags="$CFLAGS"
+CFLAGS=""
 AC_ARG_WITH(segment-type,
 [  --with-segment-type={elf,aout,xcoff}   force given segment type],
 flexrun_cv_asm_segment_style="$withval",
@@ -139,6 +145,7 @@ else
 fi
 AM_CONDITIONAL(AOUT_BUILD, test "$flexrun_cv_asm_segment_style" = aout)
 AM_CONDITIONAL(XCOFF_BUILD, test "$flexrun_cv_asm_segment_style" = xcoff)
+CFLAGS="$oldcflags"
 
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL  # sometimes needed for ioctl to work properly.
@@ -183,7 +190,7 @@ AC_ARG_WITH(missing-root-debug,
 case "$with_missing_root_debug" in
 yes)	AC_MSG_RESULT([yes])
 	AC_DEFINE(WITH_MISSING_ROOT_DEBUG, 1,
-	[ Define if you suspect a missing root problem ]
+	[ Define if you suspect a missing root problem ])
 	;;
 *)	AC_MSG_RESULT([no])
 	;;
@@ -202,7 +209,7 @@ if test "$with_classpath" = "yes" ; then
   if test -x $CLASSPATH_CONFIG ; then
      LIBS="$LIBS $($CLASSPATH_CONFIG --libs)"
      CFLAGS="$CFLAGS -DCLASSPATH_VERSION=$($CLASSPATH_CONFIG --version)"
-     JAVAC="$JAVAC -classpath $($CLASSPATH_CONFIG --classpath)"
+     BOOTCP="$($CLASSPATH_CONFIG --classpath)"
      dnl should check for version > 0.04 in particular?
      with_sunjdk=no
   else
@@ -213,12 +220,15 @@ if test "$with_classpath" = "yes" ; then
      if test "$JAVACCP" != not-found -a "$with_javac" = "auto" ; then
         AC_MSG_WARN([using jikes-classpath as java compiler])
 	JAVAC="$JAVACCP"
+	dnl jikes-classpath sets the bootclasspath for us.
+	BOOTCP=""
      fi
   fi
 fi
 case "$with_classpath" in
 no|yes)  ;;
-*)   AM_LDFLAGS="$AM_LDFLAGS -L$with_classpath"
+*)   AM_LDFLAGS="$AM_LDFLAGS -L$with_classpath/lib/classpath"
+     LDFLAGS="$LDFLAGS -L$with_classpath/lib/classpath"
 # THESE LIBRARIES SHOULD NOT BE NECESSARY: these dependencies of classpath
 # should be handled 'automagically' by libtool when it links in the
 # classpath libraries; further, including these explicitly breaks builds
@@ -237,6 +247,8 @@ no|yes)  ;;
      AC_CHECK_LIB(javanet, Java_java_net_InetAddress_getHostByName)
      dnl guess.
      CFLAGS="$CFLAGS -DCLASSPATH_VERSION=0.08"
+     dnl set appropriate bootclasspath
+     BOOTCP="$with_classpath/share/classpath/glibj.zip"
      with_classpath=yes dnl normalize.
      with_sunjdk=no
      ;;

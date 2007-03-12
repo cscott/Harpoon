@@ -11,7 +11,7 @@ include $(top_srcdir)/JavaRules.make
 $(addprefix classes/,$(JAVACLS)): $(JAVASRC)
 	-$(RM) -rf classes
 	mkdir -p classes
-	$(JAVAC) -d classes -g $^
+	$(JAVAC) -bootclasspath $(BOOTCP) -d classes -g $^
 $(JARFILE): $(addprefix classes/,$(JAVACLS))
 	$(JAR) -cf $@ -C classes .
 mostlyclean clean: clean-classes
