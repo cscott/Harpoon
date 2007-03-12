@@ -12,7 +12,9 @@ AR:=$(HOST_PREFIX)$(AR)
 # use the -fno-zero-initialized-in-bss option to CC if it is supported.
 # this is *vitally important* to ensure that all the data structure
 # pieces end up in the right place.
-CFLAGS=$(patsubst %,-fno-%,$(findstring zero-initialized-in-bss,$(shell $(CC) -v --help 2>&1)))
+# use -fno-unit-at-a-time to prevent reordering of structure declarations.
+CFLAGS=$(patsubst %,-fno-%,$(findstring zero-initialized-in-bss,$(shell $(CC) -v --help 2>&1))) \
+$(patsubst %,-fno-%,$(findstring unit-at-a-time,$(shell $(CC) -v --help 2>&1)))
 
 SRCS=$(wildcard _Primitive_*.c _Class_*.c)
 OBJS=$(patsubst %.c,%.o,$(SRCS))
