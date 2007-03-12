@@ -67,7 +67,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.23 2004-07-02 00:01:32 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.24 2007-03-12 21:51:38 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -587,7 +587,9 @@ public class TreeToC extends java.io.PrintWriter {
 	    }
 	    pwa[DD].print("\t"+ctype(e.getData())+" ");
 	    pwa[DD].print("f"+(field_counter++));
-	    pwa[DD].print(" __attribute__ ((packed))");
+	    if (sizeof(e.getData())>1)
+		// gcc 4.1.2 generates warnings when we try to pack a byte.
+		pwa[DD].print(" __attribute__ ((packed))");
 	    if (align!=null)
 		pwa[DD].print(" __attribute__ ((aligned (" +
 			      this.align.alignment + ")))");
@@ -655,6 +657,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    pwa[DD].println("struct "+label(l)+" {");
 	    pwa[DI].print("} __attribute__ ((packed)) ");
 	    pwa[DI].print(label(l));
+	    pwa[DI].print(" __attribute__ ((used)) ");
 	    if (this.align!=null)
 		pwa[DI].print(" __attribute__ ((aligned (" +
 			      this.align.alignment + ")))");
