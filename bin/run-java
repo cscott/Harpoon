@@ -70,7 +70,7 @@ else
 	exit 1;
     fi
     
-    for f in src/classpath/cpvm.jar src/java.lang.reflect/reflect-thunk.jar; do
+    for f in src/classpath/cpvm.jar src/reflect-thunk/reflect-thunk.jar; do
 	if [ -f ${RUNTIME_DIR}/$f ]; then
 	    FLEX_SUPPORT_FILES="$RUNTIME_DIR/$f $FLEX_SUPPORT_FILES"
 	else
