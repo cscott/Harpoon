@@ -67,7 +67,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.24 2007-03-12 21:51:38 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.25 2007-03-13 19:48:51 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -191,8 +191,13 @@ public class TreeToC extends java.io.PrintWriter {
 	private final int DD=2;
 	/** Data initializations. */
 	private final int DI=3;
+	/** Alias declarations. [Works around bug in gcc 3.4 (at least)
+	 * which complains that "error: initializer element is not constant"
+	 * if you initialize a structure with an aliased identifier.  Putting
+	 * the alias declarations last makes gcc happy again.] */
+	private final int AL=4;
 	/** Number of sections */
-	private final int SECTIONS=4;
+	private final int SECTIONS=5;
 
 	private StringWriter[] swa = new StringWriter[SECTIONS];
 	private PrintWriter[] pwa = new PrintWriter[SECTIONS];
@@ -253,6 +258,7 @@ public class TreeToC extends java.io.PrintWriter {
 		if (NO_SECTION_SUPPORT) pwa[DI].println("#endif");
 		flushAndAppend(DD);
 		flushAndAppend(DI);
+		flushAndAppend(AL);
 		break;
 	    default: break;
 	    }
@@ -625,10 +631,11 @@ public class TreeToC extends java.io.PrintWriter {
 		if (current_mode==DATA && field_counter==0) {
 		    // two labels back-to-back.  Treat this one as an
 		    // alias.
-		    sym2decl.put(e.label,
-				 "extern void * "+label(e.label)+
-				 " __attribute__ "+
-				 "((alias(\""+label(last_label)+"\")));");
+		    String decl = "extern void * "+label(e.label);
+		    sym2decl.put(e.label, decl + ";");
+		    // alias declaration goes last to humor gcc-3.4
+		    pwa[AL].println(decl + " __attribute__ "+
+				    "((alias(\""+label(last_label)+"\")));");
 		    return;
 		} else {
 		    startData(DATA, e.label, e.exported);
