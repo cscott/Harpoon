@@ -12,8 +12,10 @@
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_VMSecurityManager_getClassContext
   (JNIEnv *env, jclass cls) {
-    assert(0);
-    return NULL;
+    /* return a zero-length array, which is a hack, but a reasonable one */
+    jclass clsclz = (*env)->FindClass(env, "java/lang/Class");
+    if (clsclz==NULL) return NULL;
+    return (*env)->NewObjectArray(env, 0, clsclz, NULL);
 }
 
 /*
