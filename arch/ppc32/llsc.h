@@ -7,35 +7,39 @@
 
 static inline int32_t load_linked(volatile int32_t *ptr) {
   uint32_t result;
-  __asm__ volatile ("lwarx %0,0,%1" : "=r"(result) : "r"(ptr));
+  __asm__ volatile ("lwarx %[result],0,%[ptr]" :
+                    [result] "=r"(result) : [ptr] "r"(ptr), "m"(*ptr));
   return result;
 }
+/* this can/ought to be done so we branch only iff we fail. */
 static inline int store_conditional(volatile int32_t *ptr, int32_t val) {
   int result;
-  __asm__ ("\
-	stwcx. %2,0,%1
-	li %0,0
-	bne- 0f
-	addi %0,1
-0:
-" : "=r"(result) : "r"(ptr), "r"(val) : "cr0", "memory");
+  __asm__ volatile ("\
+	stwcx. %[val],0,%[ptr]\n\
+	li %[result],0\n\
+	bne- 0f\n\
+	li %[result],1\n\
+0:\n\
+" : [result] "=r"(result), "=m"(*ptr) : [ptr] "r"(ptr), [val] "r"(val) : "cr0");
   return result;
 }
 
 static inline int64_t load_linked_double(volatile int64_t *ptr) {
   uint64_t result;
-  __asm__ volatile ("ldarx %0,0,%1" : "=r"(result) : "r"(ptr));
+  __asm__ volatile ("ldarx %[result],0,%[ptr]" :
+                    [result] "=r"(result) : [ptr] "r"(ptr), "m"(*ptr));
   return result;
 }
+/* this can/ought to be done so we branch only iff we fail. */
 static inline int store_conditional_double(volatile int64_t *ptr, int64_t val){
   int result;
-  __asm__ ("\
-	stdcx. %2,0,%1
-	li %0,0
-	bne- 0f
-	addi %0,1
-0:
-" : "=r"(result) : "r"(ptr), "r"(val) : "cr0", "memory");
+  __asm__ volatile ("\
+	stdcx. %[val],0,%[ptr]\n\
+	li %[result],0\n\
+	bne- 0f\n\
+	li %[result],1\n\
+0:\n\
+" : [result] "=r"(result), "=m"(*ptr) : [ptr] "r"(ptr), [val] "r"(val) : "cr0");
   return result;
 }
 
