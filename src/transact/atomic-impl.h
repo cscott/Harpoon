@@ -24,10 +24,9 @@ static inline int T(store_conditional)(void *base, unsigned offset,
      ({
        int32_t *ptr = (int32_t*)(base+(offset&~3));
        int32_t mask = __builtin_choose_expr(sizeof(VALUETYPE)==1,0xFF,0xFFFF);
-#ifdef WORDS_BIGENDIAN
-       int shift = 24 - ((offset & 3) << 3);
-#else
        int shift = (offset & 3) << 3;
+#ifdef WORDS_BIGENDIAN
+       shift = __builtin_choose_expr(sizeof(VALUETYPE)==1,24,16) - shift;
 #endif
        int32_t nval = ((((int32_t)value) & mask) << shift) |
 	 ( (*ptr) & ~(mask << shift) );
@@ -56,10 +55,9 @@ static inline VALUETYPE T(load_linked)(void *base, unsigned offset) {
      ({
        int32_t *ptr = (int32_t*)(base+(offset&~3));
        int32_t mask = __builtin_choose_expr(sizeof(VALUETYPE)==1,0xFF,0xFFFF);
-#ifdef WORDS_BIGENDIAN
-       int shift = 24 - ((offset & 3) << 3);
-#else
        int shift = (offset & 3) << 3;
+#ifdef WORDS_BIGENDIAN
+       shift = __builtin_choose_expr(sizeof(VALUETYPE)==1,24,16) - shift;
 #endif
        (VALUETYPE) (mask & (LL(ptr) >> shift));
      }),
