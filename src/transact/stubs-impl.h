@@ -34,13 +34,11 @@ extern inline void TA(EXACT_checkWriteField)(struct oobj *obj,unsigned offset){
 extern inline struct vinfo *EXACT_ensureReader(struct oobj *obj,
 					       struct commitrec *cr) {
   /* do nothing */
-  assert(currentTrans!=NULL);
   return NULL;
 }
 extern inline struct vinfo *EXACT_ensureWriter(struct oobj *obj,
 					       struct commitrec *currentTrans){
   /* do nothing */
-  assert(currentTrans!=NULL);
   return NULL;
 }
 #endif
