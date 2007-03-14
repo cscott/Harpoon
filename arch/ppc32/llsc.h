@@ -25,22 +25,21 @@ static inline int store_conditional(volatile int32_t *ptr, int32_t val) {
 }
 
 static inline int64_t load_linked_double(volatile int64_t *ptr) {
-  uint64_t result;
-  __asm__ volatile ("ldarx %[result],0,%[ptr]" :
-                    [result] "=r"(result) : [ptr] "r"(ptr), "m"(*ptr));
-  return result;
+  /** PowerPC 32 is big-endian, but doesn't have 64-bit instrs */
+  uint32_t msb, lsb;
+  msb = load_linked((volatile int32_t *)ptr);
+  /* hopefully gcc won't reorder the instruction above & below */
+  lsb = ((volatile int32_t *)ptr)[1];
+  return (((uint64_t)msb)<<32) | lsb;
 }
 /* this can/ought to be done so we branch only iff we fail. */
 static inline int store_conditional_double(volatile int64_t *ptr, int64_t val){
-  int result;
-  __asm__ volatile ("\
-	stdcx. %[val],0,%[ptr]\n\
-	li %[result],0\n\
-	bne- 0f\n\
-	li %[result],1\n\
-0:\n\
-" : [result] "=r"(result), "=m"(*ptr) : [ptr] "r"(ptr), [val] "r"(val) : "cr0");
-  return result;
+  // XXX: THIS IS A HACK!!!
+  uint32_t msb = (uint32_t)(val>>32);
+  if (!store_conditional((volatile int32_t *)ptr, msb)) return 0;
+  // XXX: THIS NEXT STORE IS UNSAFE!
+  ((volatile int32_t *)ptr)[1] = (int32_t) val; // truncate
+  return 1;
 }
 
 static inline void sync(void) {
