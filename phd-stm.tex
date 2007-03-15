@@ -1276,3 +1276,42 @@ using this six-step approach.
 
 XXX: continue previous microbenchmarks, as function of object size.
 
+\section{Handling subword and multi-word reads/writes}
+
+XXX: describe how this is done:
+
+SUBWORD:
+w/in transactions is safe: just treat whole block of subword fields
+as read/written.  side-effect of ``false'' conflicts.
+
+outside transactions: (important because of array case)
+  problem here is that load/modify/store must be atomic.
+  while also requiring a LL of the header field.
+  reads are not a problem; LL will cover.
+  We're just worried about conflicting writes.  Solution:
+   steal some bits from the READERS field.  Must be null for
+   NT write to succeed.  Allow values 1-4, which indicate byte offset.
+%   Set READERS to 1-4 (LL(READERS) if NULL SC(READERS, addr&3),
+%   LL(READERS) if == (addr&3) load *addr, SC(*addr, munged(value))
+
+%%    do {
+%%      v = LL(READERS)
+%%      if ((v&~3) == 0) {
+%%        if (v==(addr&3)) {
+%%            if (SC(addr, munged(nval, *addr))) return;
+%%        } else { /* some other offset was written */
+%%           SC(READERS, addr&3); continue;
+%%      } else {
+%%        // writeback, or whatever
+%%    } while(1)
+
+  This way the crucial racing writes will cause the LL to fail.
+  Cost is that we will pseudo-conflict w/ ourself if we step through
+  an array, causing extra stores.  Have to live w/ it, I guess.
+
+MULTIWORD:
+w/in transactions: ok.  just treat as multiple word-size fields.
+
+outside transactions:
+wrap this as a small transactional write of N word-size fields.
+read is not a problem, because we can simulate 64-bit LL just fine.
