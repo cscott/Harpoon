@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.10 2004-02-08 03:21:24 cananian Exp $
+ * @version $Id: Translate.java,v 1.11 2007-03-23 21:48:11 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -104,18 +104,20 @@ final class Translate { // not public.
 		    final Comparator mapComparator =
 		        new MapComparator(null,null);
 		    public int compare(Object o1, Object o2) {
+			int c;
 			List l1 = (List) o1, l2 = (List) o2;
 			assert l1.size()==l2.size() && l1.size()==2;
 			ExceptionEntry e1 = (ExceptionEntry) l1.get(0);
 			ExceptionEntry e2 = (ExceptionEntry) l2.get(0);
 			// null is larger than anything else.
-			if (e1==null) return (e2==null)?0:1;
-			if (e2==null) return (e1==null)?0:-1;
-			int c = e1.compareTo(e2);
+			if (e1==null) c = (e2==null) ? 0 : 1;
+			else if (e2==null) c = -1;
+			else c = e1.compareTo(e2);
 			if (c!=0) return c;
 			Map m1 = (Map) l1.get(1);
 			Map m2 = (Map) l2.get(1);
-			return mapComparator.compare(m1, m2);
+			c = mapComparator.compare(m1, m2);
+			return c;
 		    }
 		});
 	    this.todoHandler = new Stack();
@@ -131,24 +133,24 @@ final class Translate { // not public.
     /** Auxillary class to implement mergeMap. */
     static final private class MergeMap {
 	private final Map h = new HashMap();
-	private List getList(InMerge m, Map calls) {
-	    return (List) h.get(Arrays.asList(new Object[] {m, calls }));
+	private List getList(InMerge m, State s) {
+	    return (List) h.get(Arrays.asList(new Object[] {m, s.calls, s.ms }));
 	}
 
-	boolean contains(InMerge m, Map calls) {
-	    return (getList(m, calls)!=null);
+	boolean contains(InMerge m, State s) {
+	    return (getList(m, s)!=null);
 	}
-	PHI get(InMerge m, Map calls) {
-	    return (PHI) getList(m, calls).get(0);
+	PHI get(InMerge m, State s) {
+	    return (PHI) getList(m, s).get(0);
 	}
-	int arity(InMerge m, Map calls) {
-	    return ((Integer) getList(m, calls).get(1)).intValue();
+	int arity(InMerge m, State s) {
+	    return ((Integer) getList(m, s).get(1)).intValue();
 	}
-	State state(InMerge m, Map calls) {
-	    return (State) getList(m, calls).get(2);
+	State state(InMerge m, State s) {
+	    return (State) getList(m, s).get(2);
 	}
-	void put(InMerge m, Map calls, PHI p, int arity, State s) {
-	    h.put(Arrays.asList(new Object[] { m, calls }),
+	void put(InMerge m, PHI p, int arity, State s) {
+	    h.put(Arrays.asList(new Object[] { m, s.calls, s.ms }),
 		  Arrays.asList(new Object[] { p, new Integer(arity), s}));
 	}
 	public String toString() { return h.toString(); }
@@ -267,6 +269,53 @@ final class Translate { // not public.
 	    return sb.toString();
 	}
     }
+    /** Auxilliary stack to track MONITORENTER statements on main stack. */
+    static final private class MonitorStack
+	implements Comparable<MonitorStack> {
+	/** The last MONITORENTER seen on this code path. */ 
+	final MONITORENTER monitor;
+	/** Link to the rest of the MONITORENTERs seen. */
+	final MonitorStack next;
+	/** Constructor. */
+	MonitorStack(MONITORENTER monitor, MonitorStack next) {
+	    this.monitor = monitor; this.next = next;
+	}
+	/** Make data human-readable for debugging. */
+	public String toString() {
+	    StringBuffer sb=new StringBuffer("[");
+	    for (MonitorStack msp = this; msp!=null; msp=msp.next) {
+		sb.append(msp.monitor.getID());
+		if (msp.next!=null) sb.append(", ");
+	    }
+	    sb.append("]");
+	    return sb.toString();
+	}
+	public boolean equals(Object o) {
+	    if (this == o) return true;
+	    if (!(o instanceof MonitorStack)) return false;
+	    MonitorStack ms = (MonitorStack) o;
+	    if (this.hash != ms.hash) return false;
+	    return this.monitor == ms.monitor &&
+		(this.next == ms.next ||
+		 (this.next != null && this.next.equals(ms.next)));
+	}
+	public int hashCode() {
+	    if (this.hash == 0) {
+		this.hash = monitor.getID() +
+		    7 * (this.next==null ? 0 : this.next.hashCode());
+	    }
+	    return this.hash;
+	}
+	private transient int hash = 0;
+	public int compareTo(MonitorStack ms) {
+	    if (ms == null) return -1;
+	    if (this.monitor.getID() != ms.monitor.getID())
+		return this.monitor.getID() - ms.monitor.getID();
+	    if (this.next == null)
+		return (ms.next == null) ? 0 : 1;
+	    return this.next.compareTo(ms.next);
+	}
+    }
     static final private class State {
 	/** Pointer to the static state for this method. */
 	private final StaticState ss;
@@ -278,15 +327,17 @@ final class Translate { // not public.
 	private final JSRStack js;
 	/** JSRStack to track jsr targets in local variables. */
 	private final JSRStack jlv;
+	/** Keep track of MONITORENTERs during translation. */
+	private final MonitorStack ms;
 	/** Keep track of JSR call stack during translation. */
 	private final Map calls; // unmodifiable.
 
 	/** private constructor */
 	private State(StaticState ss, int stackSize,
-		      LongStack ls, JSRStack js, JSRStack jlv,
+		      LongStack ls, JSRStack js, JSRStack jlv, MonitorStack ms,
 		      Map calls) {
 	    this.ss = ss; this.stackSize = stackSize;
-	    this.ls = ls; this.js = js; this.jlv = jlv;
+	    this.ls = ls; this.js = js; this.jlv = jlv; this.ms = ms;
 	    this.calls = calls;
 	}
 	/** public constructor */
@@ -298,11 +349,12 @@ final class Translate { // not public.
 	    this.ls = null;
 	    this.js = null;
 	    this.jlv= null;
+	    this.ms = null;
 	    this.calls = Default.EMPTY_MAP;
 	}
 	public String toString() {
 	    return "<"+ss+", "+stackSize+", "+ls+", "+
-		js+", "+jlv+", "+calls+">";
+		js+", "+jlv+", "+ms+", "+calls+">";
 	}
 
 	State pop()       { return pop(1); }
@@ -311,19 +363,19 @@ final class Translate { // not public.
 	    while (lsp!=null && lsp.index >= stackSize-n) lsp=lsp.next;
 	    JSRStack jsp = js;
 	    while (jsp!=null && jsp.index >= stackSize-n) jsp=jsp.next;
-	    return new State(ss, stackSize-n, lsp, jsp, jlv, calls);
+	    return new State(ss, stackSize-n, lsp, jsp, jlv, ms, calls);
 	}
 	State push()      { return push(1); }
 	State push(int n) {
-	    return new State(ss, stackSize+n, ls, js, jlv, calls);
+	    return new State(ss, stackSize+n, ls, js, jlv, ms, calls);
 	}
 	State pushLong()  {
 	    return new State(ss, stackSize+2,
-			     new LongStack(stackSize+1, ls), js, jlv, calls);
+			     new LongStack(stackSize+1, ls), js, jlv, ms, calls);
 	}
 	private State pushRetAddr(Instr target) { // called from enterJSR
 	    return new State(ss, stackSize+1, ls,
-			     new JSRStack(stackSize, target, js), jlv, calls);
+			     new JSRStack(stackSize, target, js), jlv, ms, calls);
 	}
 	
 	Temp stack(int n) { return ss.stack[stackSize-n-1]; }
@@ -341,14 +393,14 @@ final class Translate { // not public.
 	State clearLV(int lvIndex) {
 	    JSRStack jlvp = JSRStack.remove(jlv, lvIndex);
 	    return (jlv==jlvp) ? this :
-		new State(ss, stackSize, ls, js, jlvp, calls);
+		new State(ss, stackSize, ls, js, jlvp, ms, calls);
 	}
 	/** track a return address going from local variables to the stack */
 	State trackLV2S(int lvFrom, int stkTo) {
 	    if (!isRetAddrLV(lvFrom)) return this;
 	    JSRStack jsp=JSRStack.insert(js, stackSize-stkTo-1,
 					 getJSRtargetLV(lvFrom));
-	    return new State(ss, stackSize, ls, jsp, jlv, calls);
+	    return new State(ss, stackSize, ls, jsp, jlv, ms, calls);
 	}
 	/** track a return address going from the stack to a local variable */
 	State trackS2LV(int stkFrom, int lvTo) {
@@ -357,14 +409,14 @@ final class Translate { // not public.
 	    if (isRetAddrS(stkFrom))
 		jlvp = JSRStack.insert(jlvp, lvTo, getJSRtargetS(stkFrom));
 	    return (jlv==jlvp) ? this :
-		new State(ss, stackSize, ls, js, jlvp, calls);
+		new State(ss, stackSize, ls, js, jlvp, ms, calls);
 	}
 	/** track a return address going from the stack to the stack. */
 	State trackS2S(State old, int oldFrom, int newTo) {
 	    if (!old.isRetAddrS(oldFrom)) return this;
 	    JSRStack jsp = JSRStack.insert(js, stackSize-newTo-1,
 					   old.getJSRtargetS(oldFrom));
-	    return new State(ss, stackSize, ls, jsp, jlv, calls);
+	    return new State(ss, stackSize, ls, jsp, jlv, ms, calls);
 	}
 	boolean isRetAddrS(int n)
 	{ return JSRStack.getTarget(js, stackSize-n-1)!=null; }
@@ -374,6 +426,17 @@ final class Translate { // not public.
 	{ return JSRStack.getTarget(jlv, n); }
 	Instr getJSRtargetS(int n)
 	{ return JSRStack.getTarget(js, stackSize-n-1); }
+
+	/** mark that we've entered a synchronized block */
+	State monitorEnter(MONITORENTER monitor) {
+	    return new State(ss, stackSize, ls, js, jlv, new MonitorStack(monitor, ms), calls);
+	}
+	/** Update state to reflect leaving a synchronized block. */
+	State monitorExit() {
+	    MonitorStack msp = (ms!=null) ? ms.next : ms;
+	    if (ms==null) System.err.println("WHOOPS! "+ss.transHandler);
+	    return new State(ss, stackSize, ls, js, jlv, msp, calls);
+	}
 
 	QuadFactory qf()  { return ss.qf; }
 	TempFactory tf()  { return ss.qf.tempFactory(); }
@@ -395,7 +458,7 @@ final class Translate { // not public.
 		s.add(p.target);
 	}
 
-	State enterCatch() { return new State(ss, 1, null, null, jlv, calls); }
+	State enterCatch() { return new State(ss, 1, null, null, jlv, ms, calls); }
 
 	Stack todoHandler() { return ss.todoHandler; }
 
@@ -484,7 +547,7 @@ final class Translate { // not public.
 	    ncalls.keySet().retainAll(targets);
 	    // for efficiency, don't create a new state if maps are identical.
 	    return (calls.equals(ncalls)) ? this :
-		new State(ss, stackSize, ls, js, jlv,
+		new State(ss, stackSize, ls, js, jlv, ms,
 			  Collections.unmodifiableMap(ncalls));
 	}
 	/** return (unmodifiable) call state map. */
@@ -494,7 +557,7 @@ final class Translate { // not public.
 	    assert !calls.containsKey(target); // no recursiveness.
 	    Map ncalls = new HashMap(calls);
 	    ncalls.put(target, jsr);
-	    return new State(ss, stackSize, ls, js, jlv,
+	    return new State(ss, stackSize, ls, js, jlv, ms,
 			     Collections.unmodifiableMap(ncalls))
 		.pushRetAddr(target);
 	}
@@ -1448,12 +1511,12 @@ final class Translate { // not public.
 			 ns.stack(0), new Temp[] { s.stack(1), s.stack(0) });
 	    break;
 	case Op.MONITORENTER:
-	    ns = s.pop();
 	    q = new MONITORENTER(qf, in, s.stack(0));
+	    ns = s.pop().monitorEnter((MONITORENTER)q);
 	    break;
 	case Op.MONITOREXIT:
-	    ns = s.pop();
 	    q = new MONITOREXIT(qf, in, s.stack(0));
+	    ns = s.pop().monitorExit();
 	    break;
 	case Op.MULTIANEWARRAY:
 	    {
@@ -1603,17 +1666,16 @@ final class Translate { // not public.
 
 	// purge dead return addresses.
 	State s = s0.purgeDead(in);
-	Map calls = s.calls();
 
 	PHI phi;
 	int arity = 0;
-	if (!s.mergeMap().contains(in, calls)) { // no previous PHI
+	if (!s.mergeMap().contains(in, s)) { // no previous PHI
 	    phi = new PHI(qf, in, new Temp[0], in.arity());
 	    r = new TransState[]{new TransState(s, in.next(0), phi, 0)};
 	    s.recordHandler(in, phi, phi);
 	} else {
-	    phi = s.mergeMap().get(in, calls);
-	    arity = s.mergeMap().arity(in, calls);
+	    phi = s.mergeMap().get(in, s);
+	    arity = s.mergeMap().arity(in, s);
 	    r = new TransState[0];
 	}
 	// code duplication while translating JSRs can cause more than the
@@ -1622,7 +1684,7 @@ final class Translate { // not public.
 	    phi = phi.grow(new Temp[0], arity); // increase capacity by 1.
 
 	Quad.addEdge(ts.header, ts.which_succ, phi, arity);
-	s.mergeMap().put(in, calls, phi, arity+1, s);
+	s.mergeMap().put(in, phi, arity+1, s);
 	return r;
     }
 
