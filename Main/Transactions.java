@@ -4,6 +4,7 @@
 package harpoon.Main;
 
 
+import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.Transactions.SyncTransformer;
 import harpoon.Backend.Generic.Frame;
@@ -20,7 +21,7 @@ import java.util.LinkedList;
  * <code>Transactions</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Transactions.java,v 1.5 2004-07-02 01:05:08 cananian Exp $
+ * @version $Id: Transactions.java,v 1.6 2007-03-23 18:20:37 cananian Exp $
  */
 public abstract class Transactions {
     
@@ -57,6 +58,15 @@ public abstract class Transactions {
 	    hcf = new harpoon.Analysis.Quads.ArrayInitRemover(hcf)
 		.codeFactory();
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+
+	    if (Boolean.getBoolean("harpoon.trans.memopt")) {
+		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		hcf = new harpoon.Analysis.Quads.MemoryOptimization
+		    (hcf, classHierarchy, new CallGraphImpl(classHierarchy, hcf))
+		    .codeFactory();
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    }
 	    
 	    syncTransformer = new SyncTransformer
 		(hcf, classHierarchy, linker, frame.pointersAreLong(),
