@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.15 2004-07-02 21:16:50 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.16 2007-03-23 21:45:10 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -138,7 +138,10 @@ public class SyncTransformer
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
 	// XXX this is currently broken.
-	Boolean.getBoolean("harpoon.synctrans.checkoracle");
+	Boolean.getBoolean("harpoon.synctrans.smartcheckoracle");
+    private final boolean useSmarterCheckOracle = // dumb down check oracle
+	// XXX this is currently broken?
+	Boolean.getBoolean("harpoon.synctrans.smartercheckoracle");
     private final boolean useUniqueRWCounters = // high-overhead counters
 	Boolean.getBoolean("harpoon.synctrans.uniquerwcounters");
     private final boolean useHardwareTrans =// use hardware xaction mechanism
@@ -384,10 +387,13 @@ public class SyncTransformer
 	    CheckOracle co = new SimpleCheckOracle(noArrayModification);
 	    if (useSmartCheckOracle) {
 		DomTree dt = new DomTree(hc, false);
-		// XXX don't allow hoisting past CALL or MONITOREXIT
+		// XXX we shouldn't allow hoisting past CALL if we're
+		// supporting nested transactions.
 		co = new DominatingCheckOracle(dt, co);
-		co = new HoistingCheckOracle
-		    (hc, CFGrapher.DEFAULT, UseDefer.DEFAULT, dt, co);
+		if (useSmarterCheckOracle) {
+		    co = new HoistingCheckOracle
+			(hc, CFGrapher.DEFAULT, UseDefer.DEFAULT, dt, co);
+		}
 	    }
 	    AllocationInformationMap aim = (AllocationInformationMap)//heh heh
 		hc.getAllocationInformation();
