@@ -19,7 +19,7 @@ if BUILD_JAVA_SOURCE
 # note that we have to manually touch the files, as javah doesn't
 # alter the timestamp if its output is identical to the existing file.
 $(JAVAHDR): $(JAVASRC) $(JARFILE)
-	$(JAVAH) -jni -bootclasspath $(JARFILE) \
+	$(JAVAH) -jni -bootclasspath $(JARFILE):$(BOOTCP) \
 		$(foreach f,$(JAVASRC),$(call javacls,$(f)))
 	for f in $(JAVAHDR); do \
 	  if [ `dirname $$f` != "." ] ; then \
