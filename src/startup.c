@@ -185,6 +185,14 @@ int main(int argc, char *argv[]) {
 #endif
   }
 
+  /* initialize transactions */
+#if WITH_TRANSACTIONS
+  {
+      void transact_init_alloc();
+      transact_init_alloc();
+  }
+#endif
+
   /* initialize Realtime Java extensions */
   /* setup main thread info. */
 #ifdef WITH_GC_STATS
