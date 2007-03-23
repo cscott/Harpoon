@@ -51,7 +51,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Thread_currentThread
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_yield
   (JNIEnv *env, jclass cls) {
-  fni_thread_yield(env, cls);
+  fni_thread_yield(env);
 }
 
 /*
@@ -62,7 +62,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_yield
 /* causes the *currently-executing* thread to sleep */
 JNIEXPORT void JNICALL Java_java_lang_Thread_sleep
   (JNIEnv *env, jclass cls, jlong millis) {
-  fni_thread_sleep(env, cls, millis, 0);
+  fni_thread_sleep(env, millis, 0);
 }
 
 /*
@@ -104,12 +104,12 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_resume0
  */
 JNIEXPORT void JNICALL Java_java_lang_Thread_start
   (JNIEnv *env, jobject _this) {
-  fni_thread_start(env, _this);
+  fni_thread_start(env, _this, NULL);
 }
 #ifdef WITH_INIT_CHECK
 JNIEXPORT void JNICALL Java_java_lang_Thread_start_00024_00024initcheck
   (JNIEnv *env, jobject thisthr) {
-  fni_thread_start_initcheck(env, thisthr);
+  fni_thread_start_initcheck(env, thisthr, NULL);
 }
 #endif /* WITH_INIT_CHECK */
 

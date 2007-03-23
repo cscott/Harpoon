@@ -38,13 +38,15 @@ jclass thrCls; /* clazz for java/lang/Thread. */
 jfieldID priorityID; /* "priority" field in Thread object. */
 jfieldID daemonID; /* "daemon" field in Thread object. */
 jmethodID runID; /* Thread.run() method. */
-jmethodID gettgID; /* Thread.getThreadGroup() method. */
-#ifdef CLASSPATH_VERSION
-jmethodID removeThreadID; /* ThreadGroup.removeThread() method. */
+#ifdef CLASSPATH_VERSION /* >= 0.08 */
+jclass vmThrCls; /* clazz for java/lang/VMThread. */
+jfieldID vmThrID; /* Thread.vmThread field. */
+jfieldID vmThrThrID; /* VMThread.thread field. */
 #else /* if !CLASSPATH_VERSION */
+jmethodID gettgID; /* Thread.getThreadGroup() method. */
 jmethodID exitID; /* Thread.exit() method. */
-#endif /* !CLASSPATH_VERSION */
 jmethodID uncaughtID; /* ThreadGroup.uncaughtException() method. */
+#endif /* !CLASSPATH_VERSION */
 #ifdef WITH_REALTIME_JAVA
 jmethodID cleanupID; /* RealtimeThread.cleanup() method. */
 #endif
@@ -73,6 +75,7 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   jobject mainThr;
 #ifndef WITH_REALTIME_JAVA
   jobject mainThrGrp;
+  jobject vmThr; /* only used by classpath */
 #endif
   /* first make main thread object. */
   thrCls  = (*env)->FindClass(env,
@@ -83,10 +86,18 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 #endif
 			      );
   assert(!((*env)->ExceptionOccurred(env)));
+  thrCls = (*env)->NewGlobalRef(env, thrCls);
   thrConsID = (*env)->GetMethodID(env, thrCls, "<init>", "("
+#if defined(CLASSPATH_VERSION) /* xxx: should check version >= 0.08 */
+				  "Ljava/lang/VMThread;"
+				  "Ljava/lang/String;"
+				  "IZ"
+#else
 				  "Ljava/lang/ThreadGroup;"
 				  "Ljava/lang/Runnable;"
-				  "Ljava/lang/String;)V");
+				  "Ljava/lang/String;"
+#endif
+				  ")V");
   assert(!((*env)->ExceptionOccurred(env)));
   mainThr = 
 #ifdef WITH_CLUSTERED_HEAPS
@@ -116,14 +127,14 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   /* make the name of the group and the thread. */
   mainStr = (*env)->NewStringUTF(env, "main");
   assert(!((*env)->ExceptionOccurred(env)));
-#ifndef WITH_REALTIME_JAVA
+#if !defined(WITH_REALTIME_JAVA)
   /* make main thread group object. */
   thrGrpCls  = (*env)->FindClass(env, "java/lang/ThreadGroup");
   assert(!((*env)->ExceptionOccurred(env)));
 #endif
 #ifdef CLASSPATH_VERSION
   { /* main thread group comes from ThreadGroup.root */
-#ifndef WITH_REALTIME_JAVA
+#if !defined(WITH_REALTIME_JAVA)
     jfieldID thrGrpRootID;
     jmethodID thrGrpClInitID = /* hopefully clinit is idempotent! */
       (*env)->GetStaticMethodID(env, thrGrpCls, "<clinit>","()V");
@@ -177,17 +188,44 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
 #endif
+  priorityID = (*env)->GetFieldID(env, thrCls, "priority", "I");
+  assert(!((*env)->ExceptionOccurred(env)));
+#if !defined(CLASSPATH_VERSION)
   /* as the thread constructor method uses 'current thread' as a template
    * for setting the fields of the new thread, we need to hand-kludge some
    * field settings *before* calling the constructor.  ugh. */
-  priorityID = (*env)->GetFieldID(env, thrCls, "priority", "I");
-  assert(!((*env)->ExceptionOccurred(env)));
   (*env)->SetIntField(env, mainThr, priorityID, NORM_PRIORITY);
   // XXX: also set up the 'daemon' field?  but it defaults to the right thing.
+#endif
 #ifdef CLASSPATH_VERSION
-  // for classpath, need to initialize InheritableThreadLocal before
-  // calling the constructor.
+  // for classpath: create VMThread; add this to thread group and
+  // inheritablethreadlocal
   {
+      // Create VMThread
+      vmThrCls = (*env)->FindClass(env, "java/lang/VMThread");
+      jmethodID vmThrConsID = (*env)->GetMethodID(env, vmThrCls, "<init>",
+						  "(Ljava/lang/Thread;)V");
+      vmThr = (*env)->NewObject(env, vmThrCls, vmThrConsID, mainThr);
+      assert(!((*env)->ExceptionOccurred(env)));
+      vmThrCls = (*env)->NewGlobalRef(env, vmThrCls);
+  }
+  {
+      // Add thread to thread group
+      jfieldID thrGroupID;
+      jmethodID thrGrpAddID;
+      thrGrpAddID = (*env)->GetMethodID(env, thrGrpCls, "addThread",
+					"(Ljava/lang/Thread;)V");
+      (*env)->CallVoidMethod(env, mainThrGrp, thrGrpAddID, mainThr);
+      assert(!((*env)->ExceptionOccurred(env)));
+      thrGroupID = (*env)->GetFieldID(env, thrCls, "group",
+				      "Ljava/lang/ThreadGroup;");
+      (*env)->SetObjectField(env, mainThr, thrGroupID, mainThrGrp);
+      assert(!((*env)->ExceptionOccurred(env)));
+  }
+ {
+ }
+  {
+    // Initialize InheritableThreadLocal, then add mainThr.
     jclass itlCls; jmethodID itlInitID;
     itlCls  = (*env)->FindClass(env, "java/lang/InheritableThreadLocal");
     if ((*env)->ExceptionOccurred(env)) {
@@ -200,43 +238,53 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
       assert(!((*env)->ExceptionOccurred(env)));
       (*env)->CallStaticVoidMethod(env, itlCls, itlInitID);
       assert(!((*env)->ExceptionOccurred(env)));
+      // XXX: should we call ITL.newChildThread(mainThr) here?
+      (*env)->DeleteLocalRef(env, itlCls);
     }
   }
 #endif /* CLASSPATH_VERSION */
   /* finish constructing the thread object */
-#ifndef WITH_REALTIME_JAVA
   (*env)->CallNonvirtualVoidMethod(env, mainThr, thrCls, thrConsID,
-				   mainThrGrp, NULL, mainStr);
+#ifdef CLASSPATH_VERSION
+				   vmThr, mainStr, NORM_PRIORITY, JNI_FALSE
+#elif !defined(WITH_REALTIME_JAVA)
+				   mainThrGrp, NULL, mainStr
 #else
-  (*env)->CallNonvirtualVoidMethod(env, mainThr, thrCls, thrConsID,
-				   NULL, NULL, mainStr);
+				   NULL, NULL, mainStr
 #endif
+				   );
   assert(!((*env)->ExceptionOccurred(env)));
   // FIXME: set other fields, etc?
   /* lookup run() method */
-  runID = (*env)->GetMethodID(env, thrCls, "run", "()V");
+  runID = (*env)->GetMethodID(env,
+#ifdef CLASSPATH_VERSION /* >= 0.08 */
+			      vmThrCls,
+#else
+			      thrCls,
+#endif
+			      "run", "()V");
   /* (some classhierarchies don't include the run() method. don't sweat it. */
   if (runID==NULL) (*env)->ExceptionClear(env);
   assert(!((*env)->ExceptionOccurred(env)));
   /* lookup Thread.daemon field */
   daemonID = (*env)->GetFieldID(env, thrCls, "daemon", "Z");
   assert(!((*env)->ExceptionOccurred(env)));
+#ifdef CLASSPATH_VERSION
+#ifndef WITH_REALTIME_JAVA
+  vmThrID = (*env)->GetFieldID(env, thrCls, "vmThread", "Ljava/lang/VMThread;");
+  assert(!((*env)->ExceptionOccurred(env)));
+  vmThrThrID = (*env)->GetFieldID(env, vmThrCls, "thread", "Ljava/lang/Thread;");
+  assert(!((*env)->ExceptionOccurred(env)));
+#endif
+#else /* !CLASSPATH_VERSION */
   /* lookup Thread.getThreadGroup() and Thread.exit() methods */
 #ifndef WITH_REALTIME_JAVA
   gettgID = (*env)->GetMethodID(env, thrCls, "getThreadGroup",
 				"()Ljava/lang/ThreadGroup;");
   assert(!((*env)->ExceptionOccurred(env)));
 #endif
-#ifdef CLASSPATH_VERSION
-#ifndef WITH_REALTIME_JAVA
-  removeThreadID = (*env)->GetMethodID(env, thrGrpCls, "removeThread",
-				       "(Ljava/lang/Thread;)V");
-  assert(!((*env)->ExceptionOccurred(env)));
-#endif
-#else /* !CLASSPATH_VERSION */
   exitID = (*env)->GetMethodID(env, thrCls, "exit", "()V");
   assert(!((*env)->ExceptionOccurred(env)));
-#endif /* !CLASSPATH_VERSION */
   /* lookup ThreadGroup.uncaughtException() method */
 #ifndef WITH_REALTIME_JAVA
   uncaughtID = (*env)->GetMethodID(env, thrGrpCls, "uncaughtException",
@@ -246,9 +294,13 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   cleanupID = (*env)->GetMethodID(env, thrCls, "cleanup", "()V");
   assert(!((*env)->ExceptionOccurred(env)));
 #endif
+#endif /* !CLASSPATH_VERSION */
   /* delete all local refs except for mainThr. */
+#ifdef CLASSPATH_VERSION
+  (*env)->DeleteLocalRef(env, vmThr);
+#endif
   (*env)->DeleteLocalRef(env, mainStr);
-#ifndef WITH_REALTIME_JAVA
+#if !defined(WITH_REALTIME_JAVA)
   (*env)->DeleteLocalRef(env, thrGrpCls);
   (*env)->DeleteLocalRef(env, mainThrGrp);
 #endif
@@ -284,12 +336,14 @@ void FNI_java_lang_Thread_finishMain(JNIEnv *env) {
 /* functions for dealing with threads deferred during static initialization */
 static struct deferred_thread_list {
   jobject thread;
+  jobject vmthread;
   struct deferred_thread_list *next;
 } *deferred_threads = NULL;
 
-void fni_thread_addDeferredThread(JNIEnv *env, jobject thread) {
+void fni_thread_addDeferredThread(JNIEnv *env, jobject thread, jobject vmthread) {
   struct deferred_thread_list *dtl = malloc(sizeof(*dtl));
   dtl->thread = (*env)->NewGlobalRef(env, thread);
+  dtl->vmthread = (*env)->NewGlobalRef(env, vmthread);
   /* this interchange is safe from races because only one thread is running
    * during static initialization. */
   dtl->next = deferred_threads;
@@ -302,9 +356,10 @@ void fni_thread_startDeferredThreads(JNIEnv *env) {
     dtl = deferred_threads;
     deferred_threads = dtl->next;
     /* okay, now start the thread */
-    fni_thread_start(env, dtl->thread);
+    fni_thread_start(env, dtl->thread, dtl->vmthread);
     /* now free the global ref */
     (*env)->DeleteGlobalRef(env, dtl->thread);
+    (*env)->DeleteGlobalRef(env, dtl->vmthread);
     /* finally, free the thread list object */
     free(dtl);
   }

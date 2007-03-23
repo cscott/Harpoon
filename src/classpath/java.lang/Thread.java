@@ -337,12 +337,10 @@ public class Thread implements Runnable
     priority = current.priority;
     daemon = current.daemon;
     contextClassLoader = current.contextClassLoader;
-    nativeInit(size);//CSA HACK
 
     group.addThread(this);
     InheritableThreadLocal.newChildThread(this);
   }
-  final native void nativeInit(long size);//CSA HACK
 
   /**
    * Used by the VM to create thread objects for threads started outside
@@ -402,7 +400,14 @@ public class Thread implements Runnable
    * @throws IllegalThreadStateException if this Thread is not suspended
    * @deprecated pointless, since suspend is deprecated
    */
-  public native int countStackFrames();//CSA HACK
+  public int countStackFrames()
+  {
+    VMThread t = vmThread;
+    if (t == null || group == null)
+	throw new IllegalThreadStateException();
+
+    return t.countStackFrames();
+  }
 
   /**
    * Get the currently executing Thread. In the situation that the
@@ -412,7 +417,10 @@ public class Thread implements Runnable
    *
    * @return the currently executing Thread
    */
-  public static native Thread currentThread();//CSA HACK
+  public static Thread currentThread()
+  {
+    return VMThread.currentThread();
+  }
 
   /**
    * Originally intended to destroy this thread, this method was never
@@ -495,7 +503,10 @@ public class Thread implements Runnable
    * @throws NullPointerException if obj is null
    * @since 1.4
    */
-  public static native boolean holdsLock(Object obj);//CSA HACK
+  public static boolean holdsLock(Object obj)
+  {
+    return VMThread.holdsLock(obj);
+  }
 
   /**
    * Interrupt this Thread. First, there is a security check,
@@ -522,13 +533,10 @@ public class Thread implements Runnable
   public synchronized void interrupt()
   {
     checkAccess();
-    /*
     VMThread t = vmThread;
     if (t != null)
 	t.interrupt();
-    */nativeInterrupt();//CSA HACK
   }
-  final native void nativeInterrupt();//CSA HACK
 
   /**
    * Determine whether the current Thread has been interrupted, and clear
@@ -537,7 +545,10 @@ public class Thread implements Runnable
    * @return whether the current Thread has been interrupted
    * @see #isInterrupted()
    */
-  public static native boolean interrupted();//CSA HACK
+  public static boolean interrupted()
+  {
+    return VMThread.interrupted();
+  }
 
   /**
    * Determine whether the given Thread has been interrupted, but leave
@@ -546,7 +557,11 @@ public class Thread implements Runnable
    * @return whether the Thread has been interrupted
    * @see #interrupted()
    */
-  public native boolean isInterrupted();//CSA HACK
+  public boolean isInterrupted()
+  {
+    VMThread t = vmThread;
+    return t != null && t.isInterrupted();
+  }
 
   /**
    * Determine whether this Thread is alive. A thread which is alive has
@@ -554,7 +569,10 @@ public class Thread implements Runnable
    *
    * @return whether this Thread is alive
    */
-  public final native boolean isAlive();//CSA HACK
+  public final boolean isAlive()
+  {
+    return vmThread != null && group != null;
+  }
 
   /**
    * Tell whether this is a daemon Thread or not.
@@ -629,13 +647,10 @@ public class Thread implements Runnable
   public final synchronized void resume()
   {
     checkAccess();
-    /*
     VMThread t = vmThread;
     if (t != null)
 	t.resume();
-    */nativeResume();//CSA HACK
   }
-  final native void nativeResume();//CSA HACK
   
   /**
    * The method of Thread that will be run if there is no Runnable object
@@ -742,7 +757,10 @@ public class Thread implements Runnable
    * next to run, and it could even be this one, but most VMs will choose
    * the highest priority thread that has been waiting longest.
    */
-  public native static void yield();//CSA HACK
+  public static void yield()
+  {
+    VMThread.yield();
+  }
 
   /**
    * Suspend the current Thread's execution for the specified amount of
@@ -781,7 +799,10 @@ public class Thread implements Runnable
    * @see #notify()
    * @see #wait(long, int)
    */
-  public static native void sleep(long ms, int ns) throws InterruptedException;//CSA HACK
+  public static void sleep(long ms, int ns) throws InterruptedException
+  {
+    VMThread.sleep(ms, ns);
+  }
 
   /**
    * Start this Thread, calling the run() method of the Runnable this Thread
@@ -793,15 +814,13 @@ public class Thread implements Runnable
    * @throws IllegalThreadStateException if the thread has already started
    * @see #run()
    */
-  public synchronized native void start();//CSA HACK
-  /*
+  public synchronized void start()
   {
     if (vmThread != null || group == null)
 	throw new IllegalThreadStateException();
 
     VMThread.create(this, stacksize);
   }
-  */
   
   /**
    * Cause this Thread to stop abnormally because of the throw of a ThreadDeath
@@ -871,15 +890,12 @@ public class Thread implements Runnable
         if (this != currentThread())
           sm.checkPermission(new RuntimePermission("stopThread"));
       }
-    /*
     VMThread vt = vmThread;
     if (vt != null)
 	vt.stop(t);
     else
 	stillborn = t;
-    */nativeStop(t);//CSA HACK
   }
-  final native void nativeStop(Throwable t);//CSA HACK
 
   /**
    * Suspend this Thread.  It will not come back, ever, unless it is resumed.
@@ -896,13 +912,10 @@ public class Thread implements Runnable
   public final synchronized void suspend()
   {
     checkAccess();
-    /*
     VMThread t = vmThread;
     if (t != null)
 	t.suspend();
-    */nativeSuspend();//CSA HACK
   }
-  final native void nativeSuspend();//CSA HACK
 
   /**
    * Set this Thread's priority. There may be a security check,
@@ -926,15 +939,12 @@ public class Thread implements Runnable
       throw new IllegalArgumentException("Invalid thread priority value "
                                          + priority + ".");
     priority = Math.min(priority, group.getMaxPriority());
-    /*
     VMThread t = vmThread;
     if (t != null)
 	t.setPriority(priority);
     else
 	this.priority = priority;
-    */nativeSetPriority(priority);//CSA HACK
   }
-  final native void nativeSetPriority(int newPriority);//CSA HACK
 
   /**
    * Returns a string representation of this thread, including the

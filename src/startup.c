@@ -343,7 +343,34 @@ int main(int argc, char *argv[]) {
 
 #ifdef WITH_REALTIME_THREADS
   start_realtime_threads(env, mainthread, args, thrCls);
-#else /* !WITH_REALTIME_THREADS */
+#elif defined(CLASSPATH_VERSION) /* >= 0.08 */
+  /* Create Runnable instance (java.lang.VMMain) which will invoke
+   * the main() method for us. */
+ {
+     jfieldID fid;
+     jobject vmmain;
+     cls = (*env)->FindClass(env, "java/lang/VMMain");
+     CHECK_EXCEPTIONS(env);
+     mid = (*env)->GetMethodID(env, cls, "<init>", "([Ljava/lang/String;)V");
+     CHECK_EXCEPTIONS(env);
+     vmmain = (*env)->NewObject(env, cls, mid, args);
+     CHECK_EXCEPTIONS(env);
+     fid = (*env)->GetFieldID(env, thrCls, "runnable", "Ljava/lang/Runnable;");
+     CHECK_EXCEPTIONS(env);
+     //note that this is a final class, but we're wicked cool & break the rules
+     (*env)->SetObjectField(env, mainthread, fid, vmmain);
+     CHECK_EXCEPTIONS(env);
+     (*env)->DeleteLocalRef(env, vmmain);
+     (*env)->DeleteLocalRef(env, cls);
+     (*env)->DeleteLocalRef(env, args);
+     // okay, let's run() this thread.
+     mid = (*env)->GetMethodID(env, thrCls, "run", "()V");
+     CHECK_EXCEPTIONS(env);
+     (*env)->CallVoidMethod(env, mainthread, mid);
+     CHECK_EXCEPTIONS(env);
+     // hey, done.
+ }
+#else /* old school */
   /* Execute main() method. */
   cls = (*env)->FindClass(env, FNI_javamain);
   CHECK_EXCEPTIONS(env);
@@ -356,6 +383,7 @@ int main(int argc, char *argv[]) {
   print_GC_stats();
 #endif
 
+#if !defined(CLASSPATH_VERSION) /* if version < 0.08 */
   // handle uncaught exception in main thread. (see also thread_startup)
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
@@ -426,6 +454,7 @@ int main(int argc, char *argv[]) {
   (*env)->CallNonvirtualVoidMethod(env, mainthread, thrCls, exitID);
   CHECK_EXCEPTIONS(env);
  }
+#endif /* !CLASSPATH_VERSION */
 #endif /* !CLASSPATH_VERSION */
   (*env)->DeleteLocalRef(env, thrCls);
 

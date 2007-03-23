@@ -47,7 +47,7 @@
 
 #ifdef WITH_INIT_CHECK
 /* prototypes for dealing with threads deferred during static initialization */
-void fni_thread_addDeferredThread(JNIEnv *env, jobject thread);
+void fni_thread_addDeferredThread(JNIEnv *env, jobject thread, jobject vmthr);
 void fni_thread_startDeferredThreads(JNIEnv *env);
 
 /* Implementation of Thread.start$$inithcheck: */
@@ -59,10 +59,10 @@ void fni_thread_startDeferredThreads(JNIEnv *env);
  * thread --- but hopefully it will work well enough for those odd cases
  * where threads are launched in static initializers. */
 static inline
-void fni_thread_start_initcheck(JNIEnv *env, jobject thisthr) {
+void fni_thread_start_initcheck(JNIEnv *env, jobject thisthr, jobject vmthr) {
   fprintf(stderr, "WARNING: "
 	  "deferring thread start until end of static initialization\n");
-  fni_thread_addDeferredThread(env, thisthr);
+  fni_thread_addDeferredThread(env, thisthr, vmthr);
 }
 #endif /* WITH_INIT_CHECK */
 
@@ -76,14 +76,16 @@ void fni_thread_start_initcheck(JNIEnv *env, jobject thisthr) {
 extern jclass thrCls; /* clazz for java/lang/Thread. */
 extern jfieldID priorityID; /* "priority" field in Thread object. */
 extern jfieldID daemonID; /* "daemon" field in Thread object. */
-extern jmethodID runID; /* Thread.run() method. */
-extern jmethodID gettgID; /* Thread.getThreadGroup() method. */
-#ifdef CLASSPATH_VERSION
-extern jmethodID removeThreadID; /* ThreadGroup.removeThread() method. */
+extern jmethodID runID; /* Thread.run()/VMThread.run() method. */
+#ifdef CLASSPATH_VERSION /* >= 0.08 */
+extern jclass vmThrCls; /* clazz for java/lang/VMThread. */
+extern jfieldID vmThrID; /* Thread.vmThread field. */
+extern jfieldID vmThrThrID; /* VMThread.thread field. */
 #else /* if !CLASSPATH_VERSION */
+extern jmethodID gettgID; /* Thread.getThreadGroup() method. */
 extern jmethodID exitID; /* Thread.exit() method. */
-#endif /* !CLASSPATH_VERSION */
 extern jmethodID uncaughtID; /* ThreadGroup.uncaughtException() method. */
+#endif /* !CLASSPATH_VERSION */
 #ifdef WITH_REALTIME_JAVA
 extern jmethodID cleanupID; /* RealtimeThread.cleanup() method. */
 #endif
@@ -128,15 +130,26 @@ jobject fni_thread_currentThread(JNIEnv *env) {
   return ((struct FNI_Thread_State *)env)->thread;
 }
 
+#ifdef CLASSPATH_VERSION /* >= 0.08 */
 static inline
-void fni_thread_yield(JNIEnv *env, jclass cls) {
+jobject fni_thread_vmthread(JNIEnv *env, jobject thr) {
+    return (*env)->GetObjectField(env, thr, vmThrID);
+}
+static inline
+jobject fni_vmthread_thread(JNIEnv *env, jobject vmThr) {
+    return (*env)->GetObjectField(env, vmThr, vmThrThrID);
+}
+#endif
+
+static inline
+void fni_thread_yield(JNIEnv *env) {
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_yield_np();
 #endif
 }
 
 static inline
-void fni_thread_sleep(JNIEnv *env, jclass cls, jlong millis, jint nanos) {
+void fni_thread_sleep(JNIEnv *env, jlong millis, jint nanos) {
 #if WITH_PTH_THREADS
   // FIXME: not sure this is the best way to handle thread interruptions
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
@@ -178,6 +191,7 @@ void fni_thread_sleep(JNIEnv *env, jclass cls, jlong millis, jint nanos) {
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 struct closure_struct {
   jobject thread;
+  jobject vmthread;
   pthread_cond_t parampass_cond;
   pthread_mutex_t parampass_mutex;
 };
@@ -186,7 +200,7 @@ static void * thread_startup_routine(void *closure) {
   int top_of_stack; /* special variable holding top-of-stack position */
   struct closure_struct *cls = (struct closure_struct *)closure;
   JNIEnv *env = FNI_CreateJNIEnv();
-  jobject thread, threadgroup; jthrowable threadexc;
+  jobject thread, threadgroup, vmthread; jthrowable threadexc;
   /* set up the top of the stack for this thread for exception stack trace */
   ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
   /* This thread is alive! */
@@ -203,6 +217,7 @@ static void * thread_startup_routine(void *closure) {
   pthread_mutex_lock(&(cls->parampass_mutex));
   /* copy thread wrapper to local stack */
   thread = FNI_NewLocalRef(env, FNI_UNWRAP(cls->thread));
+  vmthread = FNI_NewLocalRef(env, FNI_UNWRAP(cls->vmthread));
   /* fill in the blanks in env */
   ((struct FNI_Thread_State *)env)->thread = thread;
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
@@ -224,6 +239,13 @@ static void * thread_startup_routine(void *closure) {
   pthread_cond_signal(&(cls->parampass_cond));
   pthread_mutex_unlock(&(cls->parampass_mutex));
   /* okay, now start run() method */
+#ifdef CLASSPATH_VERSION /* for classpath >= 0.08 */
+  /* (private) VMThread.run() takes care of calling
+   * thread.group.uncaughtException() and removing the thread from
+   * its thread group, etc. */
+  (*env)->CallNonvirtualVoidMethod(env, vmthread, vmThrCls, runID);
+#else
+  /*virtual method Thread.run(); have to manually deal w/ exceptions & groups*/
   (*env)->CallVoidMethod(env, thread, runID);
   if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
@@ -232,15 +254,6 @@ static void * thread_startup_routine(void *closure) {
     (*env)->CallVoidMethod(env, threadgroup, uncaughtID, thread, threadexc);
   }
   /* this thread is dead now.  give it a chance to clean up. */
-#ifdef CLASSPATH_VERSION
-#ifndef WITH_REALTIME_JAVA /* RTJ spec forbids ThreadGroups */
-  /* remove from thread group using ThreadGroup.removeThread(this) */
-  threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
-  if (threadgroup) /* sometimes thread groups are disabled */
-    (*env)->CallVoidMethod(env, threadgroup, removeThreadID, thread);
-  assert(!((*env)->ExceptionOccurred(env)));
-#endif 
-#else
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
 #ifndef WITH_REALTIME_JAVA /* RTJ spec forbids ThreadGroups */
@@ -279,12 +292,12 @@ static void * thread_startup_routine(void *closure) {
 #ifndef WITH_USER_THREADS
 
 static inline
-void fni_thread_start(JNIEnv *env, jobject _this) {
+void fni_thread_start(JNIEnv *env, jobject _this, jobject vmthr) {
   jint pri;
   pthread_t nthread; pthread_attr_t nattr;
   struct sched_param param;
   struct closure_struct cls =
-    { _this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
+    { _this, vmthr, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   int status;
 #ifdef WITH_INIT_CHECK
   /* this is a hack to work around the fact that we've erroneously
@@ -294,7 +307,7 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
    * reflected calls to Thread.start() will end up in the right
    * place. */
   if (!initDone) {
-    fni_thread_start_initcheck(env, _this);
+    fni_thread_start_initcheck(env, _this, vmthr);
     return;
   }
 #endif
@@ -357,11 +370,11 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
 #include "../user/engine-i386-linux-1.0.h"
 
 static inline
-void fni_thread_start(JNIEnv *env, jobject _this) {
+void fni_thread_start(JNIEnv *env, jobject _this, jobject vmthr) {
   jint pri;
 
   struct closure_struct cls =
-    { _this , PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
+    { _this , vmthr, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   struct closure_struct *clsp = &cls;
   void * stackptr;
 
@@ -372,7 +385,7 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
   int switching_state;
 #ifdef WITH_INIT_CHECK
   if (!initDone) {
-    fni_thread_start_initcheck(env, _this);
+    fni_thread_start_initcheck(env, _this, vmthr);
     return;
   }
 #endif
