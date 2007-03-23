@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.13 2005-11-21 22:44:26 salcianu Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.14 2007-03-23 17:49:42 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -129,12 +129,22 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
        constructor - it is just a convenient initializers for the real
        constructor, and should be declared as such. */
     private void initHMethods(Linker linker) {
+	// XXX: should really figure out if we're using Classpath >= 0.08
+	// here or not.  Guess by trying to look up java.lang.VMThread.
+	HClass HCthr = null;
+	try {
+	    HCthr = linker.forName("java.lang.VMThread");
+	    // we're using classpath >= 0.08
+	    HMthrStart = HCthr.getMethod("start",
+					 new HClass[] { HClass.Long });
+	} catch (Throwable t) {
+	    // nope, we're using sunjdk or older classpath.
+	    HCthr = linker.forName("java.lang.Thread");
+	    HMthrStart = HCthr.getMethod("start", new HClass[0]);
+	}
 	HMstrIntern = linker.forName("java.lang.String")
 	    .getMethod("intern",new HClass[0]);
-	HMthrStart = linker.forName("java.lang.Thread")
-	    .getMethod("start", new HClass[0]);
-	HMthrRun = linker.forName("java.lang.Thread")
-	    .getMethod("run", new HClass[0]);
+	HMthrRun = HCthr.getMethod("run", new HClass[0]);
     }
 
 
