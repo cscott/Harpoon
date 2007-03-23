@@ -10,6 +10,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.Temp.Temp;
 import harpoon.Util.ArrayIterator;
 import net.cscott.jutil.AggregateSetFactory;
@@ -33,7 +34,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.5 2004-02-08 01:54:21 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.6 2007-03-23 21:35:11 cananian Exp $
  */
 // note: doesn't allow hoisting past sigmas.  since input is SSA, this is
 // fine.  If you ever want to give it SSI instead, you should fix this.
@@ -100,8 +101,9 @@ class HoistingCheckOracle extends AnalysisCheckOracle {
 
 	/* can't hoist anything unless this==pidom(idom(this)) */
 	canHoist = canHoist && (hce == pdt.idom(dt.idom(hce)));
-	/* never hoist above a MONITORENTER */
+	/* never hoist above a MONITORENTER or MONITOREXIT */
 	canHoist = canHoist && !(dt.idom(hce) instanceof MONITORENTER);
+	canHoist = canHoist && !(dt.idom(hce) instanceof MONITOREXIT);
 	/* okay, remove all if !canHoist */
 	if (!canHoist) checks.clear();
 	
