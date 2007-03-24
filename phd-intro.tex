@@ -1,3 +1,45 @@
+\chapter{Introduction}\label{sec:intro}
+\epigraphhead[70]{\epigraph{%
+[Parallel programming] is hard.
+}{\textit{Teen Talk Barbie}\\(apocryphal)}}
+\index{Barbie!sayings inaccurately attributed to}
+% see http://itre.cis.upenn.edu/~myl/languagelog/archives/002892.html
+% for the real story and the accurate quote (``math class is tough'')
+
+How can we program the coming generation of parallel systems?
+Processor technology is finally bumping against its limits: even
+though transistor quantities continue to grow exponentially, we are
+now unable to effectively harness those vast quantities of transistors
+to create speedier single processors.  The smaller transistors yield
+relatively slower signal propagation times, dooming attempts to create
+a single synchronized processor from all of those resources.  It is
+obvious that explicitly parallel systems are in our future.  
+Techniques for effectively programming such systems are the subject of
+this dissertation.
+
+Concurrency in our programs is presently managed with explicit locking
+protocols.  We submit that this is inadequate, and propose
+\textit{transactions} as an alternative.  Current adoption of
+transactional programming is limited because transaction
+implementations are inefficient.  This thesis will demonstrate
+techniques to create both software and hardware implementations of
+transactions which are efficient and powerful enough to be usable.
+Software transactions can be adopted now; hardware transaction systems
+are more efficient, but can't be put to use until manufacturers have
+produced chips with the needed capabilities.  Once hardware
+transaction systems are available, hybrid systems can combine software
+and hardware techniques to achieve the best qualities of both.
+
+\section{The Rising Challenge of Multicore Programming}
+
+\section{Advantages of Transactions}
+
+\section{Efficient Implementations of Transactions}
+
+\section{Hybrid Transaction Systems}
+
+\section{Summary of Contributions}
+
 \index{Lock(s)!problems with}
 Atomicity in shared-memory multiprocessors is 
 conventionally provided
@@ -152,8 +194,8 @@ to provide speed in the common case.
 
 
 %%%%%%%%%%%%% LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
-\section{Contributions}
-This thesis makes the following contributions:
+\section{Summary of Contributions}
+In summary, this thesis makes the following contributions:
 
 \begin{itemize}
 \item We provide efficient implementations of
@@ -185,7 +227,8 @@ transactions.
 \end{itemize}
 %%%%%%%%%%%%% END LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Examples of Transactional Programming}
 \section{Motivation}
 I will motivate the transactional programming model by
 presenting four different common scenarios which are needlessly

@@ -125,7 +125,8 @@ popl05.dvi: csaacmconfbig.cls acmconfbig.cls
 # Phd Thesis dependencies
 phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex \
 	phd-intro.tex phd-stm.tex phd-htm.tex phd-hybrid.tex phd-ver.tex \
-	phd-chall.tex phd-concl.tex phd-ext.tex phd-opt.tex phd-htmplus.tex
+	phd-chall.tex phd-concl.tex phd-ext.tex phd-opt.tex phd-htmplus.tex \
+	phd-ack.tex
 #    figure dependencies
 phd-thesis.dvi: \
 	Figures/uvsimCounterRuntime.eps \

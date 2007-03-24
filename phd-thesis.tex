@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.32 2006-11-29 23:29:36 cananian Exp $
+% $Id: phd-thesis.tex,v 1.33 2007-03-24 23:49:22 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{verbatim}
@@ -10,14 +10,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.32 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.33 $}{70}
 
 
 \author{C. Scott Ananian}
-\newcommand{\subtitle}{Efficient Useable Transactions in Software and Hardware}
-\newcommand{\subdate}{November XX, 2006}
+\newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
+\newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.32 $ $}
+\date{\subdate \\ $ $Revision: 1.33 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -33,16 +33,16 @@
 
 \begin{document}
 \bibliographystyle{abbrv}
-\frontmatter
+%\frontmatter
 \input{phd-titlepage}
 
-\mainmatter
-\chapter{Introduction}
+%\mainmatter
+%\chapter{Introduction}
 %\section{Locking vs nonblocking synchronization}
 %\section{Transactions and transactional memory}
 \input{phd-intro}
 
-\chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:stm}
+%\chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:stm}
 \input{phd-stm}
 
 \chapter[Transactions in hardware]{Transactions in hardware: Unbounded Transactional Memory}\label{sec:htm}
@@ -109,3 +109,5 @@ You have a hardware or a software problem.
 \bibliography{xaction}
 \printindex
 \end{document}
+
+% LocalWords:  Ananian
