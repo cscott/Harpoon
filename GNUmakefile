@@ -135,6 +135,8 @@ phd-thesis.dvi: \
 	cachemods snapshot datastruct-entry tr-quad tr-multi-obj,\
 	Figures/$(f).pstex Figures/$(f).pstex_t)
 
+martin-happy: phd-thesis.pdf
+	rsync -avz phd-thesis.pdf k2.csail.mit.edu:public_html/Publications/
 
 # masters thesis figure dependencies
 export THESIS_FIGURES=\
