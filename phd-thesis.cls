@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.11 2006-08-23 20:47:28 cananian Exp $
+% $Id: phd-thesis.cls,v 1.12 2007-03-25 01:08:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -20,7 +20,7 @@
 \ProcessOptions
 
 % Load book class.
-\LoadClass[12pt,titlepage,twoside]{book}
+\LoadClass[11pt,titlepage,twoside]{book}
 \usepackage{bibcontents} % required by MIT thesis specification
 \usepackage[section,plain]{algorithm} % algorithm environment,\listofalgorithms
 
