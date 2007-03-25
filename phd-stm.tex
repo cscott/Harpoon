@@ -883,6 +883,9 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
+\section{Performance}
+XXX: microbenchmark performance here
+
 \section*{Implementation}
 There are a number of details which are not yet covered by our model,
 for example: how are fields of different byte lengths handled?  How does
@@ -899,6 +902,37 @@ out some deficiencies.  By recasting the basic implementation as a
 ``small object protocol'', I will show how to extend it to a ``large
 object protocol'', in the process addressing these performance
 problems.
+
+A. The Flex Compiler Infrastructure
+   1. precisec backend (exception handling, etc)
+B. Transforming Synchronization
+   1. Analyses (check/field oracles)
+   2. clone/arrayinit
+   3. method splitting
+C. Runtime impl
+   1. Preproc specialization
+   2. jni interface
+D. Performance
+   1. \# false conflicts
+   2. read/write check overhead
+   3. bottom-line
+E. Limitations
+   1. sub/multi word stuff
+   2. object.wait
+   3. arrays?
+F. Further optimizations
+   1. version-passing
+   2. escape analysis
+   3. \#s from unique object benchmarks?
+   4. allocation speedups
+
+G. Array Handling
+   1. theory
+   2. ubench
+   3. practice
+   4. noa \#s
+
+
 
 Section on compiler optimizations here, too.
 
@@ -959,7 +993,7 @@ XXX: also benchmark the added read check, for ``The big idea, waving
 FLAGS'' section.
 
 
-\section{Arrays and large objects}\label{sec:largeobj}
+\chapter{Arrays and large objects}\label{sec:largeobj}
 \begin{figure}
 \begin{center}
 \includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
@@ -993,7 +1027,7 @@ Chaung's algorithm later.  I will begin by
 reformulating transactions on objects in terms of concurrent
 operations on functional arrays.
 
-\subsection{Basic operations on functional arrays}
+\section{Basic operations on functional arrays}
 My large object support will use \emph{functional arrays} as
 a building block.  Functional arrays are \emph{persistent}; that is,
 after an element is updated both the new and the old contents of the
@@ -1038,7 +1072,7 @@ in this implementation never fail.  Every operation is non-blocking
 and no synchronization is necessary, since the imperative arrays are
 never mutated after they are created.
 
-\subsection{A single-object protocol}
+\section{A single-object protocol}
 \begin{figure}\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj.eps}
 \caption{Implementing non-blocking single-object concurrent operations
@@ -1105,7 +1139,7 @@ However, the restriction that only one object
 may be referenced within a transaction is overly limiting.  I will
 first fix this problem.
 
-\subsection{Extension to multiple objects}
+\section{Extension to multiple objects}
 \begin{figure}[t]\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
 \caption[Data structures to support non-blocking multi-object
@@ -1303,7 +1337,7 @@ and \funcname{WriteT} is presented in Figures~\ref{fig:reads} and
 constant time plus an invocation of \funcname{FA-Read} or
 \funcname{FA-Update}.
 
-\subsection{Lock-free functional arrays}\label{sec:large-obj}
+\section{Lock-free functional arrays}\label{sec:large-obj}
 \begin{figure}\centering
 \includegraphics[width=6in,clip=true]{Figures/chuang.eps}
 \caption{Shallow binding scheme for functional arrays, from
@@ -1530,7 +1564,7 @@ we could cheaply perform the entire rotation atomically, instead of
 using this six-step approach.
 
 
-%% \subsection{Optimizations}
+%% \section{Optimizations}
 %% Re-rooting is the most complicated part of the functional array
 %% algorithm.  It can be optimized in a number of ways.  For example,
 
@@ -1548,7 +1582,7 @@ using this six-step approach.
 
 %% % scales method of tagging fields.
 
-\subsection{Performance of functional array implementation}
+\section{Performance of functional array implementation}
 
 XXX: continue previous microbenchmarks, as function of object size.
 
