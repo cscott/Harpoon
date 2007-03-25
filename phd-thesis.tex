@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.33 2007-03-24 23:49:22 cananian Exp $
+% $Id: phd-thesis.tex,v 1.34 2007-03-25 01:09:35 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{phd-thesis}
 \usepackage{verbatim}
@@ -10,14 +10,14 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.33 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.34 $}{70}
 
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
 \newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.33 $ $}
+\date{\subdate \\ $ $Revision: 1.34 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -45,23 +45,16 @@
 %\chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:stm}
 \input{phd-stm}
 
-\chapter[Transactions in hardware]{Transactions in hardware: Unbounded Transactional Memory}\label{sec:htm}
-\epigraphhead[70]{\epigraph{%
-People who are really serious about software should make their own hardware.
-
-Remember, it's all software, it just depends on when you crystallize
-it.}{\textit{Alan Kay}}}
-\index{Kay, Alan}
-% http://www.folklore.org/StoryView.py?project=Macintosh&story=Creative_Think.txt
-
 \input{phd-htm}
 
+\punt{
 \chapter{Extending the hardware}\label{sec:htmplus}
 \epigraphhead[70]{\epigraph{%
 To create a new standard, it takes something that's not just a little
 bit different; it takes something that's really new and really
 captures people's imagination\ldots.}{\textit{Bill Gates}, 1984.}}
 \input{phd-htmplus}
+}
 
 \chapter{A hybrid transaction implementation}\label{sec:hybrid}
 \punt{
@@ -74,26 +67,22 @@ zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
 You have a hardware or a software problem.
 }{\textit{Service manual for Gestetner 3240}}}
 
-% dual-path coding: publishable paper: try in hw, fall back to sftware
+% dual-path coding: publishable paper: try in hw, fall back to software
 
 \input{phd-hybrid}
 
+\punt{
 \chapter[Optimizations and type systems]{Compiler optimizations and type systems}
 \input{phd-opt}
+}
 
 \chapter{Challenges}\label{sec:chall}
 \input{phd-chall}
 
-\punt{
-\chapter[Extending transactions]{Extending transactions: beyond atomic power}
-\input{phd-ext}
-
-}
-
 \chapter{Related work}\label{sec:related}
 \input{phd-related}
 
-\chapter{Conclusion}
+%\chapter{Conclusion}
 \input{phd-concl}
 
 \appendix
