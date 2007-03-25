@@ -1,15 +1,17 @@
 \chapter{Designing a Software Transaction System}\label{sec:stm}
 
-In this chapter I will specifically describe the implementation of
-my software transaction system.  I will first outline the design
-properties of the system, using quantitative data to validate my
-goals.  Then I will formally describe an implementation which meets those
-design goals, using the modelling language SPIN for concreteness.  I
-will evaluate the performance of the basic implementation, and point
-out some deficiencies.  By recasting the basic implementation as a
-``small object protocol'', I will show how to extend it to a ``large
-object protocol'', in the process addressing these performance
-problems.
+In this chapter I will specifically describe the design of a
+high-performance software transaction system.  I will first present
+quantitative data on transaction properties, which will guide our
+choices.  I will then describe the system goals and the design choices,
+relying on additional quantitative data.  Then I will express an
+implementation meeting those goals in the formal modeling language
+Promela.  The correctness of this implementation can be model-checked
+using the SPIN tool; the details of this effort are in
+\appref{verification}.
+
+In the next chapter I will discuss the practical implementation of
+this design.
 
 \section{Finding transactions}\label{sec:auto}
 One of the difficulties of proposing a novel language feature is the
@@ -350,7 +352,7 @@ I will describe my algorithms in the Promela modeling language
 which I used to allow mechanical model checking of the race-safety
 and correctness of the design.  Portions of the model have been
 abbreviated for this presentation;  the full Promela model is
-given in \appref{full-model}, along with a brief primer on Promela
+given in \appref{verification}, along with a brief primer on Promela
 syntax and semantics.
 
 %\subsecput{interface}{Interface}
@@ -866,6 +868,12 @@ shown at the bottom of \figref{promrwt}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Implementing Efficient Software Transactions}
+ I
+will evaluate the performance of the basic implementation, and point
+out some deficiencies.  By recasting the basic implementation as a
+``small object protocol'', I will show how to extend it to a ``large
+object protocol'', in the process addressing these performance
+problems.
 
 Section on compiler optimizations here, too.
 

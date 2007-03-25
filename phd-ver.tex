@@ -1,4 +1,4 @@
-\section{Verification}
+\chapter[Model-checking the implementation]{Model-checking the software implementation}\label{sec:verification}
 My work on both software and hardware transaction systems has
 reiterated the difficulty of creating correct implementations of
 concurrent and fault-tolerant constructs.  Automatic model checking is
@@ -69,7 +69,7 @@ model to approach a canonical allocation ordering.  A better solution
 to this problem would allow larger model instances to be checked.
 
 
-\subsection{Promela primer}\label{sec:promela}\index{Promela}
+\section{Promela primer}\label{sec:promela}\index{Promela}
 A concise Promela reference is available at
 \url{http://spinroot.com/spin/Man/Quick.html}; we will here attempt to
 summarize just enough of the language to allow the model we've
@@ -129,7 +129,7 @@ functions with names starting with {\tt move} are simple assignments;
 they've been turned into macros so that reference counting
 can be performed.
 
-\subsection{\Spin model for software transaction system}
+\section{\Spin model for software transaction system}
 The complete \Spin 4.1.0 model for the FLEX software transaction system is
 presented here.  It may also be downloaded from
 \url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.

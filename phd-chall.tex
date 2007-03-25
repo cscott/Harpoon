@@ -120,7 +120,7 @@ that ``non-transactional'' code still executes as if each statement
 was its own individual transaction, what Blundell, Lewis, and Martin
 term \defn{strong atomicity}.\index{Strong atomicity}\index{Atomicity!strong}
 
-\section{I/O Mechanisms}\index{Transaction(s)!I/O, issues with|(}
+\section{I/O Mechanisms}\label{sec:io}\index{Transaction(s)!I/O, issues with|(}
 To be useful, computing systems must be connected to the outside world
 in some fashion.  This creates a discontinuity in the transactional model:
 real world events can not be rolled back in the same way as can changes

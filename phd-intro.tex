@@ -95,7 +95,7 @@ system.
 Implementing transactions using
 non-blocking synchronization offers performance benefits as well.
 When mutual exclusion is used to enforce atomicity, page
-page faults, cache misses, context
+faults, cache misses, context
 switches, I/O, and other unpredictable events may result in delays to the
 entire system. Non-blocking
 synchronization allows undelayed processes or processors to continue
@@ -233,7 +233,7 @@ transaction model.
 \item Unlike some previous work, this thesis will assume that transactions may be of
 arbitrary size and duration, and that details of the implementation
 should not be exposed to the programmer of the system.
-\item In \charef{hybrid} I will show how a fast hardware implementation for
+\item I will show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
 transactions.
@@ -260,7 +260,7 @@ more capable virtualized transactions.  These extensions address the
 major limitations of the scheme presented in \charef{htm}, but the
 required hardware is more complicated.  Further, we must still chose
 particular solutions to open problems in transactional memory systems
-(for example, nesting); it may not be desirable to hardwire specific
+(for example, nesting); it may not be desirable to hard-wire specific
 choices before the community has more experience with the
 transactional approach to writing software.
 
@@ -339,8 +339,9 @@ we need to resort to some global lock ordering to guard against
 deadlock.  Modularity must be broken in order to synthesize the
 appropriate composed function, which may be impossible.
 
-In the Java programming language, Martin Rinard presented a partial
-solution using ``implicitly synchronized'' objects.  Lock acquistion
+In the Jade programming language, Martin Rinard presented a partial
+solution using ``implicitly synchronized'' objects~\cite[p14]{Rinard98}.
+Lock acquisition
 for each module is exposed in the module's API as an executable
 ``access declaration.''  Operation composition is accomplished by
 creating an access declaration for the composed operation which
@@ -348,8 +349,7 @@ invokes the appropriate access declarations for the components.  The
 runtime system orders the lock acquisitions to prevent deadlock.  This
 process suffices for conservative mutual exclusion, but it is limited in its
 ability to express alternative operation orders which preserve
-atomicity of the composed operation while overlapping its components
-\cite[p14]{Rinard98}.
+atomicity of the composed operation while overlapping its components.
 
 Transactions do not suffer from the composability problem
 \cite{HarrisMaPeHe05}.  Because transactions only specify the atomicity
@@ -455,7 +455,7 @@ is going to undo the list mutations.
 
 \note{Used to have a try/catch with explicit fail in here.}
 Instead, I can provide a non-deterministic choice operator,
-{\tt try}/{\tt else}, and write the recovery code at a higher-level as:
+{\tt try}/{\tt else}, and write the recovery code at a higher level as:
 \begin{inlinecode}
 try {
   traverse(list);
@@ -664,16 +664,19 @@ The transaction mechanism presented here is not a universal
 replacement for all synchronization.  In particular, transactions
 cannot replace blocking producer-consumer queues and mutual exclusion
 required to serialize I/O, although the needed locks can certainly be
-built with transactions.  Integrating I/O within a transactional
-context remains poorly understood.  However, large programs---the
+built with transactions.  The challenge of integrating I/O within a
+transactional context is discussed in \charef{io}.
+However, large programs---the
 Linux kernel\note{TODO: Find citation}, for example---have been
 written such that locks are
 never held across context switches or I/O operations.  Transactions
 provide a complete solution for this limited synchronization.
+\note{
 One of the goals of this thesis is to investigate better integration
 of transactional with inherently non-transactional operations.
 One promising approach is the addition of explicit ``recovery'' blocks
 to undo the effects of non-transactional regions embedded within
-an aborting transaction.
+an aborting transaction.}
 
 % LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
+% LocalWords:  unscalable dequeue enqueue composability filesystem
