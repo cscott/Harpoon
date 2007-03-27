@@ -1,2 +1,3 @@
 *.s
 bench-[A-Z]*[A-Z]
+print.ps

@@ -23,3 +23,7 @@ run-%: bench-%
 	-./bench-$* # warm up cache
 	-/usr/bin/time -f $*" %U" -o results.txt -a ./bench-$*
 	tail -1 results.txt
+
+####
+print.ps:
+	a2ps -o$@ -Mletter --prologue=color -E -g notes.txt results.txt Makefile bench.c bench-split.c llsc-ppc32.h llsc-unimpl.h 
