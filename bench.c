@@ -31,14 +31,18 @@ struct readerList {
 struct transid {
     enum { WAITING, COMMITTED, ABORTED } status;
 };
+#if defined(RWCHECKUNOPT) || defined(WCHECKUNOPT)
+#define UNOPT
+#endif
+#ifdef WCHECKUNOPT
+#define WCHECK
+#endif
+#ifdef RWCHECKUNOPT
+#define RWCHECK
+#endif
 #ifdef RWCHECK
 #define RCHECK
 #define WCHECK
-#endif
-
-#ifdef WCHECKUNOPT
-#define WCHECK
-#define UNOPT
 #endif
 
 #ifdef RCHECK

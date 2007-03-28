@@ -127,3 +127,14 @@ WCHECK 20.37
 RWCHECK 21.33
 RWCHECKOPT 18.30
 --- Run complete ---
+
+--- Run started: Wed Mar 28 16:55:21 EDT 2007
+/* final numbers for thesis */
+BASE 7.06
+RCHECK 8.07
+WCHECK 20.18
+WCHECKUNOPT 21.17
+RWCHECK 21.13
+RWCHECKOPT 17.15
+RWCHECKUNOPT 22.14
+--- Run complete ---
