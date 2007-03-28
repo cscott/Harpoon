@@ -36,26 +36,31 @@ struct transid {
 #define WCHECK
 #endif
 
+#ifdef WCHECKUNOPT
+#define WCHECK
+#define UNOPT
+#endif
+
 #ifdef RCHECK
-field_t readT(struct transid *tid, struct oobj *obj, int idx) { assert(0); }
+field_t unusualRead(struct oobj *obj, int idx) { assert(0); }
 /* simple check-before-read/write */
-static inline field_t read(struct transid *tid, struct oobj *obj, int idx) {
+static inline field_t read(struct oobj *obj, int idx) {
     field_t val = obj->field[idx];
-    if (__builtin_expect(val==FLAG, 0)) return readT(tid,obj,idx);
+    if (__builtin_expect(val==FLAG, 0)) return unusualRead(obj,idx);
     else return val;
 }
 #else /* base case */
-static inline field_t read(struct transid *tid, struct oobj *obj, int idx) {
+static inline field_t read(struct oobj *obj, int idx) {
     field_t val = obj->field[idx];
     return val;
 }
 #endif
 
 #ifdef WCHECK
-void writeT(struct transid *tid, struct oobj *obj, int idx, field_t val) { assert(0); }
-static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
+void unusualWrite(struct oobj *obj, int idx, field_t val) { assert(0); }
+static inline field_t write(struct oobj *obj, int idx, field_t val) {
     if (__builtin_expect(val==FLAG, 0))
-	writeT(tid,obj,idx,val); // not quite right
+	unusualWrite(obj,idx,val); // not quite right
     else {
 #if defined(_ARCH_PPC) && !defined(UNOPT)
 	struct readerList *rl;
@@ -74,7 +79,7 @@ static inline field_t write(struct transid *tid, struct oobj *obj, int idx, fiel
 #else /* unoptimized version */
 	do { // XXX: this loop can be tighter in assembly
 	    if (__builtin_expect(NULL != LL(&(obj->readerList)), 0)) {
-		writeT(tid,obj,idx,val); // not quite right
+		unusualWrite(obj,idx,val);
 		break;
 	    }
 	} while (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0));
@@ -82,7 +87,7 @@ static inline field_t write(struct transid *tid, struct oobj *obj, int idx, fiel
     }
 }
 #else /* base case */
-static inline field_t write(struct transid *tid, struct oobj *obj, int idx, field_t val) {
+static inline field_t write(struct oobj *obj, int idx, field_t val) {
     obj->field[idx] = val;
 }
 #endif
@@ -94,7 +99,11 @@ void do_bench(struct oobj *obj, struct transid *tid) {
 	int idx = 0, i=REPETITIONS;
 	field_t v1, v2, v3;
 	__asm__ ("b 0f\n\
-                  .balign 0x10 # align to 16-byte cache-line boundary\n\
+                  .balign 32 # align to 32-byte cache-line boundary\n\
+                  nop\n\
+                  nop\n\
+                  nop\n\
+                  nop\n\
                   nop\n\
                   nop\n\
 0:                lwarx %[rl],0,%[rlp] # 3{e} (must be oldest to begin)\n\
@@ -102,7 +111,7 @@ void do_bench(struct oobj *obj, struct transid *tid) {
 1:                ori %[v3], %[v1], 3 # 1\n\
                   addi %[v2], %[v1], 1 # 1\n\
                   cmpwi 1, %[rl],0 # 1\n\
-                  cmpwi 2, %[v3], 0xFFFFCACB # 1\n\
+                  cmpwi 2, %[v3], 0xFFFFCACA # 1\n\
                   bne- 1, 0b # xxx: should do copyback\n\
                   beq- 2, 0b # xxx: should do copyback or transactional write\n\
                   stwcx. %[v2],0,%[fld] # 3:1{s} no forwarding from stwcx\n\
@@ -120,12 +129,12 @@ void do_bench(struct oobj *obj, struct transid *tid) {
     int i;
     for (i=0; i<REPETITIONS; i++) {
 	// xxx optionally create new transaction here.
-	field_t v = read(tid, obj, 0);
+	field_t v = read(obj, 0);
 	v++;
-	write(tid, obj, 0, v);
+	write(obj, 0, v);
     }
 #endif
-    assert(read(tid,obj,0)==REPETITIONS);
+    assert(read(obj,0)==REPETITIONS);
 }
 /* make these variables extern, or else the compiler will toss updates to them
  * because they do not escape. */
