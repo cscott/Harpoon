@@ -884,49 +884,229 @@ Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
 \section{Performance}
-XXX: microbenchmark performance here
+The software transaction system outlined in this section depends on
+the insertion of simple read and write checks in non-transactional
+code.  The performance of read and write barriers have been
+well-studied in the garbage collection community, but our checks are
+slightly different: in particular, they are checks on the
+\textit{contents} of a memory cell, rather than on its address.  This
+introduces a more direct dependency which may affect performance.
+Further, our write check involves a LL/SC instruction pair, which may
+behave differently from the standard loads and stores used in
+barriers.
+
+In this section we use a simple counter microbenchmark to evaluate the
+``best worst case'' non-transactional performance of our transaction
+system.  It is an idealized ``best case'' in that we won't benchmark
+the effects of ``false flags'' or other forays into the transactional
+code path, nor will we account for double-word or sub-word writes,
+cache effects due to code duplication, or other details of a real
+implementation.  These effects we will investigate with full
+benchmarks in the \charef{full-bench}.  We will also feel free to
+optimize down to the assembly level to determine our fundamental
+performance limits.  However, the tight read/write dependency of a
+counter increment makes it a ``worst case'' benchmark: in general
+modern compilers are very good at separating reads from writes in
+``real'' code to mask load latency, but our particular microbenchmark
+can not be reasonably unrolled to accomplish this separation.  Our
+conclusions about the fundamental costs of read and write costs should
+thus be tempered by the knowledge that some of these costs are in
+practice be masked by the same standard compiler techniques used to
+mitigate memory access latencies.
+
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+typedef int32_t field_t;
+
+struct oobj {
+  struct version *version;
+  struct readerList * volatile readerList;
+  volatile field_t field[NUM_FIELDS];
+};
+void do_bench(struct oobj *obj) {
+  int i;
+  for (i=0; i<REPETITIONS; i++) {
+    field_t v = read(obj, 0);
+    v++;
+    write(obj, 0, v);
+  }
+}
+\end{verbatim}
+\caption{Counter microbenchmark to evaluate read- and write-check
+  overhead for non-transactional code.}
+\label{fig:counter-bench}
+\end{figure}
+
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+#if !defined(WITH_READ_CHECKS)
+
+static inline field_t read(struct oobj *obj, int idx) {
+  field_t val = obj->field[idx];
+  return val;
+}
+
+#else
+
+static inline field_t read(struct oobj *obj, int idx) {
+  field_t val = obj->field[idx];
+  if (__builtin_expect(val==FLAG, 0))
+    return unusualRead(obj,idx);
+  else return val;
+}
+
+#endif
+\end{verbatim}
+\caption{C implementation of read checks for counter microbenchmark.}
+\label{fig:counter-read}
+\end{figure}
+
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+#if !defined(WITH_WRITE_CHECKS)
+
+static inline field_t write(struct oobj *obj, int idx, field_t val) {
+  obj->field[idx] = val;
+}
+
+#else
+
+static inline field_t write(struct oobj *obj, int idx, field_t val) {
+  if (__builtin_expect(val==FLAG, 0))
+    unusualWrite(obj,idx,val); // never called
+  else {
+    do {
+      if (__builtin_expect(NULL != LL(&(obj->readerList)), 0)) {
+        unusualWrite(obj,idx,val); // never called
+        break;
+      }
+    } while (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0));
+  }
+}
+
+#endif
+\end{verbatim}
+\caption{C implementation of write checks for counter microbenchmark.}
+\label{fig:counter-write}
+\end{figure}
+
+\figref{counter-bench} presents the basic structure of the counter
+microbenchmark. The \texttt{read()} and \texttt{write()} methods will
+have appropriate definitions inlined for each variant of the
+benchmark.  Note that the \texttt{readerList} and \texttt{field}
+fields of the \texttt{struct oobj} are marked \texttt{volatile} to
+prevent the C compiler from optimizing away the accesses we are
+interested in benchmarking; without these declarations \texttt{gcc}
+4.1.2 will optimize away the entire benchmark loop and replace it with
+a direct addition of \texttt{REPETITIONS}.
+
+\figref{counter-read} shows the baseline \texttt{read()}
+implementation, which inlines to a single \texttt{lwz} instruction on
+PowerPC, along with the C implementation of the read check necessary
+for non-transactional code under our transaction system.  We use the
+\texttt{gcc} extension \texttt{\_\_builtin\_expect()} to apply the
+appropriate static prediction bits indicating that \texttt{FLAG} is
+expected to be an unusual value.  In our microbenchmark, this
+prediction will always correct.  The C compiler must still save
+whatever registers are necessary to allow the call to
+\texttt{unusualRead()}, although this function is never actually called
+during the microbenchmark.  The \texttt{unusualRead} function would be
+expected to perform the remainder of the \texttt{readNT} algorithm
+from \figref{promrwnt}, including looking up and copying back the most
+recently-committed value for this field.
+
+\figref{counter-write} shows the equivalent implementation pairs for a
+non-transactional write.  The basic implementation inlines to a single
+\texttt{stw} instruction.  The write-check version at the bottom must
+perform three tests.  First, it must ensure that the value to be
+written is not \texttt{FLAG}: if it is we must use the ``false flag''
+mechanism to write it, modeled here by a call to
+\texttt{unusualWrite()}.  This check can be optimized away when
+writing a constant, but the \texttt{volatile} declarations ensure that
+our benchmark will always perform the check.  Second, we must perform
+a load-linked of the object's \texttt{readerList} to check that there
+are not any current transactional readers of this object.  Last we
+perform a store-conditional of the value we wish to write, and check
+that it was successful.  Unlike the other two tests, this check will
+fail a number of times during the benchmark run due to context switches
+which may occur between the load-linked and the store-conditional
+instructions.
+
+The performance of this benchmark is shown in \figref{counter-perf}.
+\note{blah blah blah}
+
+Examination of the assembly code generated for this simple benchmark
+seems to indicate substantial scope for improvement.
+For example, figure XXYA shows the emitted assembly for the write
+check shown in \figref{counter-write}, along with a hand-coded
+improvement.  \note{blah blah blah.}  This results in an improved
+write-check overhead of XASDA. \note{One of the problems is
+representing the value of the SC, which is stored in a condition code.
+Note that the branches to \texttt{unusualWrite} are difficult to express.}
+
+Further performance improvement is possible by combining the read
+check and the write check and optimizing by hand.  Figure XYA shows an
+optimized assembly version of our \texttt{do\_bench()} function.  I've
+primarily rescheduled the code here to separate dependent instructions
+as much as possible, but I've also ensured repeatable instruction
+cache alignment, and replaced our canonical \texttt{FLAG} value with
+\texttt{0xFFFFCACA}, which can be represented by the PowerPC's 16-bit
+signed immediate instruction field.  The branches to \texttt{unusualRead()} and
+\texttt{unusualWrite()} are difficult to express in this hybrid of C
+and assembly, but small stubs could be written to save registers and
+perform a branch with the appropriate calling conventions.
+The read-and-write check overhead is improved to XYZ with these
+optimizations.
+
+It may be worth looking for closely at the instruction schedule for
+this optimized counter loop to understand the fundamental performance
+limits. \note{Details of instruction scheduling here?}
+
+\note{Conclusion.}
 
 \section*{Implementation}
 There are a number of details which are not yet covered by our model,
 for example: how are fields of different byte lengths handled?  How does
 transactional Java code interact with the garbage collector, or with
 native code in the runtime system?  The next chapter addresses the
+real-world
 implementation details of our software transaction system.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Implementing Efficient Software Transactions}\label{sec:stmimpl}
- I
-will evaluate the performance of the basic implementation, and point
-out some deficiencies.  By recasting the basic implementation as a
-``small object protocol'', I will show how to extend it to a ``large
-object protocol'', in the process addressing these performance
-problems.
 
-A. The Flex Compiler Infrastructure
-   1. precisec backend (exception handling, etc)
-B. Transforming Synchronization
-   1. Analyses (check/field oracles)
-   2. clone/arrayinit
-   3. method splitting
-C. Runtime impl
-   1. Preproc specialization
-   2. jni interface
-D. Performance
+\section{The Flex Compiler Infrastructure}
+\subsection{Using C as a target}
+% precisec backend (exception handling, etc)
+
+\section{Transforming Synchronization}
+\subsection{Analyses} % (check/field oracles)
+\subsection{Desugaring} % clone/arrayinit
+\subsection{Method Splitting}
+
+\section{Runtime System Implementation}
+\subsection{Preprocessor specialization}
+\subsection{Implementing the JNI}
+
+\section{Performance}\label{sec:full-bench}
    1. \# false conflicts
    2. read/write check overhead
    3. bottom-line
-E. Limitations
+   4. cache effects etc due to code splitting
+
+\section{Limitations}
    1. sub/multi word stuff
-   2. object.wait
+G   2. object.wait
    3. arrays?
-F. Further optimizations
+
+\section{Compiler optimizations}
    1. version-passing
    2. escape analysis
    3. \#s from unique object benchmarks?
    4. allocation speedups
 
-G. Array Handling
+\section{Arrays} % this should be moved into its own chapter
    1. theory
    2. ubench
    3. practice
@@ -994,6 +1174,12 @@ FLAGS'' section.
 
 
 \chapter{Arrays and large objects}\label{sec:largeobj}
+I will evaluate the performance of the basic implementation, and point
+out some deficiencies.  By recasting the basic implementation as a
+``small object protocol'', I will show how to extend it to a ``large
+object protocol'', in the process addressing these performance
+problems.
+
 \begin{figure}
 \begin{center}
 \includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
@@ -1589,4 +1775,4 @@ XXX: continue previous microbenchmarks, as function of object size.
 %%%%%%%%%%%%%%%%%%%%%
 
 
-% LocalWords:  Promela
+% LocalWords:  Promela microbenchmark
