@@ -883,7 +883,7 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
-\section{Performance}
+\section{Experimentally-derived Performance Limits}
 The software transaction system outlined in this section depends on
 the insertion of simple read and write checks in non-transactional
 code.  The performance of read and write barriers have been
@@ -1028,11 +1028,18 @@ a load-linked of the object's \texttt{readerList} to check that there
 are not any current transactional readers of this object.  Last we
 perform a store-conditional of the value we wish to write, and check
 that it was successful.  Unlike the other two tests, this check will
-fail a number of times during the benchmark run due to context switches
+fail a number of times\footnote{About 3,600 times in the 1 billion
+  repetitions of the write.}
+ during the benchmark run due to context switches
 which may occur between the load-linked and the store-conditional
 instructions.
 
-The performance of this benchmark is shown in \figref{counter-perf}.
+\epsfigput[Check overhead for counter microbenchmark]{phd-counter}{%
+  Time overhead of read checks, write checks,
+  and both read and write checks for non-transactional code, in both a
+  pure C implementation and optimized assembly.}
+
+The performance of this benchmark is shown in \figref{phd-counter}.
 \note{blah blah blah}
 
 Examination of the assembly code generated for this simple benchmark
@@ -1063,6 +1070,11 @@ this optimized counter loop to understand the fundamental performance
 limits. \note{Details of instruction scheduling here?}
 
 \note{Conclusion.}
+Patterson and Hennesey's measurements indicate that load and store
+instructions comprise N\% and M\% of dynamic instruction counts in
+real programs.  The N\% read overhead and M\% write overhead measured
+in this microbenchmark thus translate into Y\% net non-transactional
+overhead.
 
 \section*{Implementation}
 There are a number of details which are not yet covered by our model,
@@ -1099,6 +1111,7 @@ implementation details of our software transaction system.
    1. sub/multi word stuff
 G   2. object.wait
    3. arrays?
+   4/ 32-byte granularity of LL/SC == false deadlocks.
 
 \section{Compiler optimizations}
    1. version-passing
