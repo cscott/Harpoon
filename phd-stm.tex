@@ -299,7 +299,9 @@ I also measured the number and types of reads and writes for the
 SpecJVM98 benchmarks.
 \figref{writepercent} shows that transactional reads typically
 outnumber transactional writes by at least 4 to 1; in some cases reads
-outnumber writes by over 100 to 1.  It is worthwhile, therefore, to
+outnumber writes by over 100 to 1.\footnote{The typical ratio roughly
+  matches the 3:1 average observed in Hennessy and Patterson
+  \cite[pp. 105, 379]{HennessyPa96}.}  It is worthwhile, therefore, to
 make reads more efficient than writes.  In particular, since the
 flag-overwrite technique discussed in \charef{flagfield} requires us
 to allocate additional memory to store the ``real'' value of the
@@ -883,7 +885,7 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
-\section{Experimentally-derived Performance Limits}
+\section{Performance Limits for Non-Transactional Code}
 The software transaction system outlined in this section depends on
 the insertion of simple read and write checks in non-transactional
 code.  The performance of read and write barriers have been
@@ -1022,14 +1024,18 @@ perform three tests.  First, it must ensure that the value to be
 written is not \texttt{FLAG}: if it is we must use the ``false flag''
 mechanism to write it, modeled here by a call to
 \texttt{unusualWrite()}.  This check can be optimized away when
-writing a constant, but the \texttt{volatile} declarations ensure that
+writing a constant,\footnote{Hennessy and Patterson indicate that 35\%
+  of integer instructions use an immediate operand; their methodology does not
+  allow breaking out the percentage of stores specifically
+  \cite[pp. 78]{HennessyPa96}.}
+ but the \texttt{volatile} declarations ensure that
 our benchmark will always perform the check.  Second, we must perform
 a load-linked of the object's \texttt{readerList} to check that there
 are not any current transactional readers of this object.  Last we
 perform a store-conditional of the value we wish to write, and check
 that it was successful.  Unlike the other two tests, this check will
-fail a number of times\footnote{About 3,600 times in the 1 billion
-  repetitions of the write.}
+fail a number of times\footnote{Experimentally, about 3,600 times in
+  the 1 billion repetitions of the write during the counter microbenchmark.}
  during the benchmark run due to context switches
 which may occur between the load-linked and the store-conditional
 instructions.
@@ -1040,41 +1046,153 @@ instructions.
   pure C implementation and optimized assembly.}
 
 The performance of this benchmark is shown in \figref{phd-counter}.
-\note{blah blah blah}
+Read checks, even in this worst case where the value read is demanded
+immediately, only add 14\% overhead.  Write checks are more costly,
+due to the load-linked and store-conditional pair; they add 200\%
+overhead to the benchmark.  Combining read and write checks yields the
+expected 214\% overhead; our microbenchmark was carefully constructed to
+avoid the opportunities for instruction-level parallelism one might
+expect in real-world applications.
 
+\begin{figure}
+\sis\fontsize{9}{10}\begin{alltt}
+\textit{do_bench:              do_bench:
+  mflr 0                 mflr 0
+  stwu 1,-16(1)          stwu 1,-16(1)
+  lis 5,0x3b9a           addi 10,3,8
+  li 8,0                 addi 11,3,4
+  ori 5,5,51712          stw 0,20(1)
+  addi 6,3,4             lis 0,0x3b9a
+  addi 7,3,8             ori 0,0,51712
+  stw 0,20(1)            mtctr 0
+  b .L4                  b .L4
+.L22:
+  mr 10,6
+  mr 11,7              }\textbf{.L5:
+.L5:                   0:
+  lwarx 0,0,10           lwarx 0,0,11
+  cmpwi 7,0,0            cmpwi 0,0
+  bne- 7,.L19            beq+ 1f
+                         # stub for unusualWrite branch
+  stwcx. 9,0,11          b .
+  li 0,0               1:stwcx. 9,0,10
+  bne- 0f                bne 0b
+  li 0,1
+0:                       bdz .L14
+  cmpwi 7,0,0
+  beq- 7,.L5
+  addi 8,8,1
+  cmpw 7,8,5
+  beq- 7,.L21}\textit{
+.L4:                   .L4:
+  lwz 9,8(3)             lwz 9,8(3)
+  cmpwi 7,9,-13623       cmpwi 7,9,-13623
+  addi 9,9,1             addi 9,9,1
+  bne+ 7,.L22            bne+ 7,.L5
+.L21:                  .L14:
+  lwz 0,8(3)             lwz 0,8(3)
+                         xoris 9,0,0xc465
+  cmpw 7,0,8             cmpwi 7,9,-13824
+  bne- 7,.L23            bne 7,.L15
+  lwz 0,20(1)            lwz 0,20(1)
+  addi 1,1,16            addi 1,1,16
+  mtlr 0                 mtlr 0             
+  blr                    blr}
+\end{alltt}
+\caption[PowerPC assembly emitted for counter microbenchmark with
+  write checks.]{PowerPC assembly emitted for counter microbenchmark with
+  write checks.  The right-hand column is generated from the C
+  implementation; the left-hand column has an optimized version of the
+  write check inlined into the code using the \texttt{asm} keyword.
+  Italicized code is essentially unchanged; the optimized section is
+  shown in boldface.}
+\label{fig:write-assem}
+\end{figure}
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+    # repetition count is in the count register to start
+    b 0f
+    .balign 32 # align to 32-byte cache-line boundary
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+0:  lwarx 5,0,0
+    lwz 6, 0(9)
+1:  ori 8, 6, 3
+    addi 7, 6, 1
+    cmpwi 1, 5,0
+    cmpwi 2, 8, 0xFFFFCACB
+    bne- 1, 0b # stub: unusualWrite
+    beq- 2, 0b # stub: unusualRead or unusualWrite
+    stwcx. 7,0,9
+    lwarx 5,0,0
+    lwz 6, 0(9)
+    bne- 0, 1b
+    bdnz 1b
+\end{verbatim}
+\caption{Optimized PowerPC assembly for counter microbenchmark with both read
+  and write checks.}
+\label{fig:rw-assem}
+\end{figure}
 Examination of the assembly code generated for this simple benchmark
-seems to indicate substantial scope for improvement.
-For example, figure XXYA shows the emitted assembly for the write
-check shown in \figref{counter-write}, along with a hand-coded
-improvement.  \note{blah blah blah.}  This results in an improved
-write-check overhead of XASDA. \note{One of the problems is
-representing the value of the SC, which is stored in a condition code.
-Note that the branches to \texttt{unusualWrite} are difficult to express.}
+seems to indicate substantial scope for improvement.  The inline
+assembly mechanism of \texttt{gcc}/C provides no inherent support for
+instructions 
+like the PowerPC's ``store-conditional'' (\texttt{stwcx.}) which leave
+their results in a condition code register.  \figref{write-assem}
+shows the assembly emitted for the write check version of the
+microbenchmark, with the cumbersome mechanism required to move the
+condition code to a register so that it can then be retested.  We can
+easily hand-code a better write-check mechanism, shown in the
+right-hand column of the figure.\footnote{This version has a stub where a
+function call to \texttt{unusualWrite} would usually go; the correct
+code here would branch to a small thunk which will perform the
+frame operations and register saves necessary to adhere to the C
+calling convention; \texttt{gcc} makes it difficult to ensure that
+this thunk is ``near enough'' for a direct branch (within a 24-bit
+signed displacement) without duplicating it needlessly.}
+The optimized store-conditional test reduces write-check overhead to
+186\% and combined read- and write-check overhead to 199\%, as shown
+in \figref{phd-counter}.
 
-Further performance improvement is possible by combining the read
-check and the write check and optimizing by hand.  Figure XYA shows an
+Further performance improvement is possible by optimizing the
+benchmark with both read and write checks as a whole. \figref{rw-assem}
+shows an
 optimized assembly version of our \texttt{do\_bench()} function.  I've
 primarily rescheduled the code here to separate dependent instructions
 as much as possible, but I've also ensured repeatable instruction
 cache alignment, and replaced our canonical \texttt{FLAG} value with
 \texttt{0xFFFFCACA}, which can be represented by the PowerPC's 16-bit
-signed immediate instruction field.  The branches to \texttt{unusualRead()} and
+signed immediate instruction field.\footnote{Again, the branches to
+\texttt{unusualRead()} and 
 \texttt{unusualWrite()} are difficult to express in this hybrid of C
-and assembly, but small stubs could be written to save registers and
-perform a branch with the appropriate calling conventions.
-The read-and-write check overhead is improved to XYZ with these
-optimizations.
+and assembly, but small stubs would be written to save registers and
+perform a branch with the appropriate calling conventions.}
+The read-and-write check overhead is improved to 143\% with these
+optimizations, due mostly to the irreducible dependency between the
+load-linked and store-conditional instructions.
 
-It may be worth looking for closely at the instruction schedule for
+\note{It may be worth looking closely at the instruction schedule for
 this optimized counter loop to understand the fundamental performance
-limits. \note{Details of instruction scheduling here?}
+limits.}
 
-\note{Conclusion.}
-Patterson and Hennesey's measurements indicate that load and store
-instructions comprise N\% and M\% of dynamic instruction counts in
-real programs.  The N\% read overhead and M\% write overhead measured
-in this microbenchmark thus translate into Y\% net non-transactional
-overhead.
+Hennessy and Patterson's measurements indicate that load and store
+instructions comprise respectively 26\% and 9\% of dynamic instruction
+counts in SPECint92 on a RISC microarchitecture (DLX)
+\cite[pp. 105]{HennessyPa96}.
+The 14\% read overhead and 186\% write overhead measured
+in this microbenchmark thus translate into 20\% net overhead for
+non-transactional code.\footnote{$0.65 + (1.14 \times 0.26) + (2.86
+  \times 0.09) = 1.20$}
+ If we conservatively assume that most of the
+improvement in \figref{rw-assem}'s optimized checks should be credited
+to reduced write-check overhead, giving the same 14\% read overhead
+but only 129\% write overhead, it is possible that aggressive
+optimization and scheduling may yield only 15\% net overhead for
+non-transactional code.
 
 \section*{Implementation}
 There are a number of details which are not yet covered by our model,

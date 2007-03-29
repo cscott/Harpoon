@@ -1,6 +1,6 @@
 # makefile.
 LATEX=latex
-BIBTEX=bibtex --min-crossrefs=9999
+BIBTEX=bibtex -min-crossrefs=9999
 MAKEINDEX=makeindex
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
@@ -131,6 +131,7 @@ phd-thesis.dvi: \
 	Figures/uvsimCounterRuntime.eps \
 	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
 	Figures/chuang.eps Figures/funarr.eps Figures/bloat.eps \
+	Figures/phd-counter.eps \
 	$(foreach f, \
 	cachemods snapshot datastruct-entry tr-quad tr-multi-obj,\
 	Figures/$(f).pstex Figures/$(f).pstex_t)
