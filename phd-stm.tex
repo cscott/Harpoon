@@ -46,10 +46,10 @@ I compiled the SPECjvm98 benchmark suite with the FLEX Java compiler,
 modified to turn synchronized blocks and methods into transactions,
 in order to investigate the properties of the transactions in such
 ``automatically converted'' code.
-Method splitting was performed to distinguish methods called from
-within an atomic block, and nested
-\texttt{atomic} blocks were implemented as a single
-transaction around the outermost \texttt{atomic} region.  I
+FLEX performed method cloning to distinguish methods called from
+within a transactions, and implemented nested locks as a single
+transaction around the outermost.\footnote{See
+  \charef{synctrans} for more details on this transformation.} I
 instrumented this transformed program to produce a trace of
 memory references and transaction boundaries for analysis.
 I found both large
@@ -665,7 +665,7 @@ our version is still at the head of the versions list.\footnote{Note
   again that a CAS does not suffice.}  This addresses
 the major race possible in this routine.
 
-\subsubsection{Transactional Read}
+\subsubsection{Transactional Read}\label{sec:readT}
 A transactional read is split into two parts.  Before the read, we
 must ensure that our transaction is on the reader list for the
 object.  This is straight-forward to do in a non-blocking manner as
@@ -1258,7 +1258,7 @@ Java exceptions presented another difficulty when implementing a C
 backend.  The mechanisms used in our assembly backends (separate
 return addresses for ``returning'' an exception, either derived by
 rule from the normal return address or stored in a sorted table keyed
-by the normal return address) can not be implemented in C.  We support
+by the normal return address) can not be implemented in C.  FLEX supports
 two alternate translations: the first uses \texttt{setjmp} and
 \texttt{longjmp} to branch directly from the site where the exception
 is thrown to an appropriate handler, and the second returns a pair
@@ -1286,15 +1286,132 @@ The experiments in this thesis all use pair-return to implement
 exceptions, and conservative garbage
 collection, so the ``precise C'' stack is not required.
 
-\section{Transforming Synchronization}
-\subsection{Analyses} % (check/field oracles)
+\section{Transforming Synchronization}\label{sec:synctrans}
+Aside from implementing the read and write mechanisms of the software
+transaction design presented in the previous chapter, a number of
+other transformations and analyses of our Java benchmarks must be
+performed: transactions must be synthesized from the benchmark's
+monitor synchronization, methods must be cloned according to the
+context (whether inside a transaction or not) of their callsite,
+analyses must be performed in order to reduce redundant checks in the
+transformed code, and some minor desugaring is done to ease
+implementation.
+
+\subsection{Method transformation}
+\begin{figure}\sis\fontsize{9}{10}
+\begin{minipage}{1.5in}
+\begin{verbatim}
+synchronized {
+    ...
+    x = o.f;
+    ...
+    o.f = y;
+    ...
+    z = foo(a, b, c);
+    ...
+}
+\end{verbatim}
+\end{minipage}
+$\Rightarrow\quad$
+\begin{minipage}{3in}
+\begin{verbatim}
+t = CommitRecord.newTransaction();
+while(true) {
+  try {
+    ...
+    v = ensureReader(o, t);
+    x = readT(o, FIELD_F, &v, t);
+    ...
+    v = ensureWriter(o, t);
+    checkWriteField(o, FIELD_F);
+    writeT(o, FIELD_F, y, v); /* v.f = y */
+    ...
+    z = foo$$withtrans(t, a, b, c);
+    ...
+    t.commitTransaction();
+    break;
+  } catch (TransactionAbortException tex) {
+    t = t.retryTransaction();
+  }
+}
+\end{verbatim}
+\end{minipage}
+\caption[Software transaction transformation.]
+{Software transaction transformation.  The code on the left is the
+  original Java source; the transformed source is on the right.}
+\label{fig:synctrans}\end{figure}
+We automatically create transactions in our benchmarks from
+Java synchronized blocks and methods.  \figref{synctrans} illustrates
+the transformation applied.
+
+Entering a top-level synchronized block creates a new transaction
+object and starts a new exception handler context.  Exiting the block
+causes a call to the transaction's commit method.  If the commit, or
+any other operation inside the block, throws
+\texttt{TransactionAbortException} indicating that the transaction
+must be aborted, we recreate the transaction object and loop to retry
+the transaction's operations.  The \texttt{retryTransaction} method
+performs backoff; it may also perform livelock detection or other
+transaction management functions.
+
+Inside the transaction context, reads and writes must be transformed.
+Before the read, the \texttt{ensureReader} algorithm
+must be invoked (see \charef{readT} and \appref{verification}).  This
+need only be done once for each object read in this transaction;
+\charef{hoist} described how these checks are hoisted and combined to
+reduce their number.  The \texttt{ensureReader} routine returns a
+pointer to a \defn{version object} containing this transaction's field
+values for the object.  The pointer may be NULL, however, if this
+transaction has not written the object.
+The actual read is done via the \texttt{readT}
+algorithm described in \figref{promrwt} and \charef{readT}; it may
+update the cached version object for the given object (for example, if
+the object has been written within this transaction since the point at
+which \texttt{ensureReader} was invoked).\footnote{The FLEX
+  infrastructure cannot create pointers to temporaries, or
+  alternately return multiple values from function calls, so the
+  version object in my current implementation cannot be updated by
+  \texttt{readT}.  This impairs our ability to hoist and combine
+  \texttt{ensureReader} and requires us to make redundant calls.}
+
+Before each write, \texttt{ensureWriter} and \texttt{checkWriteField}
+must be executed.  Like \texttt{ensureReader}, \texttt{ensureWriter}
+(\figref{ensurewriter}) need only be performed once for each object
+written in the transaction, and is hoisted and combined in the same
+way.  \note{Can \texttt{ensureWriter} imply \texttt{ensureReader}?}
+The \texttt{checkWriteField} algorithm (\figref{copythrough}) need
+only be executed once for each object field written; if the same field
+in the same object is written multiple times, the subsequent
+\texttt{checkWriteField} invocations can be eliminated.  The actual
+write is performed via \texttt{writeT} (\figref{promrwt}), which is a
+simple store to the version object.
+
+Nested transactions are implemented via subsumption; that is, nested
+synchronized blocks inside a transaction context are ignored: the
+inner transaction is subsumed by the outermost.
+
+Method invocations inside transaction context must be transformed,
+since read and write operations are implemented differently depending
+on whether or not the current execution is inside a transaction.  We
+create a transactional clone from each method, named with a
+\texttt{\$\$withtrans} suffix, which is invoked when we are executing
+inside a transaction.  We pass the current transaction as the first
+parameter of the cloned method.\footnote{Note that cloning must take virtual
+  dispatch into account: cloning a method in a superclass must also
+  create appropriate cloned subclass implementations.}
+
+Non-transactional code inside a method must be transformed to use the
+\texttt{readNT} and \texttt{writeNT} mechanisms to perform object
+reads and writes (\figref{promrwnt}); the implementation is similar to
+that shown in \figref{counter-read} and \figref{counter-write}.
+
+\subsection{Analyses}\label{sec:hoist} % (check/field oracles)
 \subsection{Desugaring} % clone/arrayinit
-\subsection{Method Splitting}
 
 \section{Runtime System Implementation}
 The runtime system is parameterized to allow a large number of memory
 allocation strategies and collectors, but for the experiments reported
-here we used the Boehm-Demers-Weiser conservative garbage collector
+here I used the Boehm-Demers-Weiser conservative garbage collector
 \cite{BoehmDeWe91}.\footnote{The use of a conservative collector means
   that the mechanism described in \charef{precise-gc} to enable
   precise garbage collection was unneeded and thus disabled for these
