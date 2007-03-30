@@ -1406,6 +1406,32 @@ reads and writes (\figref{promrwnt}); the implementation is similar to
 that shown in \figref{counter-read} and \figref{counter-write}.
 
 \subsection{Analyses}\label{sec:hoist} % (check/field oracles)
+Our performance will be improved if we can identify objects or fields
+which are guaranteed not to be concurrently mutated, and replace our
+checks and read/write protocols with direct accesses.  We perform two
+analyses of this sort; \charef{moreopt} contains additional analyses
+which we have not implemented.
+
+Our first analysis is encapsulated in a FLEX class named
+\texttt{GlobalFieldOracle}.  This is a global analysis to determine
+fields which can/cannot be read/written to from a
+transactional/non-transactional context. \note{Think about this more.}
+
+We also use a collection of \texttt{CheckOracle}s to remove unneeded
+read and write checks. XXX.
+We hoist each check to its immediate dominator iff that node is
+postdominated by  the current node and that node is dominated by the
+definition of the variable referenced in the check.
+
+This ensures that all paths to the original location of the check must
+pass through the new location, and that the object involved in the
+check can not be undefined at the new check location.
+
+The process is
+repeated until no checks can be moved higher.
+
+Then we eliminate any check which is dominated by an identical check.
+
 \subsection{Desugaring} % clone/arrayinit
 
 \section{Runtime System Implementation}
@@ -1432,7 +1458,7 @@ G   2. object.wait
    3. arrays?
    4/ 32-byte granularity of LL/SC == false deadlocks.
 
-\section{Compiler optimizations}
+\section{Compiler optimizations}\label{sec:moreopt}
    1. version-passing
    2. escape analysis
    3. \#s from unique object benchmarks?
@@ -2108,3 +2134,4 @@ XXX: continue previous microbenchmarks, as function of object size.
 
 
 % LocalWords:  Promela microbenchmark Hennessy PowerPC setjmp longjmp
+% LocalWords:  subsumption
