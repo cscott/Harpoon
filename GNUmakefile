@@ -128,13 +128,18 @@ phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex \
 	phd-chall.tex phd-concl.tex phd-opt.tex phd-ack.tex
 #    figure dependencies
 phd-thesis.dvi: \
-	Figures/uvsimCounterRuntime.eps \
-	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
-	Figures/chuang.eps Figures/funarr.eps Figures/bloat.eps \
-	Figures/phd-counter.eps \
+	$(foreach f, \
+	uvsimCounterRuntime \
+	nb-single-obj nb-multi-obj \
+	chuang funarr bloat \
+	tr-sz-all tr-w-all sean_lie_6b \
+	phd-counter, \
+	Figures/$(f).eps Figures/$(f).pdf) \
 	$(foreach f, \
 	cachemods snapshot datastruct-entry tr-quad tr-multi-obj,\
-	Figures/$(f).pstex Figures/$(f).pstex_t)
+	Figures/$(f).pstex Figures/$(f).pstex_t Figures/$(f).pdf)
+phd-thesis.pdf: phd-thesis.dvi
+	pdflatex phd-thesis && pdflatex phd-thesis
 
 martin-happy: phd-thesis.pdf
 	rsync -avz phd-thesis.pdf k2.csail.mit.edu:public_html/Publications/

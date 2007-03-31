@@ -104,7 +104,13 @@ ptrsize.tex: ptrsize.data
 %.pstex: %.fig Makefile
 	fig2dev -L pstex $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@
 %.pstex_t: %.fig Makefile
-	fig2dev -L pstex_t -p Figures/$(patsubst %.fig,%.pstex,$<) $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@
+	fig2dev -L pstex_t -p Figures/$(patsubst %.fig,%.pstex,$<) $($(patsubst %.fig,FIG_MAG_%,$<)) $< $@.tmp
+	sed -e 's/.pstex}%/}%/' < $@.tmp > $@
+	$(RM) -f $@.tmp
+%.eps: %.pstex Makefile
+	cp $< $@
+%.pdf: %.eps Makefile
+	epstopdf $<
 
 # graphing helpers
 %.stats: %

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.12 2007-03-25 01:08:27 cananian Exp $
+% $Id: phd-thesis.cls,v 1.13 2007-03-31 23:28:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -56,7 +56,7 @@
 \newcommand{\epsfigput}[3][]{%
 \begin{figure}[t]\sis%
 \begin{center}%
-\includegraphics[height=2.75in,clip=true]{Figures/#2.eps}%
+\includegraphics[height=2.75in,clip=true]{Figures/#2}% .eps/.pdf ext is default
 \end{center}%
 \ifthenelse{\equal{#1}{}}{\caption{#3}}{\caption[#1]{#3}}%
 \label{fig:#2}%

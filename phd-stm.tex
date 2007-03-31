@@ -1412,10 +1412,24 @@ checks and read/write protocols with direct accesses.  We perform two
 analyses of this sort; \charef{moreopt} contains additional analyses
 which we have not implemented.
 
-Our first analysis is encapsulated in a FLEX class named
-\texttt{GlobalFieldOracle}.  This is a global analysis to determine
-fields which can/cannot be read/written to from a
-transactional/non-transactional context. \note{Think about this more.}
+Our first analysis classifies all fields in the program according to
+their use in transactional and non-transactional regions.  This
+analysis is encapsulated in a FLEX class named
+\texttt{GlobalFieldOracle}.  Fields which can never be written within
+a transaction do not need the special \texttt{readNT} mechanism from
+non-transactional code; their values can be loaded directly without
+testing for \texttt{FLAG}.  The only way that the field can have the
+\texttt{FLAG} value, if it is not written within a transaction, is if
+it is a false flag, in which case its value really is \texttt{FLAG}.
+Similarly, fields which can never be read or written within a
+transaction do not need to use the \texttt{writeNT} mechanism; they
+can just store directly to the field.\footnote{Note that its not
+  enough for the field not to be written; we must also protect against
+  write-after-write conflicts.}  Thus \texttt{GlobalFieldOracle} can
+make non-transactional code more efficient by eliminating the overhead
+of the software transaction system in some cases.
+
+
 
 We also use a collection of \texttt{CheckOracle}s to remove unneeded
 read and write checks. XXX.
@@ -1454,7 +1468,7 @@ here I used the Boehm-Demers-Weiser conservative garbage collector
 
 \section{Limitations}
    1. sub/multi word stuff
-G   2. object.wait
+   2. object.wait
    3. arrays?
    4/ 32-byte granularity of LL/SC == false deadlocks.
 
@@ -1540,7 +1554,7 @@ problems.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
+\includegraphics[width=2.25in,clip=true]{Figures/tr-w-all}%
 \end{center}%
 \caption{Proportion of transactional writes to objects equal to or
   smaller than a given size.}
@@ -1618,7 +1632,7 @@ never mutated after they are created.
 
 \section{A single-object protocol}
 \begin{figure}\centering
-\includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj.eps}
+\includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj}
 \caption{Implementing non-blocking single-object concurrent operations
   with functional arrays.}
 \label{fig:single-o}
@@ -1685,7 +1699,7 @@ first fix this problem.
 
 \section{Extension to multiple objects}
 \begin{figure}[t]\centering
-\includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
+\includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj}
 \caption[Data structures to support non-blocking multi-object
   concurrent operations.]{Data structures to support non-blocking multi-object
   concurrent operations.  Objects point to a linked list of versions,
@@ -1883,7 +1897,7 @@ constant time plus an invocation of \funcname{FA-Read} or
 
 \section{Lock-free functional arrays}\label{sec:large-obj}
 \begin{figure}\centering
-\includegraphics[width=6in,clip=true]{Figures/chuang.eps}
+\includegraphics[width=6in,clip=true]{Figures/chuang}
 \caption{Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
@@ -1966,7 +1980,7 @@ $O(n)$ time, so we amortize it over $n$ operations by randomly
 choosing to perform a cut with probability $1/n$.
 
 \begin{figure}\centering%
-\includegraphics[width=5.5in,clip=true]{Figures/funarr.eps}
+\includegraphics[width=5.5in,clip=true]{Figures/funarr}
 \caption[Atomic steps in $\funcname{FA-Rotate}(B)$.]%
  {Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.

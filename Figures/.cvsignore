@@ -27,7 +27,12 @@ funarr.eps
 nb-*-obj.eps
 tr-*-obj.eps
 uvsimCounterRuntime.eps
+cachemods.eps
+snapshot.eps
+datastruct-entry.eps
+tr-quad.eps
 *.pstex
 *.pstex_t
+*.pdf
 *.emf
 .*.autosave
