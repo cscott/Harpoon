@@ -348,7 +348,7 @@ architectural register state.
 \subsection{Optimizing the common case}
 
 A main goal of LTM and UTM is to run the common case fast. As shown in
-\secref{benchmarks}, the common case is when transactions are small
+\secref{htm-benchmarks}, the common case is when transactions are small
 and fit in the cache. Therefore, by using the cache and cache
 coherency mechanism to handle small transactions, LTM is able to
 execute with almost no overhead over serial code in the common
@@ -943,13 +943,13 @@ directly supported by the hardware.}}
 %% mentioned; may want to look at the ``abort handler'' defn, because
 %% we only implicitly define the term at that point.
 
-\section{Evaluation}
+\section{Evaluation}\label{sec:htm-benchmarks}
 
 \section{Making UTM fast}
 % describe how caching works.
 
 % Extending Transactions: beyond atomic power.
-\section{Extending Hardware Transactions}
+\section{Extending Hardware Transactions}\label{sec:htmplus}
 \subsection{Nesting}
 \subsection{Exchange and merging}
 \subsection{Loopholes and NITs}\label{sec:nit}
