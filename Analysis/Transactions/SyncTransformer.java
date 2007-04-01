@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.16 2007-03-23 21:45:10 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.17 2007-04-01 02:58:09 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -818,8 +818,9 @@ public class SyncTransformer
 	    }
 	    if (noFieldModification) return;
 	    if (handlers==null &&
-		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field())) {
-		// we can simply read/write fields with no sync access
+		!fo.isSyncWrite(q.field())) {
+		// we can simply read fields with no sync writes
+		// (since the only FLAG values will be false flags)
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.read_nt_skipped");
 		return;
@@ -969,7 +970,7 @@ public class SyncTransformer
 	    if (noFieldModification) return;
 	    if (handlers==null &&
 		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field())) {
-		// we can simply read/write fields with no sync access
+		// we can simply write fields with no sync access
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.write_nt_skipped");
 		return;
