@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.14 2007-04-01 23:09:45 cananian Exp $
+% $Id: phd-thesis.cls,v 1.15 2007-04-01 23:16:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -42,7 +42,9 @@
 \newcommand{\appref}[1]         {Appendix~\ref{sec:#1}}
 \newcommand{\figref}[1]         {Figure~\ref{fig:#1}}
 \newcommand{\secref}[1]         {section~\ref{sec:#1}}
+\newcommand{\Secref}[1]         {Section~\ref{sec:#1}}
 \newcommand{\charef}[1]         {chapter~\ref{sec:#1}}
+\newcommand{\Charef}[1]         {Chapter~\ref{sec:#1}}
 
 \newcommand{\figput}[3][]{%
 \begin{figure}[t]\sis%
