@@ -1,25 +1,46 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.37 2007-03-31 23:28:56 cananian Exp $
+% $Id: phd-thesis.tex,v 1.38 2007-04-01 23:20:45 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass{phd-thesis}
-\usepackage{hyperref} % make pretty hyperlinks in pdf output
+\documentclass[letterpaper]{phd-thesis}
 \usepackage{verbatim}
 \usepackage{alltt}
 \usepackage{epigraph}
 \usepackage{makeidx}
+\usepackage[pdfusetitle,pagebackref,colorlinks]{hyperref} % ooh, hyperlinks!
+%\hypersetup[linktocpage] % useful when previewing with dvi
 \makeindex
 
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.37 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.38 $}{70}
 
+% nicer bibliography back-references.
+\renewcommand*{\backref}[1]{} % tell backref we're using the alt interface
+\renewcommand*{\backrefalt}[4]{%
+  % alternative interface
+  % #1: number of distinct back references
+  % #2: backref list with distinct entries
+  % #3: number of back references including duplicates
+  % #4: backref list including duplicates
+  \ifnum#3=1 %
+    [1~citation on
+  \else
+    [#3~citations on
+  \fi
+  \ifnum#1=1 %
+    page
+  \else
+    pages
+  \fi
+  #2.]
+}
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
 \newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.37 $ $}
+\date{\subdate \\ $ $Revision: 1.38 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
