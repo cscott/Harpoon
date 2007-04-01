@@ -1390,6 +1390,7 @@ Nested transactions are implemented via subsumption; that is, nested
 synchronized blocks inside a transaction context are ignored: the
 inner transaction is subsumed by the outermost.
 
+\label{sec:withtrans}
 Method invocations inside transaction context must be transformed,
 since read and write operations are implemented differently depending
 on whether or not the current execution is inside a transaction.  We
@@ -1429,26 +1430,56 @@ can just store directly to the field.\footnote{Note that its not
 make non-transactional code more efficient by eliminating the overhead
 of the software transaction system in some cases.
 
-
-
-We also use a collection of \texttt{CheckOracle}s to remove unneeded
-read and write checks. XXX.
-We hoist each check to its immediate dominator iff that node is
-postdominated by  the current node and that node is dominated by the
-definition of the variable referenced in the check.
-
-This ensures that all paths to the original location of the check must
-pass through the new location, and that the object involved in the
-check can not be undefined at the new check location.
-
-The process is
-repeated until no checks can be moved higher.
-
-Then we eliminate any check which is dominated by an identical check.
+While \texttt{GlobalFieldOracle} targets non-transactional code, the
+\texttt{CheckOracle} analysis classes make transactional code more
+efficient by removing unneeded read and write checks.  As mentioned
+above, the \texttt{ensureReader} and \texttt{ensureWriter} checks need
+only be invoked once on each unique object read/written by the
+transaction.  Similarly, \texttt{checkWriteField} need only be
+performed once on each object field written by the transaction.  The
+\texttt{CheckOracle} classes hoist each check to its immediate
+dominator iff this new location for the check is postdominated by the
+current location and the new location is dominated by the definition
+of the variable referenced in the check.  This ensures that all paths
+to the original location of the check must pass through the new
+location, and that the object involved in the check is still defined
+appropriately at the new check location, since the analysis is
+performed on a single-assignment intermediate representation
+\cite{Ananian99}.  The check-hoisting process is repeated until no
+checks can be moved higher, then we eliminate any check which is
+dominated by an identical check.
 
 \subsection{Desugaring} % clone/arrayinit
+We also desugar some Java idioms to ease implementation.  Java
+specifies a \texttt{clone()} method of \texttt{java.lang.Object},
+from which every object is derived.  The top-level \texttt{clone()} method is
+somewhat magical, as it creates an exact copy of its subclass,
+including all its fields, which are otherwise hidden from methods of a
+superclass.  The transactional translation of this method is also
+somewhat baroque: it would have to mark all fields of the original
+method as ``read'' by the transaction, and then construct a versioned
+object written by the transaction.  As an end-run around this
+complexity, we desugar \texttt{clone()} into individual
+implementations in appropriate classes, each of which reads all fields
+of the class, and constructs a new object bypassing its
+constructors, and then individually sets all the fields to their new
+values.  Arrays get a similar \texttt{clone()} implementation that
+reads and writes the elements of the array.  These new implementations
+can then be transformed by the transaction pass like any other piece
+of code which reads and writes fields.
+
+The FLEX infrastructure also contains a mechanism for fast
+initialization of arrays; this mechanism is desugared into
+individual array set operations so that it, too, can be uniformly
+transformed by the transaction pass.
 
 \section{Runtime System Implementation}
+The FLEX runtime system was extended to support transactions.  The
+runtime uses the standard Java Native Interface (JNI) \cite{JNI} for
+native methods (written in C) called from Java.  Certain parts of the
+transaction system were written as native methods invoked via JNI, but
+others interact with the runtime system at a much lower level.
+  
 The runtime system is parameterized to allow a large number of memory
 allocation strategies and collectors, but for the experiments reported
 here I used the Boehm-Demers-Weiser conservative garbage collector
@@ -1457,8 +1488,220 @@ here I used the Boehm-Demers-Weiser conservative garbage collector
   precise garbage collection was unneeded and thus disabled for these
   experiments.} 
 
-\subsection{Preprocessor specialization}
+Each transaction had a \texttt{CommitRecord} object storing its state,
+whether \texttt{COMMITTED}, \texttt{ABORTED}, or still
+\texttt{WAITING}.  Most \texttt{CommitRecord} methods were written in
+Java, including object creation, exponential backoff on retry, and
+throwing the appropriate \texttt{TransactionAbortException} on abort.
+Only the crucial \texttt{commit()} and \texttt{abort()} operations,
+which atomically set the transaction status iff it is still
+\texttt{WAITING} were written in C, as JNI methods.
+
 \subsection{Implementing the JNI}
+\begin{figure}\sis\fontsize{9}{10}\begin{alltt}
+struct JNINativeInterface {
+  \(\cdots\)
+  \textit{/* Calling instance methods */}
+  jmethodID (*GetMethodID)
+    (JNIEnv *env, jclass clazz, const char *name, const char *sig);
+  jobject (*CallObjectMethod)
+    (JNIEnv *env, jobject obj, jmethodID methodID, ...);
+  \(\cdots\)
+  jboolean (*CallBooleanMethod)
+    (JNIEnv *env, jobject obj, jmethodID methodID, ...);
+  \(\cdots\)
+  jbyte (*CallByteMethod)
+    (JNIEnv *env, jobject obj, jmethodID methodID, ...);
+  \(\cdots\)
+  \textit{/* Accessing fields of objects */}
+  jfieldID (*GetFieldID)
+    (JNIEnv *env, jclass clazz, const char *name, const char *sig);
+  jobject (*GetObjectField)
+    (JNIEnv *env, jobject obj, jfieldID fieldID);
+  jboolean (*GetBooleanField)
+    (JNIEnv *env, jobject obj, jfieldID fieldID);
+  \(\cdots\)
+  void (*SetObjectField)
+    (JNIEnv *env, jobject obj, jfieldID fieldID, jobject value);
+  void (*SetBooleanField)
+    (JNIEnv *env, jobject obj, jfieldID fieldID, jboolean value);
+  \(\cdots\)
+  \textit{/* Array Operations */}
+  jobject (*GetObjectArrayElement)
+    (JNIEnv *env, jobjectArray array, jsize index);
+  void (*SetObjectArrayElement)
+    (JNIEnv *env, jobjectArray array, jsize index, jobject value);
+  \(\cdots\)
+  jboolean* (*GetBooleanArrayElements)
+    (JNIEnv *env, jbooleanArray array, jboolean *isCopy);
+  jbyte* (*GetByteArrayElements)
+    (JNIEnv *env, jbyteArray array, jboolean *isCopy);
+  \(\cdots\)
+};
+\end{alltt}
+\caption[A portion of the Java Native Interface] {A portion of the
+  Java Native Interface for interacting with the Java runtime from C
+  native methods \cite{JNI}.  There are function variants for all of the
+  basic Java types: boolean, byte, char, short, int, long, float,
+  double, and Object.  Note that the \texttt{jobject} and
+  \texttt{j*Array} types are not direct references to the heap
+  objects; they are opaque wrappers which preserve the garbage
+  collector's invariants and protect the runtime system's private
+  implementation.}
+\label{fig:jni}
+\end{figure}
+
+No Java transaction implementation is complete without some mechanism
+for executing native methods, that is, C code.  One cannot banish all
+native methods, since the Java standard library is built on them. 
+If one cannot make native code observe the \texttt{readNT} and
+\texttt{writeNT} protocols, one must ensure that the native code never
+reads any object written in a transaction, or writes any object read
+or written in a transaction.\footnote{If one
+  can implement \texttt{writeNT} but not \texttt{readNT}, one need
+  only ensure that native code does not write fields which are also
+  written inside a transaction, as discussed in \charef{hoist}.}  This
+is very inconvenient.
+
+Our solution ensures not only that (separately compiled) native code
+properly uses the \texttt{readNT} and  \texttt{writeNT} protocols
+outside a transaction, but also that reads and writes inside a
+transaction are handled properly.  This allows the use of ``safe''
+native methods (those without external side effects) inside a
+transaction. 
+
+We are able to do this because FLEX uses the Java Native Inteface
+\cite{JNI} to interact with native code.  The JNI, a portion of which
+is shown in \figref{jni}, abstracts field
+accesses and Java method invocations from native code, so we can
+substitute implementations which behave appropriately whether in a
+transaction or not.
+
+We distinguish between three classes of native methods.  The first are
+native methods which are ``safe'' in a transactional context.  That
+is, they have no external side effects (which would need to be undone
+if the transaction aborted), and will behave correctly in a
+transaction if all reads, writes, and method calls are simply replaced
+by the appropriate transactional protocol.   The second are methods
+which have a different implementation in a transactional context. One
+example would be the native methods which implement file I/O; in a
+transactional context these should interface with a underlying
+transactional file system and arrange for the I/O operations to commit
+iff the current transaction commits.  Another example is the
+\texttt{Object.wait()} method; the appropriate implementation is
+described in \charef{object-wait}.   The last class of native methods
+are those which are inherently impossible in a transactional context,
+usually due to irreversible external I/O (\charef{io} discusses I/O
+interactions in more detail).  A compiler configuration file
+identifies the safe native methods.
+
+For ``safe'' native methods, the FLEX compiler creates a thunk which
+stores the transaction object in the JNI environment structure
+(\texttt{JNIEnv}) which is passed to every JNI method.  When that
+native method invokes the field or array operations in the JNI (for
+example, \texttt{Get*Field}, \texttt{Get*ArrayElements}, or
+\texttt{Set*Field}) the runtime checks the environment structure to
+determine whether to use the appropriate transactional or
+non-transactional read or write protocol.  When Java methods are
+invoked, via the \texttt{Call*Method} family of methods, in a
+transactional context the runtime looks up the \texttt{\$\$withtrans}
+suffixed version of the method (see \charef{withtrans}) and invokes
+it, passing the transaction object from the environment as the first
+parameter.
+
+For unsafe native methods, FLEX generates a call to a
+\texttt{\$\$withtrans}-suffixed JNI method, passing the transaction as
+the first parameter as is done for pure Java calls inside a
+transaction context.  The implementer is then responsible for correct
+transactional behavior.
+
+\subsection{Preprocessor specialization}
+Part of the challenge in engineering a practical implementation is
+properly accounting for the wide range of data types in any real
+programming language.  Java contains 8 primitive types, plus Object
+types (which are themselves divided into array and non-array types).
+Our flag value was carefully chosen so as not to be a NaN for either
+of the floating-point types, since comparisons against NaN can be
+surprising, and to consist of a repeated byte value so that a new
+object can be initialized with all fields \texttt{FLAG} without
+knowledge of the exact types and locations of each field.
+\Charef{multiword} will discuss some of the other challenges involved in
+synthesizing atomic operations on subword and multi-word datatypes.
+
+\begin{figure}\sis\fontsize{9}{10}\begin{alltt}
+\textit{/* Example illustrating use of preprocessor specialization */}
+/* (from readwrite.c) */
+
+#define VALUETYPE jboolean
+#define VALUENAME Boolean
+#include "transact/readwrite-impl.c"
+#define ARRAY
+#include "transact/readwrite-impl.c"
+#undef ARRAY
+#undef VALUENAME
+#undef VALUETYPE
+
+/* ... etc ... */
+
+#define VALUETYPE jdouble
+#define VALUENAME Double
+#include "transact/readwrite-impl.c"
+#define ARRAY
+#include "transact/readwrite-impl.c"
+#undef ARRAY
+#undef VALUENAME
+#undef VALUETYPE
+
+#define VALUETYPE struct oobj *
+#define VALUENAME Object
+#include "transact/readwrite-impl.c"
+#define ARRAY
+#include "transact/readwrite-impl.c"
+#undef ARRAY
+#undef VALUENAME
+#undef VALUETYPE
+
+/* (from readwrite-impl.c) */
+#include "transact/preproc.h" /* Defines 'T()' and 'TA'() macros. */
+
+VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset);
+
+VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
+  do {
+    VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
+    if (likely(f!=T(TRANS_FLAG))) return f;
+    if (unlikely(SAW_FALSE_FLAG ==
+                 TA(copyBackField)(obj, offset, KILL_WRITERS)))
+      return T(TRANS_FLAG); // "false" transaction: field really is FLAG.
+    // okay, we've done a copy-back now.  retry.
+  } while(1);
+}
+\end{alltt}
+\caption{abc}\label{fig:y}
+\end{figure}
+\begin{figure}\sis\fontsize{9}{10}\begin{alltt}
+\textit{/* Preprocessor specialization mechanism */}
+/* (from preproc.h) */
+#define x1(x,v) x2(x,v)
+#define x2(x,v) x ## _ ## v
+
+#if defined(ARRAY)
+# define A(x) x1(x,Array)
+# define OBJ_OR_ARRAY(x,y) (y)
+#else
+# define A(x) x
+# define OBJ_OR_ARRAY(x,y) (x)
+#endif
+
+#define T(x) x1(x,VALUENAME)
+#define TA(x) T(A(x))
+
+#define FIELDBASE(obj) \(\backslash\)
+         OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start)
+\end{alltt}
+\caption{def}\label{fig:x}
+\end{figure}
+
 
 \section{Performance}\label{sec:full-bench}
    1. \# false conflicts
@@ -1467,16 +1710,18 @@ here I used the Boehm-Demers-Weiser conservative garbage collector
    4. cache effects etc due to code splitting
 
 \section{Limitations}
-   1. sub/multi word stuff
-   2. object.wait
+   1. sub/multi word stuff \label{sec:multiword}
+   2. object.wait \label{sec:object-wait}
    3. arrays?
    4/ 32-byte granularity of LL/SC == false deadlocks.
+   5. static fields
 
 \section{Compiler optimizations}\label{sec:moreopt}
    1. version-passing
    2. escape analysis
    3. \#s from unique object benchmarks?
    4. allocation speedups
+   5. read-only objects (can initialilze/read directly)
 
 \section{Arrays} % this should be moved into its own chapter
    1. theory
@@ -2147,5 +2392,5 @@ XXX: continue previous microbenchmarks, as function of object size.
 %%%%%%%%%%%%%%%%%%%%%
 
 
-% LocalWords:  Promela microbenchmark Hennessy PowerPC setjmp longjmp
+% LocalWords:  Promela microbenchmark Hennessy PowerPC setjmp longjmp runtime
 % LocalWords:  subsumption
