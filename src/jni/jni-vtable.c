@@ -247,9 +247,20 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   FNI_UnregisterNatives,
             
   FNI_MonitorEnter,
-  FNI_MonitorExit,
+  FNI_MonitorExit, // 218
             
-#if 0
-  FNI_GetJavaVM,
-#endif
+  0, // FNI_GetJavaVM,
+  0, // FNI_GetStringRegion,
+  0, // FNI_GetStringUTFRegion,
+  0, // FNI_GetPrimitiveArrayCritical,
+  0, // FNI_ReleasePrimitiveArrayCritical,
+  0, // FNI_GetStringCritical,
+  0, // FNI_ReleaseStringCritical,
+  0, // FNI_NewWeakGlobalRef,
+  0, // FNI_DeleteWeakGlobalRef,
+  0, // FNI_ExceptionCheck,
+  0, // FNI_NewDirectByteBuffer
+  0, // FNI_GetDirectBufferAddress,
+  0, // FNI_GetDirectBufferCapacity,
+  0
 };
