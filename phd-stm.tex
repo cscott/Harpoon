@@ -1499,7 +1499,7 @@ which atomically set the transaction status iff it is still
 
 \subsection{Implementing the JNI}
 \begin{figure}\sis\fontsize{9}{10}\begin{alltt}
-struct JNINativeInterface {
+struct JNINativeInterface \{
   \(\cdots\)
   \textit{/* Calling instance methods */}
   jmethodID (*GetMethodID)
@@ -1537,7 +1537,7 @@ struct JNINativeInterface {
   jbyte* (*GetByteArrayElements)
     (JNIEnv *env, jbyteArray array, jboolean *isCopy);
   \(\cdots\)
-};
+\};
 \end{alltt}
 \caption[A portion of the Java Native Interface] {A portion of the
   Java Native Interface for interacting with the Java runtime from C
@@ -1599,8 +1599,8 @@ For ``safe'' native methods, the FLEX compiler creates a thunk which
 stores the transaction object in the JNI environment structure
 (\texttt{JNIEnv}) which is passed to every JNI method.  When that
 native method invokes the field or array operations in the JNI (for
-example, \texttt{Get*Field}, \texttt{Get*ArrayElements}, or
-\texttt{Set*Field}) the runtime checks the environment structure to
+example, \texttt{Get*Field}, \texttt{Set*Field}, \texttt{Get*ArrayElements},
+etc.) the runtime checks the environment structure to
 determine whether to use the appropriate transactional or
 non-transactional read or write protocol.  When Java methods are
 invoked, via the \texttt{Call*Method} family of methods, in a
@@ -1617,9 +1617,10 @@ transactional behavior.
 
 \subsection{Preprocessor specialization}
 Part of the challenge in engineering a practical implementation is
-properly accounting for the wide range of data types in any real
-programming language.  Java contains 8 primitive types, plus Object
-types (which are themselves divided into array and non-array types).
+properly accounting for the wide range of data types in a real
+programming language.  Java contains 8 primitive types in addition to
+types deriving from \texttt{java.lang.Object}
+(which are themselves divided into array and non-array types).
 Our flag value was carefully chosen so as not to be a NaN for either
 of the floating-point types, since comparisons against NaN can be
 surprising, and to consist of a repeated byte value so that a new
@@ -1666,18 +1667,26 @@ synthesizing atomic operations on subword and multi-word datatypes.
 
 VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset);
 
-VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
-  do {
+VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) \{
+  do \{
     VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
     if (likely(f!=T(TRANS_FLAG))) return f;
     if (unlikely(SAW_FALSE_FLAG ==
                  TA(copyBackField)(obj, offset, KILL_WRITERS)))
       return T(TRANS_FLAG); // "false" transaction: field really is FLAG.
     // okay, we've done a copy-back now.  retry.
-  } while(1);
-}
+  \} while(1);
+\}
+
+/* ... undefine macros at end of readwrite-impl.c ... */
 \end{alltt}
-\caption{abc}\label{fig:y}
+\caption[Specializing transaction primitives by field size and object type.]
+{Specializing transaction primitives by field size and object type.
+\figref{special2} contains the relevant definitions from
+\texttt{preproc.h}.  Note the use of the macros \texttt{likely} and
+\texttt{unlikely}, which are defined to communicate static branch
+prediction information to the C compiler.}
+\label{fig:special1}
 \end{figure}
 \begin{figure}\sis\fontsize{9}{10}\begin{alltt}
 \textit{/* Preprocessor specialization mechanism */}
@@ -1699,9 +1708,22 @@ VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
 #define FIELDBASE(obj) \(\backslash\)
          OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start)
 \end{alltt}
-\caption{def}\label{fig:x}
+\caption{Snippet from \texttt{preproc.h} which defines the macros used
+in \figref{special1}.}\label{fig:special2}
 \end{figure}
-
+Figures \ref{fig:special1} and \ref{fig:special2} demonstrate how
+field size and object type specialization was implemented in the FLEX
+transaction runtime.  The main header and source files did nothing but
+repeatedly \texttt{\#include} an \texttt{-impl}-suffixed version of
+the file with \texttt{VALUETYPE}, \texttt{VALUENAME}, and
+\texttt{ARRAY} defined to range over the possible primitive and array
+types.  This allows us to compactly name and define specialized
+functions, accounting for array/object (among other) differences.  For
+example, the \texttt{FIELDBASE} macro (defined in \figref{special2},
+used in \figref{special1}) allows us to treat object fields
+and array elements uniformly, even though the first array element
+starts at a different offset from the first field (since array data starts with
+an immutable length field).
 
 \section{Performance}\label{sec:full-bench}
    1. \# false conflicts
