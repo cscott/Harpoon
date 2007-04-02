@@ -1616,19 +1616,6 @@ transaction context.  The implementer is then responsible for correct
 transactional behavior.
 
 \subsection{Preprocessor specialization}
-Part of the challenge in engineering a practical implementation is
-properly accounting for the wide range of data types in a real
-programming language.  Java contains 8 primitive types in addition to
-types deriving from \texttt{java.lang.Object}
-(which are themselves divided into array and non-array types).
-Our flag value was carefully chosen so as not to be a NaN for either
-of the floating-point types, since comparisons against NaN can be
-surprising, and to consist of a repeated byte value so that a new
-object can be initialized with all fields \texttt{FLAG} without
-knowledge of the exact types and locations of each field.
-\Charef{multiword} will discuss some of the other challenges involved in
-synthesizing atomic operations on subword and multi-word datatypes.
-
 \begin{figure}\sis\fontsize{9}{10}\begin{alltt}
 \textit{/* Example illustrating use of preprocessor specialization */}
 /* (from readwrite.c) */
@@ -1708,9 +1695,21 @@ prediction information to the C compiler.}
 #define FIELDBASE(obj) \(\backslash\)
          OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start)
 \end{alltt}
-\caption{Snippet from \texttt{preproc.h} which defines the macros used
+\caption{Snippet from \texttt{preproc.h} which defines macros used
 in \figref{special1}.}\label{fig:special2}
 \end{figure}
+
+Part of the challenge in engineering a practical implementation is
+properly accounting for the wide range of data types in a real
+programming language.  Java contains 8 primitive types in addition to
+types deriving from \texttt{java.lang.Object},
+which are themselves divided into array and non-array
+types.\footnote{Our flag value was carefully chosen so as not to be a NaN for either
+of the floating-point types, since comparisons against NaN can be
+surprising, and to consist of a repeated byte value so that a new
+object can be initialized with all fields \texttt{FLAG} without
+knowledge of the exact types and locations of each field.}
+
 Figures \ref{fig:special1} and \ref{fig:special2} demonstrate how
 field size and object type specialization was implemented in the FLEX
 transaction runtime.  The main header and source files did nothing but
@@ -1725,37 +1724,78 @@ and array elements uniformly, even though the first array element
 starts at a different offset from the first field (since array data starts with
 an immutable length field).
 
+\Charef{multiword} will discuss some of the other challenges involved in
+synthesizing atomic operations on subword and multi-word datatypes.
+
 \section{Performance}\label{sec:full-bench}
+\note{WRITE ME.}
    1. \# false conflicts
    2. read/write check overhead
    3. bottom-line
    4. cache effects etc due to code splitting
 
 \section{Limitations}
-   1. sub/multi word stuff \label{sec:multiword}
-   2. object.wait \label{sec:object-wait}
-   3. arrays?
-   4/ 32-byte granularity of LL/SC == false deadlocks.
-   5. static fields
+The present implementation contains a number of non-fundamental
+limitations with well-understood solutions that, nonetheless, would
+add additional implementation complexity.  These involve static
+fields, sub-word and multi-word fields, coarse granularity of LL/SC
+instructions, and \texttt{Object.wait()}.  In addition, there are
+limitations related to the manipulation of large objects (usually
+arrays); we will put off to \charef{largeobj} a full discussion of the
+problem and its solutions.
 
-\section{Compiler optimizations}\label{sec:moreopt}
-   1. version-passing
-   2. escape analysis
-   3. \#s from unique object benchmarks?
-   4. allocation speedups
-   5. read-only objects (can initialilze/read directly)
+\subsection{Static Fields}
+Static fields are not encapsulated in an object as other fields are;
+they are really a form of controlled-visibility global variable.  The
+present implementation ignores static fields when performing the
+synchronization transformation; reads and writes to static fields are
+always direct.  In theory this could cause races, but in our
+benchmarks most static fields are written only during initialization.
+An analysis which proved that writes only occurred during a
+single-threaded class initialization phase of execution could prove
+that these direct accesses are safe in most cases.  Proper handling of
+static fields which do not meet this condition is straight-forward:
+new singleton classes would be created encapsulating these fields, and
+access would be via an extra indirection.  \figref{static-fields}
+illustrates this transformation.
+\begin{figure}\sis\fontsize{9}{10}
+\begin{minipage}[b]{1in}
+\begin{verbatim}
+class C {
+  static int f;
+  ...
+  void foo() {
+    ... = C.f;
+    C.f = ...;
+  }
+}
+\end{verbatim}
+\end{minipage}
+\raisebox{.4in}{$\quad\Rightarrow\quad$}
+\begin{minipage}[b]{3in}
+\begin{verbatim}
+class C$$static {
+  int f;
+}
+class C {
+  final static C$$static $static = new C$$static();
+  ...
+  void foo() {
+    ... = C.$static.f;
+    C.$static.f = ...;
+  }
+}
+\end{verbatim}
+\end{minipage}%$
+\caption[Static field transformation.]
+{Static field transformation.  Static fields of class \texttt{C} have
+  been hoisted into a new class \texttt{C\$\$static}.  Since the new
+  field \texttt{\$static} is write-once during initialization, it is
+  safe to read/write directly, unlike the old field \texttt{f}.}
+\label{fig:static-fields}
+\end{figure}
 
-\section{Arrays} % this should be moved into its own chapter
-   1. theory
-   2. ubench
-   3. practice
-   4. noa \#s
-
-
-
-Section on compiler optimizations here, too.
-
-\section{Handling subword and multi-word reads/writes}
+\subsection{Handling subword and multi-word reads/writes}
 
 XXX: describe how this is done:
 
@@ -1796,7 +1836,29 @@ wrap this as a small transactional write of N word-size fields.
 read is not a problem, because we can simulate 64-bit LL just fine.
 
 
+\subsection{Coarse-grained LL/SC}
+object-per-cache line; see witchell work
 
+   2. sub/multi word stuff \label{sec:multiword}
+   3. 32-byte granularity of LL/SC == false deadlocks.
+   4. object.wait \label{sec:object-wait}
+
+\section{Compiler optimizations}\label{sec:moreopt}
+   1. version-passing
+   2. escape analysis
+   3. \#s from unique object benchmarks?
+   4. allocation speedups
+   5. read-only objects (can initialilze/read directly)
+
+\section{Arrays} % this should be moved into its own chapter
+   1. theory
+   2. ubench
+   3. practice
+   4. noa \#s
+
+
+
+Section on compiler optimizations here, too.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
