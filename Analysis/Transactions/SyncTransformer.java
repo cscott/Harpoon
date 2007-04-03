@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.17 2007-04-01 02:58:09 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.18 2007-04-03 19:59:51 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -128,6 +128,8 @@ public class SyncTransformer
     // for statistics:
     private final boolean enabled = // turns off the transformation.
 	!Boolean.getBoolean("harpoon.synctrans.disabled");
+    private final boolean removeTransactions = // make all code non-trans
+	Boolean.getBoolean("harpoon.synctrans.removetrans");
     private final boolean noFieldModification = // only do monitorenter/exit
 	Boolean.getBoolean("harpoon.synctrans.nofieldmods");
     private final boolean noArrayModification = // only do regular objects
@@ -587,7 +589,8 @@ public class SyncTransformer
 	public void visit(MONITORENTER q) {
 	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
-	    if (handlers!=null && noNestedTransactions) {
+	    if (removeTransactions ||
+		(handlers!=null && noNestedTransactions)) {
 		// we've already got a top-level transaction; ignore this
 		// monitorenter
 		skipped_nested++;
@@ -678,8 +681,8 @@ public class SyncTransformer
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    if (skipped_nested>0) {
 		skipped_nested--;
-		assert handlers!=null;
-		assert noNestedTransactions;
+		assert removeTransactions || handlers!=null;
+		assert removeTransactions || noNestedTransactions;
 		Quad.addEdge(in.from(), in.which_succ(),
 			     out.to(), out.which_pred());
 		return;
