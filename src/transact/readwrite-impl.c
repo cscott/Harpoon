@@ -136,7 +136,11 @@ DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
 
 DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
 			    VALUETYPE value) {
-  if (unlikely(value != T(TRANS_FLAG))) {
+  if (
+#if 1 /* XXX: should be '#ifndef HAS_64_BIT_STORE_CONDITIONAL' */
+      (sizeof(VALUETYPE) <= sizeof(jint)) &&
+#endif
+      likely(value != T(TRANS_FLAG))) {
     do {
       // LL(readerList)/SC(field)
       if (likely(LL(OBJ_READERS_PTR(obj))==NULL) &&
