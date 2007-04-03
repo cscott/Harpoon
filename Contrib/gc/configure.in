@@ -104,6 +104,14 @@ none)   AC_MSG_RESULT([no thread support])
 *)	AC_MSG_ERROR([unknown threading model: $thread_model]) ;;
 esac
 
+dnl Extra compiler flags; useful for compiling different variants
+dnl of the runtime for benchmarking or whatever.  FROM FLEX RUNTIME.
+AC_MSG_CHECKING([for extra compiler flags])
+AC_ARG_WITH(extra-cflags,
+[  --with-extra-cflags={flags}  Pass the given flags to the compiler.],
+extra_cflags="$withval", )
+AC_MSG_RESULT($extra_cflags)
+
 
 INCLUDES="-I${srcdir}/include -I../../include"
 THREADDLIBS=
@@ -529,6 +537,8 @@ if test "${enable_gc_assertions}" = yes; then
 fi
 
 AM_CONDITIONAL(USE_LIBDIR, test -z "$with_cross_host")
+
+GC_CFLAGS="$GC_CFLAGS $extra_cflags" dnl FROM FLEX RUNTIME
 
 AC_OUTPUT([Makefile doc/Makefile include/Makefile],,
 srcdir=${srcdir}

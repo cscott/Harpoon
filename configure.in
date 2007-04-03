@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.170 $)dnl
+AC_REVISION($Revision: 1.171 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -871,6 +871,15 @@ if test "$masked_pointers" = yes; then
         [Define to zero the low bits of pointers before their use])
 fi
 AC_MSG_RESULT($masked_pointers)
+
+dnl Extra compiler flags; useful for compiling different variants
+dnl of the runtime for benchmarking or whatever.
+AC_MSG_CHECKING([for extra compiler flags])
+AC_ARG_WITH(extra-cflags,
+[  --with-extra-cflags={flags}  Pass the given flags to the compiler.],
+extra_cflags="$withval", )
+CFLAGS="$CFLAGS $extra_cflags"
+AC_MSG_RESULT($extra_cflags)
 
 dnl Find out how to set time zone.  This is way down here because we
 dnl want to make sure it's tested *after* we set _XOPEN_SOURCE or
