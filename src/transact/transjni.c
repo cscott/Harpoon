@@ -3,6 +3,7 @@
 # include "config.h"
 # include "jni.h"
 # include "jni-private.h"
+# include "transact/transact.h"
 # ifdef DONT_REALLY_DO_TRANSACTIONS
 #  include "transact/stubs.h"
 # else
