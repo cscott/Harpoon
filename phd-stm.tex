@@ -1615,9 +1615,8 @@ the first parameter as is done for pure Java calls inside a
 transaction context.  The implementer is then responsible for correct
 transactional behavior.
 
-\subsection{Preprocessor specialization}
-\begin{figure}\sis\fontsize{9}{10}\begin{alltt}
-\textit{/* Example illustrating use of preprocessor specialization */}
+\begin{figure}[t]\sis\fontsize{8}{9}\begin{alltt}
+\textit{/* Framework for use of preprocessor specialization. */}
 /* (from readwrite.c) */
 
 #define VALUETYPE jboolean
@@ -1648,7 +1647,18 @@ transactional behavior.
 #undef ARRAY
 #undef VALUENAME
 #undef VALUETYPE
-
+\end{alltt}
+\caption[Specializing transaction primitives by field size and object
+  type (\texttt{readwrite.c}).]{
+Specializing transaction primitives by field size and object type:
+  \texttt{readwrite.c}.
+This figure shows how \texttt{readwrite.c} specializes the code in
+\texttt{readwrite-impl.c} (\figref{special2}) through the use of multiple 
+\texttt{\#include} statements.}
+\label{fig:special1}
+\end{figure}
+\begin{figure}\sis\fontsize{8}{9}\begin{alltt}
+\textit{/* Implementing generic functions. */}
 /* (from readwrite-impl.c) */
 #include "transact/preproc.h" /* Defines 'T()' and 'TA'() macros. */
 
@@ -1665,18 +1675,20 @@ VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) \{
   \} while(1);
 \}
 
-/* ... undefine macros at end of readwrite-impl.c ... */
-\end{alltt}
-\caption[Specializing transaction primitives by field size and object type.]
-{Specializing transaction primitives by field size and object type.
-\figref{special2} contains the relevant definitions from
-\texttt{preproc.h}.  Note the use of the macros \texttt{likely} and
-\texttt{unlikely}, which are defined to communicate static branch
-prediction information to the C compiler.}
-\label{fig:special1}
+/* ... undefine macros at end of readwrite-impl.c ... */\end{alltt}
+\caption[Specializing transaction primitives by field size and object
+ type (\texttt{readwrite-impl.c}).]{
+Specializing transaction primitives by field size and object type:
+ \texttt{readwrite-impl.c}.  In this snippet the \texttt{readNT} algorithm is
+ implemented using macros (defined in \figref{special3},
+ \texttt{preproc.h}) to implement generic field types and naming
+ conventions.  Note the use of the macros \texttt{likely} and
+ \texttt{unlikely}, which communicate static branch
+ prediction information to the C compiler.}
+\label{fig:special2}
 \end{figure}
-\begin{figure}\sis\fontsize{9}{10}\begin{alltt}
-\textit{/* Preprocessor specialization mechanism */}
+\begin{figure}\sis\fontsize{8}{9}\begin{alltt}
+\textit{/* Preprocessor specialization macros */}
 /* (from preproc.h) */
 #define x1(x,v) x2(x,v)
 #define x2(x,v) x ## _ ## v
@@ -1695,10 +1707,15 @@ prediction information to the C compiler.}
 #define FIELDBASE(obj) \(\backslash\)
          OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start)
 \end{alltt}
-\caption{Snippet from \texttt{preproc.h} which defines macros used
-in \figref{special1}.}\label{fig:special2}
+\caption[Specializing transaction primitives by field size and object
+ type (\texttt{preproc.h}).]
+{Specializing transaction primitives by field size and object
+ type: \texttt{preproc.h}.  In this portion of the file we define the
+ specialization macros used in \figref{special2}.}
+\label{fig:special3}
 \end{figure}
 
+\subsection{Preprocessor specialization}
 Part of the challenge in engineering a practical implementation is
 properly accounting for the wide range of data types in a real
 programming language.  Java contains 8 primitive types in addition to
@@ -1710,7 +1727,8 @@ surprising, and to consist of a repeated byte value so that a new
 object can be initialized with all fields \texttt{FLAG} without
 knowledge of the exact types and locations of each field.}
 
-Figures \ref{fig:special1} and \ref{fig:special2} demonstrate how
+Figures \ref{fig:special1}, \ref{fig:special2}, and \ref{fig:special3}
+demonstrate how
 field size and object type specialization was implemented in the FLEX
 transaction runtime.  The main header and source files did nothing but
 repeatedly \texttt{\#include} an \texttt{-impl}-suffixed version of
@@ -1742,7 +1760,7 @@ fields, sub-word and multi-word fields, coarse granularity of LL/SC
 instructions, and \texttt{Object.wait()}.  In addition, there are
 limitations related to the manipulation of large objects (usually
 arrays); we will put off to \charef{largeobj} a full discussion of the
-problem and its solutions.
+large object problem and its solutions.
 
 \subsection{Static Fields}
 Static fields are not encapsulated in an object as other fields are;
@@ -1848,7 +1866,7 @@ object-per-cache line; see witchell work
    2. escape analysis
    3. \#s from unique object benchmarks?
    4. allocation speedups
-   5. read-only objects (can initialilze/read directly)
+   5. read-only objects (can initialize/read directly)
 
 \section{Arrays} % this should be moved into its own chapter
    1. theory
