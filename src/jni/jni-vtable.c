@@ -12,12 +12,15 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
             
   (typeof(&FNI_DefineClass)) FNI_Unimplemented,
   FNI_FindClass,
-  0,
-  0,
-  0,
+
+  0, // FNI_FromReflectedMethod,
+  0, // FNI_FromReflectedField,
+  0, // FNI_ToReflectedMethod,
+
   FNI_GetSuperclass,
   FNI_IsAssignableFrom,
-  0,
+
+  0, // FNI_ToReflectedField,
             
   FNI_Throw,
   FNI_ThrowNew,
@@ -25,15 +28,16 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   FNI_ExceptionDescribe,
   FNI_ExceptionClear,
   FNI_FatalError,
-  0,
-  0,
+
+  0, // FNI_PushLocalFrame,
+  0, // FNI_PopLocalFrame,
             
   FNI_NewGlobalRef,
   FNI_DeleteGlobalRef,
   FNI_DeleteLocalRef,
   FNI_IsSameObject,
-  0,
-  0,
+  0, // FNI_NewLocalRef_, // not the same as existing FNI_NewLocalRef method
+  0, // FNI_EnsureLocalCapacity,
             
   FNI_AllocObject,
   FNI_NewObject,
@@ -250,15 +254,21 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   FNI_MonitorExit, // 218
             
   0, // FNI_GetJavaVM,
+
   0, // FNI_GetStringRegion,
   0, // FNI_GetStringUTFRegion,
+
   0, // FNI_GetPrimitiveArrayCritical,
   0, // FNI_ReleasePrimitiveArrayCritical,
+
   0, // FNI_GetStringCritical,
   0, // FNI_ReleaseStringCritical,
+
   0, // FNI_NewWeakGlobalRef,
   0, // FNI_DeleteWeakGlobalRef,
+
   0, // FNI_ExceptionCheck,
+
   0, // FNI_NewDirectByteBuffer
   0, // FNI_GetDirectBufferAddress,
   0, // FNI_GetDirectBufferCapacity,
