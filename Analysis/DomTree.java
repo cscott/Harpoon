@@ -30,7 +30,7 @@ import java.util.Stack;
  * <code>CFGrapher</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.12 2004-02-08 01:49:03 cananian Exp $
+ * @version $Id: DomTree.java,v 1.13 2007-04-03 19:59:21 cananian Exp $
  */
 
 public class DomTree<HCE extends HCodeElement> /*implements Graph*/ {
@@ -213,7 +213,7 @@ public class DomTree<HCE extends HCodeElement> /*implements Graph*/ {
 	    HCE[] hcel = bucket.getSet(p);
 	    for (int j=0; j<hcel.length; j++) {
 		HCE v = hcel[j];
-		HCE y = u.Eval(v);
+		HCE y = (HCE) u.Eval(v);//XXX: cast is JAVAC BUG
 		if (semi.get(y) == semi.get(v))
 		    idom.put(v, p);
 		else
