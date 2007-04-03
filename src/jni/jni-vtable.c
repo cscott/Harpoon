@@ -262,5 +262,4 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   0, // FNI_NewDirectByteBuffer
   0, // FNI_GetDirectBufferAddress,
   0, // FNI_GetDirectBufferCapacity,
-  0
 };
