@@ -8,13 +8,16 @@ static jmethodID lookupTrans(JNIEnv *env, jmethodID mid, int isStatic) {
   const char *crdesc="(Lharpoon/Runtime/Transactions/CommitRecord;";
   char newname[strlen(mid->name)+strlen(suffix)+1];
   char newdesc[strlen(mid->desc)+strlen(crdesc)+1];
+  jmethodID result;
   strcpy(newname, mid->name); strcat(newname, suffix);
   assert(mid->desc[0]=='(');
   strcpy(newdesc, crdesc); strcat(newdesc, mid->desc+1);
   if (isStatic)
-    return (*env)->GetStaticMethodID(env, cls, newname, newdesc);
+    result = (*env)->GetStaticMethodID(env, cls, newname, newdesc);
   else
-    return (*env)->GetMethodID(env, cls, newname, newdesc);
+    result = (*env)->GetMethodID(env, cls, newname, newdesc);
+  assert(result);
+  return result;
 }
 
 #define METHOD(methodID,isStatic) \
