@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.18 2007-04-03 19:59:51 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.19 2007-04-03 21:25:22 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -675,7 +675,8 @@ public class SyncTransformer
 	    fixupmap.put(q5, handlers.head);
 	}
 	public void visit(MONITOREXIT q) {
-	    assert handlers!=null : "MONITOREXIT not dominated by "+
+	    assert removeTransactions ||
+		   handlers!=null : "MONITOREXIT not dominated by "+
 			"MONITORENTER in "+q.getFactory().getParent();
 	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
