@@ -3,6 +3,12 @@
 # include "config.h"
 # include "jni.h"
 # include "jni-private.h"
+# include "fni-stats.h" /* sometimes we're going to keep statistics */
+DECLARE_STATS_EXTERN(transact_readnt)
+DECLARE_STATS_EXTERN(transact_writent)
+DECLARE_STATS_EXTERN(transact_false_flag_read)
+DECLARE_STATS_EXTERN(transact_false_flag_write)
+DECLARE_STATS_EXTERN(transact_long_write)
 
 # include "transact/atomic.h"
 # include "transact/versions.h"

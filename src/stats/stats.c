@@ -32,6 +32,11 @@ DECLARE_STATS_LOCAL(transact_versions_obj_num_alloc)
 DECLARE_STATS_LOCAL(transact_versions_arr_num_alloc)
 DECLARE_STATS_LOCAL(transact_versions_obj_bytes_alloc)
 DECLARE_STATS_LOCAL(transact_versions_arr_bytes_alloc)
+DECLARE_STATS_LOCAL(transact_readnt)
+DECLARE_STATS_LOCAL(transact_writent)
+DECLARE_STATS_LOCAL(transact_false_flag_read)
+DECLARE_STATS_LOCAL(transact_false_flag_write)
+DECLARE_STATS_LOCAL(transact_long_write)
 #endif /* WITH_TRANSACTIONS */
 #ifdef WITH_LIVE_HEAP_STATISTICS
 DECLARE_STATS_LOCAL(heap_current_live_arr_bytes)
@@ -119,6 +124,14 @@ void print_statistics(void) {
 	 FS(transact_versions_obj_num_alloc),
 	 FS(transact_versions_arr_bytes_alloc),
 	 FS(transact_versions_arr_num_alloc));
+  printf("False flags:             %8llu reads / %8llu writes\n"
+         "Longs:                                 %8llu writes\n"
+	 "Total non-transactional: %8llu reads / %8llu writes\n",
+	 FS(transact_false_flag_read),
+	 FS(transact_false_flag_write),
+	 FS(transact_long_write),
+	 FS(transact_readnt),
+	 FS(transact_writent));
 #endif /* WITH_TRANSACTIONS */
 #ifdef WITH_LIVE_HEAP_STATISTICS
   GC_gcollect();

@@ -100,12 +100,15 @@ DECL void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
 ///////////////////////////////////////////////////////////////////////
 
 DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
+  INCREMENT_STATS(transact_readnt, 1);
   do {
     VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
     if (likely(f!=T(TRANS_FLAG))) return f;
     if (unlikely(SAW_FALSE_FLAG ==
-		 TA(copyBackField)(obj, offset, KILL_WRITERS)))
+		 TA(copyBackField)(obj, offset, KILL_WRITERS))) {
+      INCREMENT_STATS(transact_false_flag_read, 1);
       return T(TRANS_FLAG); // "false" transaction: field really is FLAG.
+    }
     // okay, we've done a copy-back now.  retry.
   } while(1);
 }
@@ -136,6 +139,7 @@ DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
 
 DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
 			    VALUETYPE value) {
+  INCREMENT_STATS(transact_writent, 1);
   if (
 #if 1 /* XXX: should be '#ifndef HAS_64_BIT_STORE_CONDITIONAL' */
       (sizeof(VALUETYPE) <= sizeof(jint)) &&
@@ -154,6 +158,12 @@ DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
     /* implement this as a short transactional write.  this may be slow,
      * but it greatly reduces the race conditions we have to think about. */
     jint st;
+#ifdef WITH_STATISTICS
+    if (unlikely(value == T(TRANS_FLAG)))
+      INCREMENT_STATS(transact_false_flag_write, 1);
+    else
+      INCREMENT_STATS(transact_long_write, 1);
+#endif /* WITH_STATISTICS */
     do {
       struct commitrec *tid = AllocCR();
       struct vinfo *ver = EXACT_ensureWriter(obj, tid);
