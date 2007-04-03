@@ -167,7 +167,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_interrupt0
 /* transactional version of this native method */
 JNIEXPORT void JNICALL Java_java_lang_Thread_interrupt0_00024_00024withtrans
   (JNIEnv *env, jobject obj, jobject commitrec) {
-  fni_thread_interrupt_withtrans(env, obj, commitrec);
+  assert(0);
 }
 #endif /* WITH_TRANSACTIONS */
 

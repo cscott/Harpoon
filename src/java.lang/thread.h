@@ -534,12 +534,5 @@ static inline
 void fni_thread_interrupt(JNIEnv *env, jobject _this) {
   fprintf(stderr, "WARNING: Thread.interrupt() not implemented.\n");
 }
-#ifdef WITH_TRANSACTIONS
-/* transactional version of this native method */
-static inline
-void fni_thread_interrupt_withtrans(JNIEnv *env, jobject _this, jobject commitrec) {
-  assert(0); /* unimplemented */
-}
-#endif /* WITH_TRANSACTIONS */
 
 #endif /* INCLUDED_FNI_THREAD_H */

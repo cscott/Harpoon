@@ -11,6 +11,9 @@
 #include "java_lang_Object.h" /* version fetch methods */
 #include "../java.lang/class.h" /* Class.getComponentType() */
 
+// XXX NOTE THAT THIS METHOD IS NO LONGER CALLED
+// we've instead patched the JNI methods to be transaction-aware, so
+// we end up calling the 'usual' version of this method.
 void Java_java_io_FileOutputStream_writeInternal_00024_00024withtrans
   (JNIEnv *env, jobject obj, jobject commitrec,
    jint native_fd, jbyteArray buf, jint offset, jint len) {
@@ -33,6 +36,9 @@ void Java_java_io_FileOutputStream_writeInternal_00024_00024withtrans
   Java_java_io_FileOutputStream_writeInternal(env, obj, native_fd, _ba,
 					      offset, len);
 }
+// XXX NOTE THAT THIS METHOD IS NO LONGER CALLED
+// we've instead patched the JNI methods to be transaction-aware, so
+// we end up calling the 'usual' version of this method.
 jint Java_java_io_FileOutputStream_open_00024_00024withtrans
   (JNIEnv *env, jobject obj, jobject commitrec,
    jstring name, jboolean append) {
@@ -40,6 +46,9 @@ jint Java_java_io_FileOutputStream_open_00024_00024withtrans
   return Java_java_io_FileOutputStream_open
     (env, obj, FNI_StrTrans2Str(env, commitrec, name), append);
 }
+// XXX NOTE THAT THIS METHOD IS NO LONGER CALLED
+// we've instead patched the JNI methods to be transaction-aware, so
+// we end up calling the 'usual' version of this method.
 void Java_java_io_FileOutputStream_closeInternal_00024_00024withtrans
   (JNIEnv *env, jobject obj, jobject commitrec, jint native_fd) {
   Java_java_io_FileOutputStream_closeInternal(env, obj, native_fd);

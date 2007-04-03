@@ -131,6 +131,9 @@ jobject fni_class_newInstance_initcheck(JNIEnv *env, jclass cls) {
 #endif /* WITH_INIT_CHECK */
 
 #ifdef WITH_TRANSACTIONS
+// XXX THIS METHOD ISN'T ACTUALLY USED ANYMORE
+// we've switched to making our JNI-methods transaction-aware, so
+// we can now use the 'regular' newInstance implementation.
 static inline
 jobject fni_class_newInstance_withtrans
   (JNIEnv *env, jclass cls, jobject commitrec) {

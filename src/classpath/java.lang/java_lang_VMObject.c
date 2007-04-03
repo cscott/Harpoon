@@ -2,6 +2,9 @@
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_VMObject.h"
+#ifdef WITH_TRANSACTIONS
+# include "transact/transjni.h"
+#endif /* WITH_TRANSACTIONS */
 
 #include <assert.h>
 #include "../../java.lang/object.h" /* useful library-indep implementations */
@@ -64,7 +67,19 @@ JNIEXPORT jclass JNICALL Java_java_lang_Object_getClass
  */
 JNIEXPORT void JNICALL Java_java_lang_VMObject_notify
   (JNIEnv *env, jclass vmcls, jobject obj) {
+#ifdef WITH_TRANSACTIONS /* HACK HACK HACK */
+  /* called inside transaction context.  since 'too many notifies' is
+   * valid semantics, we don't have to worry about undo-ing this notify
+   * if the transaction doesn't commit.  Lock, notify, unlock.
+   * new transaction can't modify anything until this transaction commits.
+   * XXX: possible problem because listener will wake up before this
+   * transaction commits, causing a lost notification? */
+  if (currTrans(env)) FNI_MonitorEnter(env, obj);
+#endif
   fni_object_notify(env, obj);
+#ifdef WITH_TRANSACTIONS
+  if (currTrans(env)) FNI_MonitorExit(env, obj);
+#endif
 }
 
 /*
@@ -74,7 +89,14 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notify
  */
 JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll
   (JNIEnv *env, jclass vmcls, jobject obj) {
+#ifdef WITH_TRANSACTIONS /* HACK HACK HACK */
+  /* same comments/problems as above */
+  if (currTrans(env)) FNI_MonitorEnter(env, obj);
+#endif
   fni_object_notifyAll(env, obj);
+#ifdef WITH_TRANSACTIONS
+  if (currTrans(env)) FNI_MonitorExit(env, obj);
+#endif
 }
 
 /*
@@ -84,56 +106,11 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll
  */
 JNIEXPORT void JNICALL Java_java_lang_VMObject_wait
   (JNIEnv *env, jclass vmcls, jobject obj, jlong ms, jint ns) {
-  fni_object_wait(env, obj, ms, ns);
-}
-
 #ifdef WITH_TRANSACTIONS
-// at the moment, all of this is very bogus.
-
-/* transaction support.  no monitor is held initially. */
-/*
- * Class:     java_lang_VMObject
- * Method:    notify
- * Signature: (Ljava/lang/Object;)V
- */
-JNIEXPORT void JNICALL Java_java_lang_VMObject_notify_00024_00024withtrans
-  (JNIEnv *env, jclass vmcls, jobject _this, jobject commitrec) {
-  /* called inside transaction context.  since 'too many notifies' is
-   * valid semantics, we don't have to worry about undo-ing this notify
-   * if the transaction doesn't commit.  Lock, notify, unlock.
-   * new transaction can't modify anything until this transaction commits.
-   * XXX: possible problem because listener will wake up before this
-   * transaction commits, causing a lost notification? */
-  FNI_MonitorEnter(env, _this);
-  Java_java_lang_VMObject_notify(env, vmcls, _this);
-  FNI_MonitorExit(env, _this);
-}
-
-/*
- * Class:     java_lang_VMObject
- * Method:    notifyAll
- * Signature: (Ljava/lang/Object;)V
- */
-JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll_00024_00024withtrans
-  (JNIEnv *env, jclass vmcls, jobject _this, jobject commitrec) {
-  /* same comments as above. */
-  FNI_MonitorEnter(env, _this);
-  Java_java_lang_VMObject_notifyAll(env, vmcls, _this);
-  FNI_MonitorExit(env, _this);
-}
-
-/*
- * Class:     java_lang_VMObject
- * Method:    wait
- * Signature: (Ljava/lang/Object;JI)V
- */
-JNIEXPORT void JNICALL Java_java_lang_VMObject_wait_00024_00024withtrans
-  (JNIEnv *env, jclass vmcls, jobject obj, jlong ms, jint ns,
-   jobject commitrec) {
   /* should do a commit, then a wait (ought to be atomic w/respect to
    * notify) and then start a new (sub) transaction.  In other words,
    * really needs to return a CommitRec. */
-  assert(0);
+  assert(!currTrans(env));
+#endif
+  fni_object_wait(env, obj, ms, ns);
 }
-
-#endif /* WITH_TRANSACTIONS */
