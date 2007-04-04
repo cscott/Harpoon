@@ -61,8 +61,18 @@ static inline VALUETYPE T(load_linked)(void *base, unsigned offset) {
 #endif
        (VALUETYPE) (mask & (LL(ptr) >> shift));
      }),
-     LL((VALUETYPE*)(base+offset)) /*LL macro does a good job for large types*/
-     );
+     __builtin_choose_expr
+     (sizeof(VALUETYPE) == sizeof(jint),
+      ({ jint value = load_linked((jint*)(base+offset));
+         __builtin_choose_expr
+	 (__builtin_types_compatible_p(VALUETYPE,jint), (VALUETYPE) value,
+	  ({ union { jint i; VALUETYPE v; } u = { .i=value }; u.v; }));
+      }),
+      ({ jlong value = load_linked((jlong*)(base+offset));
+         __builtin_choose_expr
+	 (__builtin_types_compatible_p(VALUETYPE,jlong), (VALUETYPE) value,
+	  ({ union { jlong j; VALUETYPE v; } u = { .j=value }; u.v; }));
+      })));
 }
 
 /* clean up after ourselves */
