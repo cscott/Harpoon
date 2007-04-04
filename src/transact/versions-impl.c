@@ -298,7 +298,7 @@ DECL struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
   uint32_t allocsize;
   // if that's larger than OBJ_CHUNK_SIZE, then allow for one
   // chunk of hashtable (INITIAL_CACHE_SIZE)
-  if (size <= OBJ_CHUNK_SIZE) {
+  if ((!DO_HASH) || size <= OBJ_CHUNK_SIZE) {
     v = MALLOC(allocsize=(sizeof(struct vinfo) + size));
     memset(DIRECT_FIELDS(v), TRANS_FLAG_Byte, size);
   } else {
@@ -515,7 +515,7 @@ DECL void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset) {
     first_version = *versions;
     for (v=first_version; v!=NULL; v=v->next) {
       // ensure space
-      if (offset > OBJ_CHUNK_SIZE-sizeof(VALUETYPE)) {
+      if (DO_HASH && offset > OBJ_CHUNK_SIZE-sizeof(VALUETYPE)) {
 #if defined(ARRAY)
 	// arrays are homogenous
 	struct T(version_hashtable) *table =
@@ -538,7 +538,7 @@ DECL void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset) {
       // newAbortedVersion() doesn't allocate enough space for fields.
       if (v->transid && v->transid->state==ABORTED) continue; // link out?
       // LL and check canonical and header, then SC(version)
-      if (offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE)) {
+      if ((!DO_HASH) || offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE)) {
 	if (canonical != T(load_linked)(FIELDBASE(obj), offset) ||
 	    first_version != *versions)
 	  goto retry_copy_over;

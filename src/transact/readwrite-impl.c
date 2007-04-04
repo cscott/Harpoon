@@ -51,7 +51,7 @@ DECL VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset) {
 #if !defined(ARRAY) // this expression is probably not constant for arrays.
   //assert(__builtin_constant_p(offset<=OBJ_CHUNK_SIZE-sizeof(VALUETYPE)));
 #endif
-  if (offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE))
+  if ((!DO_HASH) || offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE))
     return *(VALUETYPE*)(DIRECT_FIELDS(version)+offset);
   else {
 #if defined(ARRAY)
@@ -75,7 +75,7 @@ DECL void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
 #if !defined(ARRAY) // this expression is probably not constant for arrays.
   //assert(__builtin_constant_p(offset<=OBJ_CHUNK_SIZE-sizeof(VALUETYPE)));
 #endif
-  if (offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE)) {
+  if ((!DO_HASH) || offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE)) {
     *(VALUETYPE*)(DIRECT_FIELDS(version)+offset) = value;
     return; // done!
   } else {
