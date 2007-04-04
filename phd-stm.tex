@@ -952,7 +952,7 @@ static inline field_t read(struct oobj *obj, int idx) {
 
 static inline field_t read(struct oobj *obj, int idx) {
   field_t val = obj->field[idx];
-  if (__builtin_expect(val==FLAG, 0))
+  if (unlikely(val==FLAG))
     return unusualRead(obj,idx);
   else return val;
 }
@@ -967,22 +967,22 @@ static inline field_t read(struct oobj *obj, int idx) {
 \sis\fontsize{9}{10}\begin{verbatim}
 #if !defined(WITH_WRITE_CHECKS)
 
-static inline field_t write(struct oobj *obj, int idx, field_t val) {
+static inline void write(struct oobj *obj, int idx, field_t val) {
   obj->field[idx] = val;
 }
 
 #else
 
-static inline field_t write(struct oobj *obj, int idx, field_t val) {
-  if (__builtin_expect(val==FLAG, 0))
+static inline void write(struct oobj *obj, int idx, field_t val) {
+  if (unlikely(val==FLAG))
     unusualWrite(obj,idx,val); // never called
   else {
     do {
-      if (__builtin_expect(NULL != LL(&(obj->readerList)), 0)) {
+      if (unlikely(NULL != LL(&(obj->readerList)))) {
         unusualWrite(obj,idx,val); // never called
         break;
       }
-    } while (__builtin_expect(SC(&(obj->field[idx]), val)==0, 0));
+    } while (unlikely(!SC(&(obj->field[idx]), val)));
   }
 }
 
@@ -1005,8 +1005,9 @@ a direct addition of \texttt{REPETITIONS}.
 \figref{counter-read} shows the baseline \texttt{read()}
 implementation, which inlines to a single \texttt{lwz} instruction on
 PowerPC, along with the C implementation of the read check necessary
-for non-transactional code under our transaction system.  We use the
-\texttt{gcc} extension \texttt{\_\_builtin\_expect()} to apply the
+for non-transactional code under our transaction system.  We use 
+the \texttt{unlikely()} macro, implemented using the
+\texttt{gcc} extension \texttt{\_\_builtin\_expect()}, to apply the
 appropriate static prediction bits indicating that \texttt{FLAG} is
 expected to be an unusual value.  In our microbenchmark, this
 prediction will always correct.  The C compiler must still save
@@ -1919,32 +1920,57 @@ minor difficulty is the possibility of ``false'' conflicts between
 updates to adjacent fields of an object; these are handled as
 described in \charef{coarseLL}.
 
+\begin{figure}[t]\sis\fontsize{9}{10}
+\begin{alltt}
+void writeNT(struct oobj *obj, int byte_idx, small_field_t val) \{
+  if (unlikely(val==FLAG))
+    unusualWrite(obj,byte_idx,val); \textit{// do a short transactional write}
+  else \{
+    do \{
+      int r = (int) LL(&(obj->readerList));
+      if (unlikely((r & ~3) != 0)) \{
+        \textit{// readerList is not "NULL"; have to kill readers, etc.}
+        unusualWrite(obj,idx,val);
+        return;
+      \} else if (r == (byte_idx & 3)) \{
+        \textit{// okay to write to this subword}
+        word_t w = obj->word[byte_idx>>2];
+        if (SC(&(obj->word[byte_idx>>2]), combine(w, val, byte_idx)))
+          return;
+      \} else
+        \textit{// last write was to some other subword; switch to this one.}
+        SC(&(obj->readerList), byte_idx & 3);
+    \} while (1);
+  \}
+\}
+\end{alltt}
+\caption[Non-transactional write to small (sub-word) field.]{
+Non-transactional write to a small (sub-word) field.  Compare to
+\figref{counter-write}.  The \texttt{byte\_idx} value is the offset
+of the field within the objects, in bytes, and the \texttt{combine}
+function does the appropriate shifting and masking to combine the new
+sub-word value with the read value of the surrounding word.
+}\label{fig:im-so-damn-smart} 
+\end{figure}
+
 The final case is then non-transactional writes to sub-word values,
 which occur frequently in real programs during string manipulations.
-An algorithm to address this problem is presented in
-\figref{im-so-damn-smart}. 
-
-  We're just worried about conflicting writes.  Solution:
-   steal some bits from the READERS field.  Must be null for
-   NT write to succeed.  Allow values 1-4, which indicate byte offset.
-%   Set READERS to 1-4 (LL(READERS) if NULL SC(READERS, addr&3),
-%   LL(READERS) if == (addr&3) load *addr, SC(*addr, munged(value))
-
-%%    do {
-%%      v = LL(READERS)
-%%      if ((v&~3) == 0) {
-%%        if (v==(addr&3)) {
-%%            if (SC(addr, munged(nval, *addr))) return;
-%%        } else { /* some other offset was written */
-%%           SC(READERS, addr&3); continue;
-%%      } else {
-%%        // writeback, or whatever
-%%    } while(1)
-
-  This way the crucial racing writes will cause the LL to fail.
-  Cost is that we will pseudo-conflict w/ ourself if we step through
-  an array, causing extra stores.  Have to live w/ it, I guess.
-
+We could address this by using a short transaction to do the
+read-modify-write of the word surrounding the sub-word field, but this
+is likely too expensive, considering the number of sub-word
+manipulations in most programs.
+A better algorithm to address this problem is presented in
+\figref{im-so-damn-smart}; compare this to the earlier expression of
+the \texttt{writeNT} algorithm in \figref{counter-write}.  The revised
+algorithm steals the lower two bits of the \texttt{readerList} pointer
+to serve as subword reservations, ensuring that racing writes to
+different subwords in the same word are prevented.  The cost of this
+algorithm is mostly extra masking when the readerList is read, and an
+extra store (to set the \texttt{readerList} reservation) on every
+sub-word write.\footnote{It would be nice if we could avoid updating the
+  \texttt{readerList} pointer on every write when using common access
+  patterns, like stepping linearly through the array, but I don't see
+  a way to do that.}
 
 \subsection{Object.wait()}
    2. sub/multi word stuff \label{sec:multiword}
