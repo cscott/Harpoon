@@ -68,7 +68,7 @@ static inline VALUETYPE T(load_linked)(void *base, unsigned offset) {
 	 (__builtin_types_compatible_p(VALUETYPE,jint), (VALUETYPE) value,
 	  ({ union { jint i; VALUETYPE v; } u = { .i=value }; u.v; }));
       }),
-      ({ jlong value = load_linked((jlong*)(base+offset));
+      ({ jlong value = load_linked_double((jlong*)(base+offset));
          __builtin_choose_expr
 	 (__builtin_types_compatible_p(VALUETYPE,jlong), (VALUETYPE) value,
 	  ({ union { jlong j; VALUETYPE v; } u = { .j=value }; u.v; }));
