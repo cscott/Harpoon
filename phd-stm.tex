@@ -1818,7 +1818,7 @@ class C {
 \label{fig:static-fields}
 \end{figure}
 
-\subsection{Coarse-grained LL/SC}
+\subsection{Coarse-grained LL/SC}\label{sec:coarseLL}
 In our description of the software transaction algorithms we have so
 far neglected to state the size of the reservation created by the
 platform load-linked instruction.  The implicit assumption is that the
@@ -1864,17 +1864,66 @@ iff they are known never to participate in transactions which might
 conflict.
 
 \subsection{Handling subword and multi-word reads/writes}
+The granularity of the store-conditional instruction is more
+problematic.  Although we have specified our algorithms assuming that
+a store-conditional of any field is possible, in practice
+store-conditional operations are only provided for a restricted set of
+data types: the PowerPC architecture defines only 32-bit and 64-bit
+stores, and 32-bit implementations (like our G4) don't implement the 64-bit
+variant.  We need to carefully consider how to safely implement our
+algorithms with only a word-sized store-conditional.
 
-XXX: describe how this is done:
+First let us consider the case where the field size is larger than a
+word; for a Java implementation this corresponds to the
+\texttt{double} and \texttt{long} types.  Within a transaction we can
+simply write two \texttt{int}s (for example) to implement the store of
+a \texttt{long}; the transactional mechanism already ensures that the
+multiple writes will appear atomic.
 
-SUBWORD:
-w/in transactions is safe: just treat whole block of subword fields
-as read/written.  side-effect of ``false'' conflicts.
+This leaves large writes outside of a transaction.  One
+solution is to decompose these fields into multiple smaller fields as
+we did in the transactional case; we don't give up strong atomicity
+but we allow other readers (both transactional and non-transactional)
+to see the partial writes.  The Java memory model actually permits
+this behavior (Java Language Specification chapter 17.7,
+``Non-atomic Treatment of double and long'' \cite{JLS3}).  The specification
+continues, ``VM implementors are encouraged to avoid splitting their
+64-bit values where possible.''  We can easily implement this behavior
+as an alternative: non-transactional writes of doubles and longs can be
+converted to small transactions encompassing nothing but the multiple
+word-size writes.
 
-outside transactions: (important because of array case)
-  problem here is that load/modify/store must be atomic.
-  while also requiring a LL of the header field.
-  reads are not a problem; LL will cover.
+Now let us consider sub-word-sized writes.  Chapter 17.6 of the Java
+Language Specification specifically says:
+\begin{quote}
+One implementation consideration for Java virtual machines is that
+every field and array element is considered distinct; updates to one
+field or element must not interact with reads or updates of any other
+field or element. In particular, two threads that update adjacent
+elements of a byte array separately must not interfere or interact and
+do not need synchronization to ensure sequential consistency.
+
+Some processors do not provide the ability to write to a single
+byte. It would be illegal to implement byte array updates on such a
+processor by simply reading an entire word, updating the appropriate
+byte, and then writing the entire word back to memory. This problem is
+sometimes known as \textit{word tearing}, and on processors that cannot easily
+update a single byte in isolation some other approach will be
+required.
+\end{quote}
+
+Again, writes within a transaction are straight-forward: reading an
+entire word, updating it, and rewriting will appear atomic due to the
+transaction mechanism, and no observable word tearing will occur.  A
+minor difficulty is the possibility of ``false'' conflicts between
+updates to adjacent fields of an object; these are handled as
+described in \charef{coarseLL}.
+
+The final case is then non-transactional writes to sub-word values,
+which occur frequently in real programs during string manipulations.
+An algorithm to address this problem is presented in
+\figref{im-so-damn-smart}. 
+
   We're just worried about conflicting writes.  Solution:
    steal some bits from the READERS field.  Must be null for
    NT write to succeed.  Allow values 1-4, which indicate byte offset.
@@ -1895,13 +1944,6 @@ outside transactions: (important because of array case)
   This way the crucial racing writes will cause the LL to fail.
   Cost is that we will pseudo-conflict w/ ourself if we step through
   an array, causing extra stores.  Have to live w/ it, I guess.
-
-MULTIWORD:
-w/in transactions: ok.  just treat as multiple word-size fields.
-
-outside transactions:
-wrap this as a small transactional write of N word-size fields.
-read is not a problem, because we can simulate 64-bit LL just fine.
 
 
 \subsection{Object.wait()}
