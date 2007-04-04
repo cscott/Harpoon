@@ -1763,7 +1763,8 @@ The present implementation contains a number of non-fundamental
 limitations with well-understood solutions that, nonetheless, would
 add additional implementation complexity.  These involve static
 fields, coarse granularity of LL/SC instructions, sub-word and
-multi-word fields, and \texttt{Object.wait()}.  In addition, there are
+multi-word fields, and condition variables (\texttt{Object.wait()}).
+In addition, there are
 limitations related to the manipulation of large objects (usually
 arrays); we will put off to \charef{largeobj} a full discussion of the
 large object problem and its solutions.
@@ -1972,10 +1973,145 @@ sub-word write.\footnote{It would be nice if we could avoid updating the
   patterns, like stepping linearly through the array, but I don't see
   a way to do that.}
 
-\subsection{Object.wait()}
-   2. sub/multi word stuff \label{sec:multiword}
-   3. 32-byte granularity of LL/SC == false deadlocks.
-   4. object.wait \label{sec:object-wait}
+\begin{figure}\sis\fontsize{9}{10}
+\begin{verbatim}
+public class Drop {
+    //Message sent from producer to consumer.
+    private String message;
+    //True if consumer should wait for producer to send message, false
+    //if producer should wait for consumer to retrieve message.
+    private boolean empty = true;
+
+    public synchronized String take() {
+        //Wait until message is available.
+        while (empty) {
+            try {
+                wait();
+            } catch (InterruptedException e) {}
+        }
+        //Toggle status.
+        empty = true;
+        //Notify producer that status has changed.
+        notifyAll();
+        return message;
+    }
+
+    public synchronized void put(String message) {
+        //Wait until message has been retrieved.
+        while (!empty) {
+            try { 
+                wait();
+            } catch (InterruptedException e) {}
+        }
+        //Toggle status.
+        empty = false;
+        //Store message.
+        this.message = message;
+        //Notify consumer that status has changed.
+        notifyAll();
+    }
+}
+\end{verbatim}
+\caption[Dropbox example illustrating the use of condition variables
+  in Java]{Dropbox example illustrating the use of condition variables
+  in Java, from \cite{ZakhourHoRoRaRiHo06}.}\label{fig:dropbox}
+\end{figure}
+
+\subsection{Condition variables}\label{sec:object-wait}
+A condition variable is a synchronization device that allows threads
+to suspend execution and relinquish the processors until some
+predicate on shared data is satisfied.  When the predicate becomes
+true, a thread signals the condition (\texttt{Object.notify()} and
+\texttt{Object.notifyAll()} in Java); other threads can suspend
+themselves waiting for the signal (\texttt{Object.wait()}).  In order
+to prevent races between notification and waiting, condition variables
+are usually associated with a mutex (the object monitor, in Java) and
+\texttt{wait} and \texttt{notify} require the lock to be held when
+they are called.  The \texttt{wait} operation atomically releases the
+lock and waits for the variable; when notification is received
+\texttt{wait} re-acquires the lock before resuming.  An example of the
+use of these operations in Java is provided in \figref{dropbox}.
+
+Implementing these semantics properly in a transactional context is
+challenging; a better solution to the fundamental problem is a
+mechanism like Harris and Fraser's \defn{guarded transactions}
+\cite{HarrisFr03}.  However, a reasonable implementation is possible.
+
+The JDK1.6 specification for the \texttt{Object.wait()} method says:
+\begin{quote}
+A thread can also wake up without being notified, interrupted, or
+timing out, a so-called spurious wakeup. While this will rarely occur
+in practice, applications must guard against it by testing for the
+condition that should have caused the thread to be awakened, and
+continuing to wait if the condition is not satisfied. In other words,
+waits should always occur in loops\ldots
+\end{quote}
+This simplifies our implementation of the notification methods, since
+we needn't wait until the transaction doing the notify is sure to
+commit; it is always safe to go ahead and do the notify immediately;
+if we end up getting aborted we'll just redo the notify later when we
+retry.  So we acquire a special mutex (either per-object as with
+standard Java or global; the lock is not held long), do the
+notification, and release the mutex.
+
+The \texttt{wait} method, however, is a commit point, since it
+releases and reacquires the monitor lock.  Thus it splits the
+transaction containing it into two.\footnote{Which arguably calls for
+a special type annotation on methods which may call \texttt{wait()},
+so that users are not misled into thinking a block is atomic which may
+invoke something which calls \texttt{wait()}.}  The fundamental
+mechanism is straight-forward.  We first acquire our special mutex,
+then attempt to commit the transaction, and check the result.  If we
+don't commit successfully, we unlock the mutex and throw the usual
+\texttt{TransactionAbortException}.  If we have committed
+successfully, we can safely wait (releasing our mutex atomically).
+When we're woken, we create a new transaction, release our mutex, and
+continue.  The mutex prevents notification from occurring between the
+commit and the wait.\footnote{Note in the dropbox example in
+\figref{dropbox} that the standard monitor lock is present to prevent
+(for example) \texttt{put()} from setting \texttt{empty} to false and
+doing the \texttt{notifyAll()} \textit{after} \texttt{take()} has seen
+that \texttt{empty} is true but \textit{before} the \texttt{wait()}
+has occurred (hence the notification would be lost).  With the
+transaction transformation, the lost notification is prevented because
+\texttt{put}'s write to \texttt{empty} will abort the \texttt{take}
+transaction if it occurs before \texttt{take} is committed (causing
+the \texttt{wait()} to be retried), and the special mutex will prevent
+the notification from occurring between the commit and the
+\texttt{wait}.}
+
+Implementation in a practical system introduces some difficulties.  As
+described in \charef{synctrans}, the transaction object is passed as
+the first argument when calling methods within a transaction context.
+Since \texttt{Object.wait()} commits the initial transaction and
+begins a new one, we must either factor out a continuation after the
+call to \texttt{Object.wait()} which can be invoked with the new
+transaction after the wait is complete, or else provide a means to
+update the active transaction pointer and the retry point.  One way to
+update the active transaction pointer is to use indirection: instead
+of keeping a direct pointer to the transaction object, we can keep a
+pointer to a cell containing the pointer; the cell can then be updated
+to point to the new transaction by \texttt{Object.wait()}.
+Alternatively, an extra return value can be added to methods called
+within a transaction, so that method can return an updated transaction
+object as well as their usual return value.  Either of these
+transformations can be applied selectively to only those methods which
+could possibly invoke, directly or indirectly, \texttt{Object.wait()}.
+The more difficult challenge is to update the location at which we'll
+resume for another attempt when the transaction is aborted; this retry
+point should be immediately following the
+\texttt{wait()}. The retry mechanism
+becomes much more complicated, and some means to reconstruct the
+appropriate call-stack is necessary.
+
+Note that for code like the example given in \figref{dropbox} the
+``correct'' resumption behavior is actually identical to restarting
+the transaction from the original start point (ie, the beginning of
+the \texttt{put()} or \texttt{take()} method), assuming that the
+\texttt{put()} or \texttt{take()} isn't in a subsumed nested
+transaction.  It is probably worth identifying this situation through
+compile-time analysis, as it simplifies the resumption transformation
+considerably.
 
 \section{Compiler optimizations}\label{sec:moreopt}
    1. version-passing
@@ -2614,4 +2750,4 @@ XXX: continue previous microbenchmarks, as function of object size.
 
 
 % LocalWords:  Promela microbenchmark Hennessy PowerPC setjmp longjmp runtime
-% LocalWords:  subsumption
+% LocalWords:  subsumption TransactionAbortException mutex
