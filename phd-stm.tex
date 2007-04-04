@@ -1164,7 +1164,9 @@ shows an
 optimized assembly version of our \texttt{do\_bench()} function.  I've
 primarily rescheduled the code here to separate dependent instructions
 as much as possible, but I've also ensured repeatable instruction
-cache alignment, replaced our canonical \texttt{FLAG} value with
+cache alignment,\footnote{The MPC7447 (G4) PowerPC has a 32-byte cache
+  line, although fetches occur in 16-byte (4 instruction) chunks.}
+replaced our canonical \texttt{FLAG} value with
 \texttt{0xFFFFCACA}, which can be represented by the PowerPC's 16-bit
 signed immediate instruction field, and combined the flag checks in
 the read and write routines.\footnote{Again, the branches to
@@ -1746,6 +1748,9 @@ an immutable length field).
 synthesizing atomic operations on subword and multi-word datatypes.
 
 \section{Performance}\label{sec:full-bench}
+All experiments performed on a 1GHz MPC7447 (G4) PowerPC processor,
+with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
+6.10 on a Linux 2.6.17 kernel.
 \note{WRITE ME.}
    1. \# false conflicts
    2. read/write check overhead
@@ -1756,8 +1761,8 @@ synthesizing atomic operations on subword and multi-word datatypes.
 The present implementation contains a number of non-fundamental
 limitations with well-understood solutions that, nonetheless, would
 add additional implementation complexity.  These involve static
-fields, sub-word and multi-word fields, coarse granularity of LL/SC
-instructions, and \texttt{Object.wait()}.  In addition, there are
+fields, coarse granularity of LL/SC instructions, sub-word and
+multi-word fields, and \texttt{Object.wait()}.  In addition, there are
 limitations related to the manipulation of large objects (usually
 arrays); we will put off to \charef{largeobj} a full discussion of the
 large object problem and its solutions.
@@ -1813,6 +1818,51 @@ class C {
 \label{fig:static-fields}
 \end{figure}
 
+\subsection{Coarse-grained LL/SC}
+In our description of the software transaction algorithms we have so
+far neglected to state the size of the reservation created by the
+platform load-linked instruction.  The implicit assumption is that the
+reservation is roughly word-sized: our algorithm uses load-linked to
+watch the pointer-valued \texttt{readerList}
+(figures \ref{fig:promrwnt}, \ref{fig:ensurewriter}) and
+\texttt{version} (figures \ref{fig:copyback}, \ref{fig:ensurewriter},
+\ref{copythrough}) fields, and to perform the compare-and-swap
+operation on the transaction status field necessary for aborting and
+committing transactions.  However, implementations of load-linked and
+store-conditional on most architectures usually place a reservation on
+a specific cache line, which spans many words.  In the case of our
+MPC7447 (G4) PowerPC processor, a reservation (and cache line) is 32
+bytes.
+
+In our present implementation we have not taken any special action to
+account for this.  In general, a larger-than-expected reservation may
+cause false conflicts between independent transactions, and this can
+lead to deadlock or livelock if contention is not managed properly.
+Our implementation uses randomized\footnote{The randomization is via
+  the varying latency of the unix \texttt{sleep} syscall; stronger
+  randomization could be implemented if it mattered.}
+ exponential backoff, which ensures that every transaction
+ eventually has an opportunity to execute in isolation, which will
+ moot any false conflict.
+
+Other mechanisms to resolve contention can also be used to address
+false conflicts.  In an extreme case, a contention manager could
+invoke a copying collector to relocate objects involved in a false
+conflict, although this is likely merited only when the conflicts are
+extremely frequent or when long-lived transactions make the
+copying cost less than the cost of serializing the transactions involved.
+
+Alternatively, false conflicts can be managed with careful allocation
+policy.  The allocator in the present implementation ensures 8-byte
+alignment of objects.  As we have done in prior work
+\cite{WitchelLaAnAs01}, the Java allocator can be modified to align
+objects to cache line (32-byte) boundaries, to ensure there are no
+false conflicts between objects.  Some of the wasted space can be
+reclaimed by using a smaller alignment for objects known not to escape
+from their thread, or by packing multiple objects into a cache line
+iff they are known never to participate in transactions which might
+conflict.
+
 \subsection{Handling subword and multi-word reads/writes}
 
 XXX: describe how this is done:
@@ -1854,9 +1904,7 @@ wrap this as a small transactional write of N word-size fields.
 read is not a problem, because we can simulate 64-bit LL just fine.
 
 
-\subsection{Coarse-grained LL/SC}
-object-per-cache line; see witchell work
-
+\subsection{Object.wait()}
    2. sub/multi word stuff \label{sec:multiword}
    3. 32-byte granularity of LL/SC == false deadlocks.
    4. object.wait \label{sec:object-wait}
@@ -1942,10 +1990,10 @@ example, a functional balanced tree) can be used to implement
 functional arrays.
 
 However, the distinguishing characteristic of an imperative array is its
-theoretical complexity: $O(1)$ access or update of any element.
+time complexity: $O(1)$ access or update of any element.
 Implementing functional arrays with a functional balanced tree yields
 $O(\lg n)$ worst-case access or update.\footnote{I will return to
-consider operation complexity in \charef{large-obj}.}
+a discussion of operation complexity in \charef{large-obj}.}
 
 For concreteness, functional arrays have the following three
 operations defined:
@@ -2055,7 +2103,8 @@ first fix this problem.
   identifier.  Version structure also contain pointers to functional
   arrays, which record the values for the fields of the object.
   If no modifications have been made to the object, multiple versions
-  in the list may share the same functional array.}
+  in the list may share the same functional array.  (Compare this model
+  of a transaction system to our concrete design in \figref{tr-multi-obj}.)}
 \label{fig:multi-o}
 \end{figure}
 \begin{figure}[p]
@@ -2165,6 +2214,8 @@ end\\
 I extend the implementation to allow the fields of any number of
 objects to be accessed during the transaction.
 Figure~\ref{fig:multi-o} shows our new object representation.
+Compare this to \figref{tr-multi-obj}; we've recast our earlier
+transaction system design in terms of operations on an array datatype.
 Objects consist of two slots, and the first represents the immutable
 {\tt type}, as before.  The second field, {\tt versions}, points to a
 linked list of {\tt Version} structures.  The {\tt Version} structures
@@ -2244,7 +2295,7 @@ constant time plus an invocation of \funcname{FA-Read} or
 
 \section{Lock-free functional arrays}\label{sec:large-obj}
 \begin{figure}\centering
-\includegraphics[width=6in,clip=true]{Figures/chuang}
+\includegraphics[width=5in,clip=true]{Figures/chuang}
 \caption{Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
@@ -2327,7 +2378,7 @@ $O(n)$ time, so we amortize it over $n$ operations by randomly
 choosing to perform a cut with probability $1/n$.
 
 \begin{figure}\centering%
-\includegraphics[width=5.5in,clip=true]{Figures/funarr}
+\includegraphics[width=5in,clip=true]{Figures/funarr}
 \caption[Atomic steps in $\funcname{FA-Rotate}(B)$.]%
  {Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.
