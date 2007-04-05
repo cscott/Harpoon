@@ -6,6 +6,7 @@
 # include <string.h> /* for memset */
 # include "compiler.h" /* for likely/unlikely */
 # include "asm/llsc.h" /* for LL/SC */
+# include "transact/transact.h" /* for DO_HASH */
 # include "transact/flags.h"
 # include "transact/vhash.h"
 #endif

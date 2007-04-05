@@ -40,7 +40,7 @@ extern void T(version_hash_write_Int_from)
 #endif /* IN_HEADER */
 
 
-#if !defined(IN_HEADER)
+#if DO_HASH && !defined(IN_HEADER)
 DECL unsigned T(version_hash_sizeof)(unsigned entries) {
   return sizeof(struct T(version_hashtable)) +
     entries*(sizeof(jint)+sizeof(VALUETYPE));
