@@ -1,11 +1,15 @@
 %% This is the abstract of my thesis.
 
-Transactions are gaining ground as a programmer-friendly means of
-expressing concurrency.  This thesis presents efficient
-implementations of transactions for three platforms: an
-object-oriented software-only system, a scalable system using a custom
-processor extension, and in a hybrid of the two systems, obtaining the
-benefits of both.
+How can we fully utilize the coming generation of parallel systems?
+The primitives available to today's programmers are largely
+inadequate.  \defn{Transactions} have been proposed as an alternative,
+but current implementations are either too limited or too inefficient
+for general use.  To help address the challenges posed by current
+trends, this dissertation presents the design and implementation of
+three efficient and powerful transaction systems: an object-oriented
+software-only system, a scalable system using a custom processor
+extension, and in a hybrid of the two systems, obtaining the benefits
+of both.
 
 The software transaction system implements \textit{strong atomicity},
 which ensures that transactions are protected from the influence of
@@ -14,12 +18,12 @@ atomicity guarantees because strong atomicity was presumed to be too
 expensive.  In this thesis strong atomicity is obtained with as little
 as 15\% slowdown for non-transactional code.  Compiler analyses can
 further improve the efficiency of the mechanism, which has been
-model-checked with the SPIN verification system.
+formally verified with the SPIN model-checker.
 
-Software transaction systems with sufficiently low overhead, such as
-ours, can be profitably combined with a hardware transaction system to
-provide fast execution of short and small transactions, while allowing
-fallback to the software system for large or complicated transactions.
-We present UTM, a hardware transactional memory system allowing
-unbounded virtualizable transactions, which can be combined with our
-software transaction system in this manner.
+The low overhead of our software system allows it to be profitably
+combined with a hardware transaction system to provide fast execution
+of short and small transactions, while allowing fallback to
+software for large or complicated transactions.  We present
+UTM, a hardware transactional memory system allowing unbounded
+virtualizable transactions, and show how a hybrid system can be
+obtained.
