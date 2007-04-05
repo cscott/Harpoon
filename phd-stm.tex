@@ -2113,18 +2113,60 @@ transaction.  It is probably worth identifying this situation through
 compile-time analysis, as it simplifies the resumption transformation
 considerably.
 
-\section{Additional compiler optimizations}\label{sec:moreopt}
-In this section we will discuss some additional compiler optimizations
+\section{Additional optimizations}\label{sec:moreopt}
+
+\note{include \#s from unique object benchmarks?}
+In this section we will discuss some additional optimizations
 which could improve our performance on transactional code; they have
 not been implemented in the present compiler.  The improvements
-include version-caching 
+include version passing, escape analysis, object immutability
+analysis, and fast allocation.
 
+As described in \charef{synctrans}, the basic transaction
+transformation inserts a call to
+\texttt{ensureReader}/\texttt{ensureWriter} once per object prior to a
+read/write of a field in the object.  These methods return a version
+object (the ``current version'') which is then passed to the
+\texttt{readT}/\texttt{writeT} methods.  A straightforward improvement
+would avoid redundant calls to
+\texttt{ensureReader}/\texttt{ensureWriter} by passing the ``current
+version'' of the various parameters when a method is invoked.  A
+strictness analysis should be performed, to avoid marking fields as
+read/written which are not guaranteed to be read/written by the
+transaction, and the ``current version'' added as an extra argument
+for the strict parameters of the method.  This allows the caller to
+combine redundant \texttt{ensureReader}/\texttt{ensureWriter}
+invocations for the argument.\footnote{One could also consider adding
+``current version'' arguments even for non-strict parameters, with the
+  caveat that the caller pass in NULL if it had not already
+  read/written the non-strict parameter.  However, 
+  all variables used in a method or the method's callees would then be
+  potentially eligible for version passing; some more sophisticated
+  heuristic would be needed to determine for which objects
+  version passing is worthwhile.}
 
-   1. version-passing
-   2. escape analysis
-   5. read-only objects (can initialize/read directly)
-   3. \#s from unique object benchmarks?
-   4. allocation speedups
+Escape analysis \cite{WhaleyRi99} is a standard technique to reduce
+unnecessary synchronization in Java programs.  In a typical
+application, monitor locks on objects which do not escape their thread
+are eliminated; these lock eliminations can translate to transaction
+eliminations as well.  Further, escape analysis can identify
+individual objects which do not escape their method, thread,
+or call context, and replace the \texttt{readT}/\texttt{writeT} or
+\texttt{readNT}/\texttt{writeNT} protocol with direct access.
+
+Another orthogonal analysis can identify object immutability
+\cite{ZibinPoArKiEr07}.  Immutable objects can be read directly and
+their field values can be safely cached across transaction boundaries.
+Further, the initialization of immutable objects typically can be done
+with direct writes as well.
+
+Finally, a substantial portion of the cost of small transactions is
+spent allocating the version object, especially for the conservative
+collector used in the present implementation.  Fast allocators could
+alleviate this bottleneck \cite{Appel89}.  Alternatively, a free list
+of versions could be hung from objects involved in many transactions:
+as soon as a version commits, the previous version can be added to the
+free list for the use of the next transaction.
 
 \punt {
 \section{Arrays} % this should be moved into its own chapter
