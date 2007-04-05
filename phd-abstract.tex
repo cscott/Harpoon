@@ -1,18 +1,25 @@
 %% This is the abstract of my thesis.
 
-Transactions map naturally to human intuition of atomic action in
-concurrent systems, eliminating the necessity of locking discipline.
-This thesis presents efficient implementations of transactions for
-three platforms: an object-oriented software-only system, a scalable
-system using a custom processor extension, and in a hybrid of the two
-systems, obtaining the benefits of both.  I also present formal models
-of the implementation which have been mechanically checked for correct
-behavior.
+Transactions are gaining ground as a programmer-friendly means of
+expressing concurrency.  This thesis presents efficient
+implementations of transactions for three platforms: an
+object-oriented software-only system, a scalable system using a custom
+processor extension, and in a hybrid of the two systems, obtaining the
+benefits of both.
 
-I also explore the implications of available, efficient, and usable
-transactions on high-level language design, presenting solutions for
-transaction nesting, merging, and loophole mechanisms.  This presents
-a solution to the vexing ``I/O'' and modularity problems with
-existing transactional mechanisms.  I also present compiler analyses
-and type systems to further improve the efficiency, safety, and
-usability of our transaction mechanisms.
+The software transaction system implements \textit{strong atomicity},
+which ensures that transactions are protected from the influence of
+non-transactional code.  Previous software systems use weaker
+atomicity guarantees because strong atomicity was presumed to be too
+expensive.  In this thesis strong atomicity is obtained with as little
+as 15\% slowdown for non-transactional code.  Compiler analyses can
+further improve the efficiency of the mechanism, which has been
+model-checked with the SPIN verification system.
+
+Software transaction systems with sufficiently low overhead, such as
+ours, can be profitably combined with a hardware transaction system to
+provide fast execution of short and small transactions, while allowing
+fallback to the software system for large or complicated transactions.
+We present UTM, a hardware transactional memory system allowing
+unbounded virtualizable transactions, which can be combined with our
+software transaction system in this manner.
