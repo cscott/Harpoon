@@ -15,7 +15,7 @@ and implementation of efficient and powerful transaction systems to
 help address the challenges posed by current trends in computing
 hardware.
 
-\section{The Rising Challenge of Multicore Systems}
+\section{The rising challenge of multicore systems}
 Processor technology is finally bumping against its limits: even
 though transistor quantities continue to grow exponentially, we are
 now unable to effectively harness those vast quantities of transistors
@@ -49,7 +49,7 @@ attainable parallelism (or may even deadlock).  Every access to a
 shared object must hold some lock protecting that object, regardless
 of whether another thread is actually attempting to access the same object.
 
-\section{Advantages of Transactions}
+\section{Advantages of transactions}
 
 \defn{Transactions} are
 an alternative means of providing concurrency control.
@@ -106,7 +106,7 @@ synchronization can prevent \defnlti{Priority inversion}
 \cite{Jones97}, although na\"{\i}ve implementations may result in
 starvation of low-priority tasks (see \charef{progress} for a discussion).
 
-\section{Unlimited Transactions}
+\section{Unlimited transactions}
 
 The
 \defn{Transactional memory} abstraction
@@ -207,7 +207,7 @@ to identify or fix some existing concurrency bugs.
 }
 
 %%%%%%%%%%%%% LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
-\section{Summary of Contributions}
+\section{Summary of contributions}
 In summary, this thesis makes the following contributions:
 
 \begin{itemize}
@@ -325,7 +325,7 @@ reported kernel bugs involve races and deadlocks.
 
 % races, lost wakeups ?
 
-\subsection{Atomically move data between two thread-safe containers}
+\subsection{Atomically move data between thread-safe containers}
 % locks don't compose
 Another common programming pitfall with locks is their
 \defn{non-composability}.\index{Lock(s)!non-composability}

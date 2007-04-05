@@ -1,4 +1,4 @@
-\chapter{Designing a Software Transaction System}\label{sec:stm}
+\chapter{Designing a software transaction system}\label{sec:stm}
 \epigraphhead[70]{\epigraph{%
 Easy things should stay easy, hard things should get easier, and
 impossible things should get hard.
@@ -885,7 +885,7 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
-\section{Performance Limits for Non-Transactional Code}
+\section{Performance limits for non-transactional code}
 The software transaction system outlined in this section depends on
 the insertion of simple read and write checks in non-transactional
 code.  The performance of read and write barriers have been
@@ -1207,7 +1207,7 @@ real-world
 implementation details of our software transaction system.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Implementing Efficient Software Transactions}\label{sec:stmimpl}
+\chapter{Implementing efficient software transactions}\label{sec:stmimpl}
 
 In the previous chapter I described the design of an efficient
 software transaction system.  In this chapter I will discuss the
@@ -1217,7 +1217,7 @@ achieve.  I will conclude by listing some limitations of the
 implementation, and describing how they may be overcome in a
 production-quality compiler.
 
-\section{The FLEX Compiler Infrastructure}
+\section{The FLEX compiler infrastructure}
 In 1998 I began implementing the FLEX compiler infrastructure for
 Java \cite{Flex}, which I will use to evaluate the transaction system
 implementations in this thesis.  FLEX has been used in over 20
@@ -1289,7 +1289,7 @@ The experiments in this thesis all use pair-return to implement
 exceptions, and conservative garbage
 collection, so the ``precise C'' stack is not required.
 
-\section{Transforming Synchronization}\label{sec:synctrans}
+\section{Transforming synchronization}\label{sec:synctrans}
 Aside from implementing the read and write mechanisms of the software
 transaction design presented in the previous chapter, a number of
 other transformations and analyses of our Java benchmarks must be
@@ -1476,7 +1476,7 @@ initialization of arrays; this mechanism is desugared into
 individual array set operations so that it, too, can be uniformly
 transformed by the transaction pass.
 
-\section{Runtime System Implementation}
+\section{Runtime system implementation}
 The FLEX runtime system was extended to support transactions.  The
 runtime uses the standard Java Native Interface (JNI) \cite{JNI} for
 native methods (written in C) called from Java.  Certain parts of the
@@ -1769,7 +1769,7 @@ limitations related to the manipulation of large objects (usually
 arrays); we will put off to \charef{largeobj} a full discussion of the
 large object problem and its solutions.
 
-\subsection{Static Fields}
+\subsection{Static fields}
 Static fields are not encapsulated in an object as other fields are;
 they are really a form of controlled-visibility global variable.  The
 present implementation ignores static fields when performing the
@@ -2113,20 +2113,25 @@ transaction.  It is probably worth identifying this situation through
 compile-time analysis, as it simplifies the resumption transformation
 considerably.
 
-\section{Compiler optimizations}\label{sec:moreopt}
+\section{Additional compiler optimizations}\label{sec:moreopt}
+In this section we will discuss some additional compiler optimizations
+which could improve our performance on transactional code; they have
+not been implemented in the present compiler.  The improvements
+include version-caching 
+
+
    1. version-passing
    2. escape analysis
+   5. read-only objects (can initialize/read directly)
    3. \#s from unique object benchmarks?
    4. allocation speedups
-   5. read-only objects (can initialize/read directly)
 
+\punt {
 \section{Arrays} % this should be moved into its own chapter
    1. theory
    2. ubench
    3. practice
    4. noa \#s
-
-
 
 Section on compiler optimizations here, too.
 
@@ -2143,6 +2148,7 @@ length.  Ideally, contrast this with hardware performance?
 XXX: also benchmark the added read check, for ``The big idea, waving
 FLAGS'' section.
 
+}
 
 \chapter{Arrays and large objects}\label{sec:largeobj}
 I will evaluate the performance of the basic implementation, and point
