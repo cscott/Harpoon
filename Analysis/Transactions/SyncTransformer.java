@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.19 2007-04-03 21:25:22 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.20 2007-04-05 20:47:34 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -267,6 +267,20 @@ public class SyncTransformer
 	HField vlistF = objM.addDeclaredField("versionsList", HCvinfo);
 	HField rlistF = objM.addDeclaredField("readerList", HCobj);
 
+	// dump our configuration
+	System.out.println("enabled: "+enabled);
+	System.out.println("removeTransactions: "+removeTransactions);
+	System.out.println("noFieldModification: "+noFieldModification);
+	System.out.println("noArrayModification: "+noArrayModification);
+	System.out.println("noNestedTransactions: "+noNestedTransactions);
+	System.out.println("useSmartFieldOracle: "+useSmartFieldOracle);
+	System.out.println("useSmartCheckOracle: "+useSmartCheckOracle);
+	System.out.println("useSmarterCheckOracle: "+useSmarterCheckOracle);
+	System.out.println("useUniqueRWCounters: "+useUniqueRWCounters);
+	System.out.println("useHardwareTrans: "+useHardwareTrans);
+	System.out.println("doMemoryTrace: "+doMemoryTrace);
+	System.out.println("keepOldLocks: "+keepOldLocks);
+
 	// set up our field oracle.
 	if (!useSmartFieldOracle) {
 	    this.fieldOracle = new SimpleFieldOracle();
@@ -307,7 +321,8 @@ public class SyncTransformer
 	});
 	// lookup WITH_TRANSACTION version of the transaction root methods
 	for (HMethod hm : transRoots) {
-	    this.transRoots.add(select(hm, WITH_TRANSACTION));
+	    if (!removeTransactions)
+		this.transRoots.add(select(hm, WITH_TRANSACTION));
 	}
     }
     // override parent's codefactory with ours! (which uses theirs)
@@ -565,6 +580,7 @@ public class SyncTransformer
 	    // if in a transaction, call the transaction version &
 	    // deal with possible abort.
 	    if (handlers==null) return;
+	    assert !removeTransactions;
 	    /* old optimization for calling known-safe methods:
 	    if (safeMethods.contains(q.method()) && !q.isVirtual())
 		return; // it's safe. (this is an optimization)
@@ -772,6 +788,7 @@ public class SyncTransformer
 			      new Temp[] { q.objectref(), q.index() },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
+		assert !removeTransactions;
 		// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
 		//		             struct vinfo *version,
 		//                           struct commitrec *cr)
@@ -855,6 +872,7 @@ public class SyncTransformer
 			      new Temp[] { q.objectref(), t0 },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
+		assert !removeTransactions;
 		// VALUETYPE TA(EXACT_readT)(struct oobj *obj, int offset,
 		//		             struct vinfo *version,
 		//                           struct commitrec *cr)
@@ -924,6 +942,7 @@ public class SyncTransformer
 			      new Temp[]{ q.objectref(), q.index(), q.src() },
 			      null, t1, false, false, new Temp[0]);
 	    } else { // transactional write
+		assert !removeTransactions;
 		// void TA(EXACT_writeT)(struct oobj *obj, int offset,
 		//		         VALUETYPE value,
 		//                       struct vinfo *version);
@@ -1007,6 +1026,7 @@ public class SyncTransformer
 			      new Temp[]{ q.objectref(), t0, q.src() },
 			      null, t1, false, false, new Temp[0]);
 	    } else { // transactional read
+		assert !removeTransactions;
 		// void TA(EXACT_writeT)(struct oobj *obj, int offset,
 		//		         VALUETYPE value,
 		//                       struct vinfo *version);
