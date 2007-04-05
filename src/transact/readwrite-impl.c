@@ -42,7 +42,7 @@ extern void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset);
 // since the array is homogeneous.
 
 
-#if !defined(IN_READWRITE_HEADER)
+#if (!defined(IN_READWRITE_HEADER)) && (!defined(DONT_REALLY_DO_TRANSACTIONS))
 
 // XXX these should certainly be inlined!!!
 /////////////////////////////////////////////////////////////////////

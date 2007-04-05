@@ -82,7 +82,7 @@ f. can always set a read flag:
 
 *************************************************************************/
 
-#if !defined(IN_VERSIONS_HEADER)
+#if (!defined(IN_VERSIONS_HEADER)) && (!defined(DONT_REALLY_DO_TRANSACTIONS))
 #if defined(NO_VALUETYPE)
 DECL struct vinfo *resizeVersion(struct oobj *obj, struct vinfo *version) {
   // resize strategy:

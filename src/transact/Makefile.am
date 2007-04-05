@@ -13,6 +13,7 @@ TRANSACTSRC=  transact.h \
 	readwrite.h readwrite.c \
 	versions.h versions.c \
 	vhash.h vhash.c \
+	stubs.h stubs.c stubs-impl.h \
 	alloc.c \
 	transjni.h transjni.c jni-array.h jni-field.h jni-invoke.h \
 	harpoon_Runtime_Transactions_ImplHelper.c \
