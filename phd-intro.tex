@@ -76,21 +76,21 @@ well.
 
 The transaction primitives presented in this thesis can exploit
 optimistic concurrency, provide fault tolerance, and prevent delays by
-using non-blocking synchronization.
-Although transactions can be implemented using mutual exclusion
-(locks), our algorithms will utilize non-blocking synchronization
-\index{Non-blocking synchronization}\index{Synchronization!non-blocking}
+using non-blocking synchronization.  Although transactions can be
+implemented using mutual exclusion (locks), our algorithms will
+utilize non-blocking synchronization \index{Non-blocking
+synchronization}\index{Synchronization!non-blocking}
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
-synchronization offers a number of advantages; foremost for the
-concerns of this thesis is fault tolerance.  A process that fails
-while holding a lock within a critical region can prevent all other
-non-failing processes from ever making progress.  It is in general not
-possible to restore the locked data structures to a consistent state
-after such a failure.  Non-blocking synchronization offers a graceful
-solution to this trouble, as non-progress or failure of any one thread
-will not affect the progress or consistency of other threads or the
-system.
+synchronization offers a number of advantages; from the system
+builder's perspective the foremost is fault tolerance.  A process that
+fails or pauses while holding a lock within a critical region can
+prevent all other processes from ever making progress.  It
+is in general not possible to restore locked data structures to a
+consistent state after such a failure.  Non-blocking synchronization
+offers a graceful solution to this trouble, as non-progress or failure
+of any one thread will not affect the progress or consistency of other
+threads or the system.
 
 Implementing transactions using
 non-blocking synchronization offers performance benefits as well.
@@ -151,7 +151,7 @@ should not be exposed to the programmer of the system.
 
 My goal is to
 make concurrent and fault-tolerant programming easier,
-without incurring excessive overhead.  I support
+without incurring excessive overhead.  This thesis discusses
 unbounded transactions because neither programmers nor compilers can
 easily cope when an architecture imposes a hard limit on transaction
 size.  An implementation might be optimized for transactions below a
@@ -167,6 +167,32 @@ transactions.
 The hybrid approach allows more sophisticated transaction models to be
 implemented, while allowing a simpler hardware transaction mechanism
 to provide speed in the common case.
+
+\section{Strong atomicity}
+Blundell, Lewis, and Martin~\cite{BlundellLeMa05} distinguish
+between \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
+transaction systems, which protect transactions from interference from
+``non-transactional'' code, and \defn{weakly atomic} transaction
+systems which do not afford this protection.
+\index{Weak atomicity}\index{Atomicity!weak}
+Consider unsynchronized code directly altering the length field of
+{\tt StringBuffer} (\charef{stringbuffer}).  In a weakly atomic system
+this will cause the {\tt atomic} {\tt StringBuffer.append()} method to
+appear non-atomic.  However,
+all current software transaction systems\footnote{For example,
+  \cite{HarrisFr03}.}\note{Include more.} are weakly atomic, despite
+the pitfalls thus opened for the unwary programmer, because of the
+perceived difficulty in efficiently implementing the required protection.
+
+Strong atomicity is clearly preferable, and Blundell et al. point out
+that programs written for a weakly atomic model (to run on a software
+transaction system, say) may deadlock when run under strong atomicity
+(for example, on a hardware transaction system).  Our goal will be to
+design a strongly atomic system.
+To this effect, I need to preserve the
+correct operation of {\tt atomic} even in the face of unsynchronized
+accesses from outside the {\tt atomic} block to the fields used within
+it.  
 
 
 \punt{
