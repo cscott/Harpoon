@@ -17,8 +17,9 @@
 
 /* deal with allocation variations */
 #ifdef BDW_CONSERVATIVE_GC
+GC_PTR GC_malloc_atomic_trans(size_t size);
 # define MALLOC GC_malloc
-# define MALLOC_ATOMIC GC_malloc_atomic
+# define MALLOC_ATOMIC GC_malloc_atomic_trans
 #else
 void *malloc(size_t size);
 # define MALLOC malloc
@@ -101,6 +102,7 @@ void *malloc(size_t size);
 #undef VALUENAME
 #undef VALUETYPE
 
+#define NONPRIMITIVE
 #define VALUETYPE struct oobj *
 #define VALUENAME Object
 #include "transact/versions-impl.c"
@@ -109,3 +111,4 @@ void *malloc(size_t size);
 #undef ARRAY
 #undef VALUENAME
 #undef VALUETYPE
+#undef NONPRIMITIVE

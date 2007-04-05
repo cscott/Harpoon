@@ -212,6 +212,7 @@ DECL enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
 #if defined(NO_VALUETYPE)
 
 // make a new aborted version, for use as a per-thread identifier.
+extern struct claz _Class_harpoon_Runtime_Transactions_CommitRecord;
 DECL struct vinfo *newAbortedVersion() {
   struct vinfo *v = MALLOC( sizeof(struct vinfo) +
 			    sizeof(struct commitrec) );
@@ -219,6 +220,8 @@ DECL struct vinfo *newAbortedVersion() {
   struct commitrec *cr = (struct commitrec *) DIRECT_FIELDS(v);
   cr->state = ABORTED;
   // we should initialize cr->header.claz and .hashcode, but we're lazy.
+  cr->header.claz = &_Class_harpoon_Runtime_Transactions_CommitRecord;
+  cr->header.hashunion.hashcode = (((int)cr) & 0xFFF) | 1;
   v->transid = cr;
   return v; // that's it!
 }
@@ -299,7 +302,13 @@ DECL struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
   // if that's larger than OBJ_CHUNK_SIZE, then allow for one
   // chunk of hashtable (INITIAL_CACHE_SIZE)
   if ((!DO_HASH) || size <= OBJ_CHUNK_SIZE) {
-    v = MALLOC(allocsize=(sizeof(struct vinfo) + size));
+    v = 
+#if defined(ARRAY) && !defined(NONPRIMITIVE)
+	MALLOC_ATOMIC
+#else
+	MALLOC
+#endif
+	(allocsize=(sizeof(struct vinfo) + size));
     memset(DIRECT_FIELDS(v), TRANS_FLAG_Byte, size);
   } else {
     unsigned entries = INITIAL_CACHE_SIZE;
