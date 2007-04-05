@@ -211,8 +211,14 @@ DECL enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
 #endif
 #if defined(NO_VALUETYPE)
 
-// make a new aborted version, for use as a per-thread identifier.
+// the claz object that corresponds to CommitRecord
 extern struct claz _Class_harpoon_Runtime_Transactions_CommitRecord;
+// also make a weak version here, in case CommitRecord is not used.
+// (ie the 'removetrans' compile option, which compiles everything as NT)
+struct claz _Class_harpoon_Runtime_Transactions_CommitRecord
+            __attribute__((weak));
+
+// make a new aborted version, for use as a per-thread identifier.
 DECL struct vinfo *newAbortedVersion() {
   struct vinfo *v = MALLOC( sizeof(struct vinfo) +
 			    sizeof(struct commitrec) );
