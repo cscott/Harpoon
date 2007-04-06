@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.38 2007-04-01 23:20:45 cananian Exp $
+% $Id: phd-thesis.tex,v 1.39 2007-04-06 20:43:06 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[letterpaper]{phd-thesis}
 \usepackage{verbatim}
@@ -13,7 +13,7 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.38 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.39 $}{70}
 
 % nicer bibliography back-references.
 \renewcommand*{\backref}[1]{} % tell backref we're using the alt interface
@@ -40,7 +40,7 @@
 \newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
 \newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.38 $ $}
+\date{\subdate \\ $ $Revision: 1.39 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -65,7 +65,7 @@
 %\section{Transactions and transactional memory}
 \input{phd-intro}
 
-%\chapter[Efficient software impl. of trans.]{An efficient software implementation of transactions}\label{sec:stm}
+%\chapter{An efficient software implementation of transactions}\label{sec:stm}
 \input{phd-stm}
 
 \input{phd-htm}
@@ -95,7 +95,7 @@ You have a hardware or a software problem.
 \input{phd-hybrid}
 
 \punt{
-\chapter[Optimizations and type systems]{Compiler optimizations and type systems}
+\chapter{Compiler optimizations and type systems}
 \input{phd-opt}
 }
 
@@ -114,7 +114,7 @@ You have a hardware or a software problem.
 %\chapter{Formal equivalence proof of UTM/xstate}\label{sec:hw-proof}
 %\input{phd-utm-impl}
 
-%\chapter[Precise garbage-collectable C]{Compiling to precise garbage-collectable C code}
+%\chapter{Compiling to precise garbage-collectable C code}
 
 \backmatter
 \bibliography{xaction}
