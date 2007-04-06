@@ -275,14 +275,28 @@ In the next chapter I will provide some concurrent programming
 examples which illustrate the limitation of current lock-based
 methodologies.  I will also provide examples illustrating the uses
 (some novel) of a transaction system, and conclude with a brief
-cautionary note about the current limits of transactions.
+caution about the current limits of transactions.
 
-In \charef{stm}, I will present an efficient software-only
+In \charef{stm}, I will present the design of an efficient software-only
 implementation of transactions.  Software-only transactions can be
 implemented on current hardware, and can easily accomodate many
 different transaction and nesting models.  Software transactions excel
-at certain long-lived transactions, where the constant overhead is
-small compared to the transaction execution time.
+at certain long-lived transactions, where the overhead is
+small compared to the transaction execution time.  I will conclude by
+presenting a microbenchmark which demonstrates the performance limits of
+the design.
+
+In \charef{stmimpl}, I will discuss the practical implementation of
+\charef{stm}'s design.  I will present details of the compiler
+analyses and transformations performed, as well as solutions to
+problems which arise when implementing Java.  I will then present
+benchmark results using real applications, discuss the benefits and
+limitations revealed, and describe how the limits could be overcome.
+
+In \charef{largeobj} we consider one such limitation in depth,
+describing how large arrays fit into an object-oriented transaction
+scheme.  We present a potential solution to the problem based on
+fast functional arrays.
 
 In \charef{htm}, I will present hardware which enables very fast
 short transactions.  The transaction model is more limited, but short
@@ -290,6 +304,7 @@ committing transactions may execute with no overhead.  The additional
 hardware is small and easily added to current processor and memory
 system designs.
 
+\punt{
 In \charef{htmplus}, I will present extensions to the hardware which allow
 more capable virtualized transactions.  These extensions address the
 major limitations of the scheme presented in \charef{htm}, but the
@@ -298,8 +313,11 @@ particular solutions to open problems in transactional memory systems
 (for example, nesting); it may not be desirable to hard-wire specific
 choices before the community has more experience with the
 transactional approach to writing software.
+}
 
-In \charef{hybrid}, I present an \defn{hybrid} transaction implementation,
+% \charef{hybrid}
+At the end of the chapter,
+I present an \defn{hybrid} transaction implementation,
 which builds on the strengths of simple hardware support, while
 allowing software fallback to support a robust and capable transaction
 mechanism.  Unlike the extended hardware scheme, the transaction model
@@ -321,6 +339,7 @@ final chapter summarizes our findings and draws conclusions.
 You have a hardware or a software problem.
 }{\textit{Service manual for Gestetner~3240}}}
 
+Before diving into the design of an efficient transaction system,
 I will motivate the transactional programming model by
 presenting four common scenarios which are needlessly
 difficult using lock-based concurrency; I will then present four novel
@@ -754,17 +773,30 @@ semantics of {\tt atomic} and {\tt synchronized} are identical; see
 \section{Some things we still can't (easily) do}\label{sec:xlimit}
 The transaction mechanism presented here is not a universal
 replacement for all synchronization.  In particular, transactions
-cannot replace blocking producer-consumer queues and mutual exclusion
+cannot replace mutual exclusion
 required to serialize I/O, although the needed locks can certainly be
-built with transactions.  The challenge of integrating I/O within a
+built with transactions.  
+The challenge of integrating I/O within a
 transactional context is discussed in \charef{io}.
 However, large programs---the
 Linux kernel\note{TODO: Find citation}, for example---have been
 written such that locks are
 never held across context switches or I/O operations.  Transactions
 provide a complete solution for this limited synchronization.
+
+Blocking producer-consumer queues, or other options which require a
+transaction to wait upon a condition variable, may introduce
+complications into a transaction system: transactions cannot
+immediately retry when they fail, but instead must wait for some
+condition to become true.  \Charef{object-wait} describes some
+solutions to this problem, ranging from na{\"\i}ve (keep retrying and
+aborting with exponential backoff until the condition is finally true)
+to clever; the clever solutions require additional transaction
+machinery.
+
+
 \note{
-One of the goals of this thesis is to investigate better integration
+One of the original goals of this thesis was to investigate better integration
 of transactional with inherently non-transactional operations.
 One promising approach is the addition of explicit ``recovery'' blocks
 to undo the effects of non-transactional regions embedded within
