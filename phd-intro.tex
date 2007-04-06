@@ -36,7 +36,7 @@ only observe data structures in well-defined states?
 Atomicity in shared-memory multiprocessors is 
 conventionally provided
 via mutual-exclusion \defn{locks} (see, for example,
-\cite{Tanenbaum92}[p.~35]).  Although locks are easy to
+\cite[p.~35]{Tanenbaum92}).  Although locks are easy to
 implement using test-and-set, compare-and-swap, or
 load-linked/{\bp}store-conditional instructions, they introduce a host of
 difficulties.  Protocols to avoid deadlock when locking multiple
@@ -168,31 +168,25 @@ The hybrid approach allows more sophisticated transaction models to be
 implemented, while allowing a simpler hardware transaction mechanism
 to provide speed in the common case.
 
-\section{Strong atomicity}
+\section{Strong atomicity}\label{sec:strongatom}
 Blundell, Lewis, and Martin~\cite{BlundellLeMa05} distinguish
 between \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
 transaction systems, which protect transactions from interference from
 ``non-transactional'' code, and \defn{weakly atomic} transaction
-systems which do not afford this protection.
-\index{Weak atomicity}\index{Atomicity!weak}
-Consider unsynchronized code directly altering the length field of
-{\tt StringBuffer} (\charef{stringbuffer}).  In a weakly atomic system
-this will cause the {\tt atomic} {\tt StringBuffer.append()} method to
-appear non-atomic.  However,
-all current software transaction systems\footnote{For example,
+systems which do not afford this
+ protection.\index{Weak atomicity}\index{Atomicity!weak}
+However, all current software transaction systems\footnote{For example,
   \cite{HarrisFr03}.}\note{Include more.} are weakly atomic, despite
 the pitfalls thus opened for the unwary programmer, because of the
 perceived difficulty in efficiently implementing the required protection.
 
 Strong atomicity is clearly preferable, and Blundell et al. point out
-that programs written for a weakly atomic model (to run on a software
+that programs written for a weakly atomic model (to run on a current software
 transaction system, say) may deadlock when run under strong atomicity
-(for example, on a hardware transaction system).  Our goal will be to
-design a strongly atomic system.
-To this effect, I need to preserve the
-correct operation of {\tt atomic} even in the face of unsynchronized
-accesses from outside the {\tt atomic} block to the fields used within
-it.  
+(for example, on a hardware transaction system).  The transaction
+systems considered in this dissertation will preserve the
+correct atomic behavior of transactions even in the face of
+unsynchronized accesses from outside the transaction.
 
 
 \punt{

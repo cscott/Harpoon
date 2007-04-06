@@ -205,31 +205,21 @@ analyses of the SpecJVM98 benchmarks, which I implemented using the
 Flex Java compiler framework.
 
 \subsection{Weak vs. strong atomicity}
-Blundell, Lewis, and Martin~\cite{BlundellLeMa05} distinguish
-between \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
-transaction systems, which protect transactions from interference from
-``non-transactional'' code, and \defn{weakly atomic} transaction
+As previously discussed in \charef{strongatom},
+\defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
+transaction systems protect transactions from interference from
+``non-transactional'' code, while \defn{weakly atomic} transaction
 systems which do not afford this protection.
 \index{Weak atomicity}\index{Atomicity!weak}
 Consider unsynchronized code directly altering the length field of
 {\tt StringBuffer} (\charef{stringbuffer}).  In a weakly atomic system
 this will cause the {\tt atomic} {\tt StringBuffer.append()} method to
-appear non-atomic.  However,
-all current software transaction systems\footnote{For example,
-  \cite{HarrisFr03}.}\note{Include more.} are weakly atomic, despite
-the pitfalls thus opened for the unwary programmer, because of the
-perceived difficulty in efficiently implementing the required protection.
-
-Strong atomicity is clearly preferable, and Blundell et al. point out
-that programs written for a weakly atomic model (to run on a software
-transaction system, say) may deadlock when run under strong atomicity
-(for example, on a hardware transaction system).  Our goal will be to
-design a strongly atomic system.
-To this effect, I need to preserve the
-correct operation of {\tt atomic} even in the face of unsynchronized
-accesses from outside the {\tt atomic} block to the fields used within
-it.  
-
+appear non-atomic.  Current software transaction systems implement
+only weak atomicity, because of the assumed expense of implementing
+strong atomicity.  The system we will design in this chapter will
+achieve strong atomicity without adding excessive overhead, so that
+correct operation is assured even despite concurrent non-transactional
+operations on locations involved in a transaction.
 
 \subsection{Object-oriented vs. flat TM}
 This transaction system, unlike all current proposals
@@ -445,7 +435,8 @@ typedef TransID {
   mtype status;
 };
 \end{verbatim}
-\caption{Declaring objects with version lists in Promela.  Note that
+\caption[Declaring objects with version lists in Promela.]
+ {Declaring objects with version lists in Promela.  Note that
   we are using the \texttt{byte} datatype to encode pointers.
   The \texttt{fieldLock} field assists in the implementation of the
   load-linked/store-conditional pair of operations in Promela.}
@@ -1100,8 +1091,8 @@ expect in real-world applications.
   mtlr 0                 mtlr 0             
   blr                    blr}
 \end{alltt}
-\caption[PowerPC assembly emitted for counter microbenchmark with
-  write checks.]{PowerPC assembly emitted for counter microbenchmark with
+\caption[PowerPC assembly for counter microbenchmark with
+  write checks.]{PowerPC assembly for counter microbenchmark with
   write checks.  The right-hand column is generated from the C
   implementation; the left-hand column has an optimized version of the
   write check inlined into the code using the \texttt{asm} keyword.
@@ -2548,7 +2539,8 @@ constant time plus an invocation of \funcname{FA-Read} or
 \section{Lock-free functional arrays}\label{sec:large-obj}
 \begin{figure}\centering
 \includegraphics[width=5in,clip=true]{Figures/chuang}
-\caption{Shallow binding scheme for functional arrays, from
+\caption[Shallow binding scheme for functional arrays.]
+  {Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
 \end{figure}
