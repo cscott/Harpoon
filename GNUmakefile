@@ -137,7 +137,8 @@ phd-thesis.dvi: \
 	Figures/$(f).eps Figures/$(f).pdf) \
 	$(foreach f, \
 	cachemods snapshot datastruct-entry tr-quad tr-multi-obj,\
-	Figures/$(f).pstex Figures/$(f).pstex_t Figures/$(f).pdf)
+	Figures/$(f).pstex Figures/$(f).pstex_t \
+	Figures/$(f).pdf Figures/$(f).eps)
 phd-thesis.pdf: phd-thesis.dvi
 	pdflatex phd-thesis && pdflatex phd-thesis
 
