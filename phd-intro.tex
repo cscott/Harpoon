@@ -232,27 +232,37 @@ In summary, this thesis makes the following contributions:
 
 \begin{itemize}
 \item We provide efficient implementations of
-transaction primitives to enable their general use.
-%%%%%%% MORE ACCURACY FOR THE ABOVE CLAIM?
+\textit{strongly-atomic} transaction primitives to enable their general use.
+In particular, our technique imposes as little as 15\% overhead on
+non-transactional code in a software-only system.
+
 \item The transaction
 primitives presented in this thesis can exploit optimistic
 concurrency, provide fault tolerance, and prevent delays by using
 non-blocking synchronization.
+\punt{
 \item 
 I will show how transactions can be integrated into an
 object-oriented language and used for backtracking, exception
 handling, and concurrency control in new programs, in addition to
 expressing atomicity and fault-tolerance.
-\punt{
 \item In \charef{safe-transactify} I will describe a technique
 for ``transactifying'' existing lock-based code
 to identify or fix existing concurrency bugs.
 }
+
+\item Unlike some previous work, this thesis will assume that
+transactions may be of arbitrary size and duration, and that details
+of the implementation should not be exposed to the programmer of the
+system.
+
 \item I will present both software and hardware implementations of the
 transaction model.
-\item Unlike some previous work, this thesis will assume that transactions may be of
-arbitrary size and duration, and that details of the implementation
-should not be exposed to the programmer of the system.
+The software transaction system runs real programs written in
+Java; I will discuss the practical implementation details encountered.
+The hardware transaction systems requires only small changes to the
+processor core and cache.
+
 \item I will show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
@@ -261,8 +271,13 @@ transactions.
 %%%%%%%%%%%%% END LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
 %% ORGANIZATION OF THESIS:  XXX FIXME XXX
 
-% \charef{stm}
-In the next chapter, I will present an efficient software-only
+In the next chapter I will provide some concurrent programming
+examples which illustrate the limitation of current lock-based
+methodologies.  I will also provide examples illustrating the uses
+(some novel) of a transaction system, and conclude with a brief
+cautionary note about the current limits of transactions.
+
+In \charef{stm}, I will present an efficient software-only
 implementation of transactions.  Software-only transactions can be
 implemented on current hardware, and can easily accomodate many
 different transaction and nesting models.  Software transactions excel
@@ -432,9 +447,10 @@ the existing class corrects this race.
 Many recursive data structures can be traversed without the use of a
 stack using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
-Schorr and Waite \cite{SchorrWa67}.  The following code implements a
-pointer-reversal traversal of a simple singly-linked list:
-\begin{inlinecode}
+Schorr and Waite \cite{SchorrWa67}.  An implementation of a
+pointer-reversal traversal of a simple singly-linked list is shown in
+\figref{destruct-list}.
+\begin{figure}\sis\fontsize{9}{10}\begin{verbatim}
 // destructive list traversal.
 void traverse(List l) {
   List last = null, t;
@@ -452,12 +468,15 @@ void traverse(List l) {
     // now do again, backwards. (restoring links)
   }
 }
-\end{inlinecode}
+\end{verbatim}
+\caption{Destructive linked-list traversal.}
+\label{fig:destruct-list}
+\end{figure}
 
-This function traverses the list, visiting nodes in order and then
-reversing the {\tt next} pointer.  When the end of the list is
-reached, the reversed links are traversed to restore the list's original
-state.  
+The \texttt{traverse()} function traverses the list, visiting nodes in
+order and then reversing the {\tt next} pointer.  When the end of the
+list is reached, the reversed links are traversed to restore the
+list's original state.
 
 Of course, I have chosen the simplest possible data structure here, but
 the technique works for trees and graphs---and the reader may mentally
@@ -499,13 +518,63 @@ the {\tt try}.  Exceptions or faults cause the transaction to abort;
 when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
+\subsection{Backtracking}\label{sec:backtrack}
 Introducing an explicit {\tt fail} statement allows us to use the same
-{\tt try}/{\tt else} for backtracking search.\index{Backtracking}
-\note{Insert example here?}
+{\tt try}/{\tt else} to facilitate backtracking
+search.\index{Backtracking} Backtracking search is used to implement
+practical\footnote{As opposed to the limited regular expressions
+demonstrated in theory classes which are always prettily compiled to
+deterministic finite automata \cite{Friedl02}.} regular expressions,
+parsers, logic programming languages, Scrabble-playing
+programs~\cite{AppelJa88}, and (in general) any problem with multiple
+solutions or multiple solution techniques.
+\note{Scrabble is an interesting case: supporting the multiple
+  possible plays (and pruning the search or selecting the best)
+  requires a \texttt{fail t} statement where we can send back the play
+  and its score, allowing them to escape the transaction.  If we want
+  to search through the opponents possible responses to the play, then
+  we need nested transactions, so that we can \texttt{fail t} the
+  opponents different responses without (yet) exiting the search that
+  yielded our own play.}
+
+\begin{figure}\sis\fontsize{9}{10}\begin{verbatim}
+int expr() {
+   try {
+     return sum();
+   } else {
+     return difference();
+   }
+}
+int sum() {
+   int a = number();
+   eat(ADD);
+   int b = number();
+   return a+b;
+}
+int difference() {
+   int a = number();
+   eat(MINUS);
+   int b = number();
+   return a-b;
+}
+\end{verbatim}
+\caption{A simple backtracking recursive-decent parser.}
+\label{fig:backtrack-parser}
+\end{figure}
+
+As a simple example, let us consider a recursive-decent parser such as
+that shown in \figref{backtrack-parser}.  We don't know whether to
+apply the \texttt{sum()} or \texttt{difference()} production until
+after we've parsed some common left prefix.  We can use backtracking
+to attempt one rule (\texttt{sum}) and \texttt{fail} out of it
+inside the \texttt{eat()} method, in the process undoing any data
+structure updates performed on this path, and then attempt the other
+possible production.
 
 \subsection{Network flow}\label{sec:flow}\index{Network flow}
 
-Let's now turn our attention now to parallel codes.
+Let's now turn our attention now to parallel codes, the more
+conventional application of transaction systems.
 Consider a serial program for computing network flow (see, for
 example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
 pushes flow across an edge by increasing the ``excess flow'' on one
