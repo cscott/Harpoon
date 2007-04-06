@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.15 2007-04-01 23:16:34 cananian Exp $
+% $Id: phd-thesis.cls,v 1.16 2007-04-06 21:22:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -23,8 +23,20 @@
 \LoadClass[11pt,titlepage,twoside]{book}
 \usepackage{bibcontents} % required by MIT thesis specification
 \usepackage[section,plain]{algorithm} % algorithm environment,\listofalgorithms
+\usepackage{fancyhdr}
 
 \linespread{1.2} % ``double-space''
+
+% header/footer layout
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[RO]{\slshape \rightmark}
+\fancyhead[LE]{\slshape \leftmark}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhfoffset[RO]{.5in}
+\fancyhfoffset[LE]{.5in}
+\addtolength{\headheight}{3pt}
 
 % definitions
 \newcommand{\defn}[1]           {{\textbf{\boldmath\defnlt{#1}}}}
