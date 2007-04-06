@@ -99,11 +99,14 @@ DECL void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
 // Now deep transaction magic.
 ///////////////////////////////////////////////////////////////////////
 
-DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
+DECL VALUETYPE TA(EXACT_readNT_full)(struct oobj *obj, unsigned offset) __attribute__((noinline));
+DECL VALUETYPE TA(EXACT_readNT_full)(struct oobj *obj, unsigned offset) {
+  goto resume;
   INCREMENT_STATS(transact_readnt, 1);
   do {
     VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
     if (likely(f!=T(TRANS_FLAG))) return f;
+  resume:
     if (unlikely(SAW_FALSE_FLAG ==
 		 TA(copyBackField)(obj, offset, KILL_WRITERS))) {
       INCREMENT_STATS(transact_false_flag_read, 1);
@@ -111,6 +114,12 @@ DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
     }
     // okay, we've done a copy-back now.  retry.
   } while(1);
+}
+DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
+    INCREMENT_STATS(transact_readnt, 1);
+    VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
+    if (likely(f!=T(TRANS_FLAG))) return f;
+    return TA(EXACT_readNT_full)(obj, offset);
 }
 
 // must have already recorded itself as a reader (set flags, etc)
@@ -137,7 +146,9 @@ DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
   } while(1);
 }
 
-DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
+DECL void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
+				 VALUETYPE value) __attribute__((noinline));
+DECL void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
 			    VALUETYPE value) {
   INCREMENT_STATS(transact_writent, 1);
   if (
@@ -172,6 +183,22 @@ DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
       st = CommitCR(tid);
     } while (st!=COMMITTED);
   }
+}
+
+DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
+			    VALUETYPE value) {
+  INCREMENT_STATS(transact_writent, 1);
+  if (
+#if 1 /* XXX: should be '#ifndef HAS_64_BIT_STORE_CONDITIONAL' */
+      (sizeof(VALUETYPE) <= sizeof(jint)) &&
+#endif
+      likely(value != T(TRANS_FLAG)) &&
+      // LL(readerList)/SC(field)
+      likely(LL(OBJ_READERS_PTR(obj))==NULL) &&
+	  // note that T(store_conditional) is a bit of a hack.
+      likely(T(store_conditional)(FIELDBASE(obj), offset, value)))
+      return; // done!
+  TA(EXACT_writeNT_full)(obj, offset, value);
 }
 
 // prior to this point, we should have recorded the write
