@@ -279,7 +279,7 @@ caution about the current limits of transactions.
 
 In \charef{stm}, I will present the design of an efficient software-only
 implementation of transactions.  Software-only transactions can be
-implemented on current hardware, and can easily accomodate many
+implemented on current hardware, and can easily accommodate many
 different transaction and nesting models.  Software transactions excel
 at certain long-lived transactions, where the overhead is
 small compared to the transaction execution time.  I will conclude by
@@ -542,7 +542,7 @@ Introducing an explicit {\tt fail} statement allows us to use the same
 {\tt try}/{\tt else} to facilitate backtracking
 search.\index{Backtracking} Backtracking search is used to implement
 practical\footnote{As opposed to the limited regular expressions
-demonstrated in theory classes which are always prettily compiled to
+demonstrated in theory classes which are always neatly compiled to
 deterministic finite automata \cite{Friedl02}.} regular expressions,
 parsers, logic programming languages, Scrabble-playing
 programs~\cite{AppelJa88}, and (in general) any problem with multiple
@@ -803,4 +803,7 @@ to undo the effects of non-transactional regions embedded within
 an aborting transaction.}
 
 % LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
-% LocalWords:  unscalable dequeue enqueue composability filesystem
+% LocalWords:  unscalable dequeue enqueue composability filesystem analyses STM
+% LocalWords:  microbenchmark virtualized multicore undelayed HTM API runtime
+% LocalWords:  unsynchronized Rinard Herlihy parallelize vertices JVM JDK
+% LocalWords:  StringBuffer

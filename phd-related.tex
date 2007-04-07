@@ -358,7 +358,7 @@ The Emerald system \cite{BlackHuJuLe86,JulSt91} introduced
 implement a simple directory object is shown in
 Figure~\ref{fig:emerald-dir}.  Each object is associated with
 Hoare-style monitor, which provides mutual exclusion and process
-signalling.  Each Emerald object is divided into a monitored part and
+signaling.  Each Emerald object is divided into a monitored part and
 a non-monitored part.  Variables declared in the monitored part are
 shared, and access to them from methods in the non-monitored part is
 prohibited---although non-monitored methods may call monitored methods
@@ -423,3 +423,4 @@ non-blocking synchronization to implement atomic methods.
 
 
 % LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
+% LocalWords:  Herlihy

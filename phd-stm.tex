@@ -108,7 +108,7 @@ transactions.  These applications include \texttt{201\_compress}, an
 implementation of gzip compression, and \texttt{222\_mpegaudio}, an
 MP3 decoder.  Both of these applications perform inherently serial
 tasks.  They perform quite well with locks, and would likely execute
-with acceptable performance even with a na\"\i{}ve software
+with acceptable performance even with a na{\"\i}ve software
 implementation of transactions, as long as the impact on
 non-transactional operations was minimal.
 
@@ -333,7 +333,7 @@ this variant is supported on many chips in the PowerPC processor family,
 although it has been deprecated in version 2.02 of the PowerPC
 architecture standard.\footnote{Version 2.02 of the PowerPC
 architecture standard says, ``If a reservation exists but the storage
-location specified by the \texttt{stdcx.} is not the same as the
+location specified by the \texttt{stwcx.} is not the same as the
 location specified by the \textit{Load And Reserve} instruction that
 established the reservation\ldots it is undefined whether [the operand
 is] stored into the word in storage addressed by [the specified
@@ -463,7 +463,7 @@ I will present the operations one-by-one.
 
 \subsubsection{Non-transactional read}
 
-The {\tt ReadNT} function does a non-transactional read of field $f$ from
+The {\tt readNT} function does a non-transactional read of field $f$ from
 object $o$, putting the result in $v$.  
 In the common case, the only overhead is to check that
 the read value is not \FLAG.  However, if the value read \emph{is}
@@ -529,7 +529,7 @@ The top of \figref{promrwnt} specifies the non-transactional read operation in
 Promela.
 
 \subsubsection{Non-transactional write}
-The {\tt WriteNT} function does a non-transactional write of new value $nval$
+The {\tt writeNT} function does a non-transactional write of new value $nval$
 to field $f$ of object $o$.  For correctness, we need to ensure that
 the reader list is empty before we do the write.  I implement this
 with a load-linked/store-conditional pair, which is modelled in
@@ -658,7 +658,7 @@ know that we have already written to this field inside this transaction.
 inline readT(tid, o, f, ver, result) {
   do
   ::
-     /* we should always either be on the readerlist or
+     /* we should always either be on the readerList or
       * aborted here */
      result = object[o].field[f];
      if
@@ -1207,7 +1207,7 @@ stand-alone binary for the target system.  The FLEX compiler and
 analysis code is written in Java, while the FLEX runtime system is
 written in C.
 
-\subsection{Using C as a target}
+\subsection{Using C as a target}\label{sec:precisec}
 The experiments in this thesis were conducted on either the x86 or
 PowerPC architectures, for which FLEX does not have a native assembly
 backend.  The ``Precise C'' backend was thus used, so named because,
@@ -1215,10 +1215,10 @@ aside from emitting C code, it's original purpose was to investigate
 the possibility of precise garbage collection whist emitting
 high-level code.  To that end, the backend contains code to maintain a
 separate stack for values of non-primitive types, and to push and pop
-all live variables to this stack at gc-points.  Since FLEX's low-level
+all live variables to this stack at gc points.  Since FLEX's low-level
 IR may create derived pointers which point inside objects, for example
 during loop optimizations, the Precise C backend will also reconstruct
-the derived pointers after the gc-point, in case the objects involved
+the derived pointers after the gc point, in case the objects involved
 have moved.\label{sec:precise-gc}
 
 Experiments showed that this mechanism had minimal impact on
@@ -1266,7 +1266,7 @@ transaction design presented in the previous chapter, a number of
 other transformations and analyses of our Java benchmarks must be
 performed: transactions must be synthesized from the benchmark's
 monitor synchronization, methods must be cloned according to the
-context (whether inside a transaction or not) of their callsite,
+context (whether inside a transaction or not) of their call site,
 analyses must be performed in order to reduce redundant checks in the
 transformed code, and some minor desugaring is done to ease
 implementation.
@@ -1819,7 +1819,7 @@ account for this.  In general, a larger-than-expected reservation may
 cause false conflicts between independent transactions, and this can
 lead to deadlock or livelock if contention is not managed properly.
 Our implementation uses randomized\footnote{The randomization is via
-  the varying latency of the unix \texttt{sleep} syscall; stronger
+  the varying latency of the Unix \texttt{sleep} syscall; stronger
   randomization could be implemented if it mattered.}
  exponential backoff, which ensures that every transaction
  eventually has an opportunity to execute in isolation, which will
@@ -1868,7 +1868,7 @@ but we allow other readers (both transactional and non-transactional)
 to see the partial writes.  The Java memory model actually permits
 this behavior (Java Language Specification chapter 17.7,
 ``Non-atomic Treatment of double and long'' \cite{JLS3}).  The specification
-continues, ``VM implementors are encouraged to avoid splitting their
+continues, ``VM implementers are encouraged to avoid splitting their
 64-bit values where possible.''  We can easily implement this behavior
 as an alternative: non-transactional writes of doubles and longs can be
 converted to small transactions encompassing nothing but the multiple
@@ -1991,8 +1991,8 @@ public class Drop {
     }
 }
 \end{verbatim}
-\caption[Dropbox example illustrating the use of condition variables
-  in Java]{Dropbox example illustrating the use of condition variables
+\caption[Drop box example illustrating the use of condition variables
+  in Java]{Drop box example illustrating the use of condition variables
   in Java, from \cite{ZakhourHoRoRaRiHo06}.}\label{fig:dropbox}
 \end{figure}
 
@@ -2049,7 +2049,7 @@ don't commit successfully, we unlock the mutex and throw the usual
 successfully, we can safely wait (releasing our mutex atomically).
 When we're woken, we create a new transaction, release our mutex, and
 continue.  The mutex prevents notification from occurring between the
-commit and the wait.\footnote{Note in the dropbox example in
+commit and the wait.\footnote{Note in the drop box example in
 \figref{dropbox} that the standard monitor lock is present to prevent
 (for example) \texttt{put()} from setting \texttt{empty} to false and
 doing the \texttt{notifyAll()} \textit{after} \texttt{take()} has seen
@@ -2473,7 +2473,7 @@ $\fref{\var{tid}}{status}=\text{\sl ABORTED}$ (which indicates that
 our transaction has been aborted) and we must back off and retry.
 All {\tt Version} structures
 created while in the transaction will reference \emph{tid} in
-in their {\tt owner} field.
+their {\tt owner} field.
 
 Semantically, the current field values for the object will be given by
 the first version in 
@@ -2786,4 +2786,10 @@ XXX: continue previous microbenchmarks, as function of object size.
 
 
 % LocalWords:  Promela microbenchmark Hennessy PowerPC setjmp longjmp runtime
-% LocalWords:  subsumption TransactionAbortException mutex
+% LocalWords:  subsumption TransactionAbortException mutex unsynchronized gzip
+% LocalWords:  SPECjvm multithreaded transactified Transactification renderer
+% LocalWords:  javac analyses StringBuffer stwcx transactionally ReaderList gcc
+% LocalWords:  readNT writeNT readT writeT ensureWriter checkWriteField inlined
+% LocalWords:  inlines inline PowerPC's Sparc StrongARM Classpath backend JNI
+% LocalWords:  bytecode desugaring ensureReader desugar superclass NaN JDK iff
+% LocalWords:  parameterized datatype Herlihy ensureReader

@@ -3,7 +3,7 @@ My work on both software and hardware transaction systems has
 reiterated the difficulty of creating correct implementations of
 concurrent and fault-tolerant constructs.  Automatic model checking is
 a prerequisite to achieving confidence in the design and implementation.
-Versions of the software transaction system have been modelled in
+Versions of the software transaction system have been modeled in
 Promela using \Spin 4.1.0 and verified on an SGI 64-processor MIPS
 machine with 16G of main memory.
 
@@ -36,7 +36,7 @@ In the process one bug in \Spin was discovered\footnote{Breadth-first
 search of atomic regions was performed incorrectly in \Spin 4.0.7;
 this was fixed in \Spin 4.1.0.}
 and a number of subtle race conditions in the model were discovered and
-corrected.  These included a number of modelling artifacts: in
+corrected.  These included a number of modeling artifacts: in
 particular, we were extremely aggressive about reference-counting and
 deallocating objects in order to control the size of the state space,
 and this proved difficult to do correctly.  We also discovered some
@@ -110,7 +110,7 @@ fi
 \end{inlinecode}
 is similar: one among its enabled statements is selected and executed,
 and then the process is repeated (with a different statement possibly
-being selected each time) until control is explicitly transfered out
+being selected each time) until control is explicitly transferred out
 of the loop with a {\tt break} or {\tt goto}.
 
 Finally,
@@ -135,3 +135,5 @@ presented here.  It may also be downloaded from
 \url{http://flex-master.csail.mit.edu/Harpoon/swx.pml}.
 
 {\footnotesize\verbatiminput{phd-swx.pml}}
+
+% LocalWords:  Promela SGI deallocating deallocation bitmask ensureWriter iff
