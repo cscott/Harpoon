@@ -5,33 +5,22 @@
 // allhashimpl.h must have been included
 
 #include "transact/preproc.h" /* Defines 'T()' and 'TA'() macros. */
-// could define DECL to be "extern inline"
-#define DECL
 
 // prototypes.
 #if defined(IN_READWRITE_HEADER)
-extern VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset);
-extern VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
-				 struct vinfo *version, struct commitrec *cr);
-extern void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
-			      VALUETYPE value);
-extern void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
-			     VALUETYPE value, struct vinfo *version);
+extern VALUETYPE TA(EXACT_readNT_full)(struct oobj *obj, unsigned offset);
+extern VALUETYPE TA(EXACT_readT_full)(struct oobj *obj, unsigned offset,
+				      struct vinfo *version,
+				      struct commitrec *cr);
+extern void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
+				   VALUETYPE value);
+extern void TA(EXACT_writeT_full)(struct oobj *obj, unsigned offset,
+				  VALUETYPE value, struct vinfo *version);
 // used in version-impl.c: copy_back
-extern VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset);
-extern void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
-			       unsigned offset, VALUETYPE value);
-
-#if 0
-// external references:
-//  from versions.c:
-extern struct versionPair findVersion(struct oobj *obj, struct commitrec *cr);
-extern enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
-                                       enum killer kill_whom);
-extern struct vinfo *EXACT_ensureWriter(struct oobj *obj,
-					struct commitrec *currentTrans);
-extern void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset);
-#endif
+extern VALUETYPE TA(readFromVersion_full)(struct vinfo *version,
+					  unsigned offset);
+extern void TA(writeToVersion_full)(struct oobj *obj, struct vinfo *version,
+				    unsigned offset, VALUETYPE value);
 
 #endif /* IN_READWRITE_HEADER */
 
@@ -43,22 +32,23 @@ extern void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset);
 
 
 #if (!defined(IN_READWRITE_HEADER)) && (!defined(DONT_REALLY_DO_TRANSACTIONS))
-inline VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset)
-     __attribute__((always_inline));
-inline void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
-			       unsigned offset, VALUETYPE value)
-     __attribute__((always_inline));
 
-// XXX these should certainly be inlined!!!
 /////////////////////////////////////////////////////////////////////
 // reading from versions.
-DECL VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset) {
+VALUETYPE TA(readFromVersion_full)(struct vinfo *version, unsigned offset) {
 #if !defined(ARRAY) // this expression is probably not constant for arrays.
   //assert(__builtin_constant_p(offset<=OBJ_CHUNK_SIZE-sizeof(VALUETYPE)));
+#endif
+#if DO_HASH
+  goto resume; // we've already done the rest in the fastpath
 #endif
   if ((!DO_HASH) || offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE))
     return *(VALUETYPE*)(DIRECT_FIELDS(version)+offset);
   else {
+#if DO_HASH
+  resume:
+#endif
+    {
 #if defined(ARRAY)
     // arrays are homogeneous.
     return T(version_hash_read)
@@ -71,19 +61,27 @@ DECL VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset) {
       (struct version_hashtable_Int *) HASHED_FIELDS(version);
     return T(version_hash_read_Int_to)(table, offset);
 #endif
+    }
   }
 }
 
 // writing to versions.
-DECL inline void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
+void TA(writeToVersion_full)(struct oobj *obj, struct vinfo *version,
 			     unsigned offset, VALUETYPE value) {
 #if !defined(ARRAY) // this expression is probably not constant for arrays.
   //assert(__builtin_constant_p(offset<=OBJ_CHUNK_SIZE-sizeof(VALUETYPE)));
+#endif
+#if DO_HASH
+  goto resume; // we've already done the rest in the fastpath
 #endif
   if ((!DO_HASH) || offset <= OBJ_CHUNK_SIZE-sizeof(VALUETYPE)) {
     *(VALUETYPE*)(DIRECT_FIELDS(version)+offset) = value;
     return; // done!
   } else {
+#if DO_HASH
+  resume:
+#endif
+    {
 #if defined(ARRAY)
     // arrays are homogeneous, so use the right version of the hashtable.
     struct T(version_hashtable) *table =
@@ -95,6 +93,7 @@ DECL inline void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
       (struct version_hashtable_Int *) HASHED_FIELDS(version);
     T(version_hash_write_Int_from)(table, offset, value);
 #endif
+    }
     return; // success!
   }
 }
@@ -104,9 +103,8 @@ DECL inline void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
 // Now deep transaction magic.
 ///////////////////////////////////////////////////////////////////////
 
-DECL VALUETYPE TA(EXACT_readNT_full)(struct oobj *obj, unsigned offset) __attribute__((noinline));
-DECL VALUETYPE TA(EXACT_readNT_full)(struct oobj *obj, unsigned offset) {
-  goto resume;
+VALUETYPE TA(EXACT_readNT_full)(struct oobj *obj, unsigned offset) {
+  goto resume; // we've already done the rest in the fastpath
   INCREMENT_STATS(transact_readnt, 1);
   do {
     VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
@@ -120,24 +118,14 @@ DECL VALUETYPE TA(EXACT_readNT_full)(struct oobj *obj, unsigned offset) {
     // okay, we've done a copy-back now.  retry.
   } while(1);
 }
-DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
-    INCREMENT_STATS(transact_readnt, 1);
-    VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
-    if (likely(f!=T(TRANS_FLAG))) return f;
-    return TA(EXACT_readNT_full)(obj, offset);
-}
 
 // must have already recorded itself as a reader (set flags, etc)
 // XXX WANT TO RETURN THE NEW VERSION AS WELL AS THE VALUE.
-DECL VALUETYPE TA(EXACT_readT_full)(struct oobj *obj, unsigned offset,
-				    struct vinfo *version,
-				    struct commitrec *cr)
-     __attribute__((noinline));
-DECL VALUETYPE TA(EXACT_readT_full)(struct oobj *obj, unsigned offset,
+VALUETYPE TA(EXACT_readT_full)(struct oobj *obj, unsigned offset,
 				    struct vinfo *version,
 				    struct commitrec *cr) {
   struct versionPair vp;
-  goto resume;
+  goto resume; // we've already done the rest in the fastpath
   /* version may be null. */
   /* we should always either be on the readerlist or aborted here. */
   do {
@@ -156,22 +144,12 @@ DECL VALUETYPE TA(EXACT_readT_full)(struct oobj *obj, unsigned offset,
     /* try, try again. */
   } while(1);
 }
-DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
-			       struct vinfo *version,
-			       struct commitrec *cr) {
-  VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
-  if (likely(f!=T(TRANS_FLAG))) return f; /* not yet involved in xaction. */
-  // object field is FLAG.
-  if (likely(version!=NULL))
-    return TA(readFromVersion)(version, offset); /* done! */
-  return TA(EXACT_readT_full)(obj, offset, version, cr);
-}
 
-DECL void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
-				 VALUETYPE value) __attribute__((noinline));
-DECL void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
+void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
 			    VALUETYPE value) {
+  goto resume; // we've already done the rest in the fastpath
   INCREMENT_STATS(transact_writent, 1);
+ resume: // we have to repeat this first test against TRANS_FLAG
   if (
 #if 1 /* XXX: should be '#ifndef HAS_64_BIT_STORE_CONDITIONAL' */
       (sizeof(VALUETYPE) <= sizeof(jint)) &&
@@ -206,33 +184,19 @@ DECL void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
   }
 }
 
-DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
-			    VALUETYPE value) {
-  INCREMENT_STATS(transact_writent, 1);
-  if (
-#if 1 /* XXX: should be '#ifndef HAS_64_BIT_STORE_CONDITIONAL' */
-      (sizeof(VALUETYPE) <= sizeof(jint)) &&
-#endif
-      likely(value != T(TRANS_FLAG)) &&
-      // LL(readerList)/SC(field)
-      likely(LL(OBJ_READERS_PTR(obj))==NULL) &&
-	  // note that T(store_conditional) is a bit of a hack.
-      likely(T(store_conditional)(FIELDBASE(obj), offset, value)))
-      return; // done!
-  TA(EXACT_writeNT_full)(obj, offset, value);
-}
-
+#if 0 // this is so simple that it's included in full in the fast path.
 // prior to this point, we should have recorded the write
 // (guaranteed that the object field had the FLAG value, and that flag bits
 //  are set)
-DECL void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
+void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
 			   VALUETYPE value, struct vinfo *version) {
   // version should always be non-null
   // this is easy!
   TA(writeToVersion)(obj, version, offset, value);
 }
+#endif
+
 #endif /* IN_READWRITE_HEADER */
 
 /* clean up after ourselves */
 #include "transact/preproc.h"
-#undef DECL

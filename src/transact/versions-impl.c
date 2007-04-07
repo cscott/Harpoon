@@ -3,8 +3,6 @@
 // VALUETYPE and VALUENAME must be defined unless NO_VALUETYPE is.
 
 #include "transact/preproc.h" /* Defines 'T()' and 'TA'() macros. */
-// could define DECL to be "extern inline"
-#define DECL
 
 ////////////////////////////////////////////////////////////////////////
 //                         prototypes
@@ -16,8 +14,9 @@ extern enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
 				       enum killer kill_whom);
 extern struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
 				       struct vinfo *template);
-extern void TA(EXACT_checkReadField)(struct oobj *obj, unsigned offset);
-extern void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset);
+//extern void TA(EXACT_checkReadField)(struct oobj *obj, unsigned offset);
+extern void TA(EXACT_checkWriteField_full)(struct oobj *obj, unsigned offset,
+					   VALUETYPE canonical);
 #endif
 #if defined(NO_VALUETYPE)
 extern struct vinfo *resizeVersion(struct oobj *obj, struct vinfo *version);
@@ -26,8 +25,8 @@ extern struct vinfo *resizeVersion(struct oobj *obj, struct vinfo *version);
 extern struct vinfo *createVersion(struct oobj *obj, struct commitrec *cr,
 				   struct vinfo *template);
 // ensure we're in readers list (per object)
-extern struct vinfo *EXACT_ensureReader(struct oobj *obj,
-					struct commitrec *cr);
+extern struct vinfo *EXACT_ensureReader_full(struct oobj *obj,
+					     struct commitrec *cr);
 extern struct vinfo *EXACT_ensureWriter(struct oobj *obj,
 					struct commitrec *currentTrans);
 #endif
@@ -84,7 +83,7 @@ f. can always set a read flag:
 
 #if (!defined(IN_VERSIONS_HEADER)) && (!defined(DONT_REALLY_DO_TRANSACTIONS))
 #if defined(NO_VALUETYPE)
-DECL struct vinfo *resizeVersion(struct oobj *obj, struct vinfo *version) {
+struct vinfo *resizeVersion(struct oobj *obj, struct vinfo *version) {
   // resize strategy:
   //  each hashtable has a linked list of "child" hashtable (as well as
   //  a link to the "parent" transaction, but that's different).
@@ -124,7 +123,7 @@ DECL struct vinfo *resizeVersion(struct oobj *obj, struct vinfo *version) {
 //  FLAG?  But *not* the one we're looking at.  Then we'll do
 //  the copyback and reset flag, but field=FLAG bit=0 will still
 //  exist for the aliased element. =(
-DECL enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
+enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
 				     enum killer kill_whom) {
   struct vinfo * volatile *versions, *first_version, *nonce=NULL;
   struct commitrec *vtid;
@@ -219,7 +218,7 @@ struct claz _Class_harpoon_Runtime_Transactions_CommitRecord
             __attribute__((weak));
 
 // make a new aborted version, for use as a per-thread identifier.
-DECL struct vinfo *newAbortedVersion() {
+struct vinfo *newAbortedVersion() {
   struct vinfo *v = MALLOC( sizeof(struct vinfo) +
 			    sizeof(struct commitrec) );
   // use the space at the end of the version for the commit record.
@@ -242,7 +241,7 @@ DECL struct vinfo *newAbortedVersion() {
  *   vp.waiting==NULL, vp.committed==NULL --
  *                           (i.e. obj->version==NULL)
  */
-DECL struct versionPair findVersion(struct oobj *obj,
+struct versionPair findVersion(struct oobj *obj,
 				    struct commitrec *currentTrans) {
   struct vinfo * volatile *versions, *first_version;
   struct commitrec *vtid;
@@ -299,7 +298,7 @@ DECL struct versionPair findVersion(struct oobj *obj,
 // even if we allow parallel subtransactions)
 #if !defined(NO_VALUETYPE)
 // created but not linked.
-DECL struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
+struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
 				     struct vinfo *template) {
   struct vinfo *v;
   // get size, not including header, rounded up to word boundary
@@ -356,7 +355,7 @@ DECL struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
 #if defined(NO_VALUETYPE)
 // determine which version of 'createVersion' to call, based on the
 // *runtime* type of the given object (static types are not precise enough!)
-DECL struct vinfo *createVersion(struct oobj *obj, struct commitrec *cr,
+struct vinfo *createVersion(struct oobj *obj, struct commitrec *cr,
 				 struct vinfo *template) {
   // copied from fni_class_isArray, because we don't want to wrap objects.
   struct claz *cc = obj->claz->component_claz;
@@ -421,8 +420,10 @@ static void ensureReaderList(struct oobj *obj, struct commitrec *cr) {
 }
 
 // ensure we're in readers list (per object)
-DECL struct vinfo *EXACT_ensureReader(struct oobj *obj, struct commitrec *cr) {
+struct vinfo *EXACT_ensureReader_full(struct oobj *obj,
+					   struct commitrec *cr) {
   struct vinfo *ver;
+  goto resume; // we've already done the rest in the fastpath
   // XXX we should have per-version readers?
   //    hmm. if a subtransaction reads then commits, then the parent
   //    transaction is legitimately still on the hook.  the only benefit
@@ -431,6 +432,7 @@ DECL struct vinfo *EXACT_ensureReader(struct oobj *obj, struct commitrec *cr) {
   //    do it.  Bears some additional thought, perhaps; especially for
   //    the multiple-reader case.
   ENSURE_HAS_TRANSACT_INFO(obj); // now all other stuff doesn't have to.
+ resume:
   /* make sure we're on the readerlist */
   ensureReaderList(obj, cr);
   /* now kill any transactions associated with uncommitted versions, unless
@@ -443,15 +445,17 @@ DECL struct vinfo *EXACT_ensureReader(struct oobj *obj, struct commitrec *cr) {
 // returns NULL to indicate suicide request
 // this is the only place where new version objects are created/linked
 // other than in copyBackField, where nonce versions are added.
-DECL struct vinfo *EXACT_ensureWriter(struct oobj *obj,
-				      struct commitrec *cr) {
+struct vinfo *EXACT_ensureWriter_full(struct oobj *obj,
+					   struct commitrec *cr) {
   // lookup (or create) appropriate version
   //       do ENSURE_HAS_TRANSACT_INFO here
   struct tlist * volatile *readers, *first_reader;
   struct vinfo * volatile *versions;
   struct versionPair vp;
+  goto resume; // we've already done the rest in the fastpath
   ENSURE_HAS_TRANSACT_INFO(obj); // now all other stuff doesn't have to.
   do {
+  resume:
     vp = findVersion(obj, cr);
     if (likely(vp.waiting!=NULL))
       return vp.waiting; /* found a writable version for us */
@@ -511,20 +515,25 @@ DECL struct vinfo *EXACT_ensureWriter(struct oobj *obj,
 #endif
 #if !defined(NO_VALUETYPE)
 
+#if 0 // simple enough that the whole thing is on the fast path
 /* per-field, before read. */
-DECL void TA(EXACT_checkReadField)(struct oobj *obj, unsigned offset){
+void TA(EXACT_checkReadField)(struct oobj *obj, unsigned offset){
   /* do nothing: no per-field read stats are kept. */
 }
+#endif
 
 /* per-field, before write. */
-DECL void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset) {
+void TA(EXACT_checkWriteField_full)(struct oobj *obj, unsigned offset,
+					 VALUETYPE canonical) {
   struct vinfo * volatile *versions, *first_version, *v;
   versions = OBJ_VERSION_PTR(obj);
+  goto resume; // we've already done the rest in the fastpath
   retry_copy_over:
   do {
     /* set write flag, if not already set. */
-    VALUETYPE canonical = *(VALUETYPE volatile *)(FIELDBASE(obj) + offset);
+    canonical = *(VALUETYPE volatile *)(FIELDBASE(obj) + offset);
     if (likely(canonical==T(TRANS_FLAG))) return; /* done: flag already set. */
+  resume:
     /* okay, need to set write flag. */
     /* LL(canonical), SC(version) for all versions. */
     first_version = *versions;
@@ -630,4 +639,3 @@ DECL void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset) {
 
 /* clean up after ourselves */
 #include "transact/preproc.h"
-#undef DECL

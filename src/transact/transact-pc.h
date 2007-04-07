@@ -13,12 +13,7 @@
 # include "transact/stubs.h"
 #else
 /* the real deal! */
-#if 0 /* hmm, declaration problems. */
-# include "transact/readwrite.h"
-# include "transact/versions.h"
-#else
-# include "transact/proto.h"
-#endif
+# include "transact/fastpath.h"
 #endif
 
 #endif /* INCLUDED_TRANSACT_PC_H */

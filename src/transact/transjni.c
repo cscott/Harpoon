@@ -7,8 +7,7 @@
 # ifdef DONT_REALLY_DO_TRANSACTIONS
 #  include "transact/stubs.h"
 # else
-#  include "transact/readwrite.h"
-#  include "transact/versions.h"
+#  include "transact/fastpath.h"
 # endif
 #endif
 

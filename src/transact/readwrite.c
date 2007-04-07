@@ -14,6 +14,7 @@ DECLARE_STATS_EXTERN(transact_long_write)
 # include "transact/versions.h"
 # include "transact/vhash.h"
 # include "transact/proto.h" /* keep us honest */
+# include "transact/fastpath.h" // fast path protos
 #endif
 #include "transact/transact.h"
 #include "transact/flags.h" /* XXX should go in asm? */
