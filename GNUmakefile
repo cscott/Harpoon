@@ -133,7 +133,7 @@ phd-thesis.dvi: \
 	nb-single-obj nb-multi-obj \
 	chuang funarr bloat \
 	tr-sz-all tr-w-all sean_lie_6b \
-	phd-counter, \
+	phd-counter phd-counter-instr, \
 	Figures/$(f).eps Figures/$(f).pdf) \
 	$(foreach f, \
 	cachemods snapshot datastruct-entry tr-quad tr-multi-obj,\

@@ -998,7 +998,7 @@ mechanism to write it, modeled here by a call to
 writing a constant,\footnote{Hennessy and Patterson indicate that 35\%
   of integer instructions use an immediate operand; their methodology does not
   allow breaking out the percentage of stores specifically
-  \cite[pp. 78]{HennessyPa96}.}
+  \cite[p. 78]{HennessyPa96}.}
  but the \texttt{volatile} declarations ensure that
 our benchmark will always perform the check.  Second, we must perform
 a load-linked of the object's \texttt{readerList} to check that there
@@ -1138,8 +1138,8 @@ cache alignment,\footnote{The MPC7447 (G4) PowerPC has a 32-byte cache
   line, although fetches occur in 16-byte (4 instruction) chunks.}
 replaced our canonical \texttt{FLAG} value with
 \texttt{0xFFFFCACA}, which can be represented by the PowerPC's 16-bit
-signed immediate instruction field (eliminating the need to load it
-into a register), and combined the flag checks in
+signed immediate instruction field (eliminating the need for a
+register), and combined the flag checks in
 the read and write routines.\footnote{Again, the branches to
 \texttt{unusualRead()} and 
 \texttt{unusualWrite()} are difficult to express in this hybrid of C
@@ -1148,26 +1148,42 @@ perform a branch with the appropriate calling conventions.}
 The read-and-write check overhead is improved to 143\% with these
 optimizations, due mostly to the irreducible dependency between the
 load-linked and store-conditional instructions.
-
 \note{It may be worth looking closely at the instruction schedule for
 this optimized counter loop to understand the fundamental performance
 limits.}
 
+\epsfigput[Check overhead as percentage of total dynamic instruction count]
+  {phd-counter-instr}{%
+  Check overhead as percentage of total dynamic instruction count.
+  The bar on the left is the DLX instruction mix for SPECint92 from
+  \cite[p.105]{HennessyPa96}.  On the right is the same instruction
+  mix after scaling the loads and stores according to
+  \figref{phd-counter}.}
+
 Hennessy and Patterson's measurements indicate that load and store
 instructions comprise respectively 26\% and 9\% of dynamic instruction
 counts in SPECint92 on a RISC microarchitecture (DLX)
-\cite[pp. 105]{HennessyPa96}.
-The 14\% read overhead and 186\% write overhead measured
+\cite[p. 105]{HennessyPa96}.
+As a rough estimate, using dynamic instruction count as a proxy for
+instruction time,
+the 14\% read overhead and 186\% write overhead measured
 in this microbenchmark thus translate into 20\% net overhead for
 non-transactional code.\footnote{$0.65 + (1.14 \times 0.26) + (2.86
-  \times 0.09) = 1.20$}
- If we conservatively assume that most of the
+  \times 0.09) = 1.20$} If we conservatively assume that most of the
 improvement in \figref{rw-assem}'s optimized checks should be credited
 to reduced write-check overhead, giving the same 14\% read overhead
-but only 129\% write overhead, it is possible that aggressive
-optimization and scheduling may yield only 15\% net overhead for
-non-transactional code.
-\note{Make new graph which shows this computation.}
+but only 129\% write overhead, the same metric gives only 15\% net
+overhead, as shown in \figref{phd-counter-instr}.  This should be
+considered a rough lower bound for the time overhead, possible with
+aggressive optimization and scheduling.\footnote{Note that this
+  calculation combines over- and underestimation, making this number
+  only a rough bound.  The use of dynamic instruction count, rather
+  than dynamic instruction time, likely underestimates the
+  contribution of loads and stores to the run time.  However,
+  scheduling, prefetching, and store buffers can pipeline the cost of
+  the loads and stores, which might cause our overhead estimate to
+  exceed the actual cost.  \Charef{full-bench} will present actual
+  overhead measurements of real Java applications.}
 
 \section*{Implementation}
 There are a number of details which are not yet covered by our model,
