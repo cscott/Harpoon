@@ -1,7 +1,7 @@
 #include "config.h"
 #include <jni.h>
 #include <jni-private.h>
-#include "java_lang_Thread.h"
+#include "java_lang_VMThread.h"
 
 #include <assert.h>
 #include <stdlib.h> /* for fprintf, stderr */
