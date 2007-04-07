@@ -537,7 +537,7 @@ the {\tt try}.  Exceptions or faults cause the transaction to abort;
 when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
-\subsection{Backtracking}\label{sec:backtrack}
+\subsection{Backtracking search}\label{sec:backtrack}
 Introducing an explicit {\tt fail} statement allows us to use the same
 {\tt try}/{\tt else} to facilitate backtracking
 search.\index{Backtracking} Backtracking search is used to implement
@@ -691,7 +691,7 @@ fault tolerance and backtracking provides atomic regions for
 synchronization as well.
 \note{Mention optimistic parallelism here?}
 
-\subsection{The \texttt{StringBuffer} class}\label{sec:stringbuffer}
+\subsection{Bug fixing}\label{sec:stringbuffer}
 The existing \defni{Monitor synchronization}\index{Synchronization!monitor} methodology for Java,
 building on such features in progenitors such as Emerald
 \cite{BlackHuJuLe86,JulSt91},\index{Emerald}\footnote{See \charef{emerald}.}
