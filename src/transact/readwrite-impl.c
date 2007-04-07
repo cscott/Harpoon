@@ -43,6 +43,11 @@ extern void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset);
 
 
 #if (!defined(IN_READWRITE_HEADER)) && (!defined(DONT_REALLY_DO_TRANSACTIONS))
+inline VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset)
+     __attribute__((always_inline));
+inline void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
+			       unsigned offset, VALUETYPE value)
+     __attribute__((always_inline));
 
 // XXX these should certainly be inlined!!!
 /////////////////////////////////////////////////////////////////////
@@ -70,7 +75,7 @@ DECL VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset) {
 }
 
 // writing to versions.
-DECL void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
+DECL inline void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
 			     unsigned offset, VALUETYPE value) {
 #if !defined(ARRAY) // this expression is probably not constant for arrays.
   //assert(__builtin_constant_p(offset<=OBJ_CHUNK_SIZE-sizeof(VALUETYPE)));
@@ -124,10 +129,15 @@ DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
 
 // must have already recorded itself as a reader (set flags, etc)
 // XXX WANT TO RETURN THE NEW VERSION AS WELL AS THE VALUE.
-DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
-			       struct vinfo *version,
-			       struct commitrec *cr) {
+DECL VALUETYPE TA(EXACT_readT_full)(struct oobj *obj, unsigned offset,
+				    struct vinfo *version,
+				    struct commitrec *cr)
+     __attribute__((noinline));
+DECL VALUETYPE TA(EXACT_readT_full)(struct oobj *obj, unsigned offset,
+				    struct vinfo *version,
+				    struct commitrec *cr) {
   struct versionPair vp;
+  goto resume;
   /* version may be null. */
   /* we should always either be on the readerlist or aborted here. */
   do {
@@ -136,6 +146,7 @@ DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
     // object field is FLAG.
     if (likely(version!=NULL))
       return TA(readFromVersion)(version, offset); /* done! */
+  resume:
     vp = findVersion(obj, cr);
     if (vp.waiting==NULL) {  /* use value from committed version. */
       assert(vp.committed!=NULL);
@@ -144,6 +155,16 @@ DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
     version = vp.waiting; /* XXX this should affect caller as well */
     /* try, try again. */
   } while(1);
+}
+DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
+			       struct vinfo *version,
+			       struct commitrec *cr) {
+  VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
+  if (likely(f!=T(TRANS_FLAG))) return f; /* not yet involved in xaction. */
+  // object field is FLAG.
+  if (likely(version!=NULL))
+    return TA(readFromVersion)(version, offset); /* done! */
+  return TA(EXACT_readT_full)(obj, offset, version, cr);
 }
 
 DECL void TA(EXACT_writeNT_full)(struct oobj *obj, unsigned offset,
