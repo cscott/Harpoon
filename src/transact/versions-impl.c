@@ -364,7 +364,7 @@ DECL struct vinfo *createVersion(struct oobj *obj, struct commitrec *cr,
     // not an array
     return createVersion_Object(obj, cr, template);
   // test for array of primitive type; copied from fni_class_isPrimitive
-  else if (cc->display[0]==NULL && cc->interfaces==NULL) {
+  else if (cc->display[0]==NULL && *(cc->interfaces)==NULL) {
     // now cheat a little; just look at the size of the primitive
     // and create an appropriately sized version.  Type mentioned may
     // not match exactly, but it doesn't matter.
