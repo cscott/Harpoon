@@ -68,6 +68,10 @@ struct vinfo {
 static inline struct commitrec *AllocCR() {
 #ifdef BDW_CONSERVATIVE_GC
   // must zero-fill.
+#ifdef GC_malloc_atomic
+# error "We want the real GC_malloc_atomic, not GC_malloc_atomic_trans"
+#endif
+  // XXX: shouldn't be atomic if we ever have nested transactions.
   return GC_malloc_atomic(sizeof(struct commitrec));
 #else
   extern void *calloc(size_t nmemb, size_t size);
