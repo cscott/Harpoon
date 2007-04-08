@@ -2113,6 +2113,24 @@ transaction when we awake.  This is sufficient for the limited uses of
 \texttt{wait} in our chosen benchmarks.
 
 \section{Performance}\label{sec:full-bench}
+In this section we will evaluate the performance of our implementation.
+All experiments were performed on a 1GHz MPC7447 (G4) PowerPC processor,
+with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
+6.10 on a Linux 2.6.17 kernel.  The limitations noted in the previous
+section counsel that the numbers we obtain ought to be considered
+guidelines to potential performance, not fundamental limits.
+Previous work has adequately demonstrated the scalability
+benefits of non-blocking synchronization; I will concentrate in this
+thesis on single-threaded efficiency measures.
+
+We will be examining the SPECjvm98 benchmark suite, a collection of
+practical Java programs including an expert system, a simple database,
+a Java compiler, an audio encoder, and a parser generator.  To clarify
+our measurements, our baseline for all of our comparisons will be a
+version of the benchmarks compiled with the same method cloning and
+desugaring (\charef{synctrans}) that is done for the transaction
+transformation.
+
 \epsfigput[Non-transactional check overhead for SPECjvm98.]{phd-spec-nt}{%
   Non-transactional check overhead for SPECjvm98.  Both benchmarks in
   each pair were compiled with the transformations in
@@ -2133,7 +2151,8 @@ mpegaudio&$239,928,276$&$2,056$ ($<0.001$\%)& $42,164,416$ & $9,132$ ($.02$\%) \
 jack &      $9,882,846$&$0$ ($0$\%)&$4,595,774$& $0$ ($0$\%) \\ \hline
 \end{tabular}
 \caption[Number of false flags read/written in SPECjvm98 benchmarks.]
-{Number of false flags read/written in SPECjvm98 benchmarks.  The
+{Number of false flags read/written in SPECjvm98 benchmarks.  To
+  compile this table the
   applications were run with input size ``10''.}
 \label{fig:false-flag}
 \end{figure}
@@ -2146,24 +2165,6 @@ jack &      $9,882,846$&$0$ ($0$\%)&$4,595,774$& $0$ ($0$\%) \\ \hline
   operation at the end.  The next bar uses the transactional and
   non-transactional read and write protocols for non-array objects.
   The final bar is fully transactional.}
-
-In this section we will evaluate the performance of our implementation.
-All experiments were performed on a 1GHz MPC7447 (G4) PowerPC processor,
-with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
-6.10 on a Linux 2.6.17 kernel.  The limitations noted in the previous
-section counsel that the numbers we obtain ought to be considered
-guidelines to potential performance, not fundamental limits.
-Previous work has adequately demonstrated the scalability
-benefits of non-blocking synchronization; I will concentrate in this
-thesis on single-threaded efficiency measures.
-
-We will be examining the SPECjvm98 benchmark suite, a collection of
-practical Java programs including an expert system, a simple database,
-a Java compiler, an audio encoder, and a parser generator.  To clarify
-our measurements, our baseline for all of our comparisons will be a
-version of the benchmarks compiled with the same method cloning and
-desugaring (\charef{synctrans}) that is done for the transaction
-transformation.
 
 In \charef{counter-bench} we examined a microbenchmark to discover the
 lower limits on our non-transactional overhead.  These are the
