@@ -5,4 +5,50 @@
 {Lewis Carroll, \textit{Alice's Adventures in Wonderland}}
 }
 
-Transactions are great!
+In this thesis I have shown that it is possible to implement an
+efficient strongly-atomic software transaction system, and that
+non-blocking transactions can be used in applications beyond
+synchronization, including fault tolerance and backtracking search.  I
+have presented implementation details to address the practical
+problems of building such a system.  I have argued the transactions
+should not be subject to limits on size or duration, and presented
+both software and hardware implementations free of such restrictions.
+Finally, the low overhead of my software system allows it to be
+profitably combined with a hardware transaction system; I have shown
+how this hybrid yields fast execution of short and small transactions
+while allowing fallback to software for large or complicated
+transactions.
+
+There is no escape: parallel systems are in our future.  However,
+programming them does not have to be as fraught as it is presently.
+I believe that transactions provide a programmer-friendly model
+of concurrency which eliminates many potential pitfalls of our
+current locking-based methodologies.
+
+In this thesis I have presented several designs for efficient
+transaction systems that will enable us to take advantage of the
+transactional programming model.  The software-only system runs on
+current hardware, and LTM and UTM indicate possible directions for future
+hardware.  However, there are challenges and design decisions
+remaining: how should I/O be handled?  What are the proper semantics
+for nested transactions?  What loophole mechanisms are necessary to
+allow information about a transaction's progress to escape?
+
+I believe hybrid systems are the best answer to these challenges: they
+combine the
+inherent speed of hardware systems with the
+flexibility of software, allowing novel solutions to be attempted
+without requiring that design decisions be cast in silicon.  The
+flag-based software transaction system described in this thesis
+imposes very low overhead, allowing transactional
+programming to get off the ground without hardware support in the near
+term, while later supporting the development of new transactional models and
+methodologies as part of a hybrid system.
+
+Designing correct transaction systems is not easy, however.  In the
+appendix you will find a Promela model of my software transaction
+system.  Automated verification was essential when designing and
+debugging the system, uncovering via exhaustive enumeration race
+conditions much too subtle for me to discover by other means.  I
+believe any credible transaction system must be buttressed by formal
+verification.
