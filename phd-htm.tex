@@ -21,7 +21,7 @@ pin-compatible with today's processors.  LTM supports more limited
 transactions, but we conclude by showing how LTM can be combined with
 the efficient software system we have already demonstrated to yield a
 hybrid system with a great deal of power and
-flexibility.\footnote{Portions of this section are adapted
+flexibility.\footnote{Portions of this chapter are adapted
 from~\cite{AnanianAsKuLeLi04}, co-written with Krste Asanovi\'c,
 Bradley C. Kuszmaul, Charles E. Leiserson, and Sean Lie.}
 
@@ -442,11 +442,61 @@ suffices for many real-world concerns, and can be symbiotically paired
 with our more flexible software transaction system to achieve truely
 unbounded transactions at minimal hardware cost.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-\section{Optimizing the common case}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Evaluation}\label{sec:htm-benchmarks}
+In this section we will evaluate the UTM and LTM designs,
+demonstrating low overhead and scalability.  We will also
+consider overflow behavior, providing some motivation for the hybrid
+system proposed in the next section.
+
+\subsection{Scalability}\label{sec:htm-counter}
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{c}
+\includegraphics{Figures/uvsimCounterRuntime}
+%% \includegraphics{uvsimLinkedListRuntime.eps}
+\end{tabular}
+\end{center}
+\caption{\texttt{Counter} performance on UVSIM.}
+\label{fig:microbenchperf}
+\end{figure}
+
+We used a parallel microbenchmark to examine
+program behavior for small transactions with high contention. Our
+results show that the extremely low overhead of small hardware transactions
+enable them to almost always complete even when contention is high.
+
+The \texttt{Counter} microbenchmark has one shared variable that each
+processor atomically increments repeatedly with no backoff
+policy; the basic idea is identical to the microbenchmark we used in
+\charef{counter-bench}.
+Each transaction is only a few instructions long and every
+processor attempts to write to the same location repeatedly.  Both a
+locking and a transactional version of \texttt{Counter} were run on
+UVSIM with LTM, and the results are shown in
+\figref{microbenchperf}. In the locking version, there is a global
+spin-lock that each processor obtains using a
+load-linked/store-conditional (LLSC) sequence from the SGI
+synchronization libraries.
+
+The locking version scales poorly, because the LLSC causes many cache
+interventions even when the lock cannot be obtained. On the other
+hand, the transactional version scales much better, despite having no
+backoff policy.  When a transaction obtains a cache line, it is likely
+to be able to execute a few more instructions before receiving an
+intervention since the network latency is high.  Therefore, small
+transactions can start and complete (and perhaps even start and
+complete the next transaction) before the cache line is taken away.
+Similar behavior is expected from UTM, and other transactional-memory
+systems which use the cache and cache-coherency protocol to store
+transactional state, since small transactions effectively use the
+cache the same way. 
+
+\subsection{Overhead}
 
 A main goal of LTM and UTM is to run the common case fast. As shown in
-\secref{htm-benchmarks}, the common case is when transactions are small
+\charef{properties}, the common case is when transactions are small
 and fit in the cache. Therefore, by using the cache and cache
 coherency mechanism to handle small transactions, LTM is able to
 execute with almost no overhead over serial code in the common
@@ -462,7 +512,7 @@ necessary. There is the added overhead of decoding the \texttt{XBEGIN}
 however that overhead is generally insignificant compared to the cost
 of the transaction. Further, instruction decode overhead is much lower
 in LTM than with locks. Even schemes where the lock is not actually
-held such as SLE have higher decode overhead since they have more
+held such as SLE~\cite{RajwarGo01} have higher decode overhead since they have more
 instructions. LTM's low transaction startup overhead is a very good
 indicator of the corresponding overhead in UTM since transaction start
 up in UTM is virtually the same.
@@ -494,10 +544,6 @@ the background.  Therefore, since transaction commit requires only a
 single change in the cache for both LTM and UTM, the overhead is
 minimal in both cases.
 
-\subsection{Evaluation} % Performance
-% overflows -- hey, hybrid scheme!  in hybrid section?
-% counter microbenchmark -- hey, we parallelize!
-
 \subsection{Understanding overflows}
 
 Overflows occur only in the uncommon case
@@ -505,31 +551,31 @@ however our studies show that it is important to have a scalable data
 structure even though it is used infrequently.
 
 For evaluation, we compiled three versions of the SPECjvm98 benchmark
-suite to run under UVSIM using our modified Java compiler. We compiled
+suite to run under UVSIM using FLEX. We compiled
 a \defn{Base} version that uses no synchronization, a \defn{Locks}
 version that uses spin-locks for synchronization, and a \defn{Trans}
 version that uses LTM transactions for synchronization. To measure
 overheads, we ran these versions of the SPECjvm98 benchmark suite on
 one processor of UVSIM.
 
-As described in \secref{synctrans}, our transactional version uses method
+As described in \charef{synctrans}, our transactional version uses method
 cloning to flatten transactions; we performed the same cloning on the
 other compiled versions so that performance improvements due to the
 specialization would not be improperly attributed to
 transactionification.  The three different benchmark versions were
-built from a common code-base using method inlining in GCC\footnote{We
-compiled the files generated by FLEX's ``PreciseC'' backend
+built from a common code-base using method inlining in \texttt{gcc}\footnote{We
+compiled the files generated by FLEX's ``Precise C'' backend
 (\charef{precisec}) with
 \texttt{-O9} for a \texttt{-mips4} target using the
 \texttt{n64} API to generate fully-static binaries executable by
 UVSIM.}  to remove or replace all invocations of lock and transaction
 entry and exit code with appropriate implementations.  No garbage
-collection was performed during benchmark runs.
-
+collection was performed during these benchmark runs.
 
 \label{sec:javac}
-Our initial results from \charef{efficient} suggested that since
-overflows are infrequent, the efficiency of the data structure would
+Our initial results from \charef{properties} suggested that
+overflows ought to be infrequent, thus the efficiency of the overflow
+data structure would 
 have a negligible effect on overall performance. Therefore, our first
 LTM implementation used an unsorted array that required a linear
 search on each miss to an overflowed set. The unsorted array was
@@ -551,7 +597,7 @@ Since the entire application was enclosed in a transaction, the
 parallel application. However, it is important that an unbounded
 transactional memory system be able to support even such applications
 with reasonable performance. Therefore, we redesigned LTM to use hash
-table as described in \secref{cachemods}.
+table as described in \charef{ltm}.
 
 
 \begin{figure}
@@ -597,108 +643,10 @@ more access to memory than LTM when there is overflow.  Therefore, the
 overflow overhead of UTM will be very similar to that of UTM.
 }
 
-\subsection{Understanding program behavior}
 
-\begin{figure}
-\begin{center}
-\begin{tabular}{c}
-\includegraphics{Figures/uvsimCounterRuntime}
-%% \includegraphics{uvsimLinkedListRuntime.eps}
-\end{tabular}
-\end{center}
-\caption{\texttt{Counter} performance on UVSIM.}
-\label{fig:microbenchperf}
-\end{figure}
-
-Using LTM we are able to gain insight into how transactional programs
-behave in a transactional memory system such as UTM. Using the
-\texttt{Counter} microbenchmark, we found that small transactions are
-likely to complete even when contention is high. LTM uses the
-cache and cache-coherency protocol to store transactional state and
-detect conflicts in the common case. Transactional-memory systems that
-use the same technique, such as UTM, all exhibit similar
-properties for the common case.
-
-We implemented the \texttt{Counter} parallel application to examine
-program behavior for small transactions with high contention. Our
-results show that the extremely low overhead of small transactions
-enable them to almost always complete even when contention is high.
-
-The \texttt{Counter} microbenchmark has one shared variable that each
-processor atomically increments repeatedly with no backoff
-policy. Each transaction is only a few instructions long and every
-processor attempts to write to the same location repeatedly.  Both a
-locking and a transactional version of \texttt{Counter} were run on
-UVSIM with LTM, and the results are shown in
-\figref{microbenchperf}. In the locking version, there is a global
-spin-lock that each processor obtains using a
-load-linked/store-conditional (LLSC) sequence from the SGI
-synchronization libraries.
-
-The locking version scales poorly, because the LLSC causes many cache
-interventions even when the lock cannot be obtained. On the other
-hand, the transactional version scales much better, despite having no
-backoff policy.  When a transaction obtains a cache line, it is likely
-to be able to execute a few more instructions before receiving an
-intervention since the network latency is high.  Therefore, small
-transactions can start and complete (and perhaps even start and
-complete the next transaction) before the cache line is taken away.
-Similar behavior is expected from UTM since small transactions
-effectively use the cache the same way.
-
-%% \subsubsection{The \texttt{LinkedList} microbenchmark}
-%% 
-%% We implemented the \texttt{LinkedList} parallel application to examine
-%% program behavior for moderately sized transactions with varying
-%% contention. Our results show that when contention is low, transactions
-%% are very efficient as expected. However, as contention increases, the
-%% efficiency is highly dependent on the backoff policy. In some cases,
-%% simple backoff policies may be insufficient.
-%% 
-%% The \texttt{LinkedList} application has an equal number of consumer
-%% and producer processors. There is one doubly-linked list for each
-%% consumer. Each consumers repeatedly takes items from the head of its
-%% list while each producer repeatedly adds items to the tail of a random
-%% list. The locking version locks the entire list when adding or
-%% removing items. Locks are implemented as in \texttt{Counter}.
-%% 
-%% For very few processors, transactions perform much better than
-%% conventional locks because transactions allow concurrent accesses to
-%% the head and the tail of the linked list. However, as the number of
-%% processors is increased, the chance that multiple producers will
-%% conflict increases.  When \texttt{LinkedList} was first implemented,
-%% no backoff policy was used and, as a result, livelock prevented
-%% program completion for more than two processors. Then,
-%% \texttt{LinkedList} was implemented with binary exponential backoff
-%% and \figref{microbenchperf} shows those results. Backoff solved the
-%% livelock problem however as the contention increases, the performance
-%% of the transactions decreases dramatically. At high contention,
-%% transactions are being aborted repeatedly and a lot of time is spent
-%% in backoff. In fact, for \texttt{LinkedList} after 32 processors the
-%% transactional version is slower than the locking version. This
-%% suggests that such a simple backoff policy may be insufficient in high
-%% contention.
-%% 
-%% The \texttt{LinkedList} application illustrates the importance of a
-%% good back policy in non-obstructive transactional memory systems such
-%% as LTM and UTM.  Such systems do not face the problem of
-%% deadlock. However, they must prevent livelock using backoff or other
-%% policies. Perhaps there needs to be a forward progress guarantee to
-%% get reasonable performance in high contention. This is one of the main
-%% challenges that transactional memory schemes such as UTM face.
-%% 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%-----------------------------------------------------------------
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\section{Evaluation}\label{sec:htm-benchmarks}
 
 \punt{
+\section{Evaluation}
 \section{Making UTM fast}
 % describe how caching works.
 
