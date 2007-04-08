@@ -23,7 +23,7 @@ to create speedier single processors.  The smaller transistors yield
 relatively slower signal propagation times, dooming attempts to create
 a single synchronized processor from all of those resources.
 Instead, hardware manufacturers are providing tightly integrated
-\defn{multicore} systems, which integrate multiple parallel
+\defn{multicore} systems which integrate multiple parallel
 processors on one chip.
 
 The widespread adoption of parallel systems creates problems: how can
@@ -41,10 +41,10 @@ implement using test-and-set, compare-and-swap, or
 load-linked/{\bp}store-conditional instructions, they introduce a host of
 difficulties.  Protocols to avoid deadlock when locking multiple
 objects often involve acquiring the locks in a consistent linear
-order, which may make programming with locks error-prone and introduce
+order, making programming with locks error-prone and introducing
 significant overheads.  The granularity of each lock must also be
-explicitly chosen: locks which are too fine introduce unnecessary
-space and time overhead, while locks which are too coarse sacrifice
+explicitly chosen: locks that are too fine introduce unnecessary
+space and time overhead, while locks that are too coarse sacrifice
 attainable parallelism (or may even deadlock).  Every access to a
 shared object must hold some lock protecting that object, regardless
 of whether another thread is actually attempting to access the same object.
@@ -70,7 +70,7 @@ interactions between multiple threads, each holding its own set of
 locks, and a full mental model of the global concurrency structure
 must be kept in mind when writing synchronization code.
 The simpler ``global atomicity'' guaranteed under the
-transactional model eliminates errors and simplifies the conceptual
+transactional model eliminates potential errors and simplifies the conceptual
 model of the system, making future modifications safer as
 well.
 
@@ -85,10 +85,10 @@ exploit optimistic concurrency among transactions.  Non-blocking
 synchronization offers a number of advantages; from the system
 builder's perspective the foremost is fault tolerance.  A process that
 fails or pauses while holding a lock within a critical region can
-prevent all other processes from ever making progress.  It
-is in general not possible to restore locked data structures to a
+prevent all other processes from ever making progress.  In general it
+is not possible to restore locked data structures to a
 consistent state after such a failure.  Non-blocking synchronization
-offers a graceful solution to this trouble, as non-progress or failure
+offers a graceful solution, as non-progress or failure
 of any one thread will not affect the progress or consistency of other
 threads or the system.
 
@@ -196,7 +196,7 @@ protocols.  We submit that this is inadequate, and propose
 transactional programming is limited because transaction
 implementations are inefficient.  This thesis will demonstrate
 techniques to create both software and hardware implementations of
-transactions which are efficient and powerful enough to be usable.
+transactions that are efficient and powerful enough to be usable.
 Software transactions can be adopted now; hardware transaction systems
 are more efficient, but can't be put to use until manufacturers have
 produced chips with the needed capabilities.  Once hardware
@@ -212,7 +212,7 @@ One of the common synchronization mistakes made in lock-based
 object-oriented code is
 the ``multiple object problem'': when lock A protects object A, and
 lock B protects object B, it is easy to get into trouble when writing
-routines which involve both objects A and B.  Either insufficient
+routines that involve both objects A and B.  Either insufficient
 locks are taken, or both locks are taken without carefully considering
 deadlock, or else one object's locks are released and reacquired during the
 operation allowing atomicity to be broken.
@@ -260,7 +260,7 @@ system.
 transaction model.
 The software transaction system runs real programs written in
 Java; I will discuss the practical implementation details encountered.
-The hardware transaction systems requires only small changes to the
+The hardware transaction systems require only small changes to the
 processor core and cache.
 
 \item I will show how a fast hardware implementation for
@@ -272,7 +272,7 @@ transactions.
 %% ORGANIZATION OF THESIS:  XXX FIXME XXX
 
 In the next chapter I will provide some concurrent programming
-examples which illustrate the limitation of current lock-based
+examples that illustrate the limitations of current lock-based
 methodologies.  I will also provide examples illustrating the uses
 (some novel) of a transaction system, and conclude with a brief
 caution about the current limits of transactions.
@@ -283,29 +283,29 @@ implemented on current hardware, and can easily accommodate many
 different transaction and nesting models.  Software transactions excel
 at certain long-lived transactions, where the overhead is
 small compared to the transaction execution time.  I will conclude by
-presenting a microbenchmark which demonstrates the performance limits of
+presenting a microbenchmark that demonstrates the performance limits of
 the design.
 
 In \charef{stmimpl}, I will discuss the practical implementation of
 \charef{stm}'s design.  I will present details of the compiler
 analyses and transformations performed, as well as solutions to
-problems which arise when implementing Java.  I will then present
+problems that arise when implementing Java.  I will then present
 benchmark results using real applications, discuss the benefits and
 limitations revealed, and describe how the limits could be overcome.
 
-In \charef{largeobj} we consider one such limitation in depth,
+In \charef{largeobj} I will consider one such limitation in depth,
 describing how large arrays fit into an object-oriented transaction
 scheme.  We present a potential solution to the problem based on
 fast functional arrays.
 
-In \charef{htm}, I will present hardware which enables very fast
+In \charef{htm}, I will present hardware that enables very fast
 short transactions.  The transaction model is more limited, but short
 committing transactions may execute with no overhead.  The additional
 hardware is small and easily added to current processor and memory
 system designs.
 
 \punt{
-In \charef{htmplus}, I will present extensions to the hardware which allow
+In \charef{htmplus}, I will present extensions to the hardware that allow
 more capable virtualized transactions.  These extensions address the
 major limitations of the scheme presented in \charef{htm}, but the
 required hardware is more complicated.  Further, we must still chose
@@ -317,8 +317,8 @@ transactional approach to writing software.
 
 % \charef{hybrid}
 At the end of the chapter,
-I present an \defn{hybrid} transaction implementation,
-which builds on the strengths of simple hardware support, while
+I present a \defn{hybrid} transaction implementation
+that builds on the strengths of simple hardware support while
 allowing software fallback to support a robust and capable transaction
 mechanism.  Unlike the extended hardware scheme, the transaction model
 is still easy to change and update; the hardware primarily supports
@@ -327,7 +327,7 @@ In the following chapter, we discuss some ways compilers can further
 optimize software and hybrid transaction systems.  These opportunities
 may not be available to pure-hardware implementations.
 
-In \charef{chall}, we discuss remaining challenges to the use of
+In \charef{chall}, I discuss remaining challenges to the use of
 ubiquitous transactions for synchronization, and present some ideas
 toward solutions. \Charef{related} discusses related work, and our
 final chapter summarizes our findings and draws conclusions.
@@ -347,17 +347,17 @@ thorough understanding of any concept.
 
 Before diving into the design of an efficient transaction system,
 I will motivate the transactional programming model by
-presenting four common scenarios which are needlessly
+presenting four common scenarios that are needlessly
 difficult using lock-based concurrency; I will then present four novel
-applications which a transactional model facilitates.  To ground the
+applications that a transactional model facilitates.  To ground the
 discussion in reality, I conclude by enumerating a few cases where
 transactions may \emph{not} be the best solution.
 
 \section{Four old things you can't (easily) do with locks}
-Locks engender fragile and complex safety protocols which
-are often expressed external to their implementations, poor modularity
-and composability, and an inability to deal gracefully with
-asynchronous events.  These limitations of locks are well-known
+Locks engender poor modularity and composability, an inability to deal
+gracefully with asynchronous events, and fragile and complex safety
+protocols that are often expressed externally to their
+implementations.  These limitations of locks are well-known
 \cite{Herlihy05}.
 
 \subsection{Tweak performance with localized changes}
@@ -376,11 +376,11 @@ whole-program context in order to prevent races and/or deadlock.
 Furthermore, this whole-program protocol is not typically expressed
 directly in code: with common programming languages acquire/release
 ordering and guarantees must be expressed externally, often as
-comments in the source code which easily drift out of sync with the
+comments in the source code that easily drift out of sync with the
 implementation.  For example, in \cite{AnanianAsKuLeLi04} we counted
 the comments in the Linux filesystem layer, and found that about 15\%
 of these relate to locking protocols; often describing global
-invariants of the program which are difficult to verify.  Many
+invariants of the program that are difficult to verify.  Many
 reported kernel bugs involve races and deadlocks.
 
 % races, lost wakeups ?
@@ -395,29 +395,30 @@ safely compose
 the \textit{get} function of one with the \textit{put} function of
 the another to create an atomic move.  We must peek inside the
 implementation of the containers to synthesize an appropriate locking
-mechanism for such an action; for example, to acquire the appropriate
-locks on \emph{both} containers (which may be at container, element,
-or some other level) before attempting the operation -- and even then,
+mechanism for such an action--for example, to acquire the 
+appropriate
+container, element, or other
+locks on \emph{both} containers---and even then,
 we need to resort to some global lock ordering to guard against
 deadlock.  Modularity must be broken in order to synthesize the
-appropriate composed function, which may be impossible.
+appropriate composed function, if it is possible at all.
 
 In the Jade programming language, Martin Rinard presented a partial
 solution using ``implicitly synchronized'' objects~\cite[p14]{Rinard98}.
 Lock acquisition
 for each module is exposed in the module's API as an executable
 ``access declaration.''  Operation composition is accomplished by
-creating an access declaration for the composed operation which
+creating an access declaration for the composed operation that
 invokes the appropriate access declarations for the components.  The
 runtime system orders the lock acquisitions to prevent deadlock.  This
 process suffices for conservative mutual exclusion, but it is limited in its
-ability to express alternative operation orders which preserve
+ability to express alternative operation orders that preserve
 atomicity of the composed operation while overlapping its components.
 
 Transactions do not suffer from the composability problem
 \cite{HarrisMaPeHe05}.  Because transactions only specify the atomicity
 properties, not the locks required, the programmer's job is eased and
-implementations are free to order operations in any way which
+implementations are free to order operations in any way that
 preserves atomicity.
 
 \subsection{Create a thread-safe double-ended queue}
@@ -454,19 +455,19 @@ event to occur.
 
 \section{Four new things transactions make easy}
 
-I present three examples in this section, illustrating how
-transactions can support fault tolerance and backtracking,
-simplify locking, and provide a more intuitive
-means for specifying thread-safety properties.
-I will first examine a destructive traversal algorithm, showing how a
-transaction implementation can be treated as an exception-handling
-mechanism.   I then, using a network flow example, show how this
-transaction mechanism can be used to simplify
-the locking discipline required when synchronizing concurrent
-modifications to multiple objects.
-Finally, I show an existing race in the Java standard libraries (in 
-the class \texttt{java.lang.StringBuffer}).  ``Transactification'' of
-the existing class corrects this race.
+I present four examples in this section, illustrating how transactions
+can support fault tolerance and backtracking, simplify locking, and
+provide a more intuitive means for specifying thread-safety
+properties.  I will first examine a destructive traversal algorithm,
+showing how a transaction implementation can be treated as an
+exception-handling mechanism.  A variant of this mechanism can be used
+to implement backtracking search.  Using a network flow example I will
+then show how the transaction mechanism can be used to simplify the
+locking discipline required when synchronizing concurrent
+modifications to multiple objects.  Finally, I show an existing race
+in the Java standard libraries (in the class
+\texttt{java.lang.StringBuffer}).  ``Transactification'' of the
+existing class corrects this race.
 
 \subsection{Destructive traversal}\label{sec:destruct}
 Many recursive data structures can be traversed without the use of a
@@ -671,7 +672,7 @@ with an appropriately non-blocking implementation, it
 will scale better and execute faster than the locking version
 \cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
 From the programmer's point of view, I have also eliminated the
-convoluted locking protocol, which must
+convoluted locking protocol which must
 be observed rigorously everywhere the related fields are accessed if
 deadlock and races are to be avoided.
 
@@ -769,7 +770,7 @@ to synchronize multi-object mutation
 and provide a more intuitive specification for the desired
 concurrent properties.  Further, the {\tt StringBuffer} example shows
 that simply replacing {\tt synchronized} with {\tt atomic} provides a
-alternative semantics which may in fact correct existing
+alternative semantics that may in fact correct existing
 synchronization errors.
 For many Java programs, the
 semantics of {\tt atomic} and {\tt synchronized} are identical; see
@@ -790,7 +791,7 @@ written such that locks are
 never held across context switches or I/O operations.  Transactions
 provide a complete solution for this limited synchronization.
 
-Blocking producer-consumer queues, or other options which require a
+Blocking producer-consumer queues, or other options that require a
 transaction to wait upon a condition variable, may introduce
 complications into a transaction system: transactions cannot
 immediately retry when they fail, but instead must wait for some

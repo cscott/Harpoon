@@ -21,7 +21,7 @@ discuss a practical implementation.
 One of the difficulties of proposing a novel language feature is the
 lack of benchmarks for its evaluation.  Although there is no existing body of
 code that uses transactions, there is a substantial body of
-code which uses Java (locking) synchronization.  This thesis will
+code that uses Java (locking) synchronization.  This thesis will
 utilize the FLEX compiler \cite{Flex} to
 substitute {\tt atomic} blocks (methods) for {\tt
   synchronized} blocks (methods) in order to evaluate the properties
@@ -57,7 +57,7 @@ transactions (involving millions of cache lines) and frequent
 transactions (up to 45 million of them).
 
 The SPECjvm98 benchmark suite represents a variety of typical Java
-applications which use the capabilities of the Java standard library.
+applications that use the capabilities of the Java standard library.
 Although the SPECjvm98 benchmarks are largely single-threaded, since
 they use the thread-safe Java standard libraries they contain
 synchronized code which is transformed into transactions.  Because in
@@ -94,7 +94,7 @@ the transactified SPECjvm98 suite.
 \figref{tr-quad} proposes a
 taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
-transactions which they perform.  Applications in Quads II and IV
+transactions that they perform.  Applications in Quads II and IV
 require an efficient transaction implementation, because they contain
 many transactional operations.
 Quads III and IV contain at least some very large transactions, which
@@ -172,7 +172,7 @@ the size of the string~\texttt{sb}.
   SPECjvm98 benchmark suite.  Note that the x-axis uses a logarithmic
   scale.}
 
-Any scheme which allows the programmer free reign over specifying
+Any scheme that allows the programmer free reign over specifying
 desired transaction and/or atomicity properties will inevitably result
 in some applications in each of these categories.  Existing
 hardware transactional memory schemes only efficiently handle
@@ -209,7 +209,7 @@ As previously discussed in \charef{strongatom},
 \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
 transaction systems protect transactions from interference from
 ``non-transactional'' code, while \defn{weakly atomic} transaction
-systems which do not afford this protection.
+systems do not afford this protection.
 \index{Weak atomicity}\index{Atomicity!weak}
 Consider unsynchronized code directly altering the length field of
 {\tt StringBuffer} (\charef{stringbuffer}).  In a weakly atomic system
@@ -320,14 +320,14 @@ another design goal of the system.  This eases ``transactification''
 of legacy code (but see \charef{semantic}!).
 
 \section{Specifying the basic mechanism}
-I now present an algorithm which has these desired properties.
+I now present an algorithm that has these desired properties.
 My algorithms will be completely non-blocking, which allows good
 scaling and proper fault-tolerant behavior: one faulty or slow
 processor cannot hold up the remaining good processors.
 
 I will implement the synchronization required by my algorithm using
 load-linked/store-conditional instructions.  I require a particular
-variant of these instructions which allows the location of the
+variant of these instructions that allows the location of the
 load-linked to be different from the target of the store-conditional:
 this variant is supported on many chips in the PowerPC processor family,
 although it has been deprecated in version 2.02 of the PowerPC
@@ -349,10 +349,10 @@ the behavior we require.  I believe version 1.10 of the PowerPC
 Architecture specification required this behavior, although I have not
 been able to confirm this.  The Cell architecture specification
 follows version 2.02 of the PowerPC specification, although it adds
-cache-line reservation operations which can also be used to
+cache-line reservation operations that can also be used to
 implement our algorithm for reasonably-sized objects aligned within
 cache lines; see \cite{WitchelLaAnAs01} for an implementation of Java
-I created which observes the appropriate alignments.}  This disjoint location
+I created that observes the appropriate alignments.}  This disjoint location
 capability is essential to allow us to keep a finger on one location
 while modifying another: a poor man's ``Double Compare And Swap''
 instruction.
@@ -372,7 +372,7 @@ syntax and semantics.
   lists.  A transaction object consists of a single field {\it
     status}, which indicates if it has COMMITTED, ABORTED, or is WAITING.
   Each object contains two extra fields: {\it readers}, a
-  singly-linked list of transactions which have read this object; and
+  singly-linked list of transactions that have read this object; and
   {\it versions} a linked list of version objects.  If an object field
   is \FLAG, then the value for the field is obtained from the
   appropriate linked version object.}
@@ -385,7 +385,7 @@ identified by its {\tt owner} field.  There is a single unique
 transaction object for each transaction.
 
 The other added field, {\tt readers}, points to a singly-linked list
-of transactions which have read from this object.  Committed and
+of transactions that have read from this object.  Committed and
 aborted transactions are pruned from this list.  The {\tt readers}
 field is used to ensure that a transaction does not operate with
 out-of-date values if the object is later written
@@ -445,7 +445,7 @@ I support transactional read/write and non-transactional read/write
 as well as transaction begin, transaction abort, and transaction
 commit.  Transaction begin simply involves the creation of a new
 transaction identifier object.  Transaction commit and abort are simply
-compare-and-swap operations which atomically set the transaction object's {\tt
+compare-and-swap operations that atomically set the transaction object's {\tt
   status} field appropriately if and only if it was previously in the
 WAITING state.
 The simplicity of commit and abort are appealing: my algorithm
@@ -453,8 +453,8 @@ requires no complicated processing, delay, roll-back or validate
 procedure to commit or abort a transaction.
 
 Note that we could support non-transactional read and write (that is,
-reads and writes which take place outside of any transaction) by
-creating a new very short transaction which encloses only the single
+reads and writes that take place outside of any transaction) by
+creating a new very short transaction that encloses only the single
 read or write.  Non-transactional accesses to objects can be very
 frequent, however, so I provide more efficient implementations with
 the same semantics.
@@ -1009,7 +1009,7 @@ that it was successful.  Unlike the other two tests, this check will
 fail a number of times\footnote{Experimentally, about 3,600 times in
   the 1 billion repetitions of the write during the counter microbenchmark.}
  during the benchmark run due to context switches
-which may occur between the load-linked and the store-conditional
+that may occur between the load-linked and the store-conditional
 instructions.
 
 \epsfigput[Check overhead for counter microbenchmark]{phd-counter}{%
@@ -1112,7 +1112,7 @@ Examination of the assembly code generated for this simple benchmark
 seems to indicate substantial scope for improvement.  The inline
 assembly mechanism of \texttt{gcc}/C provides no inherent support for
 instructions 
-like the PowerPC's ``store-conditional'' (\texttt{stwcx.}) which leave
+like the PowerPC's ``store-conditional'' (\texttt{stwcx.}) that leave
 their results in a condition code register.  \figref{write-assem}
 shows the assembly emitted for the write check version of the
 microbenchmark, with the cumbersome mechanism required to move the
@@ -1120,7 +1120,7 @@ condition code to a register so that it can then be retested.  We can
 easily hand-code a better write-check mechanism, shown in the
 right-hand column of the figure.\footnote{This version has a stub where a
 function call to \texttt{unusualWrite} would usually go; the correct
-code here would branch to a small thunk which will perform the
+code here would branch to a small thunk that will perform the
 frame operations and register saves necessary to adhere to the C
 calling convention; \texttt{gcc} makes it difficult to ensure that
 this thunk is ``near enough'' for a direct branch (within a 24-bit
@@ -1187,7 +1187,7 @@ aggressive optimization and scheduling.\footnote{Note that this
   overhead measurements of real Java applications.}
 
 \section*{Implementation}
-There are a number of details which are not yet covered by our model,
+There are a number of details that are not yet covered by our model,
 for example: how are fields of different byte lengths handled?  How does
 transactional Java code interact with the garbage collector, or with
 native code in the runtime system?  The next chapter addresses the
@@ -1236,7 +1236,7 @@ the possibility of precise garbage collection whist emitting
 high-level code.  To that end, the backend contains code to maintain a
 separate stack for values of non-primitive types, and to push and pop
 all live variables to this stack at gc points.  Since FLEX's low-level
-IR may create derived pointers which point inside objects, for example
+IR may create derived pointers that point inside objects, for example
 during loop optimizations, the Precise C backend will also reconstruct
 the derived pointers after the gc point, in case the objects involved
 have moved.\label{sec:precise-gc}
@@ -1271,9 +1271,9 @@ or re-throw it.
 The mandatory test in the pair-return method adds overhead to every
 function call, but it is minimal.  Experiments on x86 indicated that
 a pair-return call cost 2ms for both the ``normal return'' and
-``exception thrown'' case, which the \texttt{setjmp} method cost only
+``exception thrown'' case, while the \texttt{setjmp} method cost only
 1ms for the ``normal return'' but 73ms for ``exception thrown''.  Thus
-\texttt{setjmp} is dramatically slower for applications which use
+\texttt{setjmp} is dramatically slower for applications that use
 exceptions, such as the SPECjvm98 benchmark \texttt{202\_jess}.
 
 The experiments in this thesis all use pair-return to implement
@@ -1402,7 +1402,7 @@ that shown in \figref{counter-read} and \figref{counter-write}.
 
 \subsection{Analyses}\label{sec:hoist} % (check/field oracles)
 Our performance will be improved if we can identify objects or fields
-which are guaranteed not to be concurrently mutated, and replace our
+that are guaranteed not to be concurrently mutated, and replace our
 checks and read/write protocols with direct accesses.  We perform two
 analyses of this sort; \charef{moreopt} contains additional analyses
 which we have not implemented.
@@ -1410,13 +1410,13 @@ which we have not implemented.
 Our first analysis classifies all fields in the program according to
 their use in transactional and non-transactional regions.  This
 analysis is encapsulated in a FLEX class named
-\texttt{GlobalFieldOracle}.  Fields which can never be written within
+\texttt{GlobalFieldOracle}.  Fields that can never be written within
 a transaction do not need the special \texttt{readNT} mechanism from
 non-transactional code; their values can be loaded directly without
 testing for \texttt{FLAG}.  The only way that the field can have the
 \texttt{FLAG} value, if it is not written within a transaction, is if
 it is a false flag, in which case its value really is \texttt{FLAG}.
-Similarly, fields which can never be read or written within a
+Similarly, fields that can never be read or written within a
 transaction do not need to use the \texttt{writeNT} mechanism; they
 can just store directly to the field.\footnote{Note that its not
   enough for the field not to be written; we must also protect against
@@ -1440,7 +1440,7 @@ location, and that the object involved in the check is still defined
 appropriately at the new check location, since the analysis is
 performed on a single-assignment intermediate representation
 \cite{Ananian99}.  The check-hoisting process is repeated until no
-checks can be moved higher, then we eliminate any check which is
+checks can be moved higher, then we eliminate any check that is
 dominated by an identical check.
 
 \subsection{Desugaring} % clone/arrayinit
@@ -1460,7 +1460,7 @@ constructors, and then individually sets all the fields to their new
 values.  Arrays get a similar \texttt{clone()} implementation that
 reads and writes the elements of the array.  These new implementations
 can then be transformed by the transaction pass like any other piece
-of code which reads and writes fields.
+of code that reads and writes fields.
 
 The FLEX infrastructure also contains a mechanism for fast
 initialization of arrays; this mechanism is desugared into
@@ -1496,7 +1496,7 @@ Java, including object creation, exponential backoff on retry, and
 throwing the appropriate \texttt{TransactionAbortException} on abort.
 Only the crucial \texttt{commit()} and \texttt{abort()} operations,
 which atomically set the transaction status iff it is still
-\texttt{WAITING} were written in C, as JNI methods.
+\texttt{WAITING}, were written in C, as JNI methods.
 
 \subsection{Implementing the JNI}
 \begin{figure}\sis\fontsize{9}{10}\begin{alltt}
@@ -1546,7 +1546,7 @@ struct JNINativeInterface \{
   basic Java types: boolean, byte, char, short, int, long, float,
   double, and Object.  Note that the \texttt{jobject} and
   \texttt{j*Array} types are not direct references to the heap
-  objects; they are opaque wrappers which preserve the garbage
+  objects; they are opaque wrappers that preserve the garbage
   collector's invariants and protect the runtime system's private
   implementation.}
 \label{fig:jni}
@@ -1560,7 +1560,7 @@ If one cannot make native code observe the \texttt{readNT} and
 reads any object written in a transaction, or writes any object read
 or written in a transaction.\footnote{If one
   can implement \texttt{writeNT} but not \texttt{readNT}, one need
-  only ensure that native code does not write fields which are also
+  only ensure that native code does not write fields that are also
   written inside a transaction, as discussed in \charef{hoist}.}  This
 is very inconvenient.
 
@@ -1575,28 +1575,28 @@ We are able to do this because FLEX uses the Java Native Inteface
 \cite{JNI} to interact with native code.  The JNI, a portion of which
 is shown in \figref{jni}, abstracts field
 accesses and Java method invocations from native code, so we can
-substitute implementations which behave appropriately whether in a
+substitute implementations that behave appropriately whether in a
 transaction or not.
 
 We distinguish between three classes of native methods.  The first are
-native methods which are ``safe'' in a transactional context.  That
+native methods that are ``safe'' in a transactional context.  That
 is, they have no external side effects (which would need to be undone
 if the transaction aborted), and will behave correctly in a
 transaction if all reads, writes, and method calls are simply replaced
 by the appropriate transactional protocol.   The second are methods
-which have a different implementation in a transactional context. One
-example would be the native methods which implement file I/O; in a
+that have a different implementation in a transactional context. One
+example would be the native methods that implement file I/O; in a
 transactional context these should interface with a underlying
 transactional file system and arrange for the I/O operations to commit
 iff the current transaction commits.  Another example is the
 \texttt{Object.wait()} method; the appropriate implementation is
 described in \charef{object-wait}.   The last class of native methods
-are those which are inherently impossible in a transactional context,
+are those that are inherently impossible in a transactional context,
 usually due to irreversible external I/O (\charef{io} discusses I/O
 interactions in more detail).  A compiler configuration file
 identifies the safe native methods.
 
-For ``safe'' native methods, the FLEX compiler creates a thunk which
+For ``safe'' native methods, the FLEX compiler creates a thunk that
 stores the transaction object in the JNI environment structure
 (\texttt{JNIEnv}) which is passed to every JNI method.  When that
 native method invokes the field or array operations in the JNI (for
@@ -1721,7 +1721,7 @@ Part of the challenge in engineering a practical implementation is
 properly accounting for the wide range of data types in a real
 programming language.  Java contains 8 primitive types in addition to
 types deriving from \texttt{java.lang.Object},
-which are themselves divided into array and non-array
+that are themselves divided into array and non-array
 types.\footnote{Our flag value was carefully chosen so as not to be a NaN for either
 of the floating-point types, since comparisons against NaN can be
 surprising, and to consist of a repeated byte value so that a new
@@ -1764,10 +1764,10 @@ present implementation ignores static fields when performing the
 synchronization transformation; reads and writes to static fields are
 always direct.  In theory this could cause races, but in our
 benchmarks most static fields are written only during initialization.
-An analysis which proved that writes only occurred during a
+An analysis that proved that writes only occurred during a
 single-threaded class initialization phase of execution could prove
 that these direct accesses are safe in most cases.  Proper handling of
-static fields which do not meet this condition is straight-forward:
+static fields that do not meet this condition is straight-forward:
 new singleton classes would be created encapsulating these fields, and
 access would be via an extra indirection.  \figref{static-fields}
 illustrates this transformation.
@@ -1850,7 +1850,7 @@ objects to cache line (32-byte) boundaries, to ensure there are no
 false conflicts between objects.  Some of the wasted space can be
 reclaimed by using a smaller alignment for objects known not to escape
 from their thread, or by packing multiple objects into a cache line
-iff they are known never to participate in transactions which might
+iff they are known never to participate in transactions that might
 conflict.
 
 \subsection{Handling subword and multi-word reads/writes}
@@ -2049,9 +2049,9 @@ notification, and release the mutex.
 The \texttt{wait} method, however, is a commit point, since it
 releases and reacquires the monitor lock.  Thus it splits the
 transaction containing it into two.\footnote{Which arguably calls for
-a special type annotation on methods which may call \texttt{wait()},
-so that users are not misled into thinking a block is atomic which may
-invoke something which calls \texttt{wait()}.}  The fundamental
+a special type annotation on methods that may call \texttt{wait()},
+so that users are not misled into thinking a block is atomic that may
+invoke something that calls \texttt{wait()}.}  The fundamental
 mechanism is straight-forward.  We first acquire our special mutex,
 then attempt to commit the transaction, and check the result.  If we
 don't commit successfully, we unlock the mutex and throw the usual
@@ -2087,7 +2087,7 @@ to point to the new transaction by \texttt{Object.wait()}.
 Alternatively, an extra return value can be added to methods called
 within a transaction, so that method can return an updated transaction
 object as well as their usual return value.  Either of these
-transformations can be applied selectively to only those methods which
+transformations can be applied selectively to only those methods that
 could possibly invoke, directly or indirectly, \texttt{Object.wait()}.
 The more difficult challenge is to update the location at which we'll
 resume for another attempt when the transaction is aborted; this retry
@@ -2162,7 +2162,7 @@ practical Java programs including an expert system, a simple database,
 a Java compiler, an audio encoder, and a parser generator.  To clarify
 our measurements, our baseline for all of our comparisons will be a
 version of the benchmarks compiled with the same method cloning and
-desugaring (\charef{synctrans}) which is done for the transaction
+desugaring (\charef{synctrans}) that is done for the transaction
 transformation.
 
 In \charef{counter-bench} we examined a microbenchmark to discover the
@@ -2191,7 +2191,7 @@ using here) due to expressive limits, and the emitted assembly
 indicates that the compiler is not optimally acting on the hints we
 can give it.  In particular, we want as little extraneous code as
 possible on the fast path through the common case, but the compiler
-adds register spills and moves here which are necessary only in
+adds register spills and moves here that are necessary only in
 unusual cases.  Further, because the fundamental load-linked and
 store-conditional instructions are inside inline assembly blocks and
 thus opaque to the compiler, many opportunities for code motion and
@@ -2213,7 +2213,7 @@ creation of transaction objects at the start of every atomic region is
 a considerable fraction of the total cost.  If transactions are going
 to be frequent and small, this cost must be kept in line.
 
-Transactions which mutate arrays also account for a large amount of
+Transactions that mutate arrays also account for a large amount of
 the total cost.  In the extreme case, the SPECjvm98 benchmark
 \texttt{201\_compress} allocates a 1MB array and writes compressed
 data into it.  The design of our transaction system necessitates an
@@ -2239,7 +2239,7 @@ performance numbers indicate that we are not achieving our goal.
 
 \note{include \#s from unique object benchmarks?}
 In this section we will discuss some additional optimizations
-which could improve our performance on transactional code; they have
+that could improve our performance on transactional code; they have
 not been implemented in the present compiler.  The improvements
 include version passing, escape analysis, object immutability
 analysis, and fast allocation.
@@ -2254,7 +2254,7 @@ would avoid redundant calls to
 \texttt{ensureReader}/\texttt{ensureWriter} by passing the ``current
 version'' of the various parameters when a method is invoked.  A
 strictness analysis should be performed, to avoid marking fields as
-read/written which are not guaranteed to be read/written by the
+read/written that are not guaranteed to be read/written by the
 transaction, and the ``current version'' added as an extra argument
 for the strict parameters of the method.  This allows the caller to
 combine redundant \texttt{ensureReader}/\texttt{ensureWriter}
@@ -2269,10 +2269,10 @@ invocations for the argument.\footnote{One could also consider adding
 
 Escape analysis \cite{WhaleyRi99} is a standard technique to reduce
 unnecessary synchronization in Java programs.  In a typical
-application, monitor locks on objects which do not escape their thread
+application, monitor locks on objects that do not escape their thread
 are eliminated; these lock eliminations can translate to transaction
 eliminations as well.  Further, escape analysis can identify
-individual objects which do not escape their method, thread,
+individual objects that do not escape their method, thread,
 or call context, and replace the \texttt{readT}/\texttt{writeT} or
 \texttt{readNT}/\texttt{writeNT} protocol with direct access.
 
@@ -2394,7 +2394,7 @@ operations defined:
 \begin{itemize}
 \item $\funcname{FA-Create}(n)$: Return an array $A$ of size $n$.  The
   contents of the array are initialized to zero.
-\item $\funcname{FA-Update}(A, i, v)$: Return an array $A'$ which is
+\item $\funcname{FA-Update}(A, i, v)$: Return an array $A'$ that is
   functionally identical to array $A$ except that
   $\funcname{FA-Read}(A', i)=v$.
   Array $A$ is not destroyed and can be accessed further.
@@ -2436,7 +2436,7 @@ during the execution of the transaction.
 I will consider the following two operations on objects:
 \begin{itemize}
 \item $\funcname{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
-  there is a constant mapping function which given a field name
+  there is a constant mapping function that given a field name
   returns an integer index.  We will write the result of mapping $f$
   as \fref{f}{index}.  For simplicity, and without loss of generality,
   we will assume all fields are of equal size.
@@ -2463,7 +2463,7 @@ the object being updated appropriately:
 \end{itemize}
 
 The interesting cases are reads and writes inside a transaction.
-At entry to our transaction which will access (only) object $o$, we
+At entry to our transaction that will access (only) object $o$, we
 store \fref{o}{fields} in a local variable $u$.  We create another
 local variable $u'$ which we initialize to $u$.  Then our read and
 write operations are implemented as:
@@ -2759,7 +2759,7 @@ updating.
 The key to constant-time access for single-threaded use is provided by the read
 operation.  A read to the root simply reads the appropriate value from
 the cache.  However, a read to a differential node triggers a series
-of rotations which swap the direction of differential nodes and result
+of rotations that swap the direction of differential nodes and result
 in the current array acquiring the cache and becoming the new root.
 This sequence of rotations is called \emph{re-rooting}, and is
 illustrated in Figure~\ref{fig:chuang}.  Each rotation
@@ -2875,7 +2875,7 @@ functional array; it consists of a {\tt size} for the array and a
 pointer to a {\tt Node}.  There are two types of nodes: a {\tt
   CacheNode} stores a value for every index in the array, and a {\tt
   DiffNode} stores a single change to an array.  {\tt Array} objects
-which point to {\tt CacheNode}s are roots.
+that point to {\tt CacheNode}s are roots.
 
 In step 1 of the figure, we have a root array $A$ and an
 array $B$ whose differential node $d_B$ points to $A$.  The functional
@@ -2891,7 +2891,7 @@ the value of $A$.
 
 We continue swinging pointers until step 5, when can finally set
 the element $x$ in the cache to $y$.  We perform this operation with a
-DCAS operation which checks that $\fref{C}{node}$ is still pointing to
+DCAS operation that checks that $\fref{C}{node}$ is still pointing to
 the cache as we expect.  Note that a concurrent rotation would swing
 $\fref{C}{node}$ in its step 1.  In general, therefore, the location
 pointing to the cache serves as a reservation on the cache.
@@ -2930,7 +2930,7 @@ using this six-step approach.
 %% a single thread.  In particular, when we are working on an {\sl
 %%   IN-PROGRESS} operation, all array versions which it creates are
 %% unreachable from other threads until the operation is committed.
-%% We can add a field {\tt creator} to the {\tt Array} object which records what
+%% We can add a field {\tt creator} to the {\tt Array} object that records what
 %% operation created that version.  If the {\tt creator} field of both
 %% $A$ and $B$ contains our own \var{tid} when we begin a rotate, we know
 %% that these versions are both thread local
