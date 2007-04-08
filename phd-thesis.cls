@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.18 2007-04-08 20:43:39 cananian Exp $
+% $Id: phd-thesis.cls,v 1.19 2007-04-08 20:45:49 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -41,7 +41,10 @@
 \fancyhfoffset[RO]{.5in}
 \fancyhfoffset[LE]{.5in}
 \addtolength{\headheight}{3pt}
-\ifthenelse{\boolean{@phddraft}}{\fancyfoot[LE,RO]{\small Draft: \today}}{}
+\ifthenelse{\boolean{@phddraft}}{%
+  \RequirePackage{timestamp}%
+  \fancyfoot[LE,RO]{\small Draft: \timestamp}%
+}{}
 
 % definitions
 \newcommand{\defn}[1]           {{\textbf{\boldmath\defnlt{#1}}}}
