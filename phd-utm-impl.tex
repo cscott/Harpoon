@@ -13,7 +13,7 @@ cause protection problems.}
 
 There would be 16 transaction descriptor words on a cache line; this
 could cause ping-ponging.  An 8k page contains descriptors for the
-transaction blocks on 16 other pages ($2^10$ descriptors).  The
+transaction blocks on 16 other pages ($2^{10}$ descriptors).  The
 descriptors should be arranged so the ``no information'' is an
 all-zeros pattern.  The OS can then garbage collect any transaction
 descriptor pages which contain all zeros (instead of eg paging them to
