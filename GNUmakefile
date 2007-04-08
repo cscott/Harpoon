@@ -195,7 +195,7 @@ always:
 	if egrep -s 'Rerun to get cross-r|Citation.*undefined' $*.log; then \
 		$(LATEX) $*; fi
 	if egrep -s 'Rerun to get cross-r' $*.log; then $(LATEX) $*; fi
-	if egrep -s 'undefined references|Citation.*undefined' $*.log; then \
+	@if egrep -s 'undefined references|Citation.*undefined' $*.log; then \
 		grep undefined $*.log; fi
 
 # Make annotation-visible versions of bibtex files.
