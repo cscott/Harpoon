@@ -1,17 +1,21 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.17 2007-04-08 02:11:58 cananian Exp $
+% $Id: phd-thesis.cls,v 1.18 2007-04-08 20:43:39 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
-\usepackage{beton}\usepackage{euler} % fonts
+\RequirePackage{beton}\RequirePackage{euler} % fonts
 
-\usepackage{amstext} % the \text command for math mode (replaces \mbox)
-\usepackage{varioref}
-\usepackage{xspace}
-\usepackage{epsfig}
-\usepackage{url}
-\usepackage{ifthen}
-\usepackage{verbatim}
+\RequirePackage{amstext} % the \text command for math mode (replaces \mbox)
+\RequirePackage{varioref}
+\RequirePackage{xspace}
+\RequirePackage{epsfig}
+\RequirePackage{url}
+\RequirePackage{ifthen}
+\RequirePackage{verbatim}
+
+% draft option puts timestamp in footer
+\newboolean{@phddraft}\setboolean{@phddraft}{false}
+\DeclareOption{draftnotice}{\setboolean{@phddraft}{true}}
 
 % Pass on other options.
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
@@ -21,9 +25,9 @@
 
 % Load book class.
 \LoadClass[11pt,titlepage,twoside]{book}
-\usepackage{bibcontents} % required by MIT thesis specification
-\usepackage[section,plain]{algorithm} % algorithm environment,\listofalgorithms
-\usepackage{fancyhdr}
+\RequirePackage{bibcontents} % required by MIT thesis specification
+\RequirePackage[section,plain]{algorithm} % algorithm environment,\listofalgorithms
+\RequirePackage{fancyhdr}
 
 \linespread{1.2} % ``double-space''
 
@@ -37,6 +41,7 @@
 \fancyhfoffset[RO]{.5in}
 \fancyhfoffset[LE]{.5in}
 \addtolength{\headheight}{3pt}
+\ifthenelse{\boolean{@phddraft}}{\fancyfoot[LE,RO]{\small Draft: \today}}{}
 
 % definitions
 \newcommand{\defn}[1]           {{\textbf{\boldmath\defnlt{#1}}}}
@@ -53,10 +58,10 @@
 
 \newcommand{\appref}[1]         {Appendix~\ref{sec:#1}}
 \newcommand{\figref}[1]         {Figure~\ref{fig:#1}}
-\newcommand{\secref}[1]         {section~\ref{sec:#1}}
+\newcommand{\secref}[1]         {Section~\ref{sec:#1}}
 \newcommand{\Secref}[1]         {Section~\ref{sec:#1}}
-\newcommand{\charef}[1]         {chapter~\ref{sec:#1}}
-\newcommand{\Charef}[1]         {Chapter~\ref{sec:#1}}
+\newcommand{\charef}[1]         {Chapter~\ref{cha:#1}}
+\newcommand{\Charef}[1]         {Chapter~\ref{cha:#1}}
 
 \newcommand{\figput}[3][]{%
 \begin{figure}[tp]\sis%

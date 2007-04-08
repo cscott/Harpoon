@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.42 2007-04-08 05:33:07 cananian Exp $
+% $Id: phd-thesis.tex,v 1.43 2007-04-08 20:43:39 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[letterpaper]{phd-thesis}
+\documentclass[letterpaper,draftnotice]{phd-thesis}
 \usepackage{verbatim}
 \usepackage{alltt}
 \usepackage{epigraph}
@@ -13,7 +13,7 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.42 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.43 $}{70}
 
 \notesfalse % comment out this line to turn on notes.
 
@@ -42,7 +42,7 @@
 \newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
 \newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.42 $ $}
+\date{\subdate \\ $ $Revision: 1.43 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -67,14 +67,14 @@
 %\section{Transactions and transactional memory}
 \input{phd-intro}
 
-%\chapter{An efficient software implementation of transactions}\label{sec:stm}
+%\chapter{An efficient software implementation of transactions}\label{cha:stm}
 \input{phd-stm}
 
 \input{phd-htm}
 \input{phd-hybrid}
 
 \punt{
-\chapter{Extending the hardware}\label{sec:htmplus}
+\chapter{Extending the hardware}\label{cha:htmplus}
 \epigraphhead[70]{\epigraph{%
 To create a new standard, it takes something that's not just a little
 bit different; it takes something that's really new and really
@@ -97,12 +97,6 @@ zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
 
 \input{phd-chall}
 
-\chapter{Related work}\label{sec:related}
-\epigraphhead[70]{\epigraph{%
-Everything in the universe relates to [transactions], one way or another,
-given enough ingenuity on the part of the interpreter.
-}{\textit{Principia Discordia} (amended)}}
-
 \input{phd-related}
 
 %\chapter{Conclusion}
@@ -111,7 +105,7 @@ given enough ingenuity on the part of the interpreter.
 \appendix
 \input{phd-ver}
 
-%\chapter{Formal equivalence proof of UTM/xstate}\label{sec:hw-proof}
+%\chapter{Formal equivalence proof of UTM/xstate}\label{cha:hw-proof}
 %\input{phd-utm-impl}
 
 %\chapter{Compiling to precise garbage-collectable C code}

@@ -1,4 +1,4 @@
-\chapter{Introduction}\label{sec:intro}
+\chapter{Introduction}\label{cha:intro}
 \epigraphhead[70]{\epigraph{%
 [Parallel programming] is hard.
 }{\textit{Teen Talk Barbie}\\(apocryphal)}}
@@ -104,7 +104,7 @@ Similarly, in real-time systems, the use of non-blocking
 synchronization can prevent \defnlti{Priority inversion}
 \index{Lock(s)!priority inversion} in the system
 \cite{Jones97}, although na\"{\i}ve implementations may result in
-starvation of low-priority tasks (see \charef{progress} for a discussion).
+starvation of low-priority tasks (see \secref{progress} for a discussion).
 
 \section{Unlimited transactions}
 
@@ -160,7 +160,7 @@ transactions.  The size of transactional hardware should be an
 implementation parameter, like cache size or memory size, which can
 vary without affecting the portability of binaries.
 
-In \charef{hybrid} I will show how a fast hardware implementation for
+In \secref{hybrid} I will show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
 transactions.
@@ -315,7 +315,7 @@ choices before the community has more experience with the
 transactional approach to writing software.
 }
 
-% \charef{hybrid}
+% \secref{hybrid}
 At the end of the chapter,
 I present a \defn{hybrid} transaction implementation
 that builds on the strengths of simple hardware support while
@@ -334,7 +334,7 @@ final chapter summarizes our findings and draws conclusions.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Examples of Transactional Programming}
+\chapter{Examples of Transactional Programming}\label{cha:examples}
 \epigraphhead[70]{\epigraph{%
 You have a hardware or a software problem.
 }{\textit{Service manual for Gestetner~3240}}}
@@ -701,7 +701,7 @@ synchronization as well.
 \subsection{Bug fixing}\label{sec:stringbuffer}
 The existing \defni{Monitor synchronization}\index{Synchronization!monitor} methodology for Java,
 building on such features in progenitors such as Emerald
-\cite{BlackHuJuLe86,JulSt91},\index{Emerald}\footnote{See \charef{emerald}.}
+\cite{BlackHuJuLe86,JulSt91},\index{Emerald}\footnote{See \secref{emerald}.}
 implicitly associates an 
 lock with each object.
 Data races are prevented by
@@ -774,7 +774,7 @@ alternative semantics that may in fact correct existing
 synchronization errors.
 For many Java programs, the
 semantics of {\tt atomic} and {\tt synchronized} are identical; see
-\charef{semantic}.
+\secref{semantic}.
 \note{Can I make this rigorous?}
 
 \section{Some things we still can't (easily) do}\label{sec:xlimit}
@@ -784,7 +784,7 @@ cannot replace mutual exclusion
 required to serialize I/O, although the needed locks can certainly be
 built with transactions.  
 The challenge of integrating I/O within a
-transactional context is discussed in \charef{io}.
+transactional context is discussed in \secref{io}.
 However, large programs---the
 Linux kernel\note{TODO: Find citation}, for example---have been
 written such that locks are
@@ -795,7 +795,7 @@ Blocking producer-consumer queues, or other options that require a
 transaction to wait upon a condition variable, may introduce
 complications into a transaction system: transactions cannot
 immediately retry when they fail, but instead must wait for some
-condition to become true.  \Charef{object-wait} describes some
+condition to become true.  \Secref{object-wait} describes some
 solutions to this problem, ranging from na{\"\i}ve (keep retrying and
 aborting with exponential backoff until the condition is finally true)
 to clever; the clever solutions require additional transaction

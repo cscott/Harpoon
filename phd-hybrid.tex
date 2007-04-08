@@ -37,7 +37,7 @@ the \texttt{ReadNT} and \texttt{WriteNT} algorithms to ensure they
 interact properly with concurrent software transactions, although these
 checks need not be part of the hardware transaction mechanism.
 In the figure, the checks were done in software, with an implementation
-similar to that described in \charef{counter-bench}.
+similar to that described in \secref{counter-bench}.
 
 The figure shows the performance of a simple queue benchmark as the
 transaction size increases.  The hardware transaction mechanism is
@@ -68,7 +68,7 @@ Load Linked/Store Conditional sequences, which may not
 otherwise be available on a target processor.
 The small transaction support can also facilitate a functional array
 solution to the large object problem, as we saw in
-\charef{lf-fun-arr}.  We might further improve performance by adding a
+\secref{lf-fun-arr}.  We might further improve performance by adding a
 bit of hardware support for the \texttt{readNT}/\texttt{writeNT}
 barriers~\cite{ClickTeWo05}.
 

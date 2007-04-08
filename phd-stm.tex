@@ -1,4 +1,4 @@
-\chapter{Designing a software transaction system}\label{sec:stm}
+\chapter{Designing a software transaction system}\label{cha:stm}
 \epigraphhead[70]{\epigraph{%
 Easy things should stay easy, hard things should get easier, and
 impossible things should get hard.
@@ -33,7 +33,7 @@ transaction expressed with an
 {\tt atomic} block.\footnote{The proposed revision of the Java memory model
 \cite{MansonPu02} narrows the semantic gap, however I do not
 plan to treat {\tt volatile} fields in this work.  See
-\charef{semantic} for more details.}
+\secref{semantic} for more details.}
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
 correctness of the benchmarks I examine here.
@@ -49,7 +49,7 @@ in order to investigate the properties of the transactions in such
 FLEX performed method cloning to distinguish methods called from
 within a transactions, and implemented nested locks as a single
 transaction around the outermost.\footnote{See
-  \charef{synctrans} for more details on this transformation.} I
+  \secref{synctrans} for more details on this transformation.} I
 instrumented this transformed program to produce a trace of
 memory references and transaction boundaries for analysis.
 I found both large
@@ -159,7 +159,7 @@ the input size, but it need not be: a large input could still result
 in a small index, and (to some degree) vice-versa.
 
 A similar situation arises in the {\tt java.lang.StringBuffer} code
-shown in \charef{stringbuffer}:  a call to the synchronized
+shown in \secref{stringbuffer}:  a call to the synchronized
 \texttt{sb.getChars()} method means that
 the size of the transaction for this method will grow like the length
 of the parameter~\texttt{sb}.  In other words, the transaction can be
@@ -205,14 +205,14 @@ analyses of the SpecJVM98 benchmarks, which I implemented using the
 Flex Java compiler framework.
 
 \subsection{Weak vs. strong atomicity}
-As previously discussed in \charef{strongatom},
+As previously discussed in \secref{strongatom},
 \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
 transaction systems protect transactions from interference from
 ``non-transactional'' code, while \defn{weakly atomic} transaction
 systems do not afford this protection.
 \index{Weak atomicity}\index{Atomicity!weak}
 Consider unsynchronized code directly altering the length field of
-{\tt StringBuffer} (\charef{stringbuffer}).  In a weakly atomic system
+{\tt StringBuffer} (\secref{stringbuffer}).  In a weakly atomic system
 this will cause the {\tt atomic} {\tt StringBuffer.append()} method to
 appear non-atomic.  Current software transaction systems implement
 only weak atomicity, because of the assumed expense of implementing
@@ -232,7 +232,7 @@ primarily because this solves some of the issues I will present in
 several benefits:
 \begin{description}
 \item[Efficient execution of long-running transactions.]  As discussed
-  briefly in Chapter \ref{sec:efficiency} and \ref{sec:tm}, flat
+  briefly in Sections \ref{sec:efficiency} and \ref{sec:tm}, flat
   word-oriented transaction schemes require overhead proportional to
   the number of words read/written in the transaction, even if these
   locations had been accessed before inside the transaction. Object-oriented
@@ -293,7 +293,7 @@ outnumber writes by over 100 to 1.\footnote{The typical ratio roughly
   matches the 3:1 average observed in Hennessy and Patterson
   \cite[pp. 105, 379]{HennessyPa96}.}  It is worthwhile, therefore, to
 make reads more efficient than writes.  In particular, since the
-flag-overwrite technique discussed in \charef{flagfield} requires us
+flag-overwrite technique discussed in \secref{flagfield} requires us
 to allocate additional memory to store the ``real'' value of the
 field, I wish to avoid this process for transactional reads,
 reserving the extra allocation effort for transactional writes.
@@ -317,7 +317,7 @@ operations proceed as usual.
 Note that this technique explicitly allows safe access to fields
 involved in a transaction from non-transactional code, which is
 another design goal of the system.  This eases ``transactification''
-of legacy code (but see \charef{semantic}!).
+of legacy code (but see \secref{semantic}!).
 
 \section{Specifying the basic mechanism}
 I now present an algorithm that has these desired properties.
@@ -344,7 +344,7 @@ however, ``The \texttt{stwcx.} instruction does not check the
 reservation for a matching address.  The \texttt{stwcx.} instruction
 is only required to determine whether a reservation exists.  The
 \texttt{stwcx.} instruction performs a store word operation only if
-the reservation exists,'' \cite[Chapter 3.3.3.6]{MPC7450UM} which is
+the reservation exists,'' \cite[Section 3.3.3.6]{MPC7450UM} which is
 the behavior we require.  I believe version 1.10 of the PowerPC
 Architecture specification required this behavior, although I have not
 been able to confirm this.  The Cell architecture specification
@@ -875,7 +875,7 @@ the effects of ``false flags'' or other forays into the transactional
 code path, nor will we account for double-word or sub-word writes,
 cache effects due to code duplication, or other details of a real
 implementation.  These effects we will investigate with full
-benchmarks in the \charef{full-bench}.  We will also feel free to
+benchmarks in the \secref{full-bench}.  We will also feel free to
 optimize down to the assembly level to determine our fundamental
 performance limits.  However, the tight read/write dependency of a
 counter increment makes it a ``worst case'' benchmark: in general
@@ -1183,7 +1183,7 @@ aggressive optimization and scheduling.\footnote{Note that this
   contribution of loads and stores to the run time.  However,
   scheduling, prefetching, and store buffers can pipeline the cost of
   the loads and stores, which might cause our overhead estimate to
-  exceed the actual cost.  \Charef{full-bench} will present actual
+  exceed the actual cost.  \Secref{full-bench} will present actual
   overhead measurements of real Java applications.}
 
 \section*{Implementation}
@@ -1195,7 +1195,7 @@ real-world
 implementation details of our software transaction system.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Implementing efficient software transactions}\label{sec:stmimpl}
+\chapter{Implementing efficient software transactions}\label{cha:stmimpl}
 \epigraphhead[70]{\epigraph{%
 In theory, there is no difference between theory and practice.
 }{\textit{Jan~L.~A.~van~de~Snepscheut}}}
@@ -1350,15 +1350,15 @@ transaction management functions.
 
 Inside the transaction context, reads and writes must be transformed.
 Before the read, the \texttt{ensureReader} algorithm
-must be invoked (see \charef{readT} and \appref{verification}).  This
+must be invoked (see \secref{readT} and \appref{verification}).  This
 need only be done once for each object read in this transaction;
-\charef{hoist} described how these checks are hoisted and combined to
+\secref{hoist} described how these checks are hoisted and combined to
 reduce their number.  The \texttt{ensureReader} routine returns a
 pointer to a \defn{version object} containing this transaction's field
 values for the object.  The pointer may be NULL, however, if this
 transaction has not written the object.
 The actual read is done via the \texttt{readT}
-algorithm described in \figref{promrwt} and \charef{readT}; it may
+algorithm described in \figref{promrwt} and \secref{readT}; it may
 update the cached version object for the given object (for example, if
 the object has been written within this transaction since the point at
 which \texttt{ensureReader} was invoked).\footnote{The FLEX
@@ -1404,7 +1404,7 @@ that shown in \figref{counter-read} and \figref{counter-write}.
 Our performance will be improved if we can identify objects or fields
 that are guaranteed not to be concurrently mutated, and replace our
 checks and read/write protocols with direct accesses.  We perform two
-analyses of this sort; \charef{moreopt} contains additional analyses
+analyses of this sort; \secref{moreopt} contains additional analyses
 which we have not implemented.
 
 Our first analysis classifies all fields in the program according to
@@ -1478,7 +1478,7 @@ The runtime system is parameterized to allow a large number of memory
 allocation strategies and collectors, but for the experiments reported
 here I used the Boehm-Demers-Weiser conservative garbage collector
 \cite{BoehmDeWe91}.\footnote{The use of a conservative collector means
-  that the mechanism described in \charef{precise-gc} to enable
+  that the mechanism described in \secref{precise-gc} to enable
   precise garbage collection was unneeded and thus disabled for these
   experiments.} 
 Ideally the garbage collector would know enough about the transaction
@@ -1561,7 +1561,7 @@ reads any object written in a transaction, or writes any object read
 or written in a transaction.\footnote{If one
   can implement \texttt{writeNT} but not \texttt{readNT}, one need
   only ensure that native code does not write fields that are also
-  written inside a transaction, as discussed in \charef{hoist}.}  This
+  written inside a transaction, as discussed in \secref{hoist}.}  This
 is very inconvenient.
 
 Our solution ensures not only that (separately compiled) native code
@@ -1590,9 +1590,9 @@ transactional context these should interface with a underlying
 transactional file system and arrange for the I/O operations to commit
 iff the current transaction commits.  Another example is the
 \texttt{Object.wait()} method; the appropriate implementation is
-described in \charef{object-wait}.   The last class of native methods
+described in \secref{object-wait}.   The last class of native methods
 are those that are inherently impossible in a transactional context,
-usually due to irreversible external I/O (\charef{io} discusses I/O
+usually due to irreversible external I/O (\secref{io} discusses I/O
 interactions in more detail).  A compiler configuration file
 identifies the safe native methods.
 
@@ -1606,7 +1606,7 @@ determine whether to use the appropriate transactional or
 non-transactional read or write protocol.  When Java methods are
 invoked, via the \texttt{Call*Method} family of methods, in a
 transactional context the runtime looks up the \texttt{\$\$withtrans}
-suffixed version of the method (see \charef{withtrans}) and invokes
+suffixed version of the method (see \secref{withtrans}) and invokes
 it, passing the transaction object from the environment as the first
 parameter.
 
@@ -1743,7 +1743,7 @@ and array elements uniformly, even though the first array element
 starts at a different offset from the first field (since array data starts with
 an immutable length field).
 
-\Charef{multiword} will discuss some of the other challenges involved in
+\Secref{multiword} will discuss some of the other challenges involved in
 synthesizing atomic operations on subword and multi-word datatypes.
 
 \section{Limitations}
@@ -1884,7 +1884,7 @@ as an alternative: non-transactional writes of doubles and longs can be
 converted to small transactions encompassing nothing but the multiple
 word-size writes.
 
-Now let us consider sub-word-sized writes.  Chapter 17.6 of the Java
+Now let us consider sub-word-sized writes.  Section 17.6 of the Java
 Language Specification specifically says:
 \begin{quote}
 One implementation consideration for Java virtual machines is that
@@ -1908,7 +1908,7 @@ entire word, updating it, and rewriting will appear atomic due to the
 transaction mechanism, and no observable word tearing will occur.  A
 minor difficulty is the possibility of ``false'' conflicts between
 updates to adjacent fields of an object; these are handled as
-described in \charef{coarseLL}.
+described in \secref{coarseLL}.
 
 \begin{figure}[t]\sis\fontsize{9}{10}
 \begin{alltt}
@@ -2073,7 +2073,7 @@ the notification from occurring between the commit and the
 \texttt{wait}.}
 
 Implementation in a practical system introduces some difficulties.  As
-described in \charef{synctrans}, the transaction object is passed as
+described in \secref{synctrans}, the transaction object is passed as
 the first argument when calling methods within a transaction context.
 Since \texttt{Object.wait()} commits the initial transaction and
 begins a new one, we must either factor out a continuation after the
@@ -2128,13 +2128,13 @@ practical Java programs including an expert system, a simple database,
 a Java compiler, an audio encoder, and a parser generator.  To clarify
 our measurements, our baseline for all of our comparisons will be a
 version of the benchmarks compiled with the same method cloning and
-desugaring (\charef{synctrans}) that is done for the transaction
+desugaring (\secref{synctrans}) that is done for the transaction
 transformation.
 
 \epsfigput[Non-transactional check overhead for SPECjvm98.]{phd-spec-nt}{%
   Non-transactional check overhead for SPECjvm98.  Both benchmarks in
   each pair were compiled with the transformations in
-  \charef{synctrans} (method cloning, desugaring) and all
+  \secref{synctrans} (method cloning, desugaring) and all
   synchronization was removed.  The version ``with checks'' had all
   reads and writes transformed using the \texttt{readNT} and
   \texttt{writeNT} protocols, while the base version performed direct
@@ -2166,7 +2166,7 @@ jack &      $9,882,846$&$0$ ($0$\%)&$4,595,774$& $0$ ($0$\%) \\ \hline
   non-transactional read and write protocols for non-array objects.
   The final bar is fully transactional.}
 
-In \charef{counter-bench} we examined a microbenchmark to discover the
+In \secref{counter-bench} we examined a microbenchmark to discover the
 lower limits on our non-transactional overhead.  These are the
 fundamental costs of strong atomicity: the penalty we must pay even if
 we are not using transactions at all.\footnote{Although, of course, in
@@ -2186,7 +2186,7 @@ benchmarks show that an overhead of around 60\% is more typical.
 Close inspection of the assembly code emitted by the C compiler for
 these benchmarks indicates that the compiler's limitations are
 the primary reason our performance falls short of mark set by the
-microbenchmark.   As discussed in \charef{synctrans}, it is hard to
+microbenchmark.   As discussed in \secref{synctrans}, it is hard to
 obtain maximum performance with a C implementation (such as we are
 using here) due to expressive limits, and the emitted assembly
 indicates that the compiler is not optimally acting on the hints we
@@ -2245,7 +2245,7 @@ not been implemented in the present compiler.  The improvements
 include version passing, escape analysis, object immutability
 analysis, and fast allocation.
 
-As described in \charef{synctrans}, the basic transaction
+As described in \secref{synctrans}, the basic transaction
 transformation inserts a call to
 \texttt{ensureReader}/\texttt{ensureWriter} once per object prior to a
 read/write of a field in the object.  These methods return a version
@@ -2315,7 +2315,7 @@ FLAGS'' section.
 
 }
 
-\chapter{Arrays and large objects}\label{sec:largeobj}
+\chapter{Arrays and large objects}\label{cha:largeobj}
 \punt{
 \epigraphhead[70]{\epigraph{%
 In this life, one thing counts\\
@@ -2353,7 +2353,7 @@ transactional writes, so that the previous state of the object can be
 restored if the transaction aborts.  \figref{tr-w} shows the object
 size distribution of transactional writes for SPECjvm98, and
 indicates that over 10\% of writes may be to large objects.
-As we've seen in \charef{full-bench}, the copying cost can become
+As we've seen in \secref{full-bench}, the copying cost can become
 excessive.
 
 The solution I will propose will
@@ -2373,7 +2373,7 @@ In this chapter I will recast the transaction system design of
 ``small object protocol,'' then show how to extend it to a ``large
 object protocol,'' in the process addressing the large object performance
 problems.  The large object protocol will use a lock-free variant of
-Chuang's algorithm, which I will present in \charef{lf-fun-arr}.
+Chuang's algorithm, which I will present in \secref{lf-fun-arr}.
 
 \section{Basic operations on functional arrays}
 Let us begin by reviewing the basic operations on functional arrays.
@@ -2388,7 +2388,7 @@ However, the distinguishing characteristic of an imperative array is its
 time complexity: $O(1)$ access or update of any element.
 Implementing functional arrays with a functional balanced tree yields
 $O(\lg n)$ worst-case access or update.\footnote{I will return to
-a discussion of operational complexity in \charef{lf-fun-arr}.}
+a discussion of operational complexity in \secref{lf-fun-arr}.}
 
 For concreteness, functional arrays have the following three
 operations defined:
@@ -2418,7 +2418,7 @@ the performance of imperative arrays only when $n=O(1)$.  I will
 therefore call these \emph{small object functional arrays}.  Operations
 in this implementation never fail.  Every operation is non-blocking
 and no synchronization is necessary, since the imperative arrays are
-never mutated after they are created.   In \charef{lf-fun-arr} we will
+never mutated after they are created.   In \secref{lf-fun-arr} we will
 review better implementations of functional arrays, and present our
 own lock-free variant.
 
@@ -2484,7 +2484,7 @@ With our na{\"\i}ve ``small object'' functional arrays, this implementation is
 exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
 Herlihy's protocol is rightly criticized for an excessive amount of
 copying.  I will address this with a better implementation of
-functional arrays in \charef{lf-fun-arr}.
+functional arrays in \secref{lf-fun-arr}.
 However, the restriction that only one object
 may be referenced within a transaction is overly limiting.  I will
 first fix this problem.
