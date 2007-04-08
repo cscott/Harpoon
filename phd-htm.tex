@@ -706,8 +706,8 @@ system.}
 % probably don't want to have to traverse the readers list if we're
 % just writing to a block we read (i.e, increment).
 
-\begin{figure}[b]
-\hspace{-0.15cm}
+\begin{figure}
+%\hspace{-0.15cm}
 \input{Figures/snapshot.pstex_t}
 \caption[UTM processor modifications.]%
 {UTM processor modifications. The S bit vector
@@ -719,9 +719,8 @@ last physical register referenced by the destination architectural
 register).}
 \label{fig:snapshot-utm}
 \end{figure}
-\begin{figure}[b]
-%\centering
-\hspace{-1.3cm} % Make the datastruct-entry slide over to the left (it is in the right column, going off the edge)
+\begin{figure}
+\centering
 \input{Figures/datastruct-entry.pstex_t}
 \caption[The xstate data structure.]{The xstate data structure.
 The transaction log for a transaction contains a commit record and a
@@ -989,3 +988,9 @@ directly supported by the hardware.}}
 % LocalWords:  UTM XBEGIN XEND mispredicted misprediction superscalar Herlihy
 % LocalWords:  mispredict LTM UVSIM SGI transactionally uncached lookup SPECjvm
 % LocalWords:  inlining microbenchmark xstate RW RISC
+
+\section{A Real Implementation}
+\input{phd-utm-impl}
+
+\section{A hybrid transaction implementation}\label{sec:hybrid}
+\input{phd-hybrid}

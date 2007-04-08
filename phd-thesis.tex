@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.40 2007-04-08 01:49:48 cananian Exp $
+% $Id: phd-thesis.tex,v 1.41 2007-04-08 02:11:58 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[letterpaper]{phd-thesis}
 \usepackage{verbatim}
@@ -13,7 +13,7 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.40 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.41 $}{70}
 
 \notesfalse % comment out this line to turn on notes.
 
@@ -42,7 +42,7 @@
 \newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
 \newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.40 $ $}
+\date{\subdate \\ $ $Revision: 1.41 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -81,27 +81,25 @@ captures people's imagination\ldots.}{\textit{Bill Gates}, 1984.}}
 \input{phd-htmplus}
 }
 
-\chapter{A hybrid transaction implementation}\label{sec:hybrid}
 \punt{
 \epigraphhead[70]{\epigraph{%
 Hybrids are often named by the portmanteau method, combining the names
 of the two parent species. For example, a zeedonk is a cross between a
 zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
-}
-\epigraphhead[70]{\epigraph{%
-You have a hardware or a software problem.
-}{\textit{Service manual for Gestetner 3240}}}
 
 % dual-path coding: publishable paper: try in hw, fall back to software
-
 \input{phd-hybrid}
 
-\punt{
+
 \chapter{Compiler optimizations and type systems}
 \input{phd-opt}
 }
 
 \chapter{Challenges}\label{sec:chall}
+\epigraphhead[70]{\epigraph{%
+To create a new standard, it takes something that's not just a little
+bit different; it takes something that's really new and really
+captures people's imagination\ldots.}{\textit{Bill Gates}, 1984.}}
 \input{phd-chall}
 
 \chapter{Related work}\label{sec:related}

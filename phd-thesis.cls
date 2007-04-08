@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.16 2007-04-06 21:22:40 cananian Exp $
+% $Id: phd-thesis.cls,v 1.17 2007-04-08 02:11:58 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -59,7 +59,7 @@
 \newcommand{\Charef}[1]         {Chapter~\ref{sec:#1}}
 
 \newcommand{\figput}[3][]{%
-\begin{figure}[t]\sis%
+\begin{figure}[tp]\sis%
  \begin{center}%
   \input{Figures/#2.pstex_t}%
  \end{center}%
@@ -68,7 +68,7 @@
 \end{figure}%
 }
 \newcommand{\epsfigput}[3][]{%
-\begin{figure}[t]\sis%
+\begin{figure}[tp]\sis%
 \begin{center}%
 \includegraphics[height=2.75in,clip=true]{Figures/#2}% .eps/.pdf ext is default
 \end{center}%
