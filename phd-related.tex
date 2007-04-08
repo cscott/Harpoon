@@ -7,7 +7,7 @@ given enough ingenuity on the part of the interpreter.
 A number of researchers have been investigating transactional memory
 systems.  This thesis is the first to present a hybrid hardware/software
 model-checked non-blocking
-object-oriented system which allows co-existence of non-transactional and
+object-oriented system that allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 \note{Martin wants citations here: ask him about this?}
 
@@ -51,7 +51,7 @@ indefinitely.  External mechanisms are used to reduce contention
 (thus, achieve progress) including backoff, queueing, or timestamping.
 
 We will use the term \emph{non-blocking} to describe
-generally any synchronization mechanism which doesn't rely on mutual
+generally any synchronization mechanism that doesn't rely on mutual
 exclusion or locking, including wait-free, lock-free,
 and obstruction-free implementations.
 We will be concerned mainly with lock-free algorithms.%
@@ -110,7 +110,7 @@ common to many non-blocking implementations; our solution is presented
 in \charef{largeobj}.]
 
 Barnes provided the first universal non-blocking implementation
-method which avoids object copying \cite{Barnes93}.  He eliminates the
+method that avoids object copying \cite{Barnes93}.  He eliminates the
 need to store ``old'' object
 state in case of operation failure by having all threads cooperate to
 apply operations.  For example, if the first processor begins an operation
@@ -218,7 +218,7 @@ Several software transaction systems have been proposed.  Some constrain the
 programmer and make transactions difficult to use.  All have
 relatively high overheads, which make transactions unattractive for
 uniprocessor and small SMP systems. [Once the number of processors is
-large enough, the increased parallelism which can be provided by
+large enough, the increased parallelism that can be provided by
 optimistic transactions may cancel out the performance penalty of
 their use.]
 
@@ -243,7 +243,7 @@ on object copying, and so has poor performance for large objects and
 arrays.  Not including work necessary to copy objects involved in
 writes, they require $O(R(R+W))$ work to open $R$ objects for reading
 and $W$ objects for writing, which may be quadratic in the number of objects
-involved in the transaction.   A list insertion benchmark which they
+involved in the transaction.   A list insertion benchmark that they
 present shows 9x slowdown over a locking scheme, although they beat the locking
 implementation when more than 5-10 processors are active.  They
 present benchmark data with up to 576 threads on 72 processors.
@@ -269,7 +269,7 @@ We support these operations safely using the mechanisms presented in
 
 Programmers will be reluctant to use transactions to synchronize their
 code when it results in their code running more slowly on the uniprocessor
-and small-SMP systems which are most common today.
+and small-SMP systems that are most common today.
 
 Herlihy and Moss \cite{HerlihyMo93} suggested that small transactions
 might be handled in cache with overflows handled by software.  These
@@ -419,7 +419,7 @@ significantly simplifies reasoning about program correctness.
 Atomic methods can be implemented using locks.  A simple if inefficient
 implementation would simply acquire a single global lock during
 the execution of every atomic method.  Flanagan and Qadeer
-\cite{FlanaganQa03} present a more sophisticated technique which proves that
+\cite{FlanaganQa03} present a more sophisticated technique that proves that
 a given implementation using standard Java monitors correctly
 guarantees method atomicity.
 
