@@ -856,6 +856,7 @@ Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
 \section{Performance limits for non-transactional code}
+\label{sec:counter-bench}
 The software transaction system outlined in this section depends on
 the insertion of simple read and write checks in non-transactional
 code.  The performance of read and write barriers have been
@@ -1612,7 +1613,7 @@ the first parameter as is done for pure Java calls inside a
 transaction context.  The implementer is then responsible for correct
 transactional behavior.
 
-\begin{figure}[t]\sis\fontsize{8}{9}\begin{alltt}
+\begin{figure}\sis\fontsize{8}{9}\begin{alltt}
 \textit{/* Framework for use of preprocessor specialization. */}
 /* (from readwrite.c) */
 
@@ -1741,52 +1742,6 @@ an immutable length field).
 
 \Charef{multiword} will discuss some of the other challenges involved in
 synthesizing atomic operations on subword and multi-word datatypes.
-
-\section{Performance}\label{sec:full-bench}
-All experiments performed on a 1GHz MPC7447 (G4) PowerPC processor,
-with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
-6.10 on a Linux 2.6.17 kernel.
-\note{WRITE ME.}
-   1. \# false conflicts
-   2. read/write check overhead
-   3. bottom-line
-   4. cache effects etc due to code splitting
-   5. array impact
-   6. transaction creation cost
-
-\begin{figure}\small % -s10
-\begin{tabular}{|l||c|c||c|c|}
-Benchmark & reads & false flags read & writes & false flags written
-\\ \hline
-jess &     $25,583,878$&$0$ ($0$\%)& $703,303$ & $0$ ($0$\%) \\
-db &       $11,078,177$&$0$ ($0$\%)& $912,965$ & $0$ ($0$\%) \\
-javac &        $10,315$&$0$ ($0$\%)&   $2,312$ & $0$ ($0$\%) \\
-mpegaudio&$239,928,276$&$2,056$ ($<0.001$\%)& $42,164,416$ & $9,132$ ($.02$\%) \\
-jack &      $9,882,846$&$0$ ($0$\%)&$4,595,774$& $0$ ($0$\%) \\ \hline
-\end{tabular}
-\caption[Number of false flags read/written in SPECjvm98 benchmarks.]
-{Number of false flags read/written in SPECjvm98 benchmarks.  The
-  applications were run with input size ``10''.}
-\label{fig:false-flag}
-\end{figure}
-
-\epsfigput[Non-transactional check overhead for SPECjvm98.]{phd-spec-nt}{%
-  Non-transactional check overhead for SPECjvm98.  Both benchmarks in
-  each pair were compiled with the transformations in
-  \charef{synctrans} (method cloning, desugaring) and all
-  synchronization was removed.  The version ``with checks'' had all
-  reads and writes transformed using the \texttt{readNT} and
-  \texttt{writeNT} protocols, while the base version performed direct
-  field access.}
-
-\epsfigput[Transaction overhead for SPECjvm98.]{phd-spec-full}{%
-  Transaction overhead for SPECjvm98.  The leftmost bar is compiled
-  with method cloning and desugaring, all transactions removed, and
-  direct reads and writes.  The next bar adds creation of commit
-  records at the start of each transaction and the CAS commit
-  operation at the end.  The next bar uses the transactional and
-  non-transactional read and write protocols for non-array objects.
-  The final bar is fully transactional.}
 
 \section{Limitations}
 The present implementation contains a number of non-fundamental
@@ -2146,6 +2101,136 @@ the \texttt{put()} or \texttt{take()} method), assuming that the
 transaction.  It is probably worth identifying this situation through
 compile-time analysis, as it simplifies the resumption transformation
 considerably.
+
+In our present implementation we implement correct \texttt{notify} semantics,
+but we do not allow \texttt{wait} to be a commit point.  Instead we
+take the special mutex and sleep on the condition variable without
+attempting to commit the transaction, and resume executing in the same
+transaction when we awake.  This is sufficient for the limited uses of
+\texttt{wait} in our chosen benchmarks.
+
+\section{Performance}\label{sec:full-bench}
+\epsfigput[Non-transactional check overhead for SPECjvm98.]{phd-spec-nt}{%
+  Non-transactional check overhead for SPECjvm98.  Both benchmarks in
+  each pair were compiled with the transformations in
+  \charef{synctrans} (method cloning, desugaring) and all
+  synchronization was removed.  The version ``with checks'' had all
+  reads and writes transformed using the \texttt{readNT} and
+  \texttt{writeNT} protocols, while the base version performed direct
+  field access.}
+
+\begin{figure}\small % -s10
+\begin{tabular}{|l||c|c||c|c|}
+Benchmark & reads & false flags read & writes & false flags written
+\\ \hline
+jess &     $25,583,878$&$0$ ($0$\%)& $703,303$ & $0$ ($0$\%) \\
+db &       $11,078,177$&$0$ ($0$\%)& $912,965$ & $0$ ($0$\%) \\
+javac &        $10,315$&$0$ ($0$\%)&   $2,312$ & $0$ ($0$\%) \\
+mpegaudio&$239,928,276$&$2,056$ ($<0.001$\%)& $42,164,416$ & $9,132$ ($.02$\%) \\
+jack &      $9,882,846$&$0$ ($0$\%)&$4,595,774$& $0$ ($0$\%) \\ \hline
+\end{tabular}
+\caption[Number of false flags read/written in SPECjvm98 benchmarks.]
+{Number of false flags read/written in SPECjvm98 benchmarks.  The
+  applications were run with input size ``10''.}
+\label{fig:false-flag}
+\end{figure}
+
+\epsfigput[Transaction overhead for SPECjvm98.]{phd-spec-full}{%
+  Transaction overhead for SPECjvm98.  The leftmost bar is compiled
+  with method cloning and desugaring, all transactions removed, and
+  direct reads and writes.  The next bar adds creation of commit
+  records at the start of each transaction and the CAS commit
+  operation at the end.  The next bar uses the transactional and
+  non-transactional read and write protocols for non-array objects.
+  The final bar is fully transactional.}
+
+In this section we will evaluate the performance of our implementation.
+All experiments were performed on a 1GHz MPC7447 (G4) PowerPC processor,
+with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
+6.10 on a Linux 2.6.17 kernel.  The limitations noted in the previous
+section counsel that the numbers we obtain ought to be considered
+guidelines to potential performance, not fundamental limits.
+Previous work has adequately demonstrated the scalability
+benefits of non-blocking synchronization; I will concentrate in this
+thesis on single-threaded efficiency measures.
+
+We will be examining the SPECjvm98 benchmark suite, a collection of
+practical Java programs including an expert system, a simple database,
+a Java compiler, an audio encoder, and a parser generator.  To clarify
+our measurements, our baseline for all of our comparisons will be a
+version of the benchmarks compiled with the same method cloning and
+desugaring (\charef{synctrans}) which is done for the transaction
+transformation.
+
+In \charef{counter-bench} we examined a microbenchmark to discover the
+lower limits on our non-transactional overhead.  These are the
+fundamental costs of strong atomicity: the penalty we must pay even if
+we are not using transactions at all.\footnote{Although, of course, in
+  practice one would turn off the transaction transformation
+  completely if static or dynamic analysis indicated a program is
+  single-threaded, for example if no \texttt{Thread} objects are every
+  created.}  \figref{phd-spec-nt} shows equivalent measurements on
+full Java applications.  We have removed all the synchronization in
+these benchmarks (safe because they are single-threaded) leaving only
+the costs of the \texttt{readNT} and \texttt{writeNT} protocols.
+
+Our earlier microbenchmark hinted that we might expect
+non-transactional overheads as low as 15\%, although 20\% was the best
+we could obtain with a C implementation.  In fact, we see a 19\%
+overhead on the \texttt{209\_db} benchmark, although the other
+benchmarks show that an overhead of around 60\% is more typical.
+Close inspection of the assembly code emitted by the C compiler for
+these benchmarks indicates that the compiler's limitations are
+the primary reason our performance falls short of mark set by the
+microbenchmark.   As discussed in \charef{synctrans}, it is hard to
+obtain maximum performance with a C implementation (such as we are
+using here) due to expressive limits, and the emitted assembly
+indicates that the compiler is not optimally acting on the hints we
+can give it.  In particular, we want as little extraneous code as
+possible on the fast path through the common case, but the compiler
+adds register spills and moves here which are necessary only in
+unusual cases.  Further, because the fundamental load-linked and
+store-conditional instructions are inside inline assembly blocks and
+thus opaque to the compiler, many opportunities for code motion and
+scheduling are being missed.
+
+The \texttt{222\_mpegaudio} benchmark shows another potential
+liability: it incurred a 149\% overhead for the non-transactional
+code.  The ``false flag'' counts shown in \figref{false-flag} hint at
+the problem: this benchmark is the only one to encounter false
+flags.  The hidden portion of the iceberg may partly consist of
+inefficiencies in our current implementation of byte-sized reads and
+writes, but since false flags cause creation of new version objects,
+most of the cost is probably a reflection of the ``large object
+problem'', which we will discuss further in a moment.
+
+\figref{phd-spec-full} demonstrates the performance of transactional
+code, broken down into the components of the final cost.  We see that
+creation of transaction objects at the start of every atomic region is
+a considerable fraction of the total cost.  If transactions are going
+to be frequent and small, this cost must be kept in line.
+
+Transactions which mutate arrays also account for a large amount of
+the total cost.  In the extreme case, the SPECjvm98 benchmark
+\texttt{201\_compress} allocates a 1MB array and writes compressed
+data into it.  The design of our transaction system necessitates an
+object copy for every unique object written to inside a transaction;
+if the objects are large (such as the arrays in
+\texttt{201\_compress} and \texttt{222\_mpegaudio}), then this cost
+becomes excessive.  The next chapter will discuss this problem at
+length and propose a solution based on functional array data
+structures.
+
+Although our transaction design ought to be able to perform direct
+read and writes on version objects in long-lived transactions, these
+performance numbers indicate that we are not achieving our goal.
+
+%   1. \# false conflicts
+%   2. read/write check overhead
+%   3. bottom-line
+%   4. cache effects etc due to code splitting
+%   5. array impact
+%   6. transaction creation cost
 
 \section{Additional optimizations}\label{sec:moreopt}
 
