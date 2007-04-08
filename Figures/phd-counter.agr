@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Thu Mar 29 00:59:28 2007"
+@timestamp def "Sun Apr  8 03:16:44 2007"
 @with string
 @    string on
 @    string loctype view
@@ -416,7 +416,7 @@
 @    s0 symbol fill color 1
 @    s0 symbol fill pattern 1
 @    s0 symbol linewidth 1.0
-@    s0 symbol linestyle 1
+@    s0 symbol linestyle 0
 @    s0 symbol char 65
 @    s0 symbol char font 0
 @    s0 symbol skip 0
@@ -460,11 +460,11 @@
 @    s1 type bar
 @    s1 symbol 0
 @    s1 symbol size 2.000000
-@    s1 symbol color 1
+@    s1 symbol color 2
 @    s1 symbol pattern 1
-@    s1 symbol fill color 1
+@    s1 symbol fill color 2
 @    s1 symbol fill pattern 5
-@    s1 symbol linewidth 1.0
+@    s1 symbol linewidth 0.5
 @    s1 symbol linestyle 1
 @    s1 symbol char 65
 @    s1 symbol char font 0
@@ -494,7 +494,7 @@
 @    s1 avalue offset 0.000000 , 0.000000
 @    s1 errorbar on
 @    s1 errorbar place both
-@    s1 errorbar color 1
+@    s1 errorbar color 2
 @    s1 errorbar pattern 1
 @    s1 errorbar size 1.000000
 @    s1 errorbar linewidth 1.0
@@ -509,11 +509,11 @@
 @    s2 type bar
 @    s2 symbol 0
 @    s2 symbol size 2.000000
-@    s2 symbol color 1
+@    s2 symbol color 3
 @    s2 symbol pattern 1
-@    s2 symbol fill color 1
+@    s2 symbol fill color 3
 @    s2 symbol fill pattern 13
-@    s2 symbol linewidth 1.0
+@    s2 symbol linewidth 0.5
 @    s2 symbol linestyle 1
 @    s2 symbol char 65
 @    s2 symbol char font 0
@@ -543,7 +543,7 @@
 @    s2 avalue offset 0.000000 , 0.000000
 @    s2 errorbar on
 @    s2 errorbar place both
-@    s2 errorbar color 1
+@    s2 errorbar color 3
 @    s2 errorbar pattern 1
 @    s2 errorbar size 1.000000
 @    s2 errorbar linewidth 1.0
