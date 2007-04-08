@@ -1752,15 +1752,7 @@ with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
    3. bottom-line
    4. cache effects etc due to code splitting
    5. array impact
-
-\epsfigput[Non-transactional check overhead for SPECjvm98.]{phd-spec-nt}{%
-  Non-transactional check overhead for SPECjvm98.  Both benchmarks in
-  each pair were compiled with the transformations in
-  \charef{synctrans} (method cloning, desugaring) and all
-  synchronization was removed.  The version ``with checks'' had all
-  reads and writes transformed using the \texttt{readNT} and
-  \texttt{writeNT} protocols, while the base version performed direct
-  field access.}
+   6. transaction creation cost
 
 \begin{figure}\small % -s10
 \begin{tabular}{|l||c|c||c|c|}
@@ -1772,10 +1764,29 @@ javac &        $10,315$&$0$ ($0$\%)&   $2,312$ & $0$ ($0$\%) \\
 mpegaudio&$239,928,276$&$2,056$ ($<0.001$\%)& $42,164,416$ & $9,132$ ($.02$\%) \\
 jack &      $9,882,846$&$0$ ($0$\%)&$4,595,774$& $0$ ($0$\%) \\ \hline
 \end{tabular}
-\caption{Number of false flags read/written in SPECjvm98 benchmarks.}
+\caption[Number of false flags read/written in SPECjvm98 benchmarks.]
+{Number of false flags read/written in SPECjvm98 benchmarks.  The
+  applications were run with input size ``10''.}
 \label{fig:false-flag}
 \end{figure}
 
+\epsfigput[Non-transactional check overhead for SPECjvm98.]{phd-spec-nt}{%
+  Non-transactional check overhead for SPECjvm98.  Both benchmarks in
+  each pair were compiled with the transformations in
+  \charef{synctrans} (method cloning, desugaring) and all
+  synchronization was removed.  The version ``with checks'' had all
+  reads and writes transformed using the \texttt{readNT} and
+  \texttt{writeNT} protocols, while the base version performed direct
+  field access.}
+
+\epsfigput[Transaction overhead for SPECjvm98.]{phd-spec-full}{%
+  Transaction overhead for SPECjvm98.  The leftmost bar is compiled
+  with method cloning and desugaring, all transactions removed, and
+  direct reads and writes.  The next bar adds creation of commit
+  records at the start of each transaction and the CAS commit
+  operation at the end.  The next bar uses the transactional and
+  non-transactional read and write protocols for non-array objects.
+  The final bar is fully transactional.}
 
 \section{Limitations}
 The present implementation contains a number of non-fundamental
