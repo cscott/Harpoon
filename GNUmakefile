@@ -144,6 +144,8 @@ phd-thesis.pdf: phd-thesis.dvi
 
 martin-happy: phd-thesis.pdf
 	rsync -avz phd-thesis.pdf k2.csail.mit.edu:public_html/Publications/
+	mkdir -p phd-bak
+	cp phd-thesis.pdf phd-bak/phd-thesis-`date "+%Y%m%d-%H%M"`.pdf
 
 # masters thesis figure dependencies
 export THESIS_FIGURES=\
