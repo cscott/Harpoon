@@ -10,7 +10,7 @@
  */
 JNIEXPORT jint JNICALL Java_harpoon_Runtime_Transactions_CommitRecord_state
     (JNIEnv *env, jclass cls, jobject commitrec) {
-    struct commitrec *cr = (struct commitrec *) FNI_UNWRAP_MASKED(commitrec);
+    //struct commitrec *cr = (struct commitrec *) FNI_UNWRAP_MASKED(commitrec);
     assert(0);
 }
 

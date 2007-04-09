@@ -34,18 +34,29 @@ enum commitstatus {
 };
 
 /* functions on commit records */
+extern struct claz _Class_harpoon_Runtime_Transactions_CommitRecord;
 static inline struct commitrec *AllocCR() {
+    struct commitrec *cr;
+    extern void *memset(void *, int c, size_t n);
+    // (also weak version in versions.c, even when DONT_REALLY_DO_TRANSACTIONS)
 #ifdef BDW_CONSERVATIVE_GC
   // must zero-fill.
 #ifdef GC_malloc_atomic
 # error "We want the real GC_malloc_atomic, not GC_malloc_atomic_trans"
 #endif
   // XXX: shouldn't be atomic if we ever have nested transactions.
-  return GC_malloc_atomic(sizeof(struct commitrec));
+    cr = GC_malloc_atomic(sizeof(struct commitrec));
 #else
-  extern void *calloc(size_t nmemb, size_t size);
-  return calloc(1, sizeof(struct commitrec));
+    extern void *malloc(size_t size);
+    cr = malloc(sizeof(struct commitrec));
 #endif
+    // initialize
+    memset(cr, 0, sizeof(*cr));
+#if 0 // makes for nice debugging, but unnecessary
+    cr->header.claz = &_Class_harpoon_Runtime_Transactions_CommitRecord;
+    cr->header.hashunion.hashcode = (((int)cr) & 0xFFF) | 1;
+#endif
+    return cr;
 }
 static inline enum commitstatus CommitCR(struct commitrec *cr) {
     enum commitstatus s;

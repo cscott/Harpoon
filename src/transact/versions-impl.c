@@ -27,8 +27,8 @@ extern struct vinfo *createVersion(struct oobj *obj, struct commitrec *cr,
 // ensure we're in readers list (per object)
 extern struct vinfo *EXACT_ensureReader_full(struct oobj *obj,
 					     struct commitrec *cr);
-extern struct vinfo *EXACT_ensureWriter(struct oobj *obj,
-					struct commitrec *currentTrans);
+extern struct vinfo *EXACT_ensureWriter_full(struct oobj *obj,
+					     struct commitrec *currentTrans);
 #endif
 
 #endif /* IN_VERSIONS_HEADER */
@@ -80,6 +80,16 @@ f. can always set a read flag:
    c) atomically update read flag.
 
 *************************************************************************/
+
+#if defined(NO_VALUETYPE) && !defined(IN_VERSIONS_HEADER)
+// ...the claz object that corresponds to CommitRecord...
+// make a weak bogus version of the CommitRecord claz, in case CommitRecord
+// is not used by the user code.
+// (ie the 'removetrans' compile option, which compiles everything as NT)
+// note that this should be included even if DONT_REALLY_DO_TRANSACTIONS
+struct claz _Class_harpoon_Runtime_Transactions_CommitRecord
+            __attribute__((weak));
+#endif
 
 #if (!defined(IN_VERSIONS_HEADER)) && (!defined(DONT_REALLY_DO_TRANSACTIONS))
 #if defined(NO_VALUETYPE)
@@ -210,13 +220,6 @@ enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
 #endif
 #if defined(NO_VALUETYPE)
 
-// the claz object that corresponds to CommitRecord
-extern struct claz _Class_harpoon_Runtime_Transactions_CommitRecord;
-// also make a weak version here, in case CommitRecord is not used.
-// (ie the 'removetrans' compile option, which compiles everything as NT)
-struct claz _Class_harpoon_Runtime_Transactions_CommitRecord
-            __attribute__((weak));
-
 // make a new aborted version, for use as a per-thread identifier.
 struct vinfo *newAbortedVersion() {
   struct vinfo *v = MALLOC( sizeof(struct vinfo) +
@@ -227,6 +230,9 @@ struct vinfo *newAbortedVersion() {
   // we should initialize cr->header.claz and .hashcode, but we're lazy.
   cr->header.claz = &_Class_harpoon_Runtime_Transactions_CommitRecord;
   cr->header.hashunion.hashcode = (((int)cr) & 0xFFF) | 1;
+#if 0 // memory should have been zeroed already
+  cr->parent = NULL;
+#endif
   v->transid = cr;
   return v; // that's it!
 }
@@ -446,7 +452,7 @@ struct vinfo *EXACT_ensureReader_full(struct oobj *obj,
 // this is the only place where new version objects are created/linked
 // other than in copyBackField, where nonce versions are added.
 struct vinfo *EXACT_ensureWriter_full(struct oobj *obj,
-					   struct commitrec *cr) {
+				      struct commitrec *cr) {
   // lookup (or create) appropriate version
   //       do ENSURE_HAS_TRANSACT_INFO here
   struct tlist * volatile *readers, *first_reader;
