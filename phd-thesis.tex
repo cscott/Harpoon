@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.44 2007-04-09 03:50:18 cananian Exp $
+% $Id: phd-thesis.tex,v 1.45 2007-04-09 04:13:48 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[letterpaper,draftnotice]{phd-thesis}
 \usepackage{verbatim}
@@ -14,7 +14,7 @@
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.44 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.45 $}{70}
 
 \notesfalse % comment out this line to turn on notes.
 
@@ -26,12 +26,20 @@
   % #2: backref list with distinct entries
   % #3: number of back references including duplicates
   % #4: backref list including duplicates
+  [on
   \ifnum#1=1 %
-    [page~%
+    p.~%
   \else%
-    [pages~%
+    pp.~%
   \fi%
   #2.]
+}
+% describe these back-references; also add the bibliography to the toc.
+\renewcommand{\bibsection}{\chapter{Bibliography}}
+\newcommand{\bibpreamble}{%
+Each citation is followed by a bracketed list of the pages
+on which it appears.\\
+DOI names can be resolved at \url{http://doi.org}.
 }
 
 % hyperlink doi references
@@ -41,7 +49,7 @@
 \newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
 \newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.44 $ $}
+\date{\subdate \\ $ $Revision: 1.45 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
