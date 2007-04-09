@@ -1,19 +1,20 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.43 2007-04-08 20:43:39 cananian Exp $
+% $Id: phd-thesis.tex,v 1.44 2007-04-09 03:50:18 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[letterpaper,draftnotice]{phd-thesis}
 \usepackage{verbatim}
 \usepackage{alltt}
 \usepackage{epigraph}
 \usepackage{makeidx}
-\usepackage[pdfusetitle,pagebackref,colorlinks]{hyperref} % ooh, hyperlinks!
+\usepackage[square,sort&compress,numbers]{natbib}
+\usepackage[pdfusetitle,pagebackref,colorlinks,bookmarks,bookmarksnumbered,pdfpagelayout=TwoColumnRight,breaklinks]{hyperref} % ooh, hyperlinks!
 %\hypersetup[linktocpage] % useful when previewing with dvi
-\makeindex
+%\makeindex % punting!
 
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.43 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.44 $}{70}
 
 \notesfalse % comment out this line to turn on notes.
 
@@ -25,24 +26,22 @@
   % #2: backref list with distinct entries
   % #3: number of back references including duplicates
   % #4: backref list including duplicates
-  \ifnum#3=1 %
-    [1~citation on
-  \else
-    [#3~citations on
-  \fi
   \ifnum#1=1 %
-    page
-  \else
-    pages
-  \fi
+    [page~%
+  \else%
+    [pages~%
+  \fi%
   #2.]
 }
+
+% hyperlink doi references
+\newcommand{\doi}[1]{doi: \href{http://hdl.handle.net/#1}{\urlstyle{rm}\nolinkurl{#1}}}
 
 \author{C. Scott Ananian}
 \newcommand{\subtitle}{Efficient Usable Transactions in Software and Hardware}
 \newcommand{\subdate}{April XX, 2007}
 \title{\subtitle}
-\date{\subdate \\ $ $Revision: 1.43 $ $}
+\date{\subdate \\ $ $Revision: 1.44 $ $}
 
 % definitions for this thesis
 \newcommand{\atomic}{\texttt{atomic}\xspace}
@@ -57,7 +56,7 @@
 \newcommand{\contribution}[1]{\begin{quote}\textbf{\textsf{#1}}\end{quote}}
 
 \begin{document}
-\bibliographystyle{abbrv}
+\bibliographystyle{plainnat}
 %\frontmatter
 \input{phd-titlepage}
 
@@ -111,8 +110,10 @@ zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
 %\chapter{Compiling to precise garbage-collectable C code}
 
 \backmatter
+\sis % single-space bibliography
 \bibliography{xaction}
-\printindex
+%\printindex % punt index; as Bradley says, it's sad.
+             % Plus Google does it better.
 \end{document}
 
 % LocalWords:  Ananian
