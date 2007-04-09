@@ -27,8 +27,8 @@ Instead, hardware manufacturers are providing tightly integrated
 processors on one chip.
 
 The widespread adoption of parallel systems creates problems: how can
-we ensure that operations occur in the appropriate order?
-Equivalently, how can we ensure certain operations occur
+we ensure that operations occur in an appropriate order?
+How can we ensure certain operations occur
 \textit{atomically}, so that other components of the parallel system
 only observe data structures in well-defined states?
 
@@ -145,13 +145,15 @@ logic---should suffice.  For STM implementations, some researchers
 argue additionally that transactions occur infrequently, and hence the
 software overhead would be dwarfed by the other processing done by an
 application.
-In contrast, this thesis will assume that transactions may be of
-arbitrary size and duration, and that details of the implementation
-should not be exposed to the programmer of the system.
+In contrast, this thesis will support transactions of
+arbitrary size and duration.  Just as most programmers need not pay any
+attention to the exact size and replacement policy of their
+system's cache, programmers ought not concern themselves with limits
+or implementation details of their transaction system.
 
 My goal is to
 make concurrent and fault-tolerant programming easier,
-without incurring excessive overhead.  This thesis discusses
+without incurring excessive overhead.  This thesis advocates
 unbounded transactions because neither programmers nor compilers can
 easily cope when an architecture imposes a hard limit on transaction
 size.  An implementation might be optimized for transactions below a
@@ -160,7 +162,7 @@ transactions.  The size of transactional hardware should be an
 implementation parameter, like cache size or memory size, which can
 vary without affecting the portability of binaries.
 
-In \secref{hybrid} I will show how a fast hardware implementation for
+In \charef{hybrid} I will show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
 transactions.
@@ -175,10 +177,16 @@ transaction systems, which protect transactions from interference from
 ``non-transactional'' code, and \defn{weakly atomic} transaction
 systems which do not afford this
  protection.\index{Weak atomicity}\index{Atomicity!weak}
-However, all current software transaction systems\footnote{For example,
-  \cite{HarrisFr03}.}\note{Include more.} are weakly atomic, despite
-the pitfalls thus opened for the unwary programmer, because of the
-perceived difficulty in efficiently implementing the required protection.
+However, nearly all current software transaction systems are weakly
+atomic,\footnote{ There are some systems which use type systems to
+disallow non-transactional access to objects with a ``shared'' type
+\cite{RudysWa02, HerlihyLuMoSc03, HarrisMaPeHe05}, but to my knowledge
+all systems which allow (or cannot prevent) access to shared objects
+from non-transactional code do so unsafely
+\cite{ShavitTo95,HarrisFr03,Herlihy05b,DiceShSh06,HerlihyLuMo06,FraserHa04}.}
+despite the pitfalls thus opened for the unwary programmer, because of
+the perceived difficulty in efficiently implementing the required
+protection.
 
 Strong atomicity is clearly preferable, and Blundell et al. point out
 that programs written for a weakly atomic model (to run on a current software
@@ -231,10 +239,14 @@ to identify or fix some existing concurrency bugs.
 In summary, this thesis makes the following contributions:
 
 \begin{itemize}
-\item We provide efficient implementations of
+\item I provide efficient implementations of
 \textit{strongly-atomic} transaction primitives to enable their general use.
 In particular, our technique imposes as little as 15\% overhead on
-non-transactional code in a software-only system.
+non-transactional code in a software-only system.  My experiments have
+not shown an overhead of more than 150\% in real applications,
+although proper compiler support should reduce that worst case
+considerably.%
+\note{Be sure to update this worst case when I get the final final \#s.}
 
 \item The transaction
 primitives presented in this thesis can exploit optimistic
@@ -251,19 +263,18 @@ for ``transactifying'' existing lock-based code
 to identify or fix existing concurrency bugs.
 }
 
-\item Unlike some previous work, this thesis will assume that
-transactions may be of arbitrary size and duration, and that details
-of the implementation should not be exposed to the programmer of the
-system.
+\item This thesis proposes systems which can support transactions of
+arbitrary size and duration, sparing the programmer from detailed
+knowledge of the system's implementation details.
 
-\item I will present both software and hardware implementations of the
+\item I present both software and hardware implementations of the
 transaction model.
 The software transaction system runs real programs written in
 Java; I will discuss the practical implementation details encountered.
 The hardware transaction systems require only small changes to the
 processor core and cache.
 
-\item I will show how a fast hardware implementation for
+\item I show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
 transactions.
@@ -404,22 +415,22 @@ deadlock.  Modularity must be broken in order to synthesize the
 appropriate composed function, if it is possible at all.
 
 In the Jade programming language, Martin Rinard presented a partial
-solution using ``implicitly synchronized'' objects~\cite[p14]{Rinard98}.
-Lock acquisition
-for each module is exposed in the module's API as an executable
-``access declaration.''  Operation composition is accomplished by
-creating an access declaration for the composed operation that
-invokes the appropriate access declarations for the components.  The
-runtime system orders the lock acquisitions to prevent deadlock.  This
-process suffices for conservative mutual exclusion, but it is limited in its
-ability to express alternative operation orders that preserve
-atomicity of the composed operation while overlapping its components.
+solution using ``implicitly synchronized''
+objects~\cite[p14]{Rinard98}.  Lock acquisition for each module is
+exposed in the module's API as an executable ``access declaration.''
+Operation composition is accomplished by creating an access
+declaration for the composed operation that invokes the appropriate
+access declarations for the components.  The runtime system orders the
+lock acquisitions to prevent deadlock.  This process suffices for
+conservative mutual exclusion, but pre-declaration makes it difficult
+to express optimistic locking protocols, where one or more locks are
+only rarely required.
 
 Transactions do not suffer from the composability problem
 \cite{HarrisMaPeHe05}.  Because transactions only specify the atomicity
 properties, not the locks required, the programmer's job is eased and
-implementations are free to order operations in any way that
-preserves atomicity.
+implementations are free to optimistically synchronize in any way that
+preserves atomicity.\footnote{\Secref{flow} presents a concrete example.}
 
 \subsection{Create a thread-safe double-ended queue}
 % publishable result: michael/scott, 1996 PPoPP
@@ -597,7 +608,7 @@ inside the \texttt{eat()} method, in the process undoing any data
 structure updates performed on this path, and then attempt the other
 possible production.
 
-\subsection{Network flow}\label{sec:flow}\index{Network flow}
+\subsection{Optimistic synchronization}\label{sec:flow}\index{Network flow}
 
 Let's now turn our attention now to parallel codes, the more
 conventional application of transaction systems.

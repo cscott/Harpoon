@@ -1,6 +1,4 @@
-Be consistent on "I" vs. "We".  (Page 17: "We provide efficient..."
-Page 18:  "I will present both...")   I prefer "I", unless the context
-demands a we.
+Be consistent on "I" vs. "We".
 
 On page 18: You talk about a system that will be described in Chapter
 3, but don't name it.  Name it!
