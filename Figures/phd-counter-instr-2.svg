@@ -69,8 +69,8 @@
    
    
   </defs><sodipodi:namedview
-   inkscape:window-height="588"
-   inkscape:window-width="790"
+   inkscape:window-height="709"
+   inkscape:window-width="944"
    inkscape:pageshadow="2"
    inkscape:pageopacity="0.0"
    guidetolerance="10.0"
@@ -80,11 +80,11 @@
    bordercolor="#666666"
    pagecolor="#ffffff"
    id="base"
-   inkscape:zoom="0.49673203"
+   inkscape:zoom="0.99346405"
    inkscape:cx="495"
    inkscape:cy="380.48684"
-   inkscape:window-x="537"
-   inkscape:window-y="332"
+   inkscape:window-x="383"
+   inkscape:window-y="211"
    inkscape:current-layer="svg2" />
  <g
    id="g10"
@@ -189,10 +189,12 @@
    transform="matrix(2.8e-2,0,0,-2.8e-2,225.6571,73.68)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L;fill:#993333;fill-opacity:1">Unmodified</text>
 
+
    <text
    id="text68"
    transform="matrix(2.8e-2,0,0,-2.8e-2,397.5143,73.68)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L;fill:#993333;fill-opacity:1">With Checks</text>
+
 
   </g><g
    id="g70"
@@ -293,6 +295,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">0</text>
+
 <text
    style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
    id="text132"
@@ -301,6 +304,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">20</text>
+
 <text
    style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
    id="text134"
@@ -309,6 +313,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">40</text>
+
 <text
    style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
    id="text136"
@@ -317,6 +322,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">60</text>
+
 <text
    style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
    id="text138"
@@ -325,6 +331,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">80</text>
+
 <text
    style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
    id="text140"
@@ -333,6 +340,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">100</text>
+
 <text
    style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
    id="text142"
@@ -341,6 +349,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">120</text>
+
 <text
    style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#993333;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L;fill-opacity:1"
    transform="matrix(0,-1,1,0,0,0)"
@@ -350,6 +359,7 @@
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">Percent of Dynamic Instructions</text>
+
 <g
    id="g146"
    style="fill:none;stroke:#000000;stroke-width:0.91799998;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none"
@@ -372,14 +382,15 @@
    d="M 501.84,489.6 L 501.84,331.4 L 677.64,331.4 L 677.64,489.6 L 501.84,489.6 z " />
   </g><g
    id="g154"
-   style="fill:none;stroke:#000000;stroke-width:0.91799998;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none"
-   transform="matrix(1,0,0,-1,0,612)"
+   style="fill:#ffffff;stroke:#000000;stroke-width:0.91799998;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;fill-opacity:1"
+   transform="matrix(1.0913786,0,0,-0.9997415,-45.836995,611.89387)"
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
    inkscape:export-xdpi="172.78999"
    inkscape:export-ydpi="172.78999">
    <path
    id="path156"
-   d="M 501.84,489.6 L 501.84,331.4 L 677.64,331.4 L 677.64,489.6 L 501.84,489.6 z " />
+   d="M 501.84,489.6 L 501.84,331.4 L 677.64,331.4 L 677.64,489.6 L 501.84,489.6 z "
+   style="fill:#ffffff;fill-opacity:1" />
   </g><g
    id="g158"
    style="fill:#000000;fill-rule:nonzero"
@@ -391,6 +402,7 @@
    id="text160"
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,471.48)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Logical Ops</text>
+
 
   </g><g
    id="g162"
@@ -406,6 +418,7 @@
    id="text166"
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,449.36)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Call/Return</text>
+
 
   </g><g
    id="g168"
@@ -429,6 +442,7 @@
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,431.24)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Branches</text>
 
+
   </g><g
    id="g176"
    style="fill:#00ff00;fill-rule:nonzero"
@@ -450,6 +464,7 @@
    id="text182"
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,413.12)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Imm. Load</text>
+
 
   </g><g
    id="g184"
@@ -473,6 +488,7 @@
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,396)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Compares</text>
 
+
   </g><g
    id="g192"
    style="fill:#ffff00;fill-rule:nonzero"
@@ -495,6 +511,7 @@
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,373.88)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Arithmetic</text>
 
+
   </g><g
    id="g200"
    style="fill:#bc8f8f;fill-rule:nonzero"
@@ -516,6 +533,7 @@
    id="text206"
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,355.76)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Load</text>
+
 
   </g><g
    id="g3589"
@@ -553,6 +571,7 @@
    transform="matrix(2.8e-2,0,0,-2.8e-2,587.52,337.64)"
    style="font-size:612px;font-style:normal;font-weight:normal;font-family:Times &quot;, &quot; Nimbus Roman No9 L">Stores</text>
 
+
   </g><g
    id="g3596"
    inkscape:export-filename="/home/cananian/Harpoon/Design/Figures/phd-counter-instr-2.png"
@@ -587,13 +606,15 @@
    id="layer2"
    inkscape:label="Hidden"
    style="display:none"><text
-     style="font-size:25.70400047px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
-     id="text222"
-     x="311.79999"
-     y="55.080002">Check Overhead</text>
+   style="font-size:25.70400047px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
+   id="text222"
+   x="311.79999"
+   y="55.080002">Check Overhead</text>
+
 <text
-     style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
-     id="text224"
-     x="294.79999"
-     y="75.559998">as part of total instruction mix</text>
+   style="font-size:17.13599968px;font-style:normal;font-weight:normal;fill:#000000;fill-rule:nonzero;font-family:Times &quot;, &quot; Nimbus Roman No9 L"
+   id="text224"
+   x="294.79999"
+   y="75.559998">as part of total instruction mix</text>
+
 </g></svg>
