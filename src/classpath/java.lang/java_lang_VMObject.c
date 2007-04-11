@@ -4,6 +4,9 @@
 #include "java_lang_VMObject.h"
 #ifdef WITH_TRANSACTIONS
 # include "transact/transjni.h"
+# ifndef TRANS_NT
+#  define TRANS_NT 0
+# endif
 #endif /* WITH_TRANSACTIONS */
 
 #include <assert.h>
@@ -74,11 +77,11 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notify
    * new transaction can't modify anything until this transaction commits.
    * XXX: possible problem because listener will wake up before this
    * transaction commits, causing a lost notification? */
-  if (currTrans(env)) FNI_MonitorEnter(env, obj);
+  if (TRANS_NT || currTrans(env)) FNI_MonitorEnter(env, obj);
 #endif
   fni_object_notify(env, obj);
 #ifdef WITH_TRANSACTIONS
-  if (currTrans(env)) FNI_MonitorExit(env, obj);
+  if (TRANS_NT || currTrans(env)) FNI_MonitorExit(env, obj);
 #endif
 }
 
@@ -91,11 +94,11 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll
   (JNIEnv *env, jclass vmcls, jobject obj) {
 #ifdef WITH_TRANSACTIONS /* HACK HACK HACK */
   /* same comments/problems as above */
-  if (currTrans(env)) FNI_MonitorEnter(env, obj);
+  if (TRANS_NT || currTrans(env)) FNI_MonitorEnter(env, obj);
 #endif
   fni_object_notifyAll(env, obj);
 #ifdef WITH_TRANSACTIONS
-  if (currTrans(env)) FNI_MonitorExit(env, obj);
+  if (TRANS_NT || currTrans(env)) FNI_MonitorExit(env, obj);
 #endif
 }
 
@@ -110,7 +113,16 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_wait
   /* should do a commit, then a wait (ought to be atomic w/respect to
    * notify) and then start a new (sub) transaction.  In other words,
    * really needs to return a CommitRec. */
-  assert(!currTrans(env));
+  /* but, as a hack that will almost always work (unless the transaction
+   * did some writes before the wait), let's just wait, waking after
+   * 2s to be sure we're not deadlocking). */
+    if (TRANS_NT || currTrans(env)) {
+	FNI_MonitorEnter(env, obj);
+        if (ms==0 && ns==0) ms = 2000;
+    }
 #endif
   fni_object_wait(env, obj, ms, ns);
+#ifdef WITH_TRANSACTIONS
+  if (TRANS_NT || currTrans(env)) FNI_MonitorExit(env, obj);
+#endif
 }
