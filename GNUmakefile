@@ -141,6 +141,10 @@ phd-thesis.dvi: \
 	Figures/$(f).pdf Figures/$(f).eps)
 phd-thesis.pdf: phd-thesis.dvi
 	pdflatex phd-thesis && pdflatex phd-thesis
+phd-defense: $(foreach f, snapshot-color-2 cachemods-color-2 \
+	$(foreach n, 1 2 3 4 5 6 7 8 9 10, phd-multi-obj-$(n)),
+	Figures/$(f).emf)
+.PHONY: phd-defense
 
 martin-happy: phd-thesis.pdf
 	rsync -avz phd-thesis.pdf k2.csail.mit.edu:public_html/Publications/
