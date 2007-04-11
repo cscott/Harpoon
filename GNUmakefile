@@ -136,7 +136,7 @@ phd-thesis.dvi: \
 	phd-counter phd-counter-instr phd-spec-nt phd-spec-full, \
 	Figures/$(f).eps Figures/$(f).pdf) \
 	$(foreach f, \
-	cachemods snapshot datastruct-entry tr-quad tr-multi-obj,\
+	cachemods snapshot datastruct-entry tr-quad2 tr-multi-obj,\
 	Figures/$(f).pstex Figures/$(f).pstex_t \
 	Figures/$(f).pdf Figures/$(f).eps)
 phd-thesis.pdf: phd-thesis.dvi

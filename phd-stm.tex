@@ -86,12 +86,12 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
   operations (loads and stores).  These are full input size runs.
 }\label{fig:perfnums}
 \end{figure}
-\figput{tr-quad}{Classification of SPECjvm98 benchmarks into quadrants
+\figput{tr-quad2}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
 \figref{perfnums} shows the raw sizes and frequency of transactions in
 the transactified SPECjvm98 suite.
-\figref{tr-quad} proposes a
+\figref{tr-quad2} proposes a
 taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
 transactions that they perform.  Applications in Quads II and IV
@@ -113,7 +113,8 @@ implementation of transactions, as long as the impact on
 non-transactional operations was minimal.
 
 Quad II applications perform a large number of small transactions.
-The expert system \texttt{202\_jess} falls in this category, as do
+The expert system \texttt{202\_jess} falls in this category, as does
+the parser generator \texttt{228\_jack} and
 small input sizes of \texttt{209\_db}, a database.  These benchmarks
 perform at least an order of magnitude more transactions than Quad
 I applications, and all of the transactions are small enough to 
