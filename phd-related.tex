@@ -204,7 +204,7 @@ bus operation.  This strategy limits scalability, whereas both the UTM and
 LTM proposals in \charef{htm}
 can employ scalable cache-consistency protocols to implement
 transactions.  TCC affirms the conclusion we draw from our own
-\figref{tr-sz-all}: most transactions are small, but some are very large.  TCC
+\figref{tr-sz-all-1}: most transactions are small, but some are very large.  TCC
 supports large transactions by locking the broadcast bus and stalling
 all other processors when any processor buffer overflows, whereas UTM
 and LTM allow overlapped execution of multiple large transactions with

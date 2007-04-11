@@ -132,7 +132,7 @@ phd-thesis.dvi: \
 	uvsimCounterRuntime \
 	nb-single-obj nb-multi-obj \
 	chuang funarr bloat \
-	tr-sz-all tr-w-all sean_lie_6b \
+	tr-sz-all-1 tr-w-all-1 sean_lie_6b \
 	phd-counter phd-counter-instr phd-spec-nt phd-spec-full, \
 	Figures/$(f).eps Figures/$(f).pdf) \
 	$(foreach f, \
