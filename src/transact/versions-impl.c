@@ -302,13 +302,19 @@ struct versionPair findVersion(struct oobj *obj,
 // GOOD!  this means we just get to a point where we can create the
 // new transaction with FLAG_VALUE everywhere.  (hey, this works
 // even if we allow parallel subtransactions)
-#if !defined(NO_VALUETYPE)
+#if (defined(ARRAY)||defined(NONPRIMITIVE)) && !defined(NO_VALUETYPE)
 // created but not linked.
 struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
 				     struct vinfo *template) {
   struct vinfo *v;
   // get size, not including header, rounded up to word boundary
-  uint32_t size = (3+FNI_ObjectSize(obj)-sizeof(struct oobj))&~3;
+  uint32_t size = (3+FNI_ObjectSize(obj)-
+#ifdef ARRAY
+		   sizeof(struct aarray)
+#else
+		   sizeof(struct oobj)
+#endif
+		   )&~3;
   uint32_t allocsize;
   // if that's larger than OBJ_CHUNK_SIZE, then allow for one
   // chunk of hashtable (INITIAL_CACHE_SIZE)
