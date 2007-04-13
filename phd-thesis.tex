@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.48 2007-04-13 21:40:37 cananian Exp $
+% $Id: phd-thesis.tex,v 1.49 2007-04-13 23:45:12 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[letterpaper,draftnotice]{phd-thesis}
 \usepackage{verbatim}
@@ -9,12 +9,13 @@
 \usepackage[square,sort&compress,numbers]{natbib}
 \usepackage[pdfusetitle,pagebackref,colorlinks,bookmarks,bookmarksnumbered,pdfpagelayout=TwoPageRight,breaklinks]{hyperref} % ooh, hyperlinks!
 %\hypersetup[linktocpage] % useful when previewing with dvi
+\usepackage{hypernat}
 %\makeindex % punting!
 
 % draft options:
 %\usepackage[light,first,bottomafter,timestamp]{draftcopy}
 %\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.48 $}{70}
+%\draftcopyName{DRAFT $Revision: 1.49 $}{70}
 
 \notesfalse % comment out this line to turn on notes.
 
@@ -120,7 +121,7 @@ zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
 
 \backmatter
 \sis % single-space bibliography
-\bibliography{xaction}
+\bibliography{xaction,flex}
 %\printindex % punt index; as Bradley says, it's sad.
              % Plus Google does it better.
 \end{document}

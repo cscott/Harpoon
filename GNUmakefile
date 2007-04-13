@@ -45,7 +45,7 @@ lctes03.dvi: harpoon.bib
 p072-ananian.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
-phd-thesis.dvi: xaction.bib
+phd-thesis.dvi: xaction.bib flex.bib
 
 # lots of dependencies for the pldi99 paper
 pldi99.dvi: pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
@@ -141,6 +141,11 @@ phd-thesis.dvi: \
 	Figures/$(f).pdf Figures/$(f).eps)
 phd-thesis.pdf: phd-thesis.dvi
 	pdflatex phd-thesis && pdflatex phd-thesis
+phd-thesis.munged: phd-thesis.tex phd-intro.tex phd-stm.tex phd-htm.tex \
+        phd-hybrid.tex phd-chall.tex phd-related.tex phd-concl.tex phd-ver.tex
+	munge $^ > $@
+phd-thesis-unmunge:
+	unmunge phd-thesis.munged
 phd-defense: $(foreach f, snapshot-color-2 cachemods-color-2 \
 	$(foreach n, 1 2 3 4 5 6 7 8 9 10, phd-multi-obj-$(n)), \
 	Figures/$(f).emf)

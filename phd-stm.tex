@@ -190,7 +190,7 @@ on a semi-log scale.
 
 These initial results indicate that real applications can be
 transactified with modest effort, yielding significant gains in
-concurrency.  In other work \cite{AnanianAsKuLeLi04} we have shown
+concurrency.  In other work \cite{AnanianAsKuLeLi05} we have shown
 that a factor of 4 increase in concurrency can be obtained
 by doing nothing more than converting locks to transactions.  Since
 the transactified applications may contain large transactions,
@@ -1201,11 +1201,11 @@ implementation details of our software transaction system.
 In theory, there is no difference between theory and practice.
 }{\textit{Jan~L.~A.~van~de~Snepscheut}}}
 
-In the previous chapter I described the design of an efficient
-software transaction system.  In this chapter I will discuss the
+In \charef{stm} I described the design of an efficient
+software transaction system.  In this chapter I discuss the
 challenges involved in translating this design to a practical Java
 compiler, the implementation techniques I used, and the performance
-achieved.  I will conclude by listing some limitations of the
+achieved.  I conclude by listing some limitations of the
 implementation, and describing how they may be overcome in a
 production-quality compiler.
 
@@ -1213,7 +1213,7 @@ production-quality compiler.
 In 1998 I began implementing the FLEX compiler infrastructure for
 Java \cite{Flex}, which I will use to evaluate the transaction system
 implementations in this thesis.  FLEX has been used in over 20
-published papers, on a wide range of topics.
+published papers, on a wide range of topics \cite{DallmeierLiWaZe06,AnanianAsKuLeLi06,Ananian05,AnanianAsKuLeLi05,SalcianuRi05,RinardSaBu04,AnanianRi03,BoyapatiSaBeRi03,FeizabadiBeRaLiRi03,GheorghioiuSaRi03,ZeeRi02,WitchelCaAs02,Gheorghioiu02,Francu02,WitchelLaAnAs01,Whaley01,Salcianu01,BeebeeRi01,Beebee01,Klock01,SalcianuRi01,VivienRi01,Ananian99,WhaleyRi99}.
 
 FLEX is a whole-program static compiler for Java, with a runtime
 system built around the GNU Classpath implementation of the Java

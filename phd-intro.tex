@@ -388,7 +388,7 @@ Furthermore, this whole-program protocol is not typically expressed
 directly in code: with common programming languages acquire/release
 ordering and guarantees must be expressed externally, often as
 comments in the source code that easily drift out of sync with the
-implementation.  For example, in \cite{AnanianAsKuLeLi04} we counted
+implementation.  For example, in \cite{AnanianAsKuLeLi05} we counted
 the comments in the Linux filesystem layer, and found that about 15\%
 of these relate to locking protocols; often describing global
 invariants of the program that are difficult to verify.  Many
@@ -681,7 +681,7 @@ void pushFlow(Vertex v1, Vertex v2, double flow) {
 This {\tt atomic} region can be implemented as a transaction, and
 with an appropriately non-blocking implementation, it
 will scale better and execute faster than the locking version
-\cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
+\cite{AnanianAsKuLeLi05,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
 From the programmer's point of view, I have also eliminated the
 convoluted locking protocol which must
 be observed rigorously everywhere the related fields are accessed if
