@@ -334,17 +334,17 @@ this variant is supported on many chips in the PowerPC processor family,
 although it has been deprecated in version 2.02 of the PowerPC
 architecture standard.\footnote{Version 2.02 of the PowerPC
 architecture standard says, ``If a reservation exists but the storage
-location specified by the \texttt{stwcx.} is not the same as the
+location specified by the \texttt{stwcx.}\ is not the same as the
 location specified by the \textit{Load And Reserve} instruction that
 established the reservation\ldots it is undefined whether [the operand
 is] stored into the word in storage addressed by [the specified
 effective address]'' and states that the condition code indicating a
 successful store is also undefined in this circumstance \cite[p 25]{PPCII202}.
 The user manual for the MPC7447/7457 (``G4'') PowerPC chips states,
-however, ``The \texttt{stwcx.} instruction does not check the
-reservation for a matching address.  The \texttt{stwcx.} instruction
+however, ``The \texttt{stwcx.}\ instruction does not check the
+reservation for a matching address.  The \texttt{stwcx.}\ instruction
 is only required to determine whether a reservation exists.  The
-\texttt{stwcx.} instruction performs a store word operation only if
+\texttt{stwcx.}\ instruction performs a store word operation only if
 the reservation exists,'' \cite[Section 3.3.3.6]{MPC7450UM} which is
 the behavior we require.  I believe version 1.10 of the PowerPC
 Architecture specification required this behavior, although I have not
