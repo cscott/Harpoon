@@ -587,7 +587,7 @@ which is not surprising, since the entire application is enclosed in
 one large transaction. The large transaction touches 13K cache lines
 with 9K lines overflowed.  So, even though only 0.5\% of the
 transactional memory operations miss in the cache, each one incurs a
-huge search cost. This unexpected slowdown indicated that a naive
+huge search cost. This unexpected slowdown indicated that a \naive
 unsorted array is insufficient as an overflow data
 structure. Therefore, LTM was redesigned to use a hash table to store
 overflows.

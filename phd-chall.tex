@@ -11,7 +11,7 @@ The thing is to remember that the future comes one day at a time.
 }{\textit{Dean Acheson}}}
 
 In this section we will review objections that have been raised to
-straightforward or na{\"\i}ve transaction implementations.
+straightforward or \naive transaction implementations.
 Some of these objections do not apply to our implementation;
 discussion of these may further illuminate our design choices.
 Others apply to certain situations, and should be kept in mind when
@@ -107,7 +107,7 @@ of my program?  What other behaviors might have changed?
 
 Blundell, Lewis, and Martin~\cite{BlundellLeMa05} describe the
 ``semantic gap'' opened between the locking and
-na{\"\i}vely-transactified code.  They point out that programs with
+\naive{}ly-transactified code.  They point out that programs with
 data races -- even ``benign'' ones -- may deadlock when converted to
 use transactions, since the data race will never occur.  One may even
 wrap every access with a location-specific lock to ``remove'' the race

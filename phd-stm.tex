@@ -108,7 +108,7 @@ transactions.  These applications include \texttt{201\_compress}, an
 implementation of gzip compression, and \texttt{222\_mpegaudio}, an
 MP3 decoder.  Both of these applications perform inherently serial
 tasks.  They perform quite well with locks, and would likely execute
-with acceptable performance even with a na{\"\i}ve software
+with acceptable performance even with a \naive software
 implementation of transactions, as long as the impact on
 non-transactional operations was minimal.
 
@@ -2406,7 +2406,7 @@ operations defined:
 We allow any of these operations to \emph{fail}.  Failed operations
 can be safely retried, as all operations are idempotent by definition.
 
-For the moment, consider the following na{\"\i}ve implementation:
+For the moment, consider the following \naive implementation:
 \begin{itemize}
 \item $\funcname{FA-Create}(n)$: Return an ordinary imperative array of size
   $n$.
@@ -2481,7 +2481,7 @@ At the end of the transaction, we use Compare-And-Swap to atomically
 set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
 we the transaction is aborted (we simply discard $u'$) and we retry.
 
-With our na{\"\i}ve ``small object'' functional arrays, this implementation is
+With our \naive ``small object'' functional arrays, this implementation is
 exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
 Herlihy's protocol is rightly criticized for an excessive amount of
 copying.  I will address this with a better implementation of

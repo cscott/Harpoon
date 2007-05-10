@@ -9,14 +9,16 @@
 How can we fully utilize the coming generation of parallel systems?
 The primitives available to today's programmers are largely
 inadequate.  \defn{Transactions} have been proposed as an
-alternative, but current implementations are either too limited or too
+alternative to the existing mechanisms for expressing concurrency and
+synchronization, but current implementations of transactions are
+either too limited or too 
 inefficient for general use.  This dissertation presents the design
 and implementation of efficient and powerful transaction systems to
 help address the challenges posed by current trends in computing
 hardware.
 
 \section{The rising challenge of multicore systems}
-Processor technology is finally bumping against its limits: even
+Processor technology is nearing its limits: even
 though transistor quantities continue to grow exponentially, we are
 now unable to effectively harness those vast quantities of transistors
 to create speedier single processors.  The smaller transistors yield
@@ -42,8 +44,9 @@ load-linked/{\bp}store-conditional instructions, they introduce a host of
 difficulties.  Protocols to avoid deadlock when locking multiple
 objects often involve acquiring the locks in a consistent linear
 order, making programming with locks error-prone and introducing
-significant overheads.  The granularity of each lock must also be
-explicitly chosen: locks that are too fine introduce unnecessary
+significant time and space overheads in the resulting code.  The
+granularity of each lock must also be
+explicitly chosen, as locks that are too fine introduce unnecessary
 space and time overhead, while locks that are too coarse sacrifice
 attainable parallelism (or may even deadlock).  Every access to a
 shared object must hold some lock protecting that object, regardless
@@ -64,7 +67,7 @@ effect and the transaction may be restarted, with some mechanism to
 ensure forward progress.
 
 By structuring concurrency at a high level with transactions, human
-programmers no longer have to manage the details required to ensure
+programmers no longer need to manage the details required to ensure
 atomicity.  Programmers have difficulty correctly understanding the global
 interactions between multiple threads, each holding its own set of
 locks, and a full mental model of the global concurrency structure
@@ -103,7 +106,7 @@ to make progress.
 Similarly, in real-time systems, the use of non-blocking
 synchronization can prevent \defnlti{Priority inversion}
 \index{Lock(s)!priority inversion} in the system
-\cite{Jones97}, although na\"{\i}ve implementations may result in
+\cite{Jones97}, although \naive implementations may result in
 starvation of low-priority tasks (see \secref{progress} for a discussion).
 
 \section{Unlimited transactions}
@@ -807,7 +810,7 @@ transaction to wait upon a condition variable, may introduce
 complications into a transaction system: transactions cannot
 immediately retry when they fail, but instead must wait for some
 condition to become true.  \Secref{object-wait} describes some
-solutions to this problem, ranging from na{\"\i}ve (keep retrying and
+solutions to this problem, ranging from \naive (keep retrying and
 aborting with exponential backoff until the condition is finally true)
 to clever; the clever solutions require additional transaction
 machinery.
