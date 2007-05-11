@@ -68,10 +68,9 @@ ensure forward progress.
 
 By structuring concurrency at a high level with transactions, human
 programmers no longer need to manage the details required to ensure
-atomicity.  Programmers have difficulty correctly understanding the global
-interactions between multiple threads, each holding its own set of
-locks, and a full mental model of the global concurrency structure
-must be kept in mind when writing synchronization code.
+atomicity.  A full mental model of the global concurrency structure
+must be kept in mind when writing synchronization code, which
+programmers have difficulty correctly maintaining.
 The simpler ``global atomicity'' guaranteed under the
 transactional model eliminates potential errors and simplifies the conceptual
 model of the system, making future modifications safer as
@@ -80,19 +79,20 @@ well.
 The transaction primitives presented in this thesis can exploit
 optimistic concurrency, provide fault tolerance, and prevent delays by
 using non-blocking synchronization.  Although transactions can be
-implemented using mutual exclusion (locks), our algorithms will
+implemented using mutual exclusion (locks), our algorithms
 utilize non-blocking synchronization \index{Non-blocking
 synchronization}\index{Synchronization!non-blocking}
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
-synchronization offers a number of advantages; from the system
-builder's perspective the foremost is fault tolerance.  A process that
+synchronization offers several advantages; from the system
+builder's perspective the principle advantage is fault tolerance.
+In a traditionally constructed system, a process that
 fails or pauses while holding a lock within a critical region can
-prevent all other processes from ever making progress.  In general it
-is not possible to restore locked data structures to a
+prevent all other processes from making progress.  It is in general
+not possible to restore locked data structures to a
 consistent state after such a failure.  Non-blocking synchronization
 offers a graceful solution, as non-progress or failure
-of any one thread will not affect the progress or consistency of other
+of any one thread does not affect the progress or consistency of other
 threads or the system.
 
 Implementing transactions using
@@ -103,7 +103,7 @@ switches, I/O, and other unpredictable events may result in delays to the
 entire system. Non-blocking
 synchronization allows undelayed processes or processors to continue
 to make progress.
-Similarly, in real-time systems, the use of non-blocking
+In real-time systems, the use of non-blocking
 synchronization can prevent \defnlti{Priority inversion}
 \index{Lock(s)!priority inversion} in the system
 \cite{Jones97}, although \naive implementations may result in
@@ -112,12 +112,12 @@ starvation of low-priority tasks (see \secref{progress} for a discussion).
 \section{Unlimited transactions}
 
 The
-\defn{Transactional memory} abstraction
+\defni{Transactional memory} abstraction
 \cite{Knight86,HerlihyMo93,StoneStHe93,RajwarGo02,ShavitTo95,HerlihyLuMoSc03},
 has
 been proposed as a general and flexible way to allow programs to read
-and modify disparate primary memory locations atomically as a single
-operation, much as a database transaction can atomically modify many
+and modify disparate primary memory locations as a single
+operation (atomically), much as a database transaction can atomically modify many
 records on disk.
 
 \index{HTM|see{Hardware Transactional Memory}}
@@ -148,7 +148,7 @@ logic---should suffice.  For STM implementations, some researchers
 argue additionally that transactions occur infrequently, and hence the
 software overhead would be dwarfed by the other processing done by an
 application.
-In contrast, this thesis will support transactions of
+In contrast, this thesis supports transactions of
 arbitrary size and duration.  Just as most programmers need not pay any
 attention to the exact size and replacement policy of their
 system's cache, programmers ought not concern themselves with limits
@@ -165,7 +165,7 @@ transactions.  The size of transactional hardware should be an
 implementation parameter, like cache size or memory size, which can
 vary without affecting the portability of binaries.
 
-In \charef{hybrid} I will show how a fast hardware implementation for
+In \charef{hybrid} I show how a fast hardware implementation for
 frequent short transactions can gracefully fail over to a software
 implementation designed to efficiently execute large long-lived
 transactions.
@@ -180,22 +180,26 @@ transaction systems, which protect transactions from interference from
 ``non-transactional'' code, and \defn{weakly atomic} transaction
 systems which do not afford this
  protection.\index{Weak atomicity}\index{Atomicity!weak}
-However, nearly all current software transaction systems are weakly
-atomic,\footnote{ There are some systems which use type systems to
+Nearly all current software transaction systems are weakly
+atomic,\footnote{There are some systems which use type systems to
 disallow non-transactional access to objects with a ``shared'' type
 \cite{RudysWa02, HerlihyLuMoSc03, HarrisMaPeHe05}, but to my knowledge
 all systems which allow (or cannot prevent) access to shared objects
 from non-transactional code do so unsafely
 \cite{ShavitTo95,HarrisFr03,Herlihy05b,DiceShSh06,HerlihyLuMo06,FraserHa04}.}
+however,
 despite the pitfalls thus opened for the unwary programmer, because of
 the perceived difficulty in efficiently implementing the required
 protection.
 
-Strong atomicity is clearly preferable, and Blundell et al. point out
+Strong atomicity is clearly preferable, as the programmer will
+inevitably overlook some non-transactional references to shared data;
+we wish to preserve correctness in this common case.
+Blundell \etal point out
 that programs written for a weakly atomic model (to run on a current software
 transaction system, say) may deadlock when run under strong atomicity
 (for example, on a hardware transaction system).  The transaction
-systems considered in this dissertation will preserve the
+systems considered in this dissertation preserve the
 correct atomic behavior of transactions even in the face of
 unsynchronized accesses from outside the transaction.
 
@@ -243,8 +247,8 @@ In summary, this thesis makes the following contributions:
 
 \begin{itemize}
 \item I provide efficient implementations of
-\textit{strongly-atomic} transaction primitives to enable their general use.
-In particular, our technique imposes as little as 15\% overhead on
+\textit{strongly atomic} transaction primitives to enable their general use.
+In particular, my technique imposes as little as 15\% overhead on
 non-transactional code in a software-only system.  My experiments have
 not shown an overhead of more than 150\% in real applications,
 although proper compiler support should reduce that worst case
@@ -273,7 +277,7 @@ knowledge of the system's implementation details.
 \item I present both software and hardware implementations of the
 transaction model.
 The software transaction system runs real programs written in
-Java; I will discuss the practical implementation details encountered.
+Java; I discuss the practical implementation details encountered.
 The hardware transaction systems require only small changes to the
 processor core and cache.
 
@@ -285,41 +289,41 @@ transactions.
 %%%%%%%%%%%%% END LIST OF CONTRIBUTIONS %%%%%%%%%%%%%%%%%%%
 %% ORGANIZATION OF THESIS:  XXX FIXME XXX
 
-In the next chapter I will provide some concurrent programming
+In \charef{examples} I provide some concurrent programming
 examples that illustrate the limitations of current lock-based
-methodologies.  I will also provide examples illustrating the uses
+methodologies.  I also provide examples illustrating the uses
 (some novel) of a transaction system, and conclude with a brief
 caution about the current limits of transactions.
 
-In \charef{stm}, I will present the design of an efficient software-only
+In \charef{stm} I present the design of an efficient software-only
 implementation of transactions.  Software-only transactions can be
 implemented on current hardware, and can easily accommodate many
 different transaction and nesting models.  Software transactions excel
 at certain long-lived transactions, where the overhead is
-small compared to the transaction execution time.  I will conclude by
+small compared to the transaction execution time.  I conclude by
 presenting a microbenchmark that demonstrates the performance limits of
 the design.
 
-In \charef{stmimpl}, I will discuss the practical implementation of
-\charef{stm}'s design.  I will present details of the compiler
+In \charef{stmimpl} I discuss the practical implementation of
+\charef{stm}'s design.  I present details of the compiler
 analyses and transformations performed, as well as solutions to
-problems that arise when implementing Java.  I will then present
+problems that arise when implementing Java.  I then present
 benchmark results using real applications, discuss the benefits and
 limitations revealed, and describe how the limits could be overcome.
 
-In \charef{largeobj} I will consider one such limitation in depth,
+In \charef{largeobj} I consider one such limitation in depth,
 describing how large arrays fit into an object-oriented transaction
-scheme.  We present a potential solution to the problem based on
+scheme.  I present a potential solution to the problem based on
 fast functional arrays.
 
-In \charef{htm}, I will present hardware that enables very fast
+In \charef{htm} I present hardware that enables very fast
 short transactions.  The transaction model is more limited, but short
 committing transactions may execute with no overhead.  The additional
 hardware is small and easily added to current processor and memory
 system designs.
 
 \punt{
-In \charef{htmplus}, I will present extensions to the hardware that allow
+In \charef{htmplus}, I present extensions to the hardware that allow
 more capable virtualized transactions.  These extensions address the
 major limitations of the scheme presented in \charef{htm}, but the
 required hardware is more complicated.  Further, we must still chose
@@ -337,14 +341,14 @@ allowing software fallback to support a robust and capable transaction
 mechanism.  Unlike the extended hardware scheme, the transaction model
 is still easy to change and update; the hardware primarily supports
 fast small transactions and conflict checking in the common case.
-In the following chapter, we discuss some ways compilers can further
+I discuss some ways compilers can further
 optimize software and hybrid transaction systems.  These opportunities
 may not be available to pure-hardware implementations.
 
-In \charef{chall}, I discuss remaining challenges to the use of
+In \charef{chall} I discuss remaining challenges to the use of
 ubiquitous transactions for synchronization, and present some ideas
-toward solutions. \Charef{related} discusses related work, and our
-final chapter summarizes our findings and draws conclusions.
+toward solutions. \Charef{related} discusses related work, and my
+final chapter summarizes my findings and draws conclusions.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

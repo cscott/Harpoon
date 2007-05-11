@@ -48,3 +48,5 @@ I think it would be advantageous to Make the code examples be
 single-spaced (especially in the appendix).  Also what are all those
 #ifdef's doing in the code.  Can you simplify the presentation by
 getting rid of unused cases?
+-------
+Abstract: "More bottom-line numbers" (CEL)
