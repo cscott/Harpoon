@@ -22,7 +22,7 @@ One of the difficulties of proposing a novel language feature is the
 lack of benchmarks for its evaluation.  Although there is no existing body of
 code that uses transactions, there is a substantial body of
 code that uses Java (locking) synchronization.  This thesis
-utilizes the FLEX compiler \cite{Flex} to
+utilizes the \flex compiler \cite{Flex} to
 substitute {\tt atomic} blocks (methods) for {\tt
   synchronized} blocks (methods) in order to evaluate the properties
 Java transactions are likely to have.  The semantics are not
@@ -30,10 +30,13 @@ precisely compatible: the existing \indexed{Java memory model} allows
 unsynchronized updates to shared fields to be observed within a
 synchronized block, while such updates are never visible to a
 transaction expressed with an
-{\tt atomic} block.\footnote{The proposed revision of the Java memory model
-\cite{MansonPu02} narrows the semantic gap, however I do not
-plan to treat {\tt volatile} fields in this work.  See
-\secref{semantic} for more details.}
+{\tt atomic} block.\footnote{The Java 5.0 revision of the Java memory model
+\cite{MansonPu01a,MansonPu01b,MansonPuAd05} narrows the semantic gap.
+The full memory model includes details---such as \texttt{volatile}
+fields---which I do not treat in this work.  \Secref{semantic}
+discusses the challenges involved in automatic transactification, and 
+\cite{GrossmanMaPu06} contains a fuller discussion of the interactions
+between transactions and high-level memory models.}
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
 correctness of the benchmarks I examine here.
@@ -42,25 +45,26 @@ correctness of the benchmarks I examine here.
 The initial results of this chapter
 explore the implications of exposing the transaction
 mechanism to user-level code through a compiler.
-I compiled the SPECjvm98 benchmark suite with the FLEX Java compiler,
+I compiled the SPECjvm98 benchmark suite with the \flex Java compiler,
 modified to turn synchronized blocks and methods into transactions,
 in order to investigate the properties of the transactions in such
 ``automatically converted'' code.
-FLEX performed method cloning to distinguish methods called from
-within a transactions, and implemented nested locks as a single
+\Flex performed method cloning to distinguish methods called from
+within transactions, and implemented nested locks as a single
 transaction around the outermost.\footnote{See
   \secref{synctrans} for more details on this transformation.} I
 instrumented this transformed program to produce a trace of
 memory references and transaction boundaries for analysis.
 I found both large
 transactions (involving millions of cache lines) and frequent
-transactions (up to 45 million of them).
+transactions (up to 45 million of them).  We will show that these
+properties are not unusual for typical applications.
 
 The SPECjvm98 benchmark suite represents a variety of typical Java
 applications that use the capabilities of the Java standard library.
-Although the SPECjvm98 benchmarks are largely single-threaded, since
-they use the thread-safe Java standard libraries they contain
-synchronized code which is transformed into transactions.  Because in
+Although the SPECjvm98 benchmarks are largely single-threaded, they contain
+synchronized code within the thread-safe Java standard libraries which
+is transformed into transactions.  Because in
 this evaluation I am looking at transaction properties only, the
 multithreaded \texttt{227\_mtrt} benchmark is identical to its
 serialized version, \texttt{205\_raytrace}.  For consistency, I present
@@ -83,14 +87,22 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
 \caption[Transactification of SPECjvm98 benchmark suite.]%
  {Transactification of SPECjvm98 benchmark suite: resulting
   transaction counts and sizes, compared to total number of memory
-  operations (loads and stores).  These are full input size runs.
+  operations (loads and stores).  These numbers represent full input
+ size runs.
 }\label{fig:perfnums}
 \end{figure}
 \figput{tr-quad2}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
 \figref{perfnums} shows the raw sizes and frequency of transactions in
-the transactified SPECjvm98 suite.
+the transactified SPECjvm98 suite.  Because the run times of the
+benchmarks are roughly comparable,\footnote{The canonical run times
+  used for computation of the Spec ratio range from 380 to 1175
+  seconds.  Sorted by run time: \texttt{202\_jess}, 380 s;
+  \texttt{213\_javac}, 425 s; \texttt{228\_jack}, 455 s;
+  \texttt{227\_mtrt}, 460 s; \texttt{209\_db}, 505 s;
+  \texttt{222\_mpegaudio}, 1100 s; \texttt{201\_compress}, 1175 s.}
+transaction count is also an indicator of transaction rate.
 \figref{tr-quad2} proposes a
 taxonomy for Java applications with transactions, grouping the SPECjvm98
 applications into quadrants based on the number and size of the
@@ -98,8 +110,8 @@ transactions that they perform.  Applications in Quads II and IV
 require an efficient transaction implementation, because they contain
 many transactional operations.
 Quads III and IV contain at least some very large transactions, which
-pose difficulties for currently-proposed hardware transactional memory
-schemes.  We will now
+pose difficulties for currently proposed hardware transactional memory
+schemes.  We now
 examine the benchmarks in each quadrant to determine why its program
 logic caused it to be classified in that quadrant.
 
@@ -124,7 +136,7 @@ one were to be implemented.
 
 Quad III includes \texttt{205\_raytrace}, a ray-tracing renderer.  A
 small number of transactions are performed, but they may grow very
-large.  Existing bounded hardware transactional schemes will not
+large.  Existing bounded hardware transactional schemes do not
 suffice.  The large
 transactions may account for a large percentage of total memory
 operations, which may make software schemes
@@ -137,7 +149,7 @@ of transactional memory operations with at least a few large transactions.
 The \texttt{213\_javac} Java compiler application and the large input
 size of the \texttt{209\_db} benchmark illustrate that some programs
 contain \emph{extremely} large transactions.  When \texttt{213\_javac}
-is run on its full input set, it contains 4 very large transactions,
+is run on its full input set, it contains 4 huge transactions,
 each of which contains over 118 million transactional memory
 operations.  Closer
 examination reveals that the method \texttt{Javac.compile()}, which
@@ -146,7 +158,7 @@ the programmer has explicitly requested that the entire compilation
 occur atomically.
 
 The large transactions in Quad III and IV may be, as in this case, a result of
-overly-coarse--grained locking, but our goal is to
+overly coarse-grained locking, but my goal is to
 relieve the programmer from the burden of specifying correct
 atomic regions of smaller granularity.  Performance may benefit from
 narrowing the atomic regions, but execution with coarse regions should
@@ -162,7 +174,7 @@ in a small index, and (to some degree) vice-versa.
 A similar situation arises in the {\tt java.lang.StringBuffer} code
 shown in \secref{stringbuffer}:  a call to the synchronized
 \texttt{sb.getChars()} method means that
-the size of the transaction for this method will grow like the length
+the size of the transaction for this method grows like the length
 of the parameter~\texttt{sb}.  In other words, the transaction can be
 made arbitrarily large by increasing the length of \texttt{sb}; or,
 equivalently, there is no bound on transaction size without a bound on
@@ -170,17 +182,20 @@ the size of the string~\texttt{sb}.
 
 \epsfigput[Distribution of transaction size in the SPECjvm98 benchmark
   suite.]{tr-sz-all-1}{Distribution of transaction size in the
-  SPECjvm98 benchmark suite.  Note that the x-axis uses a logarithmic
+  SPECjvm98 benchmark suite.  The x-axis uses a logarithmic
   scale.}
 
-Any scheme that allows the programmer free reign over specifying
-desired transaction and/or atomicity properties will inevitably result
-in some applications in each of these categories.  Existing
+Any transaction system that allows the programmer free reign over specifying
+desired transaction and/or atomicity properties will result
+in some applications in each of these categories.  Large transactions,
+for example, are a side-effect of modularity: when a cross-module call
+occurs inside a transaction, the abstraction boundary prevents precise
+knowledge of the memory accesses implicitly included.  Existing
 hardware transactional memory schemes only efficiently handle
 relatively short-lived and small transactions (Quad I or II),
-although for these they are very efficient.  Object-based
+although they are efficient for these transactions.  Object-based
 transaction systems can asymptotically approach that efficiency for
-very long-lived transactions;  the existence of such is shown in
+very long-lived transactions;  the existence of which is shown in
 \figref{tr-sz-all-1}, which plots
 the distribution of transaction sizes in SPECjvm98
 on a semi-log scale.
@@ -193,19 +208,20 @@ transactified with modest effort, yielding significant gains in
 concurrency.  In other work \cite{AnanianAsKuLeLi05} we have shown
 that a factor of 4 increase in concurrency can be obtained
 by doing nothing more than converting locks to transactions.  Since
-the transactified applications may contain large transactions,
+the transactified applications may contain large transactions, prior
 proposed hardware support for transactions is inadequate.
 
 
 \section{Designing efficient transactions}\label{sec:efficient}
 
-In this section I briefly describe some desired properties of the
-software transaction system of this thesis.  Where possible I will
+In this section I briefly describe the desired properties of the
+\apex software transaction system: strong atomicity,
+object-orientation, low bloat, and fast reads.  Where possible I
 justify these desiderata using quantitative data obtained from
 analyses of the SpecJVM98 benchmarks, which I implemented using the
-Flex Java compiler framework.
+\flex Java compiler framework.
 
-\subsection{Weak vs. strong atomicity}
+\subsection{Weak vs.\ strong atomicity}
 As previously discussed in \secref{strongatom},
 \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
 transaction systems protect transactions from interference from
@@ -214,31 +230,32 @@ systems do not afford this protection.
 \index{Weak atomicity}\index{Atomicity!weak}
 Consider unsynchronized code directly altering the length field of
 {\tt StringBuffer} (\secref{stringbuffer}).  In a weakly atomic system
-this will cause the {\tt atomic} {\tt StringBuffer.append()} method to
+this unsynchronized code causes the {\tt atomic} {\tt
+  StringBuffer.append()} method to
 appear non-atomic.  Current software transaction systems implement
-only weak atomicity, because of the assumed expense of implementing
-strong atomicity.  The system we will design in this chapter will
-achieve strong atomicity without adding excessive overhead, so that
+only weak atomicity because of the assumed expense of implementing
+strong atomicity.  The \apex system
+achieves strong atomicity without adding excessive overhead, so that
 correct operation is assured even despite concurrent non-transactional
 operations on locations involved in a transaction.
 
 \subsection{Object-oriented vs. flat TM}
-This transaction system, unlike most current proposals
+The \apex transaction system, unlike most current proposals
 \cite{HarrisFr03,HerlihyMo93}\note{Include more} (including the
-hardware system presented in \charef{htm}), uses an
+UTM and LTM hardware systems presented in \charef{htm}), uses an
 ``object-oriented'' design.  Much contemporary research is focused on
 implementing a flat (transactional) memory abstraction in software,
-primarily because this solves some of the issues I will present in
-\charef{largeobj}.  However, the object-oriented approach offers
+primarily because flat systems side-step the large object issues
+presented in \charef{largeobj}.  The object-oriented approach, however, offers
 several benefits:
 \begin{description}
 \item[Efficient execution of long-running transactions.]  As discussed
   briefly in Sections \ref{sec:efficiency} and \ref{sec:tm}, flat
   word-oriented transaction schemes require overhead proportional to
   the number of words read/written in the transaction, even if these
-  locations had been accessed before inside the transaction. Object-oriented
+  locations have been accessed before inside the transaction. Object-oriented
   schemes impose a cost proportional to the number of \emph{objects}
-  touched by the transaction --- but once the cost of ``opening'' those
+  touched by the transaction---but once the cost of ``opening'' those
   objects is paid, the transaction can continue to work indefinitely
   upon those objects without paying any further penalty.
   Object-oriented schemes are thus seen to be more efficient for
@@ -251,17 +268,17 @@ several benefits:
 %\item[Freedom from implementation restrictions.]
 % thinking of multi-version consistency here.
 \end{description}
-I believe that the problems with previous object-oriented schemes can
+I contend that the problems with previous object-oriented schemes can
 be solved while preserving the inherent benefits of an object-oriented
 approach, and the current thesis presents one such solution.
 
-\epsfigput{bloat}{Application slowdown with increasing object bloat
+\epsbigfigput{bloat-color}{Application slowdown with increasing object bloat
 for the SPECjvm98 benchmark applications.}
 \subsection{Tolerable limits for object expansion}
-I will need to add some additional information to each object to
+I need to add some additional information to each object to
 track transaction state.  I measured the slowdown caused by various
 amounts of object ``bloat'' to determine reasonable bounds on the
-size of this extra information.  \figref{bloat} presents these
+size of this extra information.  \figref{bloat-color} presents these
 results for the SPECjvm98 applications; I determined that two words
 (eight bytes) of additional storage per object would not impact
 performance unreasonably.  This amount of bloat causes a geometric
@@ -311,26 +328,30 @@ distributed shared memory implementation of Scales and Gharachorloo
 \cite{ScalesGh97}.  I pick a special ``flag'' value, and
 ``cross-out'' locations currently involved in a transaction by
 overwriting them with the flag value.  Reading or attempting to
-overwrite a flagged value will indicate to non-transactional code
+overwrite a flagged value indicates to non-transactional code
 that exceptional processing is necessary; all other non-transactional
 operations proceed as usual.
 
-Note that this technique explicitly allows safe access to fields
-involved in a transaction from non-transactional code, which is
-another design goal of the system.  This eases ``transactification''
-of legacy code (but see \secref{semantic}!).
+This technique explicitly allows safe access to fields
+involved in a transaction from non-transactional code, which provides
+strong atomicity, a
+design goal of the system.
+\punt{Strong atomicity eases ``transactification''
+of legacy code (but see \secref{semantic}!).}
 
 \section{Specifying the basic mechanism}
-I now present an algorithm that has these desired properties.
-My algorithms will be completely non-blocking, which allows good
-scaling and proper fault-tolerant behavior: one faulty or slow
+I now present algorithms that have these desired properties.
+The \apex algorithms provide strongly-atomic object-oriented
+transactions with low bloat and fast reads.  Further, the \apex
+algorithms are completely non-blocking, which allows good
+scaling and proper fault-tolerant behavior.  Specifically, one faulty or slow
 processor cannot hold up the remaining good processors.
 
-I will implement the synchronization required by my algorithm using
+I implement the synchronization required by the \apex algorithms using
 load-linked/store-conditional instructions.  I require a particular
 variant of these instructions that allows the location of the
-load-linked to be different from the target of the store-conditional:
-this variant is supported on many chips in the PowerPC processor family,
+load-linked to be different from the target of the store-conditional.
+This variant is supported on many chips in the PowerPC processor family,
 although it has been deprecated in version 2.02 of the PowerPC
 architecture standard.\footnote{Version 2.02 of the PowerPC
 architecture standard says, ``If a reservation exists but the storage
@@ -348,7 +369,7 @@ is only required to determine whether a reservation exists.  The
 the reservation exists,'' \cite[Section 3.3.3.6]{MPC7450UM} which is
 the behavior we require.  I believe version 1.10 of the PowerPC
 Architecture specification required this behavior, although I have not
-been able to confirm this.  The Cell architecture specification
+been able to locate a copy to confirm this requirement.  The Cell architecture specification
 follows version 2.02 of the PowerPC specification, although it adds
 cache-line reservation operations that can also be used to
 implement our algorithm for reasonably-sized objects aligned within
@@ -358,7 +379,7 @@ capability is essential to allow us to keep a finger on one location
 while modifying another: a poor man's ``Double Compare And Swap''
 instruction.
 
-I will describe my algorithms in the Promela modeling language
+I describe the \apex algorithms in the Promela modeling language
 \cite{Holzmann03},
 which I used to allow mechanical model checking of the race-safety
 and correctness of the design.  Portions of the model have been
@@ -368,7 +389,7 @@ syntax and semantics.
 
 %\subsecput{interface}{Interface}
 \subsection{Object structures}%datastruct
-\figput[Implementing software transactions with version lists.]{tr-multi-obj}%
+\figput[Implementing software transactions with version lists.]{tr-multi-obj-big}%
  {Implementing software transactions with version
   lists.  A transaction object consists of a single field {\it
     status}, which indicates if it has COMMITTED, ABORTED, or is WAITING.
@@ -377,15 +398,15 @@ syntax and semantics.
   {\it versions} a linked list of version objects.  If an object field
   is \FLAG, then the value for the field is obtained from the
   appropriate linked version object.}
-\figref{tr-multi-obj} illustrates the basic data structures of my
+\figref{tr-multi-obj-big} illustrates the basic data structures of the \apex
 software transaction implementation.  Objects are extended with two
 additional fields.  The first field, {\tt versions}, points to a
-singly-linked list of object versions.  Each one contains field values
+singly linked list of object versions.  Each one contains field values
 corresponding to a committed, aborted, or in-progress transaction,
 identified by its {\tt owner} field.  There is a single unique
 transaction object for each transaction.
 
-The other added field, {\tt readers}, points to a singly-linked list
+The other added field, {\tt readers}, points to a singly linked list
 of transactions that have read from this object.  Committed and
 aborted transactions are pruned from this list.  The {\tt readers}
 field is used to ensure that a transaction does not operate with
@@ -395,15 +416,15 @@ non-transactionally.
 There is a special flag value, here denoted by \FLAG.  It should be
 an uncommon value, i.e. not a small positive or negative integer
 constant, nor zero.  In my implementation, I have chosen the byte
-\texttt{0xCA} to be our flag value, repeated as necessary to fill out
+\texttt{0xCA} to be the flag value, repeated as necessary to fill out
 the width of the appropriate type.
 The semantic value of an object field is the value in the original
 object structure, \emph{unless that value is \FLAG}, in which
 case the field's value is the value of the field in the first
 committed transaction in the object's version list.  A ``false flag''
 occurs when the application wishes to ``really'' store the value \FLAG
-in a field; this is handled by creating a fully-committed version
-attached to the object and storing \FLAG in that version as well as in
+in a field. To do so we create a fully-committed version
+attached to the object and store \FLAG in that version, as well as in
 the object field.
 
 \begin{figure}
@@ -432,8 +453,8 @@ typedef TransID {
 };
 \end{verbatim}
 \caption[Declaring objects with version lists in Promela.]
- {Declaring objects with version lists in Promela.  Note that
-  we are using the \texttt{byte} datatype to encode pointers.
+ {Declaring objects with version lists in Promela.
+  The \texttt{byte} datatype encodes pointers.
   The \texttt{fieldLock} field assists in the implementation of the
   load-linked/store-conditional pair of operations in Promela.}
 \label{fig:promdecl}
@@ -449,35 +470,35 @@ transaction identifier object.  Transaction commit and abort are simply
 compare-and-swap operations that atomically set the transaction object's {\tt
   status} field appropriately if and only if it was previously in the
 WAITING state.
-The simplicity of commit and abort are appealing: my algorithm
+The simplicity of commit and abort are appealing: the \apex algorithm
 requires no complicated processing, delay, roll-back or validate
 procedure to commit or abort a transaction.
 
-Note that we could support non-transactional read and write (that is,
+I could support non-transactional read and write (that is,
 reads and writes that take place outside of any transaction) by
 creating a new very short transaction that encloses only the single
-read or write.  Non-transactional accesses to objects can be very
-frequent, however, so I provide more efficient implementations with
+read or write.  Since non-transactional accesses to objects can be
+frequent, I provide more efficient implementations with
 the same semantics.
 
-I will present the operations one-by-one.
+I now present the operations one-by-one.
 
 \subsubsection{Non-transactional read}
 
-The {\tt readNT} function does a non-transactional read of field $f$ from
+The {\tt readNT} function performs a non-transactional read of field $f$ from
 object $o$, putting the result in $v$.  
 In the common case, the only overhead is to check that
-the read value is not \FLAG.  However, if the value read \emph{is}
-\FLAG, we copy back the field value 
+the read value is not \FLAG.  If the value read \emph{is}
+\FLAG, however, we copy back the field value 
 from the most-recently committed transaction (aborting all other
-transactions) and try again.  The copy-back procedure will notify
-us if this is a ``false flag'', in which case the value of this
+transactions) and try again.  The copy-back procedure notifies
+the caller if this is a ``false flag'', in which case the value of this
 field really is \FLAG.  We pass the {\tt kill\_writers} constant
 to the copy-back procedure to
 indicate that only transactional writers need be aborted, not
 transactional readers.
 All possible races are confined to the copy-back procedure, which I
-will describe on page \pageref{sec:copyback}.
+describe on page \pageref{sec:copyback}.
 
 \begin{figure}
 \begin{inlinecode}
@@ -530,12 +551,12 @@ The top of \figref{promrwnt} specifies the non-transactional read operation in
 Promela.
 
 \subsubsection{Non-transactional write}
-The {\tt writeNT} function does a non-transactional write of new value $nval$
-to field $f$ of object $o$.  For correctness, we need to ensure that
-the reader list is empty before we do the write.  I implement this
+The {\tt writeNT} function performs a non-transactional write of new value $nval$
+to field $f$ of object $o$.  For correctness, we must ensure that
+the reader list is empty before we do the write.  I implement this check
 with a load-linked/store-conditional pair, which is modelled in
-Promela slightly differently, ensuring that our write only succeeds
-so long as the reader list remains empty.\footnote{Note that a
+Promela slightly differently, ensuring that the write only succeeds
+so long as the reader list remains empty.\footnote{A
   standard CAS would not suffice, as the load-linked targets a
   different location than the store-conditional.}
 If it is not empty, we
@@ -549,7 +570,7 @@ little bit trickier.  This case does not occur often, and so the
 simplest correct implementation is to treat this non-transactional
 write as a short transactional write, creating a new transaction for
 this one write, and attempting to commit it immediately after the
-write.  This is slow, but adequate for this uncommon case.
+write.  This implementation is slow, but adequate for this uncommon case.
 
 The bottom of \figref{promrwnt} specifies the non-transactional
 write operation in Promela.
@@ -634,16 +655,16 @@ inline copyBackField(o, f, mode, st) {
 new version owned by a pre-aborted transaction which serves as a
 reservation on the head of the version list.  We then write to the
 object field with a load-linked/store-conditional pair if and only if
-our version is still at the head of the versions list.\footnote{Note
-  again that a CAS does not suffice.}  This addresses
+our version is still at the head of the versions list.\footnote{Again,
+  a CAS does not suffice.}  This addresses
 the major race possible in this routine.
 
 \subsubsection{Transactional Read}\label{sec:readT}
 A transactional read is split into two parts.  Before the read, we
 must ensure that our transaction is on the reader list for the
-object.  This is straight-forward to do in a non-blocking manner as
-long as we always add ourselves to the head of the list.  We must also
-walk the versions list, and abort any uncommitted transaction other
+object.  This check is straight-forward to do in a non-blocking manner as
+long as we always add readers to the head of the list.  We must also
+walk the versions list to abort any uncommitted transaction other
 than our own.  These steps can be combined and hoisted so that they
 are done once before the first read from an object and not repeated.
 
@@ -1209,34 +1230,34 @@ achieved.  I conclude by listing some limitations of the
 implementation, and describing how they may be overcome in a
 production-quality compiler.
 
-\section{The FLEX compiler infrastructure}
-In 1998 I began implementing the FLEX compiler infrastructure for
+\section{The \flex compiler infrastructure}
+In 1998 I began implementing the \flex compiler infrastructure for
 Java \cite{Flex}, which I will use to evaluate the transaction system
-implementations in this thesis.  FLEX has been used in over 20
+implementations in this thesis.  \Flex has been used in over 20
 published papers, on a wide range of topics \cite{DallmeierLiWaZe06,AnanianAsKuLeLi06,Ananian05,AnanianAsKuLeLi05,SalcianuRi05,RinardSaBu04,AnanianRi03,BoyapatiSaBeRi03,FeizabadiBeRaLiRi03,GheorghioiuSaRi03,ZeeRi02,WitchelCaAs02,Gheorghioiu02,Francu02,WitchelLaAnAs01,Whaley01,Salcianu01,BeebeeRi01,Beebee01,Klock01,SalcianuRi01,VivienRi01,Ananian99,WhaleyRi99}.
 
-FLEX is a whole-program static compiler for Java, with a runtime
+\Flex is a whole-program static compiler for Java, with a runtime
 system built around the GNU Classpath implementation of the Java
-standard libraries \cite{Classpath}.  FLEX takes as input Java
+standard libraries \cite{Classpath}.  \Flex takes as input Java
 bytecode, generated by any Java 1.0-1.6 compiler from user code and
 the GNU Classpath 0.08 library implementation, and emits either
 assembly code for MIPS, Sparc, or StrongARM, or else 
 ``portable assembly language'' written in \texttt{gcc} 3.4's variant
-of C.  The emitted code is compiled and linked against FLEX's runtime
+of C.  The emitted code is compiled and linked against the \flex runtime
 system and the GNU Classpath 0.08 native libraries to produce a
-stand-alone binary for the target system.  The FLEX compiler and
-analysis code is written in Java, while the FLEX runtime system is
+stand-alone binary for the target system.  The \flex compiler and
+analysis code is written in Java, while the \flex runtime system is
 written in C.
 
 \subsection*{Using C as a target}\label{sec:precisec}
 The experiments in this thesis were conducted on either the x86 or
-PowerPC architectures, for which FLEX does not have a native assembly
+PowerPC architectures, for which \flex does not have a native assembly
 backend.  The ``Precise C'' backend was thus used, so named because,
 aside from emitting C code, it's original purpose was to investigate
 the possibility of precise garbage collection whist emitting
 high-level code.  To that end, the backend contains code to maintain a
 separate stack for values of non-primitive types, and to push and pop
-all live variables to this stack at gc points.  Since FLEX's low-level
+all live variables to this stack at gc points.  Since \flex's low-level
 IR may create derived pointers that point inside objects, for example
 during loop optimizations, the Precise C backend will also reconstruct
 the derived pointers after the gc point, in case the objects involved
@@ -1253,7 +1274,7 @@ Java exceptions presented another difficulty when implementing a C
 backend.  The mechanisms used in our assembly backends (separate
 return addresses for ``returning'' an exception, either derived by
 rule from the normal return address or stored in a sorted table keyed
-by the normal return address) can not be implemented in C.  FLEX supports
+by the normal return address) can not be implemented in C.  \Flex supports
 two alternate translations: the first uses \texttt{setjmp} and
 \texttt{longjmp} to branch directly from the site where the exception
 is thrown to an appropriate handler, and the second returns a pair
@@ -1362,7 +1383,7 @@ The actual read is done via the \texttt{readT}
 algorithm described in \figref{promrwt} and \secref{readT}; it may
 update the cached version object for the given object (for example, if
 the object has been written within this transaction since the point at
-which \texttt{ensureReader} was invoked).\footnote{The FLEX
+which \texttt{ensureReader} was invoked).\footnote{The \flex
   infrastructure cannot create pointers to temporaries, or
   alternately return multiple values from function calls, so the
   version object in my current implementation cannot be updated by
@@ -1410,7 +1431,7 @@ which we have not implemented.
 
 Our first analysis classifies all fields in the program according to
 their use in transactional and non-transactional regions.  This
-analysis is encapsulated in a FLEX class named
+analysis is encapsulated in a \flex class named
 \texttt{GlobalFieldOracle}.  Fields that can never be written within
 a transaction do not need the special \texttt{readNT} mechanism from
 non-transactional code; their values can be loaded directly without
@@ -1463,13 +1484,13 @@ reads and writes the elements of the array.  These new implementations
 can then be transformed by the transaction pass like any other piece
 of code that reads and writes fields.
 
-The FLEX infrastructure also contains a mechanism for fast
+The \flex infrastructure also contains a mechanism for fast
 initialization of arrays; this mechanism is desugared into
 individual array set operations so that it, too, can be uniformly
 transformed by the transaction pass.
 
 \section{Runtime system implementation}
-The FLEX runtime system was extended to support transactions.  The
+The \flex runtime system was extended to support transactions.  The
 runtime uses the standard Java Native Interface (JNI) \cite{JNI} for
 native methods (written in C) called from Java.  Certain parts of the
 transaction system were written as native methods invoked via JNI, but
@@ -1572,7 +1593,7 @@ transaction are handled properly.  This allows the use of ``safe''
 native methods (those without external side effects) inside a
 transaction. 
 
-We are able to do this because FLEX uses the Java Native Inteface
+We are able to do this because \flex uses the Java Native Inteface
 \cite{JNI} to interact with native code.  The JNI, a portion of which
 is shown in \figref{jni}, abstracts field
 accesses and Java method invocations from native code, so we can
@@ -1597,7 +1618,7 @@ usually due to irreversible external I/O (\secref{io} discusses I/O
 interactions in more detail).  A compiler configuration file
 identifies the safe native methods.
 
-For ``safe'' native methods, the FLEX compiler creates a thunk that
+For ``safe'' native methods, the \flex compiler creates a thunk that
 stores the transaction object in the JNI environment structure
 (\texttt{JNIEnv}) which is passed to every JNI method.  When that
 native method invokes the field or array operations in the JNI (for
@@ -1611,7 +1632,7 @@ suffixed version of the method (see \secref{withtrans}) and invokes
 it, passing the transaction object from the environment as the first
 parameter.
 
-For unsafe native methods, FLEX generates a call to a
+For unsafe native methods, \flex generates a call to a
 \texttt{\$\$withtrans}-suffixed JNI method, passing the transaction as
 the first parameter as is done for pure Java calls inside a
 transaction context.  The implementer is then responsible for correct
@@ -1731,7 +1752,7 @@ knowledge of the exact types and locations of each field.}
 
 Figures \ref{fig:special1}, \ref{fig:special2}, and \ref{fig:special3}
 demonstrate how
-field size and object type specialization was implemented in the FLEX
+field size and object type specialization was implemented in the \flex
 transaction runtime.  The main header and source files did nothing but
 repeatedly \texttt{\#include} an \texttt{-impl}-suffixed version of
 the file with \texttt{VALUETYPE}, \texttt{VALUENAME}, and
@@ -2502,7 +2523,7 @@ first fix this problem.
   arrays, which record the values for the fields of the object.
   If no modifications have been made to the object, multiple versions
   in the list may share the same functional array.  (Compare this model
-  of a transaction system to our concrete design in \figref{tr-multi-obj}.)}
+  of a transaction system to our concrete design in \figref{tr-multi-obj-big}.)}
 \label{fig:multi-o}
 \end{figure}
 \begin{figure}
@@ -2612,7 +2633,7 @@ end\\
 I extend the implementation to allow the fields of any number of
 objects to be accessed during the transaction.
 Figure~\ref{fig:multi-o} shows our new object representation.
-Compare this to \figref{tr-multi-obj}; we've successfully recast our earlier
+Compare this to \figref{tr-multi-obj-big}; we've successfully recast our earlier
 transaction system design now in terms of operations on an array datatype.
 Objects consist of two slots, and the first represents the immutable
 {\tt type}, as before.  The second field, {\tt versions}, points to a

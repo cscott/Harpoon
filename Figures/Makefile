@@ -1,7 +1,12 @@
 FIG_MAG_tr-multi-obj=-m 0.4
+FIG_MAG_tr-multi-obj-big=-m 0.65
 FIG_MAG_cachemods=-m 0.75
 FIG_MAG_snapshot=-m 0.75
 FIG_MAG_datastruct-entry=-m 0.75
+
+# phd thesis figures
+tr-multi-obj-big.fig: tr-multi-obj.fig
+	cp $< $@
 
 # definitions for example 1
 EX1FIG=THex1.fig
@@ -62,18 +67,6 @@ THlat6c2.tex: THlat6c.tex
 	    -e 's/\\color\[rgb\]{0,0,1}/\\white\\onlySlide*{4}{\\yellow}/g' \
 	< $< > $@
 
-# default pbm->eps rule
-%.eps : %.pbm
-	pnmtops -equalpixels -noturn $< > $@
-
-# default fig->eps rule
-%.eps: %.fig
-	fig2dev -L eps $($(patsubst %.fig,FIG_MAG_%,$<)) $< > $@
-
-# default fig->emf rule
-%.emf: %.fig
-	fig2dev -L emf $< > $@
-
 #default gnu-plot to latex rule
 %.tex: %.gnuplot
 	gnuplot $< | uniq | sed -e '/setlength{.unitlength}/r head.tex' > $@
@@ -111,6 +104,19 @@ ptrsize.tex: ptrsize.data
 	cp $< $@
 %.pdf: %.eps Makefile
 	epstopdf $<
+
+# default pbm->eps rule
+%.eps : %.pbm
+	pnmtops -equalpixels -noturn $< > $@
+
+# default fig->eps rule
+# XXX: shouldn't use this if we also need the pstex
+%.eps: %.fig
+	fig2dev -L eps $($(patsubst %.fig,FIG_MAG_%,$<)) $< > $@
+
+# default fig->emf rule
+%.emf: %.fig
+	fig2dev -L emf $< > $@
 
 # graphing helpers
 %.stats: %

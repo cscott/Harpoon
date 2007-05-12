@@ -1,6 +1,6 @@
 # Grace project file
 #
-@version 50112
+@version 50121
 @page size 792, 612
 @page scroll 5%
 @page inout 5%
@@ -47,6 +47,32 @@
 @map font 49 to "Hershey-Plain-Triplex-Italic", "Hershey-Plain-Triplex-Italic"
 @map font 50 to "Hershey-Script-Complex", "Hershey-Script-Complex"
 @map font 51 to "Hershey-Script-Simplex", "Hershey-Script-Simplex"
+@map font 66 to "LMSans10-BoldOblique", "LMSans10-BoldOblique"
+@map font 67 to "LMSans10-DemiCondensed", "LMSans10-DemiCondensed"
+@map font 68 to "LMSans10-DemiCondensedOblique", "LMSans10-DemiCondensedOblique"
+@map font 69 to "LMSans10-Oblique", "LMSans10-Oblique"
+@map font 70 to "LMSans10-Regular", "LMSans10-Regular"
+@map font 71 to "LMSansQuotation8-Bold", "LMSansQuotation8-Bold"
+@map font 72 to "LMSansQuotation8-BoldOblique", "LMSansQuotation8-BoldOblique"
+@map font 73 to "LMSansQuotation8-Oblique", "LMSansQuotation8-Oblique"
+@map font 74 to "LMSansQuotation8-Regular", "LMSansQuotation8-Regular"
+@map font 75 to "LMTypewriter10-CapsOblique", "LMTypewriter10-CapsOblique"
+@map font 76 to "LMTypewriter10-CapsRegular", "LMTypewriter10-CapsRegular"
+@map font 77 to "LMTypewriter10-Dark", "LMTypewriter10-Dark"
+@map font 78 to "LMTypewriter10-DarkOblique", "LMTypewriter10-DarkOblique"
+@map font 79 to "LMTypewriter10-Italic", "LMTypewriter10-Italic"
+@map font 80 to "LMTypewriter10-Light", "LMTypewriter10-Light"
+@map font 81 to "LMTypewriter10-LightCondensed", "LMTypewriter10-LightCondensed"
+@map font 82 to "LMTypewriter10-LightCondensedOblique", "LMTypewriter10-LightCondensedOblique"
+@map font 83 to "LMTypewriter10-LightOblique", "LMTypewriter10-LightOblique"
+@map font 84 to "LMTypewriter10-Oblique", "LMTypewriter10-Oblique"
+@map font 85 to "LMTypewriter10-Regular", "LMTypewriter10-Regular"
+@map font 86 to "LMTypewriterVarWd10-Dark", "LMTypewriterVarWd10-Dark"
+@map font 87 to "LMTypewriterVarWd10-DarkOblique", "LMTypewriterVarWd10-DarkOblique"
+@map font 88 to "LMTypewriterVarWd10-Light", "LMTypewriterVarWd10-Light"
+@map font 89 to "LMTypewriterVarWd10-LightOblique", "LMTypewriterVarWd10-LightOblique"
+@map font 90 to "LMTypewriterVarWd10-Oblique", "LMTypewriterVarWd10-Oblique"
+@map font 91 to "LMTypewriterVarWd10-Regular", "LMTypewriterVarWd10-Regular"
 @map font 52 to "LuxiMono", "LuxiMono"
 @map font 53 to "LuxiMono-Bold", "LuxiMono-Bold"
 @map font 54 to "LuxiMono-BoldOblique", "LuxiMono-BoldOblique"
@@ -60,77 +86,9 @@
 @map font 62 to "LuxiSerif-BoldOblique", "LuxiSerif-BoldOblique"
 @map font 63 to "LuxiSerif-Oblique", "LuxiSerif-Oblique"
 @map font 64 to "TeX-tipa10", "TeX-tipa10"
+@map font 105 to "TeX-tipa10", "TeX-tipa10"
 @map font 65 to "TeX-tipa12", "TeX-tipa12"
-@map font 66 to "TeX-tipa17", "TeX-tipa17"
-@map font 67 to "TeX-tipa8", "TeX-tipa8"
-@map font 68 to "TeX-tipa9", "TeX-tipa9"
-@map font 69 to "TeX-tipab10", "TeX-tipab10"
-@map font 70 to "TeX-tipabs10", "TeX-tipabs10"
-@map font 71 to "TeX-tipabx10", "TeX-tipabx10"
-@map font 72 to "TeX-tipabx12", "TeX-tipabx12"
-@map font 73 to "TeX-tipabx8", "TeX-tipabx8"
-@map font 74 to "TeX-tipabx9", "TeX-tipabx9"
-@map font 75 to "TeX-tipasb10", "TeX-tipasb10"
-@map font 76 to "TeX-tipasi10", "TeX-tipasi10"
-@map font 77 to "TeX-tipasl10", "TeX-tipasl10"
-@map font 78 to "TeX-tipasl12", "TeX-tipasl12"
-@map font 79 to "TeX-tipasl8", "TeX-tipasl8"
-@map font 80 to "TeX-tipasl9", "TeX-tipasl9"
-@map font 81 to "TeX-tipass10", "TeX-tipass10"
-@map font 82 to "TeX-tipass12", "TeX-tipass12"
-@map font 83 to "TeX-tipass17", "TeX-tipass17"
-@map font 84 to "TeX-tipass8", "TeX-tipass8"
-@map font 85 to "TeX-tipass9", "TeX-tipass9"
-@map font 86 to "TeX-tipats10", "TeX-tipats10"
-@map font 87 to "TeX-tipatt10", "TeX-tipatt10"
-@map font 88 to "TeX-tipatt12", "TeX-tipatt12"
-@map font 89 to "TeX-tipatt8", "TeX-tipatt8"
-@map font 90 to "TeX-tipatt9", "TeX-tipatt9"
-@map font 91 to "TeX-tipx10", "TeX-tipx10"
-@map font 92 to "TeX-tipx12", "TeX-tipx12"
-@map font 93 to "TeX-tipx17", "TeX-tipx17"
-@map font 94 to "TeX-tipx8", "TeX-tipx8"
-@map font 95 to "TeX-tipx9", "TeX-tipx9"
-@map font 96 to "TeX-tipxb10", "TeX-tipxb10"
-@map font 97 to "TeX-tipxbs10", "TeX-tipxbs10"
-@map font 98 to "TeX-tipxbx10", "TeX-tipxbx10"
-@map font 99 to "TeX-tipxbx12", "TeX-tipxbx12"
-@map font 100 to "TeX-tipxbx8", "TeX-tipxbx8"
-@map font 101 to "TeX-tipxbx9", "TeX-tipxbx9"
-@map font 102 to "TeX-tipxsb10", "TeX-tipxsb10"
-@map font 103 to "TeX-tipxsi10", "TeX-tipxsi10"
-@map font 104 to "TeX-tipxsl10", "TeX-tipxsl10"
-@map font 105 to "TeX-tipxsl12", "TeX-tipxsl12"
-@map font 106 to "TeX-tipxsl8", "TeX-tipxsl8"
-@map font 107 to "TeX-tipxsl9", "TeX-tipxsl9"
-@map font 108 to "TeX-tipxss10", "TeX-tipxss10"
-@map font 109 to "TeX-tipxss12", "TeX-tipxss12"
-@map font 110 to "TeX-tipxss17", "TeX-tipxss17"
-@map font 111 to "TeX-tipxss8", "TeX-tipxss8"
-@map font 112 to "TeX-tipxss9", "TeX-tipxss9"
-@map font 113 to "TeX-tipxts10", "TeX-tipxts10"
-@map font 114 to "TeX-tipxtt10", "TeX-tipxtt10"
-@map font 115 to "TeX-tipxtt12", "TeX-tipxtt12"
-@map font 116 to "TeX-tipxtt8", "TeX-tipxtt8"
-@map font 117 to "TeX-tipxtt9", "TeX-tipxtt9"
-@map font 118 to "TeX-xipa10", "TeX-xipa10"
-@map font 119 to "TeX-xipab10", "TeX-xipab10"
-@map font 120 to "TeX-xipabs10", "TeX-xipabs10"
-@map font 121 to "TeX-xipasb10", "TeX-xipasb10"
-@map font 122 to "TeX-xipasi10", "TeX-xipasi10"
-@map font 123 to "TeX-xipasl10", "TeX-xipasl10"
-@map font 124 to "TeX-xipass10", "TeX-xipass10"
-@map font 125 to "TeX-xipx10", "TeX-xipx10"
-@map font 126 to "TeX-xipxb10", "TeX-xipxb10"
-@map font 127 to "TeX-xipxbs10", "TeX-xipxbs10"
-@map font 128 to "TeX-xipxsb10", "TeX-xipxsb10"
-@map font 129 to "TeX-xipxsi10", "TeX-xipxsi10"
-@map font 130 to "TeX-xipxsl10", "TeX-xipxsl10"
-@map font 131 to "TeX-xipxss10", "TeX-xipxss10"
-@map font 133 to "Utopia-Bold", "Utopia-Bold"
-@map font 135 to "Utopia-BoldItalic", "Utopia-BoldItalic"
-@map font 137 to "Utopia-Italic", "Utopia-Italic"
-@map font 139 to "Utopia-Regular", "Utopia-Regular"
+@map font 107 to "TeX-tipa12", "TeX-tipa12"
 @map color 0 to (255, 255, 255), "white"
 @map color 1 to (0, 0, 0), "black"
 @map color 2 to (255, 0, 0), "red"
@@ -166,7 +124,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Jun 20 16:16:12 2003"
+@timestamp def "Sat May 12 13:21:56 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -213,17 +171,11 @@
 @g0 fixedpoint format general general
 @g0 fixedpoint prec 6, 6
 @with g0
-@    world xmin 0
-@    world xmax 16
-@    world ymin 0.98
-@    world ymax 1.1
+@    world 0, 0.98, 16, 1.1
 @    stack world 0, 0, 0, 0
 @    znorm 1
-@    view xmin 0.150000
-@    view xmax 0.850000
-@    view ymin 0.150000
-@    view ymax 0.850000
-@    title "Slowdown with object bloat"
+@    view 0.150000, 0.150000, 0.850000, 0.850000
+@    title ""
 @    title font 0
 @    title size 1.500000
 @    title color 1
@@ -242,7 +194,7 @@
 @    xaxis  bar color 1
 @    xaxis  bar linestyle 1
 @    xaxis  bar linewidth 1.0
-@    xaxis  label "Added bloat, in bytes"
+@    xaxis  label "Added bloat, in bytes per object"
 @    xaxis  label layout para
 @    xaxis  label place auto
 @    xaxis  label char size 1.000000
@@ -364,28 +316,28 @@
 @    frame background pattern 0
 @    s0 hidden false
 @    s0 type xy
-@    s0 symbol 0
-@    s0 symbol size 0.910000
+@    s0 symbol 1
+@    s0 symbol size 0.800000
 @    s0 symbol color 2
 @    s0 symbol pattern 1
 @    s0 symbol fill color 2
 @    s0 symbol fill pattern 0
-@    s0 symbol linewidth 2.0
+@    s0 symbol linewidth 1.0
 @    s0 symbol linestyle 1
-@    s0 symbol char 71
+@    s0 symbol char 65
 @    s0 symbol char font 0
 @    s0 symbol skip 0
 @    s0 line type 1
-@    s0 line linestyle 1
-@    s0 line linewidth 1.0
+@    s0 line linestyle 2
+@    s0 line linewidth 1.5
 @    s0 line color 2
 @    s0 line pattern 1
 @    s0 baseline type 0
 @    s0 baseline off
 @    s0 dropline off
-@    s0 fill type 2
+@    s0 fill type 0
 @    s0 fill rule 0
-@    s0 fill color 2
+@    s0 fill color 1
 @    s0 fill pattern 1
 @    s0 avalue off
 @    s0 avalue type 2
@@ -410,14 +362,14 @@
 @    s0 errorbar riser clip off
 @    s0 errorbar riser clip length 0.100000
 @    s0 comment "/home/cananian/dataset.dat"
-@    s0 legend  "Geo. Mean"
+@    s0 legend  "compress"
 @    s1 hidden false
 @    s1 type xy
-@    s1 symbol 0
-@    s1 symbol size 1.000000
-@    s1 symbol color 1
+@    s1 symbol 2
+@    s1 symbol size 0.800000
+@    s1 symbol color 11
 @    s1 symbol pattern 1
-@    s1 symbol fill color 1
+@    s1 symbol fill color 11
 @    s1 symbol fill pattern 0
 @    s1 symbol linewidth 1.0
 @    s1 symbol linestyle 1
@@ -425,9 +377,9 @@
 @    s1 symbol char font 0
 @    s1 symbol skip 0
 @    s1 line type 1
-@    s1 line linestyle 1
-@    s1 line linewidth 1.0
-@    s1 line color 1
+@    s1 line linestyle 3
+@    s1 line linewidth 1.5
+@    s1 line color 11
 @    s1 line pattern 1
 @    s1 baseline type 0
 @    s1 baseline off
@@ -449,7 +401,7 @@
 @    s1 avalue offset 0.000000 , 0.000000
 @    s1 errorbar on
 @    s1 errorbar place both
-@    s1 errorbar color 1
+@    s1 errorbar color 11
 @    s1 errorbar pattern 1
 @    s1 errorbar size 1.000000
 @    s1 errorbar linewidth 1.0
@@ -459,14 +411,14 @@
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
 @    s1 comment "/home/cananian/dataset.dat"
-@    s1 legend  "compress"
+@    s1 legend  "jess"
 @    s2 hidden false
 @    s2 type xy
-@    s2 symbol 0
-@    s2 symbol size 1.000000
-@    s2 symbol color 9
+@    s2 symbol 3
+@    s2 symbol size 0.800000
+@    s2 symbol color 5
 @    s2 symbol pattern 1
-@    s2 symbol fill color 9
+@    s2 symbol fill color 5
 @    s2 symbol fill pattern 0
 @    s2 symbol linewidth 1.0
 @    s2 symbol linestyle 1
@@ -474,16 +426,16 @@
 @    s2 symbol char font 0
 @    s2 symbol skip 0
 @    s2 line type 1
-@    s2 line linestyle 1
-@    s2 line linewidth 1.0
-@    s2 line color 9
+@    s2 line linestyle 4
+@    s2 line linewidth 1.5
+@    s2 line color 5
 @    s2 line pattern 1
 @    s2 baseline type 0
 @    s2 baseline off
 @    s2 dropline off
 @    s2 fill type 0
 @    s2 fill rule 0
-@    s2 fill color 9
+@    s2 fill color 1
 @    s2 fill pattern 1
 @    s2 avalue off
 @    s2 avalue type 2
@@ -498,7 +450,7 @@
 @    s2 avalue offset 0.000000 , 0.000000
 @    s2 errorbar on
 @    s2 errorbar place both
-@    s2 errorbar color 9
+@    s2 errorbar color 5
 @    s2 errorbar pattern 1
 @    s2 errorbar size 1.000000
 @    s2 errorbar linewidth 1.0
@@ -508,11 +460,11 @@
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
 @    s2 comment "/home/cananian/dataset.dat"
-@    s2 legend  "jess"
+@    s2 legend  "raytrace"
 @    s3 hidden false
 @    s3 type xy
-@    s3 symbol 0
-@    s3 symbol size 1.000000
+@    s3 symbol 4
+@    s3 symbol size 0.800000
 @    s3 symbol color 3
 @    s3 symbol pattern 1
 @    s3 symbol fill color 3
@@ -523,8 +475,8 @@
 @    s3 symbol char font 0
 @    s3 symbol skip 0
 @    s3 line type 1
-@    s3 line linestyle 1
-@    s3 line linewidth 1.0
+@    s3 line linestyle 2
+@    s3 line linewidth 1.5
 @    s3 line color 3
 @    s3 line pattern 1
 @    s3 baseline type 0
@@ -557,11 +509,11 @@
 @    s3 errorbar riser clip off
 @    s3 errorbar riser clip length 0.100000
 @    s3 comment "/home/cananian/dataset.dat"
-@    s3 legend  "raytrace"
+@    s3 legend  "db"
 @    s4 hidden false
 @    s4 type xy
-@    s4 symbol 0
-@    s4 symbol size 1.000000
+@    s4 symbol 5
+@    s4 symbol size 0.800000
 @    s4 symbol color 4
 @    s4 symbol pattern 1
 @    s4 symbol fill color 4
@@ -572,8 +524,8 @@
 @    s4 symbol char font 0
 @    s4 symbol skip 0
 @    s4 line type 1
-@    s4 line linestyle 1
-@    s4 line linewidth 1.0
+@    s4 line linestyle 6
+@    s4 line linewidth 1.5
 @    s4 line color 4
 @    s4 line pattern 1
 @    s4 baseline type 0
@@ -606,14 +558,14 @@
 @    s4 errorbar riser clip off
 @    s4 errorbar riser clip length 0.100000
 @    s4 comment "/home/cananian/dataset.dat"
-@    s4 legend  "db"
+@    s4 legend  "javac"
 @    s5 hidden false
 @    s5 type xy
-@    s5 symbol 0
-@    s5 symbol size 1.000000
-@    s5 symbol color 5
+@    s5 symbol 6
+@    s5 symbol size 0.800000
+@    s5 symbol color 12
 @    s5 symbol pattern 1
-@    s5 symbol fill color 5
+@    s5 symbol fill color 12
 @    s5 symbol fill pattern 0
 @    s5 symbol linewidth 1.0
 @    s5 symbol linestyle 1
@@ -621,9 +573,9 @@
 @    s5 symbol char font 0
 @    s5 symbol skip 0
 @    s5 line type 1
-@    s5 line linestyle 1
-@    s5 line linewidth 1.0
-@    s5 line color 5
+@    s5 line linestyle 3
+@    s5 line linewidth 1.5
+@    s5 line color 12
 @    s5 line pattern 1
 @    s5 baseline type 0
 @    s5 baseline off
@@ -645,7 +597,7 @@
 @    s5 avalue offset 0.000000 , 0.000000
 @    s5 errorbar on
 @    s5 errorbar place both
-@    s5 errorbar color 5
+@    s5 errorbar color 12
 @    s5 errorbar pattern 1
 @    s5 errorbar size 1.000000
 @    s5 errorbar linewidth 1.0
@@ -655,14 +607,14 @@
 @    s5 errorbar riser clip off
 @    s5 errorbar riser clip length 0.100000
 @    s5 comment "/home/cananian/dataset.dat"
-@    s5 legend  "javac"
+@    s5 legend  "mpegaudio"
 @    s6 hidden false
 @    s6 type xy
-@    s6 symbol 0
-@    s6 symbol size 1.000000
-@    s6 symbol color 6
+@    s6 symbol 7
+@    s6 symbol size 0.800000
+@    s6 symbol color 13
 @    s6 symbol pattern 1
-@    s6 symbol fill color 6
+@    s6 symbol fill color 13
 @    s6 symbol fill pattern 0
 @    s6 symbol linewidth 1.0
 @    s6 symbol linestyle 1
@@ -670,9 +622,9 @@
 @    s6 symbol char font 0
 @    s6 symbol skip 0
 @    s6 line type 1
-@    s6 line linestyle 1
-@    s6 line linewidth 1.0
-@    s6 line color 6
+@    s6 line linestyle 8
+@    s6 line linewidth 1.5
+@    s6 line color 13
 @    s6 line pattern 1
 @    s6 baseline type 0
 @    s6 baseline off
@@ -694,7 +646,7 @@
 @    s6 avalue offset 0.000000 , 0.000000
 @    s6 errorbar on
 @    s6 errorbar place both
-@    s6 errorbar color 6
+@    s6 errorbar color 13
 @    s6 errorbar pattern 1
 @    s6 errorbar size 1.000000
 @    s6 errorbar linewidth 1.0
@@ -704,14 +656,14 @@
 @    s6 errorbar riser clip off
 @    s6 errorbar riser clip length 0.100000
 @    s6 comment "/home/cananian/dataset.dat"
-@    s6 legend  "mpegaudio"
+@    s6 legend  "mtrt"
 @    s7 hidden false
 @    s7 type xy
-@    s7 symbol 0
-@    s7 symbol size 1.000000
-@    s7 symbol color 7
+@    s7 symbol 8
+@    s7 symbol size 0.800000
+@    s7 symbol color 6
 @    s7 symbol pattern 1
-@    s7 symbol fill color 7
+@    s7 symbol fill color 6
 @    s7 symbol fill pattern 0
 @    s7 symbol linewidth 1.0
 @    s7 symbol linestyle 1
@@ -719,9 +671,9 @@
 @    s7 symbol char font 0
 @    s7 symbol skip 0
 @    s7 line type 1
-@    s7 line linestyle 1
-@    s7 line linewidth 1.0
-@    s7 line color 7
+@    s7 line linestyle 5
+@    s7 line linewidth 1.5
+@    s7 line color 6
 @    s7 line pattern 1
 @    s7 baseline type 0
 @    s7 baseline off
@@ -743,7 +695,7 @@
 @    s7 avalue offset 0.000000 , 0.000000
 @    s7 errorbar on
 @    s7 errorbar place both
-@    s7 errorbar color 7
+@    s7 errorbar color 6
 @    s7 errorbar pattern 1
 @    s7 errorbar size 1.000000
 @    s7 errorbar linewidth 1.0
@@ -753,32 +705,32 @@
 @    s7 errorbar riser clip off
 @    s7 errorbar riser clip length 0.100000
 @    s7 comment "/home/cananian/dataset.dat"
-@    s7 legend  "mtrt"
+@    s7 legend  "jack"
 @    s8 hidden false
 @    s8 type xy
 @    s8 symbol 0
-@    s8 symbol size 1.000000
-@    s8 symbol color 8
+@    s8 symbol size 0.910000
+@    s8 symbol color 1
 @    s8 symbol pattern 1
-@    s8 symbol fill color 8
+@    s8 symbol fill color 1
 @    s8 symbol fill pattern 0
-@    s8 symbol linewidth 1.0
+@    s8 symbol linewidth 2.0
 @    s8 symbol linestyle 1
-@    s8 symbol char 65
+@    s8 symbol char 71
 @    s8 symbol char font 0
 @    s8 symbol skip 0
 @    s8 line type 1
 @    s8 line linestyle 1
-@    s8 line linewidth 1.0
-@    s8 line color 8
+@    s8 line linewidth 3.0
+@    s8 line color 1
 @    s8 line pattern 1
-@    s8 baseline type 0
+@    s8 baseline type 1
 @    s8 baseline off
 @    s8 dropline off
 @    s8 fill type 0
 @    s8 fill rule 0
-@    s8 fill color 1
-@    s8 fill pattern 1
+@    s8 fill color 9
+@    s8 fill pattern 9
 @    s8 avalue off
 @    s8 avalue type 2
 @    s8 avalue char size 1.000000
@@ -792,7 +744,7 @@
 @    s8 avalue offset 0.000000 , 0.000000
 @    s8 errorbar on
 @    s8 errorbar place both
-@    s8 errorbar color 8
+@    s8 errorbar color 1
 @    s8 errorbar pattern 1
 @    s8 errorbar size 1.000000
 @    s8 errorbar linewidth 1.0
@@ -802,28 +754,8 @@
 @    s8 errorbar riser clip off
 @    s8 errorbar riser clip length 0.100000
 @    s8 comment "/home/cananian/dataset.dat"
-@    s8 legend  "jack"
+@    s8 legend  "Geo. Mean"
 @target G0.S0
-@type xy
-0 1
-1 1.0053
-2 1.0008
-3 1.0016
-4 1.0092
-5 1.016
-6 1.016
-7 1.0178
-8 1.0215
-9 1.021
-10 1.025
-11 1.0243
-12 1.0333
-13 1.0342
-14 1.0333
-15 1.0345
-16 1.0423
-&
-@target G0.S1
 @type xy
 0 1
 1 1.0101
@@ -843,7 +775,7 @@
 15 1.0045
 16 1.0076
 &
-@target G0.S2
+@target G0.S1
 @type xy
 0 1
 1 0.9995
@@ -863,7 +795,7 @@
 15 1.0201
 16 1.0275
 &
-@target G0.S3
+@target G0.S2
 @type xy
 0 1
 1 0.9944
@@ -883,7 +815,7 @@
 15 1.067
 16 1.07
 &
-@target G0.S4
+@target G0.S3
 @type xy
 0 1
 1 1.0219
@@ -903,7 +835,7 @@
 15 1.0525
 16 1.062
 &
-@target G0.S5
+@target G0.S4
 @type xy
 0 1
 1 1.0155
@@ -923,7 +855,7 @@
 15 1.0363
 16 1.0375
 &
-@target G0.S6
+@target G0.S5
 @type xy
 0 1
 1 0.9932
@@ -943,7 +875,7 @@
 15 0.9927
 16 0.9969
 &
-@target G0.S7
+@target G0.S6
 @type xy
 0 1
 1 1.0061
@@ -963,7 +895,7 @@
 15 1.0736
 16 1.0993
 &
-@target G0.S8
+@target G0.S7
 @type xy
 0 1
 1 1.0022
@@ -982,4 +914,24 @@
 14 1.0334
 15 1.0316
 16 1.041
+&
+@target G0.S8
+@type xy
+0 1
+1 1.0053
+2 1.0008
+3 1.0016
+4 1.0092
+5 1.016
+6 1.016
+7 1.0178
+8 1.0215
+9 1.021
+10 1.025
+11 1.0243
+12 1.0333
+13 1.0342
+14 1.0333
+15 1.0345
+16 1.0423
 &

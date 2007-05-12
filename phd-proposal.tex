@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-proposal.tex,v 1.11 2005-10-10 22:35:36 cananian Exp $
+% $Id: phd-proposal.tex,v 1.12 2007-05-12 19:34:05 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,twoside]{article}
 %\usepackage{pdffonts}
@@ -693,7 +693,7 @@ precisely compatible: the existing Java memory model allows
 unsynchronized updates to shared fields to be observed within a
 synchronized block, while such updates will never be visible to an
 {\tt atomic} block.  The proposed revision of the Java memory model
-\cite{MansonPu02} narrows the semantic gap, however I do not
+\cite{MansonPu01a,MansonPu01b} narrows the semantic gap, however I do not
 plan to treat {\tt volatile} fields in this work.
 
 Despite the differences in semantics, the automatic substitution of
@@ -1162,7 +1162,7 @@ transaction overhead) is around 4 processors.
 Note that Harris and Fraser do not address the problem of
 concurrent non-transactional operations on locations involved in a
 transaction.  Java synchronization allows such concurrent operations,
-with semantics given by the Java memory model \cite{MansonPu02}.
+with semantics given by the Java memory model \cite{MansonPu01a,MansonPu01b}.
 We support these operations safely using our FLAG mechanism.
 
 Programmers will be reluctant to use transactions to synchronize their

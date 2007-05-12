@@ -131,12 +131,12 @@ phd-thesis.dvi: \
 	$(foreach f, \
 	uvsimCounterRuntime \
 	nb-single-obj nb-multi-obj \
-	chuang funarr bloat \
+	chuang funarr bloat-color \
 	tr-sz-all-1 tr-w-all-1 sean_lie_6b \
 	phd-counter phd-counter-instr phd-spec-nt phd-spec-full, \
 	Figures/$(f).eps Figures/$(f).pdf) \
 	$(foreach f, \
-	cachemods snapshot datastruct-entry tr-quad2 tr-multi-obj,\
+	cachemods snapshot datastruct-entry tr-quad2 tr-multi-obj-big,\
 	Figures/$(f).pstex Figures/$(f).pstex_t \
 	Figures/$(f).pdf Figures/$(f).eps)
 phd-thesis.pdf: phd-thesis.dvi
