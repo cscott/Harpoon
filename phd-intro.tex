@@ -209,7 +209,7 @@ Concurrency in our programs is presently managed with explicit locking
 protocols.  We submit that this is inadequate, and propose
 \textit{transactions} as an alternative.  Current adoption of
 transactional programming is limited because transaction
-implementations are inefficient.  This thesis will demonstrate
+implementations are inefficient.  This thesis demonstrates
 techniques to create both software and hardware implementations of
 transactions that are efficient and powerful enough to be usable.
 Software transactions can be adopted now; hardware transaction systems
@@ -218,7 +218,7 @@ produced chips with the needed capabilities.  Once hardware
 transaction systems are available, hybrid systems can combine software
 and hardware techniques to achieve the best qualities of both.
 
-In this thesis I will show how transactions can be integrated into an
+In this thesis I show how transactions can be integrated into an
 object-oriented language and used for backtracking, exception
 handling, and concurrency control in new programs, in addition to
 expressing atomicity and fault-tolerance.
@@ -231,7 +231,7 @@ routines that involve both objects A and B.  Either insufficient
 locks are taken, or both locks are taken without carefully considering
 deadlock, or else one object's locks are released and reacquired during the
 operation allowing atomicity to be broken.
-In \charef{safe-transactify} I will describe a technique
+In \charef{safe-transactify} I describe a technique
 for ``transactifying'' existing lock-based code
 to identify or fix some existing concurrency bugs.
 
@@ -261,11 +261,11 @@ concurrency, provide fault tolerance, and prevent delays by using
 non-blocking synchronization.
 \punt{
 \item 
-I will show how transactions can be integrated into an
+I show how transactions can be integrated into an
 object-oriented language and used for backtracking, exception
 handling, and concurrency control in new programs, in addition to
 expressing atomicity and fault-tolerance.
-\item In \charef{safe-transactify} I will describe a technique
+\item In \charef{safe-transactify} I describe a technique
 for ``transactifying'' existing lock-based code
 to identify or fix existing concurrency bugs.
 }
@@ -295,12 +295,14 @@ methodologies.  I also provide examples illustrating the uses
 (some novel) of a transaction system, and conclude with a brief
 caution about the current limits of transactions.
 
-In \charef{stm} I present the design of an efficient software-only
+In \charef{stm} I present the design of \apex, an efficient software-only
 implementation of transactions.  Software-only transactions can be
 implemented on current hardware, and can easily accommodate many
 different transaction and nesting models.  Software transactions excel
 at certain long-lived transactions, where the overhead is
-small compared to the transaction execution time.  I conclude by
+small compared to the transaction execution time.  An early version of
+\apex was published as \cite{Ananian05}.
+I conclude by
 presenting a microbenchmark that demonstrates the performance limits of
 the design.
 
@@ -316,11 +318,14 @@ describing how large arrays fit into an object-oriented transaction
 scheme.  I present a potential solution to the problem based on
 fast functional arrays.
 
-In \charef{htm} I present hardware that enables very fast
+In \charef{htm} I present LTM and UTM, hardware systems that enable very fast
 short transactions.  The transaction model is more limited, but short
 committing transactions may execute with no overhead.  The additional
 hardware is small and easily added to current processor and memory
-system designs.
+system designs.  This portion of the chapter is joint work with Krste
+Asanovi\'c, 
+Bradley C. Kuszmaul, Charles E. Leiserson, and Sean Lie, and has been
+previously published as \cite{AnanianAsKuLeLi05,AnanianAsKuLeLi06}.
 
 \punt{
 In \charef{htmplus}, I present extensions to the hardware that allow
@@ -335,7 +340,7 @@ transactional approach to writing software.
 
 % \secref{hybrid}
 At the end of the chapter,
-I present a \defn{hybrid} transaction implementation
+I present \hyx, a \defn{hybrid} transaction implementation
 that builds on the strengths of simple hardware support while
 allowing software fallback to support a robust and capable transaction
 mechanism.  Unlike the extended hardware scheme, the transaction model
@@ -364,9 +369,9 @@ thorough understanding of any concept.
 }
 
 Before diving into the design of an efficient transaction system,
-I will motivate the transactional programming model by
+I motivate the transactional programming model by
 presenting four common scenarios that are needlessly
-difficult using lock-based concurrency; I will then present four novel
+difficult using lock-based concurrency.  I then present four novel
 applications that a transactional model facilitates.  To ground the
 discussion in reality, I conclude by enumerating a few cases where
 transactions may \emph{not} be the best solution.
@@ -376,7 +381,10 @@ Locks engender poor modularity and composability, an inability to deal
 gracefully with asynchronous events, and fragile and complex safety
 protocols that are often expressed externally to their
 implementations.  These limitations of locks are well-known
-\cite{Herlihy05}.
+\cite{Herlihy05}.  I present four common tasks which locks make
+unnecessarily difficult: making localized changes to synchronization,
+performing atomic operations on containers, creating a thread-safe
+double-ended queue, and handling asynchronous exceptions.
 
 \subsection{Tweak performance with localized changes}
 % global lock orders, oh my!
@@ -385,20 +393,21 @@ reasoning.  It is not enough to simply specify a lock of a certain
 granularity protecting certain data items; the order or circumstances
 in which the lock may be acquired and released must also be specified
 globally, in the context of all locks in the system, in order to
-prevent deadlocks or unexpected races.  This prevents the programmer
-from easily tuning the system using localized changes: every small
-change must be re-verified against the protocols specified in the
-whole-program context in order to prevent races and/or deadlock.
+prevent deadlocks or unexpected races.  This requirement prevents the
+programmer from easily tuning the system using localized changes:
+every small change must be re-verified against the protocols specified
+in the whole-program context in order to prevent races and/or
+deadlock.
 
 % usage rules embedded in comments
 Furthermore, this whole-program protocol is not typically expressed
-directly in code: with common programming languages acquire/release
+directly in code.  With common programming languages, acquire/release
 ordering and guarantees must be expressed externally, often as
 comments in the source code that easily drift out of sync with the
 implementation.  For example, in \cite{AnanianAsKuLeLi05} we counted
 the comments in the Linux filesystem layer, and found that about 15\%
 of these relate to locking protocols; often describing global
-invariants of the program that are difficult to verify.  Many
+invariants of the program which are difficult to verify.  Many
 reported kernel bugs involve races and deadlocks.
 
 % races, lost wakeups ?
@@ -411,9 +420,9 @@ For example, given two thread-safe
 container classes implemented with locks, it is impossible to
 safely compose
 the \textit{get} function of one with the \textit{put} function of
-the another to create an atomic move.  We must peek inside the
+the other to create an atomic move.  We must peek inside the
 implementation of the containers to synthesize an appropriate locking
-mechanism for such an action--for example, to acquire the 
+mechanism for such an action---for example, to acquire the 
 appropriate
 container, element, or other
 locks on \emph{both} containers---and even then,
@@ -421,12 +430,12 @@ we need to resort to some global lock ordering to guard against
 deadlock.  Modularity must be broken in order to synthesize the
 appropriate composed function, if it is possible at all.
 
-In the Jade programming language, Martin Rinard presented a partial
+In the Jade programming language, Rinard presents a partial
 solution using ``implicitly synchronized''
 objects~\cite[p14]{Rinard98}.  Lock acquisition for each module is
 exposed in the module's API as an executable ``access declaration.''
 Operation composition is accomplished by creating an access
-declaration for the composed operation that invokes the appropriate
+declaration for the composed operation which invokes the appropriate
 access declarations for the components.  The runtime system orders the
 lock acquisitions to prevent deadlock.  This process suffices for
 conservative mutual exclusion, but pre-declaration makes it difficult
@@ -435,7 +444,7 @@ only rarely required.
 
 Transactions do not suffer from the composability problem
 \cite{HarrisMaPeHe05}.  Because transactions only specify the atomicity
-properties, not the locks required, the programmer's job is eased and
+properties, not the locks required, the programmer's job is made easier and
 implementations are free to optimistically synchronize in any way that
 preserves atomicity.\footnote{\Secref{flow} presents a concrete example.}
 
@@ -445,7 +454,7 @@ Herlihy suggests creating a thread-safe double-ended queue using locks
 as ``sadistic homework'' for computer science students \cite{Herlihy05}.
 Although double-ended queues are a simple data structure,
 creating a scalable locking protocol is a
-non-trivial exercise: one wants dequeue and enqueue operations to
+non-trivial exercise.  One wants dequeue and enqueue operations to
 complete concurrently when the ends of the queue are ``far enough''
 apart, while safely handling the interference in the small-queue case.
 In fact, the solution to this assignment was a publishable result, as
@@ -453,22 +462,23 @@ Michael and Scott demonstrated in 1996 \cite{MichaelSc96}.
 
 The simple ``one lock'' solution to the double-ended queue
 problem, ruled out as unscalable in the locking case, is scalable and
-efficient for non-blocking transactions.
+efficient for non-blocking transactions \cite{HerlihyLuMo03,Herlihy05}.
 
 \subsection{Handle asynchronous exceptions}
 Properly handling asynchronous events is difficult with locks, because
 it is impossible to safely go off to handle the event while holding an
 arbitrary set of locks---and it is impossible to safely drop the
 locks.  The solution implemented in the Real-Time Specification for
-Java and similar systems is to generally forbid asynchronous events within
+Java \cite{BollellaBrGoDiFuTu00}
+and similar systems (see \cite[section 9]{MarlowPeMoRe01}) is to generally forbid asynchronous events within
 locked regions, allowing the programmer to explicitly specify certain
 points within the region at which execution can be interrupted,
 dropping all locks in order to do so.  Maintaining the correctness
-in the face of even explicitly-declared interruption points is still
+in the face of even explicitly declared interruption points is still
 difficult.
 
 Transactional atomic regions handle asynchronous exceptions
-gracefully: the transaction is aborted to allow an
+gracefully, by aborting the transaction to allow an
 event to occur.
 
 \section{Four new things transactions make easy}
@@ -476,10 +486,10 @@ event to occur.
 I present four examples in this section, illustrating how transactions
 can support fault tolerance and backtracking, simplify locking, and
 provide a more intuitive means for specifying thread-safety
-properties.  I will first examine a destructive traversal algorithm,
+properties.  I first examine a destructive traversal algorithm,
 showing how a transaction implementation can be treated as an
 exception-handling mechanism.  A variant of this mechanism can be used
-to implement backtracking search.  Using a network flow example I will
+to implement backtracking search.  Using a network flow example, I
 then show how the transaction mechanism can be used to simplify the
 locking discipline required when synchronizing concurrent
 modifications to multiple objects.  Finally, I show an existing race
@@ -489,7 +499,7 @@ existing class corrects this race.
 
 \subsection{Destructive traversal}\label{sec:destruct}
 Many recursive data structures can be traversed without the use of a
-stack using pointer reversal.  This technique is widely used in
+stack by using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
 Schorr and Waite \cite{SchorrWa67}.  An implementation of a
 pointer-reversal traversal of a simple singly-linked list is shown in

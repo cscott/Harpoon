@@ -15,14 +15,14 @@ software-only transaction system for object-oriented programs.  Given
 hardware support, we can construct even more efficient transaction
 systems for certain types of transactions.  In this chapter, we will
 present UTM, an implementation of unbounded transactional memory
-\cite{AnanianAsKuLeLi05} which fully virtualizes transactions.  We
+\cite{AnanianAsKuLeLi05,AnanianAsKuLeLi06} which fully virtualizes transactions.  We
 will follow this with LTM, a much simpler design which can be
 pin-compatible with today's processors.  LTM supports more limited
 transactions, but we conclude by showing how LTM can be combined with
 the efficient software system we have already demonstrated to yield a
 hybrid system with a great deal of power and
 flexibility.\footnote{Portions of this chapter are adapted
-from~\cite{AnanianAsKuLeLi05}, co-written with Krste Asanovi\'c,
+from~\cite{AnanianAsKuLeLi05,AnanianAsKuLeLi06}, co-written with Krste Asanovi\'c,
 Bradley C. Kuszmaul, Charles E. Leiserson, and Sean Lie.}
 
 \section{The UTM architecture}\label{sec:utm}

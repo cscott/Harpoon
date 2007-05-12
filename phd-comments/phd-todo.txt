@@ -50,3 +50,5 @@ single-spaced (especially in the appendix).  Also what are all those
 getting rid of unused cases?
 -------
 Abstract: "More bottom-line numbers" (CEL)
+"Four new things transactions make easy", topic paragraph: itemize
+(CEL).
