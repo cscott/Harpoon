@@ -1,17 +1,5 @@
 Be consistent on "I" vs. "We".
 
-On page 18: You talk about a system that will be described in Chapter
-3, but don't name it.  Name it!
-
-Then it causes trouble on the Chapter 4 paragraph, because you have to
-call it "Chapter 3's design".  Bleah.
-
-Better if you don't say  "I will consider".  You should already have
-considered it.   Better would be "Chapter 5 explores one such
-limitation in depth..."
-
-Again the "we" vs. "I" think shows up on page 19.
-
 Don't go into 3 levels of hierarchy.  Two levels of hierarchy is
 almost too much. Three is definitely too much.  Consider Chapter 2:
   intro par
@@ -27,10 +15,6 @@ do the rest of the organization.
 
 Come up with a better word than "things".  Something like "challenges"
 would be better.
-
-Chapter 2's title is not too good.  "Examples of Transactional
-Programming" does not match the content, which is more like "The Good,
-the Bad, and the Ugly of Transactions".
 
 Chapter 3's title "Designing a Software Transaction System" makes no
 sense to me.  What about this chapter is about designing a system.

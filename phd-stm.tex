@@ -4,31 +4,31 @@ Easy things should stay easy, hard things should get easier, and
 impossible things should get hard.
 }{\textit{Motto for Perl~6 development}}}
 
-In this chapter I will detail the design of a
-high-performance software transaction system.  I will first present
-our methodology for isolating likely transactions from our benchmarks.
-I will then describe the system goals, and use quantitative data from
-our benchmarks as I explain the design choices.  Then I will formalize an
+In this chapter I detail the design of \apex, a
+high-performance software transaction system.  I first present
+a methodology for isolating likely transactions from benchmarks.
+I then describe the system goals, and use quantitative data from
+benchmarks to buttress the design choices.  I formalize an
 implementation meeting those goals in the modeling language
 Promela.  The correctness of this implementation can be model-checked
 using the \Spin tool; the details of this effort are in
 \appref{verification}.
 
-After outlining the design in this chapter, \charef{stmimpl} will
-discuss a practical implementation.
+After outlining the design of \apex in this chapter, \charef{stmimpl}
+discusses its practical implementation.
 
 \section{Finding transactions}\label{sec:auto}
 One of the difficulties of proposing a novel language feature is the
 lack of benchmarks for its evaluation.  Although there is no existing body of
 code that uses transactions, there is a substantial body of
-code that uses Java (locking) synchronization.  This thesis will
-utilize the FLEX compiler \cite{Flex} to
+code that uses Java (locking) synchronization.  This thesis
+utilizes the FLEX compiler \cite{Flex} to
 substitute {\tt atomic} blocks (methods) for {\tt
   synchronized} blocks (methods) in order to evaluate the properties
-Java transactions are likely to have.  Note that the semantics are not
+Java transactions are likely to have.  The semantics are not
 precisely compatible: the existing \indexed{Java memory model} allows
 unsynchronized updates to shared fields to be observed within a
-synchronized block, while such updates will never be visible to a
+synchronized block, while such updates are never visible to a
 transaction expressed with an
 {\tt atomic} block.\footnote{The proposed revision of the Java memory model
 \cite{MansonPu02} narrows the semantic gap, however I do not

@@ -307,13 +307,13 @@ presenting a microbenchmark that demonstrates the performance limits of
 the design.
 
 In \charef{stmimpl} I discuss the practical implementation of
-\charef{stm}'s design.  I present details of the compiler
+\apex.  I present details of the compiler
 analyses and transformations performed, as well as solutions to
 problems that arise when implementing Java.  I then present
 benchmark results using real applications, discuss the benefits and
 limitations revealed, and describe how the limits could be overcome.
 
-In \charef{largeobj} I consider one such limitation in depth,
+\Charef{largeobj} explores one such limitation in depth,
 describing how large arrays fit into an object-oriented transaction
 scheme.  I present a potential solution to the problem based on
 fast functional arrays.
@@ -357,7 +357,9 @@ final chapter summarizes my findings and draws conclusions.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Examples of Transactional Programming}\label{cha:examples}
+\chapter{Transactional programming: the good, bad, and the ugly}
+\markboth{CHAPTER 2.~~TRANSACTIONAL PROGRAMMING}{}
+\label{cha:examples}
 \epigraphhead[70]{\epigraph{%
 You have a hardware or a software problem.
 }{\textit{Service manual for Gestetner~3240}}}
@@ -544,7 +546,7 @@ at some point during the traversal: an assertion fires, an exception
 occurs, the hardware hiccups, or a thread is killed.  Control may
 leave the {\tt traverse()} method, but the data structure is left in
 shambles.  What is needed is some exception-handling procedure to
-restore the proper state of the list.  This can be manually coded with
+restore the proper state of the list.  This handler can be manually coded with
 Java's existing {\tt try}/{\tt catch} construct, but the
 exception-handling code must be tightly-coupled to the traversal if it
 is going to undo the list mutations.
@@ -565,7 +567,7 @@ try {
 The {\tt try}/{\tt else} block appears to make a non-deterministic
 choice between executing the {\tt try} or the {\tt else} clause,
 depending on whether the {\tt try} would succeed or not.
-This can be straight-forwardly implemented
+This construct can be straight forwardly implemented
 with a transaction around the traversal,
 always initially attempting
 the {\tt try}.  Exceptions or faults cause the transaction to abort;
@@ -586,12 +588,20 @@ solutions or multiple solution techniques.
   possible plays (and pruning the search or selecting the best)
   requires a \texttt{fail t} statement where we can send back the play
   and its score, allowing them to escape the transaction.  If we want
-  to search through the opponents possible responses to the play, then
+  to search through the opponent's possible responses to the play, then
   we need nested transactions, so that we can \texttt{fail t} the
   opponents different responses without (yet) exiting the search that
   yielded our own play.}
 
 \begin{figure}\sis\fontsize{9}{10}\begin{verbatim}
+char buffer[];
+int  pos;
+
+void eat(char token) {
+  if (buffer[pos++] != token)
+    fail;
+}
+
 int expr() {
    try {
      return sum();
@@ -599,12 +609,14 @@ int expr() {
      return difference();
    }
 }
+
 int sum() {
    int a = number();
    eat(ADD);
    int b = number();
    return a+b;
 }
+
 int difference() {
    int a = number();
    eat(MINUS);
@@ -612,7 +624,8 @@ int difference() {
    return a-b;
 }
 \end{verbatim}
-\caption{A simple backtracking recursive-decent parser.}
+\caption[A simple backtracking recursive-decent parser.]
+{A simple backtracking recursive-decent parser, using transactional \texttt{try}/\texttt{else}/\texttt{fail}.}
 \label{fig:backtrack-parser}
 \end{figure}
 
@@ -697,11 +710,11 @@ void pushFlow(Vertex v1, Vertex v2, double flow) {
 
 This {\tt atomic} region can be implemented as a transaction, and
 with an appropriately non-blocking implementation, it
-will scale better and execute faster than the locking version
+will scale better, execute faster, and use less memory than the locking version
 \cite{AnanianAsKuLeLi05,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
 From the programmer's point of view, I have also eliminated the
 convoluted locking protocol which must
-be observed rigorously everywhere the related fields are accessed if
+be observed rigorously everywhere the related fields are accessed, if
 deadlock and races are to be avoided.
 
 Further, I can implement {\tt atomic} using the {\tt try}/{\tt else}
@@ -735,8 +748,8 @@ lock with each object.
 Data races are prevented by
 requiring a thread to acquire an
 object's lock before touching the object's shared fields.
-However, the lack of races is not sufficient to prevent unanticipated
-parallel behavior.
+The lack of races is not sufficient to prevent unanticipated
+parallel behavior, however.
 
 Flanagan and Qadeer \cite{FlanaganQa03} demonstrated this
 insufficiency with an
@@ -769,7 +782,7 @@ The library documentation indicates that the methods of this class are meant
 to execute atomically, and the {\tt synchronized} modifiers on the
 methods are meant to accomplish this.
 
-However, the {\tt append()} method is \emph{not} atomic.  Another
+The {\tt append()} method is \emph{not} atomic, however.  Another
 thread may change the length of the parameter \texttt{sb} (by adding
 or removing characters) between the call to \texttt{sb.length()} at
 label A and the call to \texttt{sb.getChars(\ldots)} at label B.
@@ -782,7 +795,7 @@ atomic, they do not compose to form an atomic implementation of
 %The simple monitor synchronization scheme breaks
 %down when operations touch multiple objects.
 
-Note that replacing {\tt synchronized} with {\tt atomic} in
+Replacing {\tt synchronized} with {\tt atomic} in
 this code gives us the semantics
 we desire: the atomicity of nested {\tt atomic} blocks is guaranteed
 by the atomicity of the outermost block, ensuring that the entire
@@ -790,7 +803,7 @@ operation appears atomic.
 
 Both the network flow example and this {\tt StringBuffer} example require
 synchronization of
-changes to more than one object.
+updates to more than one object.
 Monitor synchronization is not
 well-suited to this task.  Atomic regions implemented with
 transactions can be used to simplify the locking discipline required
@@ -813,11 +826,11 @@ required to serialize I/O, although the needed locks can certainly be
 built with transactions.  
 The challenge of integrating I/O within a
 transactional context is discussed in \secref{io}.
-However, large programs---the
+Large programs---the
 Linux kernel\note{TODO: Find citation}, for example---have been
 written such that locks are
-never held across context switches or I/O operations.  Transactions
-provide a complete solution for this limited synchronization.
+never held across context switches or I/O operations, however.  Transactions
+provide a complete solution for this limited form of synchronization.
 
 Blocking producer-consumer queues, or other options that require a
 transaction to wait upon a condition variable, may introduce
