@@ -576,11 +576,12 @@ The bottom of \figref{promrwnt} specifies the non-transactional
 write operation in Promela.
 
 \subsubsection{Field Copy-Back}\label{sec:copyback}
-\begin{figure}\sis\fontsize{6.5}{7.4}
+\begin{figure}\sis\fontsize{9}{10}
 \begin{verbatim}
 inline copyBackField(o, f, mode, st) {
   _nonceV=NIL; _ver = NIL; _r = NIL; st = success;
-  /* try to abort each version.  when abort fails, we've got a committed version. */
+  /* try to abort each version.  when abort fails, we've got a committed
+   * version. */
   do
   :: _ver = object[o].version;
      if
@@ -588,7 +589,8 @@ inline copyBackField(o, f, mode, st) {
         st = saw_race; break /* someone's done the copyback for us */
      :: else
      fi;
-      /* move owner to local var to avoid races (owner set to NIL behind our back) */
+      /* move owner to local var to avoid races
+       * (owner set to NIL behind our back) */
      _tmp_tid=version[_ver].owner;
      tryToAbort(_tmp_tid);
      if
@@ -600,7 +602,8 @@ inline copyBackField(o, f, mode, st) {
      assert(transid[_tmp_tid].status==aborted);
      CAS_Version(object[o].version, _ver, version[_ver].next, _);
   od;
-  /* okay, link in our nonce.  this will prevent others from doing the copyback. */
+  /* okay, link in our nonce.  this will prevent others from doing the
+   * copyback. */
   if
   :: (st==success) ->
      assert (_ver!=NIL);
@@ -613,6 +616,19 @@ inline copyBackField(o, f, mode, st) {
      fi
   :: else
   fi;
+  /* check that no one's beaten us to the copy back, then kill readers. */
+  checkCopyAndKill(o,f,mode,st);
+  /* done */
+}
+\end{verbatim}
+\caption[First half of the field copy-back routine.]
+{First half of the field copy-back routine.  The final steps
+  have been split off into \texttt{checkCopyAndKill}, which is
+  presented in \figref{copyback2}.}\label{fig:copyback1}
+\end{figure}
+\begin{figure}\sis\fontsize{9}{10}
+\begin{verbatim}
+inline checkCopyAndKill(o, f, mode, st) {
   /* check that no one's beaten us to the copy back */
   if
   :: (st==success) ->
@@ -638,9 +654,10 @@ inline copyBackField(o, f, mode, st) {
      fi
   :: else /* !success */
   fi;
-  /* always kill readers, whether successful or not.  This ensures that we make progress if
-   * called from writeNT after a readNT sets readerList non-null without changing FLAG to
-   * _val (see immediately above; st will equal saw_race_cleanup in this scenario). */
+  /* always kill readers, whether successful or not.  This ensures that we
+   * make progress if called from writeNT after a readNT sets readerList
+   * non-null without changing FLAG to _val (see immediately above; st will
+   * equal saw_race_cleanup in this scenario). */
   if
   :: (mode == kill_all) ->
      killAllReaders(o, _r); /* see Appendix for details */
@@ -649,9 +666,11 @@ inline copyBackField(o, f, mode, st) {
   /* done */
 }
 \end{verbatim}
-\caption{The field copy-back routine.}\label{fig:copyback}
+\caption[Final portion of the field copy-back routine.]
+ {Final portion of the field copy-back routine of \figref{copyback1}.}
+\label{fig:copyback2}
 \end{figure}
-\figref{copyback} presents the field copy-back routine.  We create a
+Figures \ref{fig:copyback1} and \ref{fig:copyback2} present the field copy-back routine.  We create a
 new version owned by a pre-aborted transaction which serves as a
 reservation on the head of the version list.  We then write to the
 object field with a load-linked/store-conditional pair if and only if
@@ -670,9 +689,9 @@ are done once before the first read from an object and not repeated.
 
 At read time, we initially read from the original object.  If the
 value read is not \FLAG, we use it.  Otherwise, we look up the version
-object associated with our transaction (this will typically be at the
+object associated with our transaction (our version will typically be at the
 head of the version list) and read the appropriate value from that
-version.  Note that the initial read-and-check can be omitted if we
+version.  The initial read-and-check can be omitted if we
 know that we have already written to this field inside this transaction.
 
 \begin{figure}
@@ -860,11 +879,12 @@ inline checkWriteField(o, f) {
 \label{fig:copythrough}
 \end{figure}
 \subsubsection{Transactional Write}
-Again, writes are split in two.  Once for each object we must traverse
+Again, writes are split in two.  Once for each object, we must traverse
 the version list, aborting other versions and locating or creating a
 version corresponding to our transaction.  We must also traverse the
 reader list, aborting all transactions on the list except ourself.
-This is shown in the {\tt ensureWriter} routine in \figref{ensurewriter}.
+This portion of the algorithm is shown in the {\tt ensureWriter}
+routine in \figref{ensurewriter}.
 
 Once for each field we intend to write, we must perform a
 copy-through: copy the object's field value into all the versions and
@@ -884,8 +904,9 @@ the insertion of simple read and write checks in non-transactional
 code.  The performance of read and write barriers have been
 well-studied in the garbage collection community, but our checks are
 slightly different: in particular, they are checks on the
-\textit{contents} of a memory cell, rather than on its address.  This
-introduces a more direct dependency which may affect performance.
+\textit{contents} of a memory cell, rather than on its address.  
+Thus our checks
+introduce a more direct dependency which may affect performance.
 Further, our write check involves a LL/SC instruction pair, which may
 behave differently from the standard loads and stores used in
 barriers.
@@ -896,18 +917,20 @@ system.  It is an idealized ``best case'' in that we won't benchmark
 the effects of ``false flags'' or other forays into the transactional
 code path, nor will we account for double-word or sub-word writes,
 cache effects due to code duplication, or other details of a real
-implementation.  These effects we will investigate with full
-benchmarks in the \secref{full-bench}.  We will also feel free to
+implementation.  I investigate these effects with full
+benchmarks in \secref{full-bench}.  We will also feel free to
 optimize down to the assembly level to determine our fundamental
-performance limits.  However, the tight read/write dependency of a
-counter increment makes it a ``worst case'' benchmark: in general
-modern compilers are very good at separating reads from writes in
+performance limits.  
+
+The tight read/write dependency makes a counter increment
+a ``worst case'' benchmark, however.  In general,
+modern compilers are good at separating reads from writes in
 ``real'' code to mask load latency, but our particular microbenchmark
 can not be reasonably unrolled to accomplish this separation.  Our
 conclusions about the fundamental costs of read and write costs should
 thus be tempered by the knowledge that some of these costs are in
-practice be masked by the same standard compiler techniques used to
-mitigate memory access latencies.
+practice masked by the same standard compiler techniques used to
+mitigate memory-access latencies.
 
 \begin{figure}
 \sis\fontsize{9}{10}\begin{verbatim}
@@ -986,13 +1009,13 @@ static inline void write(struct oobj *obj, int idx, field_t val) {
 \end{figure}
 
 \figref{counter-bench} presents the basic structure of the counter
-microbenchmark. The \texttt{read()} and \texttt{write()} methods will
+microbenchmark. The \texttt{read()} and \texttt{write()} methods
 have appropriate definitions inlined for each variant of the
-benchmark.  Note that the \texttt{readerList} and \texttt{field}
+benchmark.  The \texttt{readerList} and \texttt{field}
 fields of the \texttt{struct oobj} are marked \texttt{volatile} to
 prevent the C compiler from optimizing away the accesses we are
-interested in benchmarking; without these declarations \texttt{gcc}
-4.1.2 will optimize away the entire benchmark loop and replace it with
+interested in benchmarking.  Without these declarations, \texttt{gcc}
+4.1.2 optimizes away the entire benchmark loop and replaces it with
 a direct addition of \texttt{REPETITIONS}.
 
 \figref{counter-read} shows the baseline \texttt{read()}
@@ -1003,7 +1026,7 @@ the \texttt{unlikely()} macro, implemented using the
 \texttt{gcc} extension \texttt{\_\_builtin\_expect()}, to apply the
 appropriate static prediction bits indicating that \texttt{FLAG} is
 expected to be an unusual value.  In our microbenchmark, this
-prediction will always correct.  The C compiler must still save
+prediction is always correct.  The C compiler must still save
 whatever registers are necessary to allow the call to
 \texttt{unusualRead()}, although this function is never actually called
 during the microbenchmark.  The \texttt{unusualRead} function would be
@@ -1015,36 +1038,36 @@ recently-committed value for this field.
 non-transactional write.  The basic implementation inlines to a single
 \texttt{stw} instruction.  The write-check version at the bottom must
 perform three tests.  First, it must ensure that the value to be
-written is not \texttt{FLAG}: if it is we must use the ``false flag''
+written is not \texttt{FLAG}.  If it is, we must use the ``false flag''
 mechanism to write it, modeled here by a call to
 \texttt{unusualWrite()}.  This check can be optimized away when
 writing a constant,\footnote{Hennessy and Patterson indicate that 35\%
-  of integer instructions use an immediate operand; their methodology does not
-  allow breaking out the percentage of stores specifically
-  \cite[p. 78]{HennessyPa96}.}
+  of integer instructions use an immediate operand \cite[p. 78]{HennessyPa96}.
+  Their methodology does not
+  allow breaking out the percentage of stores specifically.}
  but the \texttt{volatile} declarations ensure that
-our benchmark will always perform the check.  Second, we must perform
+our benchmark always performs the check.  Second, we must perform
 a load-linked of the object's \texttt{readerList} to check that there
-are not any current transactional readers of this object.  Last we
-perform a store-conditional of the value we wish to write, and check
-that it was successful.  Unlike the other two tests, this check will
-fail a number of times\footnote{Experimentally, about 3,600 times in
+are not any current transactional readers of this object.  Last, we
+perform a store-conditional of the value we wish to write and check
+that it was successful.  Unlike the other two tests, this check
+fails occasionally\footnote{Experimentally, about 3,600 times in
   the 1 billion repetitions of the write during the counter microbenchmark.}
  during the benchmark run due to context switches
 that may occur between the load-linked and the store-conditional
 instructions.
 
-\epsfigput[Check overhead for counter microbenchmark]{phd-counter}{%
+\epsbigfigput[Check overhead for counter microbenchmark]{phd-counter}{%
   Time overhead of read checks, write checks,
   and both read and write checks for non-transactional code, in both a
   pure C implementation and optimized assembly.}
 
-The performance of this benchmark is shown in \figref{phd-counter}.
+\figref{phd-counter} shows the performance of this benchmark.
 Read checks, even in this worst case where the value read is demanded
 immediately, only add 14\% overhead.  Write checks are more costly,
-due to the load-linked and store-conditional pair; they add 200\%
+due to the load-linked and store-conditional pair.  Specifically, they add 200\%
 overhead to the benchmark.  Combining read and write checks yields the
-expected 214\% overhead; our microbenchmark was carefully constructed to
+expected 214\% overhead, as our microbenchmark was carefully constructed to
 avoid the opportunities for instruction-level parallelism one might
 expect in real-world applications.
 
@@ -1095,9 +1118,9 @@ expect in real-world applications.
 \caption[PowerPC assembly for counter microbenchmark with
   write checks.]{PowerPC assembly for counter microbenchmark with
   write checks.  The right-hand column is generated from the C
-  implementation; the left-hand column has an optimized version of the
+  implementation.  The left-hand column has an optimized version of the
   write check inlined into the code using the \texttt{asm} keyword.
-  Italicized code is essentially unchanged; the optimized section is
+  Italicized code is essentially unchanged.  The optimized section is
   shown in boldface.}
 \label{fig:write-assem}
 \end{figure}
@@ -1136,7 +1159,7 @@ assembly mechanism of \texttt{gcc}/C provides no inherent support for
 instructions 
 like the PowerPC's ``store-conditional'' (\texttt{stwcx.}) that leave
 their results in a condition code register.  \figref{write-assem}
-shows the assembly emitted for the write check version of the
+shows the assembly emitted for the write-check version of the
 microbenchmark, with the cumbersome mechanism required to move the
 condition code to a register so that it can then be retested.  We can
 easily hand-code a better write-check mechanism, shown in the
@@ -1175,7 +1198,7 @@ load-linked and store-conditional instructions.
 this optimized counter loop to understand the fundamental performance
 limits.}
 
-\epsfigput[Check overhead as percentage of total dynamic instruction count]
+\epsbigfigput[Check overhead as percentage of total dynamic instruction count]
   {phd-counter-instr}{%
   Check overhead as percentage of total dynamic instruction count.
   The bar on the left is the DLX instruction mix for SPECint92 from
@@ -1196,23 +1219,23 @@ non-transactional code.\footnote{$0.65 + (1.14 \times 0.26) + (2.86
 improvement in \figref{rw-assem}'s optimized checks should be credited
 to reduced write-check overhead, giving the same 14\% read overhead
 but only 129\% write overhead, the same metric gives only 15\% net
-overhead, as shown in \figref{phd-counter-instr}.  This should be
+overhead, as shown in \figref{phd-counter-instr}.  This figure should be
 considered a rough lower bound for the time overhead, possible with
-aggressive optimization and scheduling.\footnote{Note that this
+aggressive optimization and scheduling.\footnote{This
   calculation combines over- and underestimation, making this number
   only a rough bound.  The use of dynamic instruction count, rather
   than dynamic instruction time, likely underestimates the
-  contribution of loads and stores to the run time.  However,
-  scheduling, prefetching, and store buffers can pipeline the cost of
-  the loads and stores, which might cause our overhead estimate to
-  exceed the actual cost.  \Secref{full-bench} will present actual
+  contribution of loads and stores to the run time.
+  Scheduling, prefetching, and store buffers can pipeline the cost of
+  the loads and stores, however, which might cause our overhead estimate to
+  exceed the actual cost.  \Secref{full-bench} presents actual
   overhead measurements of real Java applications.}
 
 \section*{Implementation}
-There are a number of details that are not yet covered by our model,
-for example: how are fields of different byte lengths handled?  How does
+Some details are not yet covered by our model.
+For example, how are fields of different byte lengths handled?  How does
 transactional Java code interact with the garbage collector, or with
-native code in the runtime system?  The next chapter addresses the
+native code in the runtime system?  \Charef{stmimpl} addresses the
 real-world
 implementation details of our software transaction system.
 
@@ -1836,8 +1859,9 @@ far neglected to state the size of the reservation created by the
 platform load-linked instruction.  The implicit assumption is that the
 reservation is roughly word-sized: our algorithm uses load-linked to
 watch the pointer-valued \texttt{readerList}
-(figures \ref{fig:promrwnt}, \ref{fig:ensurewriter}) and
-\texttt{version} (figures \ref{fig:copyback}, \ref{fig:ensurewriter},
+(Figures \ref{fig:promrwnt}, \ref{fig:ensurewriter}) and
+\texttt{version} (Figures \ref{fig:copyback1}, \ref{fig:copyback2},
+\ref{fig:ensurewriter},
 \ref{fig:copythrough}) fields, and to perform the compare-and-swap
 operation on the transaction status field necessary for aborting and
 committing transactions.  However, implementations of load-linked and
