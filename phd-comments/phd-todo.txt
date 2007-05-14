@@ -39,3 +39,5 @@ Abstract: "More bottom-line numbers" (CEL)
 (CEL).
 
 "Note that"...
+
+Fix sketchy numbers at end of ch 3.

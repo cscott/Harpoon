@@ -229,10 +229,15 @@ transaction systems protect transactions from interference from
 systems do not afford this protection.
 \index{Weak atomicity}\index{Atomicity!weak}
 Consider unsynchronized code directly altering the length field of
-{\tt StringBuffer} (\secref{stringbuffer}).  In a weakly atomic system
-this unsynchronized code causes the {\tt atomic} {\tt
-  StringBuffer.append()} method to
-appear non-atomic.  Current software transaction systems implement
+the {\tt String\-Buffer} class, the example discussed in \secref{stringbuffer}.
+In a weakly atomic system, an unsynchronized decrement to the \texttt{count}
+field between labels A and B in \texttt{StringBuffer.append()} on
+page \pageref{pg:stringbuffer} causes a
+\texttt{String\-Index\-Out\-Of\-Bound\-Exception} to be thrown in the call to
+\texttt{getChars()} at label B.  This exception should never be thrown
+by an atomic execution of {\tt String\-Buffer.append()}.
+
+Current software transaction systems implement
 only weak atomicity because of the assumed expense of implementing
 strong atomicity.  The \apex system
 achieves strong atomicity without adding excessive overhead, so that
@@ -251,7 +256,7 @@ several benefits:
 \begin{description}
 \item[Efficient execution of long-running transactions.]  As discussed
   briefly in Sections \ref{sec:efficiency} and \ref{sec:tm}, flat
-  word-oriented transaction schemes require overhead proportional to
+  word-oriented transaction schemes typically require overhead proportional to
   the number of words read/written in the transaction, even if these
   locations have been accessed before inside the transaction. Object-oriented
   schemes impose a cost proportional to the number of \emph{objects}
@@ -275,8 +280,10 @@ approach, and the current thesis presents one such solution.
 \epsbigfigput{bloat-color}{Application slowdown with increasing object bloat
 for the SPECjvm98 benchmark applications.}
 \subsection{Tolerable limits for object expansion}
-I need to add some additional information to each object to
-track transaction state.  I measured the slowdown caused by various
+An object-oriented transaction scheme requires transaction state
+information about each object.  In \apex, this information is added
+directly to the objects, to eliminate indirection cost.
+I measured the slowdown caused by various
 amounts of object ``bloat'' to determine reasonable bounds on the
 size of this extra information.  \figref{bloat-color} presents these
 results for the SPECjvm98 applications; I determined that two words
@@ -330,7 +337,11 @@ distributed shared memory implementation of Scales and Gharachorloo
 overwriting them with the flag value.  Reading or attempting to
 overwrite a flagged value indicates to non-transactional code
 that exceptional processing is necessary; all other non-transactional
-operations proceed as usual.
+operations proceed as usual.  The flagged field either is currently
+involved in an active transaction, belongs to a committed or aborted
+transaction and requires copy back, or indicates a ``false flag'', a
+field with a true value equal to the flag value (see
+page \pageref{pg:falseflag}).
 
 This technique explicitly allows safe access to fields
 involved in a transaction from non-transactional code, which provides
@@ -425,7 +436,7 @@ committed transaction in the object's version list.  A ``false flag''
 occurs when the application wishes to ``really'' store the value \FLAG
 in a field. To do so we create a fully-committed version
 attached to the object and store \FLAG in that version, as well as in
-the object field.
+the object field.\label{pg:falseflag}
 
 \begin{figure}
 \sis\fontsize{9}{10}
@@ -901,7 +912,7 @@ shown at the bottom of \figref{promrwt}.
 \label{sec:counter-bench}
 The software transaction system outlined in this section depends on
 the insertion of simple read and write checks in non-transactional
-code.  The performance of read and write barriers have been
+code.  The performance of read and write barriers has been
 well-studied in the garbage collection community, but our checks are
 slightly different: in particular, they are checks on the
 \textit{contents} of a memory cell, rather than on its address.  
@@ -1192,7 +1203,8 @@ the read and write routines.\footnote{Again, the branches to
 and assembly, but small stubs would be written to save registers and
 perform a branch with the appropriate calling conventions.}
 The read-and-write check overhead is improved to 143\% with these
-optimizations, due mostly to the irreducible dependency between the
+optimizations.  The remaining overhead is
+due mostly to the irreducible dependency between the
 load-linked and store-conditional instructions.
 \note{It may be worth looking closely at the instruction schedule for
 this optimized counter loop to understand the fundamental performance
