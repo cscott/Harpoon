@@ -694,7 +694,7 @@ A transactional read is split into two parts.  The first part, which
 occurs before the read, is encapsulated in a routine named
 \texttt{ensureReader}.  Its primary task is to
 ensure that our transaction is on the reader list for the
-object.  This check is straight-forward to do in a non-blocking manner as
+object.  This check is straightforward to do in a non-blocking manner as
 long as we always add readers to the head of the list.  The
 \texttt{ensureReader} routine must also
 walk the versions list to abort any uncommitted transaction other
@@ -753,7 +753,7 @@ inline writeT(ver, f, nval) {
 The top of \figref{promrwt} specifies read-time portion of the
 transactional read operation in
 Promela.  The initial \texttt{ensureReader} portion is
-straight-forward; it is included in \appref{verification}.
+straightforward; it is included in \appref{verification}.
 
 \begin{figure}
 \sis\fontsize{6.5}{8}
@@ -1538,7 +1538,7 @@ make nontransactional code more efficient by eliminating the overhead
 of the software transaction system in some cases.
 
 While \texttt{GlobalFieldOracle} targets nontransactional code, the
-\texttt{CheckOracle} analysis classes make transactional code more
+\texttt{Check\-Oracle} analysis classes make transactional code more
 efficient by removing unneeded read and write checks.  As mentioned
 above, the \texttt{ensureReader} and \texttt{ensureWriter} checks need
 only be invoked once on each unique object read/written by the
@@ -1547,17 +1547,17 @@ performed once on each object field written by the transaction.  The
 \texttt{CheckOracle} classes hoist each check to its immediate
 dominator if and only if this new location for the check is postdominated by the
 current location and the new location is dominated by the definition
-of the variable referenced in the check.  This ensures that all paths
+of the variable referenced in the check.  This condition ensures that all paths
 to the original location of the check must pass through the new
-location, and that the object involved in the check is still defined
+location.  Moreover, it ensures that the object involved in the check is still defined
 appropriately at the new check location, since the analysis is
 performed on a single-assignment intermediate representation
 \cite{Ananian99}.  The check-hoisting process is repeated until no
-checks can be moved higher, then we eliminate any check that is
+checks can be moved higher, and then \flex eliminates any check that is
 dominated by an identical check.
 
 \subsection{Desugaring} % clone/arrayinit
-We also desugar some Java idioms to ease implementation.  Java
+\Flex also desugars some Java idioms to ease implementation.  Java
 specifies a \texttt{clone()} method of \texttt{java.lang.Object},
 from which every object is derived.  The top-level \texttt{clone()} method is
 somewhat magical, as it creates an exact copy of its subclass,
@@ -1576,7 +1576,7 @@ can then be transformed by the transaction pass like any other piece
 of code that reads and writes fields.
 
 The \flex infrastructure also contains a mechanism for fast
-initialization of arrays; this mechanism is desugared into
+initialization of arrays.  This mechanism is desugared into
 individual array set operations so that it, too, can be uniformly
 transformed by the transaction pass.
 
@@ -1589,17 +1589,17 @@ others interact with the runtime system at a much lower level.
   
 The runtime system is parameterized to allow a large number of memory
 allocation strategies and collectors, but for the experiments reported
-here I used the Boehm-Demers-Weiser conservative garbage collector
-\cite{BoehmDeWe91}.\footnote{The use of a conservative collector means
+here, I used the Boehm-Demers-Weiser conservative garbage collector
+\cite{BoehmDeWe91}.\punt{\footnote{The use of a conservative collector means
   that the mechanism described in \secref{precise-gc} to enable
   precise garbage collection was unneeded and thus disabled for these
-  experiments.} 
+  experiments.} }
 Ideally the garbage collector would know enough about the transaction
 implementation to be able to automatically prune unneeded committed or
 aborted versions from the object's version list during collection.
-However, we relied on opportunistically nulling out tail pointers
-during version list traversal (for example, while looking for the
-last committed version), which may result in incomplete collections
+\Flex relies on opportunistically nulling out tail pointers
+during version list traversal,\footnote{For example, while looking for the
+last committed version.} however, which may result in incomplete collections
 (and more memory usage than strictly necessary).
 
 Each transaction had a \texttt{CommitRecord} object storing its state,
@@ -1659,7 +1659,7 @@ struct JNINativeInterface \{
   basic Java types: boolean, byte, char, short, int, long, float,
   double, and Object.  The \texttt{jobject} and
   \texttt{j*Array} types are not direct references to the heap
-  objects; they are opaque wrappers that preserve the garbage
+  objects, but rather opaque wrappers that preserve the garbage
   collector's invariants and protect the runtime system's private
   implementation.}
 \label{fig:jni}
@@ -1674,35 +1674,36 @@ reads any object written in a transaction, or writes any object read
 or written in a transaction.\footnote{If one
   can implement \texttt{writeNT} but not \texttt{readNT}, one need
   only ensure that native code does not write fields that are also
-  written inside a transaction, as discussed in \secref{hoist}.}  This
-is very inconvenient.
+  written inside a transaction, as discussed in \secref{hoist}.}
+These restrictions would be inconvenient.
 
-Our solution ensures not only that (separately compiled) native code
+My solution ensures not only that (separately compiled) native code
 properly uses the \texttt{readNT} and  \texttt{writeNT} protocols
 outside a transaction, but also that reads and writes inside a
-transaction are handled properly.  This allows the use of ``safe''
+transaction are handled properly.  This ability allows the use of ``safe''
 native methods (those without external side effects) inside a
 transaction. 
 
-We are able to do this because \flex uses the Java Native Interface
+I am able to transform native methods because \flex uses the
+Java Native Interface
 \cite{JNI} to interact with native code.  The JNI, a portion of which
 is shown in \figref{jni}, abstracts field
 accesses and Java method invocations from native code, so we can
 substitute implementations that behave appropriately whether in a
 transaction or not.
 
-We distinguish between three classes of native methods.  The first are
+I distinguish among three classes of native methods.  The first are
 native methods that are ``safe'' in a transactional context.  That
 is, they have no external side effects (which would need to be undone
-if the transaction aborted), and will behave correctly in a
+if the transaction aborted) and behave correctly in a
 transaction if all reads, writes, and method calls are simply replaced
 by the appropriate transactional protocol.   The second are methods
 that have a different implementation in a transactional context. One
 example would be the native methods that implement file I/O; in a
-transactional context these should interface with a underlying
+transactional context, these methods should instead interface with a underlying
 transactional file system and arrange for the I/O operations to commit
 if and only if the current transaction commits.  Another example is the
-\texttt{Object.wait()} method; the appropriate implementation is
+\texttt{Object.wait()} method; the appropriate alternate implementation is
 described in \secref{object-wait}.   The last class of native methods
 are those that are inherently impossible in a transactional context,
 usually due to irreversible external I/O (\secref{io} discusses I/O
@@ -1824,7 +1825,7 @@ Specializing transaction primitives by field size and object type:
 \caption[Specializing transaction primitives by field size and object
  type (\texttt{preproc.h}).]
 {Specializing transaction primitives by field size and object
- type: \texttt{preproc.h}.  In this portion of the file we define the
+ type: \texttt{preproc.h}.  In this portion of the file, we define the
  specialization macros used in \figref{special2}.}
 \label{fig:special3}
 \end{figure}
@@ -1834,25 +1835,25 @@ Part of the challenge in engineering a practical implementation is
 properly accounting for the wide range of data types in a real
 programming language.  Java contains 8 primitive types in addition to
 types deriving from \texttt{java.lang.Object},
-that are themselves divided into array and non-array
-types.\footnote{Our flag value was carefully chosen so as not to be a NaN for either
+which are themselves divided into array and non-array
+types.\footnote{The \flex flag value was carefully chosen so as not to be a NaN for either
 of the floating-point types, since comparisons against NaN can be
-surprising, and to consist of a repeated byte value so that a new
+surprising.  The flag value consists of a repeated byte value so that a new
 object can be initialized with all fields \texttt{FLAG} without
 knowledge of the exact types and locations of each field.}
 
 Figures \ref{fig:special1}, \ref{fig:special2}, and \ref{fig:special3}
 demonstrate how
-field size and object type specialization was implemented in the \flex
-transaction runtime.  The main header and source files did nothing but
+field size and object type specialization are implemented in the \flex
+transaction runtime.  The main header and source files do nothing but
 repeatedly \texttt{\#include} an \texttt{-impl}-suffixed version of
 the file with \texttt{VALUETYPE}, \texttt{VALUENAME}, and
 \texttt{ARRAY} defined to range over the possible primitive and array
-types.  This allows us to compactly name and define specialized
-functions, accounting for array/object (among other) differences.  For
-example, the \texttt{FIELDBASE} macro (defined in \figref{special2},
-used in \figref{special1}) allows us to treat object fields
-and array elements uniformly, even though the first array element
+types.  This technique allows compact naming and definition of
+specializable functions to account for array/object (among other) differences.
+For example, the \texttt{FIELDBASE} macro (defined in \figref{special2},
+used in \figref{special1}) allows the uniform treatment of object fields
+and array elements, even though the first array element
 starts at a different offset from the first field (since array data starts with
 an immutable length field).
 
@@ -1860,9 +1861,9 @@ an immutable length field).
 synthesizing atomic operations on subword and multi-word datatypes.
 
 \section{Limitations}
-The present implementation contains a number of non-fundamental
-limitations with well-understood solutions that, nonetheless, would
-add additional implementation complexity.  These involve static
+The present implementation contains a few non-fundamental
+limitations with well-understood solutions which, nonetheless, would
+add additional implementation complexity.  These limitations involve static
 fields, coarse granularity of LL/SC instructions, subword and
 multi-word fields, and condition variables (\texttt{Object.wait()}).
 In addition, there are
@@ -1880,7 +1881,7 @@ benchmarks most static fields are written only during initialization.
 An analysis that proved that writes only occurred during a
 single-threaded class initialization phase of execution could prove
 that these direct accesses are safe in most cases.  Proper handling of
-static fields that do not meet this condition is straight-forward:
+static fields that do not meet this condition is straightforward:
 new singleton classes would be created encapsulating these fields, and
 access would be via an extra indirection.  \figref{static-fields}
 illustrates this transformation.
@@ -2017,7 +2018,7 @@ update a single byte in isolation some other approach will be
 required.
 \end{quote}
 
-Again, writes within a transaction are straight-forward: reading an
+Again, writes within a transaction are straightforward: reading an
 entire word, updating it, and rewriting will appear atomic due to the
 transaction mechanism, and no observable word tearing will occur.  A
 minor difficulty is the possibility of ``false'' conflicts between
@@ -2166,7 +2167,7 @@ transaction containing it into two.\footnote{Which arguably calls for
 a special type annotation on methods that may call \texttt{wait()},
 so that users are not misled into thinking a block is atomic that may
 invoke something that calls \texttt{wait()}.}  The fundamental
-mechanism is straight-forward.  We first acquire our special mutex,
+mechanism is straightforward.  We first acquire our special mutex,
 then attempt to commit the transaction, and check the result.  If we
 don't commit successfully, we unlock the mutex and throw the usual
 \texttt{TransactionAbortException}.  If we have committed

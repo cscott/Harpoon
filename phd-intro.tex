@@ -567,7 +567,7 @@ try {
 The {\tt try}/{\tt else} block appears to make a non-deterministic
 choice between executing the {\tt try} or the {\tt else} clause,
 depending on whether the {\tt try} would succeed or not.
-This construct can be straight forwardly implemented
+This construct can be straightforwardly implemented
 with a transaction around the traversal,
 always initially attempting
 the {\tt try}.  Exceptions or faults cause the transaction to abort;
