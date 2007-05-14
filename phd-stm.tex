@@ -122,7 +122,7 @@ MP3 decoder.  Both of these applications perform inherently serial
 tasks.  They perform quite well with locks, and would likely execute
 with acceptable performance even with a \naive software
 implementation of transactions, as long as the impact on
-non-transactional operations was minimal.
+nontransactional operations was minimal.
 
 Quad II applications perform a large number of small transactions.
 The expert system \texttt{202\_jess} falls in this category, as does
@@ -225,7 +225,7 @@ analyses of the SpecJVM98 benchmarks, which I implemented using the
 As previously discussed in \secref{strongatom},
 \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
 transaction systems protect transactions from interference from
-``non-transactional'' code, while \defn{weakly atomic} transaction
+nontransactional code, while \defn{weakly atomic} transaction
 systems do not afford this protection.
 \index{Weak atomicity}\index{Atomicity!weak}
 Consider unsynchronized code directly altering the length field of
@@ -241,7 +241,7 @@ Current software transaction systems implement
 only weak atomicity because of the assumed expense of implementing
 strong atomicity.  The \apex system
 achieves strong atomicity without adding excessive overhead, so that
-correct operation is assured even despite concurrent non-transactional
+correct operation is assured even despite concurrent nontransactional
 operations on locations involved in a transaction.
 
 \subsection{Object-oriented vs. flat TM}
@@ -328,15 +328,15 @@ reserving the extra allocation effort for transactional writes.
 \note{Missing: performance numbers for adding check.  Use ``no trans''
 version of transaction app and add check into the access functions.}
 \note{No: use microbenchmark from later section.}
-I would like non-transactional code to execute with minimal overhead,
-but transactions should still appear atomic to non-transactional
+I would like nontransactional code to execute with minimal overhead,
+but transactions should still appear atomic to nontransactional
 code.  My basic mechanism is loosely based on the
 distributed shared memory implementation of Scales and Gharachorloo
 \cite{ScalesGh97}.  I pick a special ``flag'' value, and
 ``cross-out'' locations currently involved in a transaction by
 overwriting them with the flag value.  Reading or attempting to
-overwrite a flagged value indicates to non-transactional code
-that exceptional processing is necessary; all other non-transactional
+overwrite a flagged value indicates to nontransactional code
+that exceptional processing is necessary; all other nontransactional
 operations proceed as usual.  The flagged field either is currently
 involved in an active transaction, belongs to a committed or aborted
 transaction and requires copy back, or indicates a ``false flag'', a
@@ -344,7 +344,7 @@ field with a true value equal to the flag value (see
 page \pageref{pg:falseflag}).
 
 This technique explicitly allows safe access to fields
-involved in a transaction from non-transactional code, which provides
+involved in a transaction from nontransactional code, which provides
 strong atomicity, a
 design goal of the system.
 \punt{Strong atomicity eases ``transactification''
@@ -422,7 +422,7 @@ of transactions that have read from this object.  Committed and
 aborted transactions are pruned from this list.  The {\tt readers}
 field is used to ensure that a transaction does not operate with
 out-of-date values if the object is later written
-non-transactionally.
+nontransactionally.
 
 There is a special flag value, here denoted by \FLAG.  It should be
 an uncommon value, i.e. not a small positive or negative integer
@@ -474,7 +474,7 @@ typedef TransID {
 \figref{promdecl} declares these object structures in Promela.
 
 \subsection{Operations}%ops
-I support transactional read/write and non-transactional read/write
+I support transactional read/write and nontransactional read/write
 as well as transaction begin, transaction abort, and transaction
 commit.  Transaction begin simply involves the creation of a new
 transaction identifier object.  Transaction commit and abort are simply
@@ -485,18 +485,18 @@ The simplicity of commit and abort are appealing: the \apex algorithm
 requires no complicated processing, delay, roll-back or validate
 procedure to commit or abort a transaction.
 
-I could support non-transactional read and write (that is,
+I could support nontransactional read and write (that is,
 reads and writes that take place outside of any transaction) by
 creating a new very short transaction that encloses only the single
-read or write.  Since non-transactional accesses to objects can be
+read or write.  Since nontransactional accesses to objects can be
 frequent, I provide more efficient implementations with
 the same semantics.
 
 I now present the operations one-by-one.
 
-\subsubsection{Non-transactional read}
+\subsubsection{Nontransactional read}
 
-The {\tt readNT} function performs a non-transactional read of field $f$ from
+The {\tt readNT} function performs a nontransactional read of field $f$ from
 object $o$, putting the result in $v$.  
 In the common case, the only overhead is to check that
 the read value is not \FLAG.  If the value read \emph{is}
@@ -555,17 +555,17 @@ inline writeNT(o, f, nval) {
   fi;
 }
 \end{inlinecode}
-\caption{Promela specification of non-transactional read and write operations.}
+\caption{Promela specification of nontransactional read and write operations.}
 \label{fig:promrwnt}
 \end{figure}
-The top of \figref{promrwnt} specifies the non-transactional read operation in
+The top of \figref{promrwnt} specifies the nontransactional read operation in
 Promela.
 
-\subsubsection{Non-transactional write}
-The {\tt writeNT} function performs a non-transactional write of new value $nval$
+\subsubsection{Nontransactional write}
+The {\tt writeNT} function performs a nontransactional write of new value $nval$
 to field $f$ of object $o$.  For correctness, we must ensure that
 the reader list is empty before we do the write.  I implement this check
-with a load-linked/store-conditional pair, which is modelled in
+with a load-linked/store-conditional pair, which is modeled in
 Promela slightly differently, ensuring that the write only succeeds
 so long as the reader list remains empty.\footnote{A
   standard CAS would not suffice, as the load-linked targets a
@@ -578,12 +578,12 @@ procedure leaves the reader list empty.
 
 If the value to be written is actually the \FLAG value, things get a
 little bit trickier.  This case does not occur often, and so the
-simplest correct implementation is to treat this non-transactional
+simplest correct implementation is to treat this nontransactional
 write as a short transactional write, creating a new transaction for
 this one write, and attempting to commit it immediately after the
 write.  This implementation is slow, but adequate for this uncommon case.
 
-The bottom of \figref{promrwnt} specifies the non-transactional
+The bottom of \figref{promrwnt} specifies the nontransactional
 write operation in Promela.
 
 \subsubsection{Field Copy-Back}\label{sec:copyback}
@@ -706,7 +706,7 @@ once before the first read from an object and not repeated.
 
 At read time, we initially read from the original object.  If the
 value read is not \FLAG, we use it.  Otherwise, we look up the version
-object associated with our transaction (our version will typically be at the
+object associated with our transaction (our version is typically at the
 head of the version list) and read the appropriate value from that
 version.  The initial read-and-check can be omitted if we
 know that we have already written to this field inside this transaction.
@@ -794,7 +794,7 @@ inline ensureWriter(tid, o, ver) {
         if
         :: (_cas_stat) ->
            /* kill all readers (except ourself) */
-           /* note that all changes have to be made from the front of the
+           /* all changes have to be made from the front of the
             * list, so we unlink ourself and then re-add us. */
            do
            :: moveReaderList(_r, object[o].readerList);
@@ -917,10 +917,10 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
-\section{Performance limits for non-transactional code}
+\section{Performance limits for nontransactional code}
 \label{sec:counter-bench}
 The software transaction system outlined in this section depends on
-the insertion of simple read and write checks in non-transactional
+the insertion of simple read and write checks in nontransactional
 code.  The performance of read and write barriers has been
 well-studied in the garbage collection community, but our checks are
 slightly different: in particular, they are checks on the
@@ -931,22 +931,22 @@ Further, our write check involves a LL/SC instruction pair, which may
 behave differently from the standard loads and stores used in
 barriers.
 
-In this section we use a simple counter microbenchmark to evaluate the
-``best worst case'' non-transactional performance of our transaction
-system.  It is an idealized ``best case'' in that we won't benchmark
+In this section I use a simple counter microbenchmark to evaluate the
+``best worst case'' nontransactional performance of \apex.
+It is an idealized ``best case'' in that I don't benchmark
 the effects of ``false flags'' or other forays into the transactional
-code path, nor will we account for double-word or sub-word writes,
+code path, nor do I account for double-word or subword writes,
 cache effects due to code duplication, or other details of a real
 implementation.  I investigate these effects with full
-benchmarks in \secref{full-bench}.  We will also feel free to
-optimize down to the assembly level to determine our fundamental
+benchmarks in \secref{full-bench}.  I also freely
+optimize down to the assembly level to determine the fundamental
 performance limits.  
 
-The tight read/write dependency makes a counter increment
+The tight read/write dependency makes counter increment
 a ``worst case'' benchmark, however.  In general,
 modern compilers are good at separating reads from writes in
-``real'' code to mask load latency, but our particular microbenchmark
-can not be reasonably unrolled to accomplish this separation.  Our
+``real'' code to mask load latency, but this particular microbenchmark
+can not be reasonably unrolled to accomplish the separation.  My
 conclusions about the fundamental costs of read and write costs should
 thus be tempered by the knowledge that some of these costs are in
 practice masked by the same standard compiler techniques used to
@@ -971,7 +971,7 @@ void do_bench(struct oobj *obj) {
 }
 \end{verbatim}
 \caption{Counter microbenchmark to evaluate read- and write-check
-  overhead for non-transactional code.}
+  overhead for nontransactional code.}
 \label{fig:counter-bench}
 \end{figure}
 
@@ -1041,7 +1041,7 @@ a direct addition of \texttt{REPETITIONS}.
 \figref{counter-read} shows the baseline \texttt{read()}
 implementation, which inlines to a single \texttt{lwz} instruction on
 PowerPC, along with the C implementation of the read check necessary
-for non-transactional code under our transaction system.  We use 
+for nontransactional code under our transaction system.  We use 
 the \texttt{unlikely()} macro, implemented using the
 \texttt{gcc} extension \texttt{\_\_builtin\_expect()}, to apply the
 appropriate static prediction bits indicating that \texttt{FLAG} is
@@ -1055,7 +1055,7 @@ from \figref{promrwnt}, including looking up and copying back the most
 recently-committed value for this field.
 
 \figref{counter-write} shows the equivalent implementation pairs for a
-non-transactional write.  The basic implementation inlines to a single
+nontransactional write.  The basic implementation inlines to a single
 \texttt{stw} instruction.  The write-check version at the bottom must
 perform three tests.  First, it must ensure that the value to be
 written is not \texttt{FLAG}.  If it is, we must use the ``false flag''
@@ -1079,7 +1079,7 @@ instructions.
 
 \epsbigfigput[Check overhead for counter microbenchmark]{phd-counter}{%
   Time overhead of read checks, write checks,
-  and both read and write checks for non-transactional code, in both a
+  and both read and write checks for nontransactional code, in both a
   pure C implementation and optimized assembly.}
 
 \figref{phd-counter} shows the performance of this benchmark.
@@ -1185,7 +1185,7 @@ condition code to a register so that it can then be retested.  We can
 easily hand-code a better write-check mechanism, shown in the
 right-hand column of the figure.\footnote{This version has a stub where a
 function call to \texttt{unusualWrite} would usually go; the correct
-code here would branch to a small thunk that will perform the
+code here would branch to a small thunk that performs the
 frame operations and register saves necessary to adhere to the C
 calling convention; \texttt{gcc} makes it difficult to ensure that
 this thunk is ``near enough'' for a direct branch (within a 24-bit
@@ -1235,7 +1235,7 @@ As a rough estimate, using dynamic instruction count as a proxy for
 instruction time,
 the 14\% read overhead and 186\% write overhead measured
 in this microbenchmark thus translate into 20\% net overhead for
-non-transactional code.\footnote{$0.65 + (1.14 \times 0.26) + (2.86
+nontransactional code.\footnote{$0.65 + (1.14 \times 0.26) + (2.86
   \times 0.09) = 1.20$} If we conservatively assume that most of the
 improvement in \figref{rw-assem}'s optimized checks should be credited
 to reduced write-check overhead, giving the same 14\% read overhead
@@ -1508,7 +1508,7 @@ parameter of the cloned method.\footnote{Cloning must take virtual
   dispatch into account: cloning a method in a superclass must also
   create appropriate cloned subclass implementations.}
 
-Non-transactional code inside a method must be transformed to use the
+Nontransactional code inside a method must be transformed to use the
 \texttt{readNT} and \texttt{writeNT} mechanisms to perform object
 reads and writes (\figref{promrwnt}); the implementation is similar to
 that shown in \figref{counter-read} and \figref{counter-write}.
@@ -1521,11 +1521,11 @@ analyses of this sort; \secref{moreopt} describes additional analyses
 which we have not implemented.
 
 Our first analysis classifies all fields in the program according to
-their use in transactional and non-transactional regions.  This
+their use in transactional and nontransactional regions.  This
 analysis is encapsulated in a \flex class named
 \texttt{GlobalFieldOracle}.  Fields that can never be written within
 a transaction do not need the special \texttt{readNT} mechanism from
-non-transactional code; their values can be loaded directly without
+nontransactional code; their values can be loaded directly without
 testing for \texttt{FLAG}.  The only way that the field can have the
 \texttt{FLAG} value, if it is not written within a transaction, is if
 it is a false flag, in which case its value really is \texttt{FLAG}.
@@ -1534,10 +1534,10 @@ transaction do not need to use the \texttt{writeNT} mechanism; they
 can just store directly to the field.\footnote{It is not
   enough for the field not to be written; we must also protect against
   write-after-write conflicts.}  Thus, \texttt{GlobalFieldOracle} can
-make non-transactional code more efficient by eliminating the overhead
+make nontransactional code more efficient by eliminating the overhead
 of the software transaction system in some cases.
 
-While \texttt{GlobalFieldOracle} targets non-transactional code, the
+While \texttt{GlobalFieldOracle} targets nontransactional code, the
 \texttt{CheckOracle} analysis classes make transactional code more
 efficient by removing unneeded read and write checks.  As mentioned
 above, the \texttt{ensureReader} and \texttt{ensureWriter} checks need
@@ -1545,7 +1545,7 @@ only be invoked once on each unique object read/written by the
 transaction.  Similarly, \texttt{checkWriteField} need only be
 performed once on each object field written by the transaction.  The
 \texttt{CheckOracle} classes hoist each check to its immediate
-dominator iff this new location for the check is postdominated by the
+dominator if and only if this new location for the check is postdominated by the
 current location and the new location is dominated by the definition
 of the variable referenced in the check.  This ensures that all paths
 to the original location of the check must pass through the new
@@ -1608,7 +1608,7 @@ whether \texttt{COMMITTED}, \texttt{ABORTED}, or still
 Java, including object creation, exponential backoff on retry, and
 throwing the appropriate \texttt{TransactionAbortException} on abort.
 Only the crucial \texttt{commit()} and \texttt{abort()} operations,
-which atomically set the transaction status iff it is still
+which atomically set the transaction status if and only if it is still
 \texttt{WAITING}, were written in C, as JNI methods.
 
 \subsection{Implementing the JNI}
@@ -1657,7 +1657,7 @@ struct JNINativeInterface \{
   Java Native Interface for interacting with the Java runtime from C
   native methods \cite{JNI}.  There are function variants for all of the
   basic Java types: boolean, byte, char, short, int, long, float,
-  double, and Object.  Note that the \texttt{jobject} and
+  double, and Object.  The \texttt{jobject} and
   \texttt{j*Array} types are not direct references to the heap
   objects; they are opaque wrappers that preserve the garbage
   collector's invariants and protect the runtime system's private
@@ -1684,7 +1684,7 @@ transaction are handled properly.  This allows the use of ``safe''
 native methods (those without external side effects) inside a
 transaction. 
 
-We are able to do this because \flex uses the Java Native Inteface
+We are able to do this because \flex uses the Java Native Interface
 \cite{JNI} to interact with native code.  The JNI, a portion of which
 is shown in \figref{jni}, abstracts field
 accesses and Java method invocations from native code, so we can
@@ -1701,7 +1701,7 @@ that have a different implementation in a transactional context. One
 example would be the native methods that implement file I/O; in a
 transactional context these should interface with a underlying
 transactional file system and arrange for the I/O operations to commit
-iff the current transaction commits.  Another example is the
+if and only if the current transaction commits.  Another example is the
 \texttt{Object.wait()} method; the appropriate implementation is
 described in \secref{object-wait}.   The last class of native methods
 are those that are inherently impossible in a transactional context,
@@ -1716,7 +1716,7 @@ native method invokes the field or array operations in the JNI (for
 example, \texttt{Get*Field}, \texttt{Set*Field}, \texttt{Get*ArrayElements},
 etc.) the runtime checks the environment structure to
 determine whether to use the appropriate transactional or
-non-transactional read or write protocol.  When Java methods are
+nontransactional read or write protocol.  When Java methods are
 invoked, via the \texttt{Call*Method} family of methods, in a
 transactional context the runtime looks up the \texttt{\$\$withtrans}
 suffixed version of the method (see \secref{withtrans}) and invokes
@@ -1796,8 +1796,8 @@ Specializing transaction primitives by field size and object type:
  \texttt{readwrite-impl.c}.  In this snippet the \texttt{readNT} algorithm is
  implemented using macros (defined in \figref{special3},
  \texttt{preproc.h}) to implement generic field types and naming
- conventions.  Note the use of the macros \texttt{likely} and
- \texttt{unlikely}, which communicate static branch
+ conventions.  The macros \texttt{likely} and
+ \texttt{unlikely} communicate static branch
  prediction information to the C compiler.}
 \label{fig:special2}
 \end{figure}
@@ -1856,18 +1856,18 @@ and array elements uniformly, even though the first array element
 starts at a different offset from the first field (since array data starts with
 an immutable length field).
 
-\Secref{multiword} will discuss some of the other challenges involved in
+\Secref{multiword} discusses some of the other challenges involved in
 synthesizing atomic operations on subword and multi-word datatypes.
 
 \section{Limitations}
 The present implementation contains a number of non-fundamental
 limitations with well-understood solutions that, nonetheless, would
 add additional implementation complexity.  These involve static
-fields, coarse granularity of LL/SC instructions, sub-word and
+fields, coarse granularity of LL/SC instructions, subword and
 multi-word fields, and condition variables (\texttt{Object.wait()}).
 In addition, there are
 limitations related to the manipulation of large objects (usually
-arrays); we will put off to \charef{largeobj} a full discussion of the
+arrays); we put off to \charef{largeobj} a full discussion of the
 large object problem and its solutions.
 
 \subsection{Static fields}
@@ -1964,7 +1964,7 @@ objects to cache line (32-byte) boundaries, to ensure there are no
 false conflicts between objects.  Some of the wasted space can be
 reclaimed by using a smaller alignment for objects known not to escape
 from their thread, or by packing multiple objects into a cache line
-iff they are known never to participate in transactions that might
+if and only if they are known never to participate in transactions that might
 conflict.
 
 \subsection{Handling subword and multi-word reads/writes}
@@ -1988,17 +1988,17 @@ multiple writes will appear atomic.
 This leaves large writes outside of a transaction.  One
 solution is to decompose these fields into multiple smaller fields as
 we did in the transactional case; we don't give up strong atomicity
-but we allow other readers (both transactional and non-transactional)
+but we allow other readers (both transactional and nontransactional)
 to see the partial writes.  The Java memory model actually permits
 this behavior (Java Language Specification chapter 17.7,
 ``Non-atomic Treatment of double and long'' \cite{JLS3}).  The specification
 continues, ``VM implementers are encouraged to avoid splitting their
 64-bit values where possible.''  We can easily implement this behavior
-as an alternative: non-transactional writes of doubles and longs can be
+as an alternative: nontransactional writes of doubles and longs can be
 converted to small transactions encompassing nothing but the multiple
 word-size writes.
 
-Now let us consider sub-word-sized writes.  Section 17.6 of the Java
+Now let us consider subword-sized writes.  Section 17.6 of the Java
 Language Specification specifically says:
 \begin{quote}
 One implementation consideration for Java virtual machines is that
@@ -2048,20 +2048,20 @@ void writeNT(struct oobj *obj, int byte_idx, small_field_t val) \{
   \}
 \}
 \end{alltt}
-\caption[Non-transactional write to small (sub-word) field.]{
-Non-transactional write to a small (sub-word) field.  Compare to
+\caption[Nontransactional write to small (subword) field.]{
+Nontransactional write to a small (subword) field.  Compare to
 \figref{counter-write}.  The \texttt{byte\_idx} value is the offset
 of the field within the objects, in bytes, and the \texttt{combine}
 function does the appropriate shifting and masking to combine the new
-sub-word value with the read value of the surrounding word.
+subword value with the read value of the surrounding word.
 }\label{fig:im-so-damn-smart} 
 \end{figure}
 
-The final case is then non-transactional writes to sub-word values,
+The final case is then nontransactional writes to subword values,
 which occur frequently in real programs during string manipulations.
 We could address this by using a short transaction to do the
-read-modify-write of the word surrounding the sub-word field, but this
-is likely too expensive, considering the number of sub-word
+read-modify-write of the word surrounding the subword field, but this
+is likely too expensive, considering the number of subword
 manipulations in most programs.
 A better algorithm to address this problem is presented in
 \figref{im-so-damn-smart}; compare this to the earlier expression of
@@ -2071,7 +2071,7 @@ to serve as subword reservations, ensuring that racing writes to
 different subwords in the same word are prevented.  The cost of this
 algorithm is mostly extra masking when the readerList is read, and an
 extra store (to set the \texttt{readerList} reservation) on every
-sub-word write.\footnote{It would be nice if we could avoid updating the
+subword write.\footnote{It would be nice if we could avoid updating the
   \texttt{readerList} pointer on every write when using common access
   patterns, like stepping linearly through the array, but I don't see
   a way to do that.}
@@ -2120,7 +2120,7 @@ public class Drop {
   in Java, from \cite{ZakhourHoRoRaRiHo06}.}\label{fig:dropbox}
 \end{figure}
 
-Our present implementation does not specially handle sub-word-sized
+Our present implementation does not specially handle subword-sized
 writes, resulting in programmer-visible word tearing.
 
 \subsection{Condition variables}\label{sec:object-wait}
@@ -2210,7 +2210,7 @@ point should be immediately following the
 becomes much more complicated, and some means to reconstruct the
 appropriate call-stack is necessary.
 
-Note that for code like the example given in \figref{dropbox} the
+For code like the example given in \figref{dropbox} the
 ``correct'' resumption behavior is actually identical to restarting
 the transaction from the original start point (ie, the beginning of
 the \texttt{put()} or \texttt{take()} method), assuming that the
@@ -2245,8 +2245,8 @@ version of the benchmarks compiled with the same method cloning and
 desugaring (\secref{synctrans}) that is done for the transaction
 transformation.
 
-\epsfigput[Non-transactional check overhead for SPECjvm98.]{phd-spec-nt}{%
-  Non-transactional check overhead for SPECjvm98.  Both benchmarks in
+\epsfigput[Nontransactional check overhead for SPECjvm98.]{phd-spec-nt}{%
+  Nontransactional check overhead for SPECjvm98.  Both benchmarks in
   each pair were compiled with the transformations in
   \secref{synctrans} (method cloning, desugaring) and all
   synchronization was removed.  The version ``with checks'' had all
@@ -2277,11 +2277,11 @@ jack &      $9,882,846$&$0$ ($0$\%)&$4,595,774$& $0$ ($0$\%) \\ \hline
   direct reads and writes.  The next bar adds creation of commit
   records at the start of each transaction and the CAS commit
   operation at the end.  The next bar uses the transactional and
-  non-transactional read and write protocols for non-array objects.
+  nontransactional read and write protocols for non-array objects.
   The final bar is fully transactional.}
 
 In \secref{counter-bench} we examined a microbenchmark to discover the
-lower limits on our non-transactional overhead.  These are the
+lower limits on our nontransactional overhead.  These are the
 fundamental costs of strong atomicity: the penalty we must pay even if
 we are not using transactions at all.\footnote{Although, of course, in
   practice one would turn off the transaction transformation
@@ -2293,7 +2293,7 @@ these benchmarks (safe because they are single-threaded) leaving only
 the costs of the \texttt{readNT} and \texttt{writeNT} protocols.
 
 Our earlier microbenchmark hinted that we might expect
-non-transactional overheads as low as 15\%, although 20\% was the best
+nontransactional overheads as low as 15\%, although 20\% was the best
 we could obtain with a C implementation.  In fact, we see a 19\%
 overhead on the \texttt{209\_db} benchmark, although the other
 benchmarks show that an overhead of around 60\% is more typical.
@@ -2313,7 +2313,7 @@ thus opaque to the compiler, many opportunities for code motion and
 scheduling are being missed.
 
 The \texttt{222\_mpegaudio} benchmark shows another potential
-liability: it incurred a 149\% overhead for the non-transactional
+liability: it incurred a 149\% overhead for the nontransactional
 code.  The ``false flag'' counts shown in \figref{false-flag} hint at
 the problem: this benchmark is the only one to encounter false
 flags.  The hidden portion of the iceberg may partly consist of
@@ -2591,7 +2591,7 @@ write operations are implemented as:
 \end{itemize}
 
 At the end of the transaction, we use Compare-And-Swap to atomically
-set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
+set \fref{o}{fields} to $u'$ if and only if it contained $u$.  If the CAS fails,
 we the transaction is aborted (we simply discard $u'$) and we retry.
 
 With our \naive ``small object'' functional arrays, this implementation is
@@ -2745,7 +2745,7 @@ a \textsl{ABORTED} transaction identifier never becomes
 We create an transaction identifier when we begin or restart a transaction
 and place it in a local variable \emph{tid}.  At the end of the
 transaction, we use CAS to set \fref{\var{tid}}{status} to
-{\sl COMMITTED} iff it was {\sl IN-PROGRESS}.  If the CAS is successful,
+{\sl COMMITTED} if and only if it was {\sl IN-PROGRESS}.  If the CAS is successful,
 the transaction has also executed successfully; otherwise
 $\fref{\var{tid}}{status}=\text{\sl ABORTED}$ (which indicates that
 our transaction has been aborted) and we must back off and retry.
@@ -3007,7 +3007,7 @@ the value of $A$.
 We continue swinging pointers until step 5, when can finally set
 the element $x$ in the cache to $y$.  We perform this operation with a
 DCAS operation that checks that $\fref{C}{node}$ is still pointing to
-the cache as we expect.  Note that a concurrent rotation would swing
+the cache as we expect.  A concurrent rotation would swing
 $\fref{C}{node}$ in its step 1.  In general, therefore, the location
 pointing to the cache serves as a reservation on the cache.
 
@@ -3017,7 +3017,7 @@ from the cache as we swing $\fref{B}{node}$ to point to the cache.
 
 Figures~\ref{fig:fun-impl1} and \ref{fig:fun-impl2} present pseudocode
 for \funcname{FA-Rotate}, \funcname{FA-Read}, and
-\funcname{FA-Update}.  Note that \funcname{FA-Read} also uses the
+\funcname{FA-Update}.  The \funcname{FA-Read} procedure also uses the
 cache pointer as a reservation, double-checking the cache pointer
 after it finishes its read to ensure that the cache hasn't been stolen
 from it.
@@ -3031,7 +3031,7 @@ during an invocation of $\funcname{FA-Rotate}(B)$.  But then the
 differential node $d_B$ will be applied after the cache is copied,
 which will safely overwrite the mutation we were concerned about.
 
-Note that with hardware support for small transactions \cite{HerlihyMo93}
+With hardware support for small transactions \cite{HerlihyMo93}
 we could cheaply perform the entire rotation atomically, instead of
 using this six-step approach.
 
@@ -3069,5 +3069,7 @@ XXX: continue previous microbenchmarks, as function of object size.
 % LocalWords:  javac analyses StringBuffer stwcx transactionally ReaderList gcc
 % LocalWords:  readNT writeNT readT writeT ensureWriter checkWriteField inlined
 % LocalWords:  inlines inline PowerPC's Sparc StrongARM Classpath backend JNI
-% LocalWords:  bytecode desugaring ensureReader desugar superclass NaN JDK iff
-% LocalWords:  parameterized datatype Herlihy ensureReader
+% LocalWords:  bytecode desugaring ensureReader desugar superclass NaN JDK jess
+% LocalWords:  parameterized datatype Herlihy ensureReader nontransactional UTM
+% LocalWords:  transactification mpegaudio raytrace LTM microarchitecture RISC
+% LocalWords:  backoff syscall livelock subword subwords lookup Chuang

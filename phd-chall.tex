@@ -123,11 +123,11 @@ deadlocks in transactified code\note{Need citation here.} and alerting
 the programmer of the problem.
 
 Blundell, Lewis, and Martin also point out that some transaction
-implementations ignore ``non-transactional'' accesses -- even if these
+implementations ignore ``nontransactional'' accesses -- even if these
 are to locations which are currently involved in a transaction.  This
 leads to additional alterations in the semantics of the code.  In the
 implementations described in this thesis, we are careful to ensure
-that ``non-transactional'' code still executes as if each statement
+that ``nontransactional'' code still executes as if each statement
 was its own individual transaction, what Blundell, Lewis, and Martin
 term \defn{strong atomicity}.\index{Strong atomicity}\index{Atomicity!strong}
 
@@ -146,8 +146,8 @@ to enforce this restriction.
 A useful programmer technique in this model is to create a separate concurrent
 thread for I/O.  A transaction can interact with a queue to request
 I/O, and the I/O thread will dequeue requests and enqueue responses.
-This works best for unidirectional communication.  Note that
-round-trip communication with the I/O thread can not be accomplished
+This works best for unidirectional communication.
+Round-trip communication with the I/O thread can not be accomplished
 within a single transaction (deadlock will result), so transactions
 still must be broken between a request and reply: some forms of
 interaction can not be accomplished atomically.
@@ -207,8 +207,8 @@ do/undo blocks may be nested within transactions.  A \texttt{do} block
 executes uninterruptibly.  If a transaction aborts before it reaches a
 \texttt{do} block, rollback occurs conventionally.  If it aborts after it
 has executed a \texttt{do} block, then the \texttt{undo} block is
-executed uninterruptibly as part of transactional rollback.  Note that
-mutual exclusion must still be used in portions of the transaction
+executed uninterruptibly as part of transactional rollback.
+Mutual exclusion must still be used in portions of the transaction
 processing; ideally the critical regions are short and infrequently
 invoked.
 

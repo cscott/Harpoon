@@ -11,7 +11,7 @@ Versions of the software transaction system have been modeled in
 Promela using \Spin 4.1.0 and verified on an SGI 64-processor MIPS
 machine with 16G of main memory.
 
-Sequences of transactional and non-transactional load and store
+Sequences of transactional and nontransactional load and store
 operations were checked using two concurrent processes, and all possible
 interleavings were found to produce results consistent with
 the semantic atomicity of the transactions.  
@@ -22,7 +22,7 @@ cannot otherwise exploit SMP).  Some representative costs include:
 \item testing two concurrent {\tt writeT} operations (including
   ``false flag'' conditions) against a single object required $3.8\times
   10^6$ states and $170$M memory;
-\item testing sequences of transactional and non-transactional reads
+\item testing sequences of transactional and nontransactional reads
   and writes against two objects (checking that all views of the two
   objects were consistent) required $4.6\times 10^6$ states and $207$M
   memory; and
@@ -87,7 +87,7 @@ guard expression from the statements it is guarding.
 The program counter moves past a statement only if the statement is
 {\it enabled}.  Most
 statements, including assignments, are always enabled.
-A statement consisting only of an expression is enabled iff the
+A statement consisting only of an expression is enabled if and only if the
 expression is true (non-zero).
 Our model uses three basic Promela statements: selection, repetition,
 and {\tt atomic}.
@@ -101,8 +101,8 @@ if
 fi
 \end{inlinecode}
 selects one among its options and executes it.  An option can be
-selected iff its first statement (the guard) is enabled.  The
-special guard {\tt else} is enabled iff all other guards are not.
+selected if and only if its first statement (the guard) is enabled.  The
+special guard {\tt else} is enabled if and only if all other guards are not.
 
 The repetition statement,
 \begin{inlinecode}
@@ -140,4 +140,4 @@ presented here.  It may also be downloaded from
 
 {\linespread{0.9}\footnotesize\verbatiminput{phd-swx.pml}}
 
-% LocalWords:  Promela SGI deallocating deallocation bitmask ensureWriter iff
+% LocalWords:  Promela SGI deallocating deallocation bitmask ensureWriter

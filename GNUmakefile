@@ -141,7 +141,7 @@ phd-thesis.dvi: \
 	Figures/$(f).pdf Figures/$(f).eps)
 phd-thesis.pdf: phd-thesis.dvi
 	pdflatex phd-thesis && pdflatex phd-thesis
-phd-thesis.munged: phd-thesis.tex phd-intro.tex phd-stm.tex phd-htm.tex \
+phd-thesis.munged: phd-thesis.tex phd-titlepage.tex phd-abstract.tex phd-ack.tex phd-intro.tex phd-stm.tex phd-htm.tex \
         phd-hybrid.tex phd-chall.tex phd-related.tex phd-concl.tex phd-ver.tex
 	munge $^ > $@
 phd-thesis-unmunge:

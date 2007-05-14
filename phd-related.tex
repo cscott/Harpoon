@@ -7,7 +7,7 @@ given enough ingenuity on the part of the interpreter.
 A number of researchers have been investigating transactional memory
 systems.  This thesis is the first to present a hybrid hardware/software
 model-checked non-blocking
-object-oriented system that allows co-existence of non-transactional and
+object-oriented system that allows co-existence of nontransactional and
 transactional accesses to a dynamic set of object fields.
 \note{Martin wants citations here: ask him about this?}
 
@@ -55,7 +55,7 @@ generally any synchronization mechanism that doesn't rely on mutual
 exclusion or locking, including wait-free, lock-free,
 and obstruction-free implementations.
 We will be concerned mainly with lock-free algorithms.%
-\footnote{Note that some authors use ``non-blocking'' and
+\footnote{Some authors use ``non-blocking'' and
   ``lock-free'' as synonyms, usually meaning what we here call
   \emph{lock-free}.  Others exchange our definitions for ``lock-free''
   and ``non-blocking'', using lock-free as a generic term and non-blocking
@@ -260,8 +260,8 @@ implementation on some microbenchmarks.  They benchmark on a
 4-processor as well as a 106-processor machine; their crossover point
 (at which the blocking overhead of locks matches the software
 transaction overhead) is around 4 processors.
-Note that Harris and Fraser do not address the problem of
-concurrent non-transactional operations on locations involved in a
+Harris and Fraser do not address the problem of
+concurrent nontransactional operations on locations involved in a
 transaction.  Java synchronization allows such concurrent operations,
 with semantics given by the Java memory model \cite{MansonPu01a,MansonPu01b,MansonPuAd05}.
 We support these operations safely using the mechanisms presented in
@@ -408,8 +408,7 @@ system; that is, that every execution of the program computes the same
 result as some execution where all atomic methods were run \emph{in
   isolation} at a certain point in time, called the
 \defni{Linearization point}, between their invocation and return.
-Note that
-atomic methods invoked directly or indirectly from an atomic
+Atomic methods invoked directly or indirectly from an atomic
 method are subsumed by it: if the outermost method appears atomic,
 then by definition all inner method invocations will also appear atomic.
 Flanagan and Qadeer provide a more formal semantics in \cite{FlanaganQa03}.

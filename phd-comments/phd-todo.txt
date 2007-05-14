@@ -38,11 +38,8 @@ Abstract: "More bottom-line numbers" (CEL)
 "Four new things transactions make easy", topic paragraph: itemize
 (CEL).
 
-"Note that"... (CEL)
-
 Fix sketchy numbers at end of ch 3.
 
 Be specific, better topic para for chapter 4 (CEL)
 
-Charles doesn't like the hyphen in non-transactional.
-nontransactional. (CEL)
+Global search: "will", "we", "our".

@@ -177,15 +177,15 @@ to provide speed in the common case.
 Blundell, Lewis, and Martin~\cite{BlundellLeMa05} distinguish
 between \defn{strongly atomic}\index{Strong atomicity}\index{Atomicity!strong}
 transaction systems, which protect transactions from interference from
-``non-transactional'' code, and \defn{weakly atomic} transaction
+nontransactional code, and \defn{weakly atomic} transaction
 systems which do not afford this
  protection.\index{Weak atomicity}\index{Atomicity!weak}
 Nearly all current software transaction systems are weakly
 atomic,\footnote{There are some systems which use type systems to
-disallow non-transactional access to objects with a ``shared'' type
+disallow nontransactional access to objects with a ``shared'' type
 \cite{RudysWa02, HerlihyLuMoSc03, HarrisMaPeHe05}, but to my knowledge
 all systems which allow (or cannot prevent) access to shared objects
-from non-transactional code do so unsafely
+from nontransactional code do so unsafely
 \cite{ShavitTo95,HarrisFr03,Herlihy05b,DiceShSh06,HerlihyLuMo06,FraserHa04}.}
 however,
 despite the pitfalls thus opened for the unwary programmer, because of
@@ -193,7 +193,7 @@ the perceived difficulty in efficiently implementing the required
 protection.
 
 Strong atomicity is clearly preferable, as the programmer will
-inevitably overlook some non-transactional references to shared data;
+inevitably overlook some nontransactional references to shared data;
 we wish to preserve correctness in this common case.
 Blundell \etal point out
 that programs written for a weakly atomic model (to run on a current software
@@ -249,7 +249,7 @@ In summary, this thesis makes the following contributions:
 \item I provide efficient implementations of
 \textit{strongly atomic} transaction primitives to enable their general use.
 In particular, my technique imposes as little as 15\% overhead on
-non-transactional code in a software-only system.  My experiments have
+nontransactional code in a software-only system.  My experiments have
 not shown an overhead of more than 150\% in real applications,
 although proper compiler support should reduce that worst case
 considerably.%
@@ -845,13 +845,14 @@ machinery.
 
 \note{
 One of the original goals of this thesis was to investigate better integration
-of transactional with inherently non-transactional operations.
+of transactional with inherently nontransactional operations.
 One promising approach is the addition of explicit ``recovery'' blocks
-to undo the effects of non-transactional regions embedded within
+to undo the effects of nontransactional regions embedded within
 an aborting transaction.}
 
 % LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
 % LocalWords:  unscalable dequeue enqueue composability filesystem analyses STM
 % LocalWords:  microbenchmark virtualized multicore undelayed HTM API runtime
 % LocalWords:  unsynchronized Rinard Herlihy parallelize vertices JVM JDK
-% LocalWords:  StringBuffer
+% LocalWords:  StringBuffer nontransactional transactifying Transactification
+% LocalWords:  automata
