@@ -1299,7 +1299,7 @@ The experiments in this thesis were conducted on either the x86 or
 PowerPC architectures, for which \flex does not have a native assembly
 backend.  The ``Precise C'' backend was thus used, so named because,
 aside from emitting C code, it's original purpose was to investigate
-the possibility of precise garbage collection whist emitting
+the possibility of precise garbage collection while emitting
 high-level code.  To that end, the backend contains code to maintain a
 separate stack for values of non-primitive types and to push and pop
 all live variables to this stack at gc points.  Since \flex's low-level
@@ -1323,12 +1323,13 @@ by the normal return address) cannot be implemented in C.  \Flex supports
 two alternate translations: the first uses \texttt{setjmp} and
 \texttt{longjmp} to branch directly from the site where the exception
 is thrown to an appropriate handler, and the second returns a pair
-value from every function call.  The \texttt{setjmp} method only
-incurs cost when a new exception-handling region
-(\texttt{try}/\texttt{catch} block) is entered or when an exception
-is thrown, but \texttt{setjmp} and \texttt{longjmp} are rather
-expensive.  The pair-return method returns a C \texttt{struct}
-consisting of the ``real'' return value along with an exception
+value from every function call.  In the \texttt{setjmp} method \flex emits
+a \texttt{setjmp} call when a new exception-handling region
+(\texttt{try}/\texttt{catch} block) is entered and a \texttt{longjmp}
+when an exception is thrown,
+but \texttt{setjmp} and \texttt{longjmp} are rather
+expensive.  The pair-return method returns a C \texttt{struct} from every
+call consisting of the ``real'' return value along with an exception
 value.\footnote{Methods declared as \texttt{void} return only the
   exception value, of course.}  When the function returns, the caller
 must first test the exception value; if it is non-\texttt{NULL}, then
@@ -1387,7 +1388,7 @@ SPECjvm98 benchmark suite.
 
 The experiments in this thesis all use pair-return to implement
 exceptions.  All experiments also use conservative garbage
-collection, making the ``Precise C'' stack unnecessary.
+collection~\cite{BoehmDeWe91}, making the ``Precise C'' stack unnecessary.
 
 \section{Transforming synchronization}\label{sec:synctrans}
 Aside from implementing the read and write mechanisms of the software
@@ -1545,7 +1546,8 @@ only be invoked once on each unique object read/written by the
 transaction.  Similarly, \texttt{checkWriteField} need only be
 performed once on each object field written by the transaction.  The
 \texttt{CheckOracle} classes hoist each check to its immediate
-dominator if and only if this new location for the check is postdominated by the
+dominator~\cite{Offner95,LengauerTa79,Tarjan74}
+if and only if this new location for the check is postdominated by the
 current location and the new location is dominated by the definition
 of the variable referenced in the check.  This condition ensures that all paths
 to the original location of the check must pass through the new
@@ -1958,7 +1960,7 @@ conflict, although this tactic is likely merited only when the conflicts are
 extremely frequent or when long-lived transactions make the
 copying cost less than the cost of serializing the transactions involved.
 
-Alternatively, false conflicts can be managed with careful allocation
+Alternatively, false conflicts can be managed with a careful allocation
 policy.  The allocator in the present implementation ensures 8-byte
 alignment of objects.  As we have done in prior work
 \cite{WitchelLaAnAs01}, the Java allocator can be modified to align
@@ -2133,7 +2135,7 @@ true, a thread signals the condition (\texttt{Object.notify()} and
 \texttt{Object.notifyAll()} in Java); other threads can suspend
 themselves waiting for the signal (\texttt{Object.wait()}).  In order
 to prevent races between notification and waiting, condition variables
-are usually associated with a mutex (the object monitor, in Java) and
+are associated with a mutex (the object monitor, in Java) and
 \texttt{wait} and \texttt{notify} require the lock to be held when
 they are called.  The \texttt{wait} operation atomically releases the
 lock and waits for the variable; when notification is received
