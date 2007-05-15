@@ -45,3 +45,18 @@ Be specific, better topic para for chapter 4 (CEL)
 Global search: "will", "we", "our".
 
 Need topic para at start of chapter 5. (CEL)
+
+[A-Z]. => [A-Z]\@.
+
+non-blocking => nonblocking
+multi-object => multiobject
+pseudo-code => pseudocode
+re-root => reroot (?)
+
+make figure 5.6 (shallow binding scheme for functional arrays) larger,
+probably by rotating it 90-degrees.  We could alternatively crop the
+note and grow the rest.
+
+make figure 5.7 bigger.
+
+make figure 5.9 smaller.

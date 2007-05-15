@@ -1606,7 +1606,7 @@ last committed version.} however, which may result in incomplete collections
 
 Each transaction had a \texttt{CommitRecord} object storing its state,
 whether \texttt{COMMITTED}, \texttt{ABORTED}, or still
-\texttt{WAITING}.  Most \texttt{CommitRecord} methods were written in
+\texttt{WAITING}\@.  Most \texttt{CommitRecord} methods were written in
 Java, including object creation, exponential backoff on retry, and
 throwing the appropriate \texttt{TransactionAbortException} on abort.
 Only the crucial \texttt{commit()} and \texttt{abort()} operations,
@@ -2488,6 +2488,10 @@ integers (indexes) to values, any functional-map datatype (for
 example, a functional balanced tree) can be used to implement
 functional arrays.
 
+In contrast, an imperative array---such as those in imperative
+languages such as Java---is mutable.  Elements of the array are
+updated ``in place'', destroying the old value of the element.  Only
+the updated array is available for use after an update.
 The distinguishing characteristic of an imperative array is its
 time complexity: $O(1)$ time to access or update any element.
 Implementing functional arrays with a functional balanced tree yields
@@ -2498,7 +2502,7 @@ For concreteness, a functional array defines the following three
 operations:
 \begin{itemize}
 \item $\funcname{FA-Create}(n)$: Return an array $A$ of size $n$.  The
-  contents of the array are initialized to zero.
+  contents of the array are initialized to $0$.
 \item $\funcname{FA-Update}(A, i, v)$: Return an array $A'$ that is
   functionally identical to array $A$ except that
   $\funcname{FA-Read}(A', i)=v$.
@@ -2517,14 +2521,19 @@ For the moment, consider the following \naive implementation:
   $A'$ and copy the contents of $A$ to $A'$.  Set $A'[i]=v$. Return $A'$.
 \item $\funcname{FA-Read}(A, i)$: Return $A[i]$.
 \end{itemize}
-This implementation has $O(1)$ read and $O(n)$ update, so it matches
-the performance of imperative arrays only when $n=O(1)$.  I will
-therefore call these \emph{small object functional arrays}.  Operations
-in this implementation never fail.  Every operation is non-blocking
+Since this implementation costs $O(1)$ to read and $O(n)$ to update,
+it matches
+the performance of imperative arrays only when $R = O(U \cdot n)$,
+where $R$ is the number of reads and $U$ is the number of updates.
+In most code, $R \approx 3U$ \cite[p. 105]{HennessyPa96} and the
+constant factors hidden by the big-O notation are small, so the
+performance equivalence is only valid when $n$ is relatively small.  I
+therefore call these \emph{small-object functional arrays}.  Operations
+in this implementation never fail.  Every operation is nonblocking
 and no synchronization is necessary, since the imperative arrays are
-never mutated after they are created.   In \secref{lf-fun-arr} we will
-review better implementations of functional arrays, and present our
-own lock-free variant.
+never mutated after they are created.   \Secref{lf-fun-arr}
+reviews better functional array implementations and presents
+a new lock-free variant.
 
 \section{A single-object protocol}
 \begin{figure}\centering
@@ -2538,20 +2547,20 @@ construct a transaction implementation for single objects.  In
 this implementation, fields of at most one object may be referenced
 during the execution of the transaction.
 
-I will consider the following two operations on objects:
+Consider the following two operations on objects:
 \begin{itemize}
-\item $\funcname{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
-  there is a constant mapping function that given a field name
-  returns an integer index.  We will write the result of mapping $f$
-  as \fref{f}{index}.  For simplicity, and without loss of generality,
-  we will assume all fields are of equal size.
+\item $\funcname{Read}(o, f)$: Read field $f$ of $o$.  Assume that
+  there is a constant mapping function, which, given a field name $f$,
+  returns an integer index, \fref{f}{index}.
+  For simplicity and without loss of generality,
+  assume that all field sizes are equal.
 \item $\funcname{Write}(o, f, v)$: Write value $v$ to field $f$ of $o$.
 \end{itemize}
 All other operations on Java objects, such as method dispatch and type
 interrogation, can be performed using the immutable {\tt type}
-field in the object.  Because the {\tt type} field is never changed
-after object creation, non-blocking implementations of operations on
-the {\tt type} field are trivial.
+field in the object.  Because the {\tt type} field never changes
+after object creation, implementing nonblocking operations on
+the {\tt type} field is straightforward.
 
 As Figure~\ref{fig:single-o} shows, our single-object transaction
 implementation represents objects as a pair, combining {\tt type} and a
@@ -2568,10 +2577,11 @@ the object being updated appropriately:
 \end{itemize}
 
 The interesting cases are reads and writes inside a transaction.
-At entry to our transaction that will access (only) object $o$, we
-store \fref{o}{fields} in a local variable $u$.  We create another
-local variable $u'$ which we initialize to $u$.  Then our read and
-write operations are implemented as:
+At entry to a transaction that will access (only) object $o$, the
+single-object version of \lapex
+stores \fref{o}{fields} in a local variable $u$.  We create another
+local variable $u'$ initialized to $u$.  Then, the read and
+write operations are implemented as follows:
 \begin{itemize}
 \item $\funcname{ReadT}(o, f)$:
   Return $\funcname{FA-Read}(u', \fref{f}{index})$.
@@ -2582,16 +2592,15 @@ write operations are implemented as:
 
 At the end of the transaction, we use Compare-And-Swap to atomically
 set \fref{o}{fields} to $u'$ if and only if it contained $u$.  If the CAS fails,
-we the transaction is aborted (we simply discard $u'$) and we retry.
+the transaction is aborted (we simply discard $u'$) and retried.
 
 With our \naive ``small object'' functional arrays, this implementation is
-exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
+exactly the ``small-object protocol'' of Herlihy \cite{Herlihy93}.
 Herlihy's protocol is rightly criticized for an excessive amount of
-copying.  I will address this with a better implementation of
-functional arrays in \secref{lf-fun-arr}.
-However, the restriction that only one object
-may be referenced within a transaction is overly limiting.  I will
-first fix this problem.
+copying.  I address this criticism with a better implementation of
+functional arrays in \secref{lf-fun-arr}.  First, however, I remove
+the restriction that only one object
+may be referenced within a transaction.
 
 \section{Extension to multiple objects}
 \begin{figure}\centering
@@ -2715,8 +2724,8 @@ end\\
 I extend the implementation to allow the fields of any number of
 objects to be accessed during the transaction.
 Figure~\ref{fig:multi-o} shows our new object representation.
-Compare this to \figref{tr-multi-obj-big}; we've successfully recast our earlier
-transaction system design now in terms of operations on an array datatype.
+Compare this figure to \figref{tr-multi-obj-big}; we've successfully
+recast the basic \apex design in terms of operations on an array datatype.
 Objects consist of two slots, and the first represents the immutable
 {\tt type}, as before.  The second field, {\tt versions}, points to a
 linked list of {\tt Version} structures.  The {\tt Version} structures
@@ -2724,91 +2733,92 @@ contain a pointer {\tt fields} to a functional array, and a pointer
 {\tt owner} to an \emph{transaction identifier}.  The transaction
 identifier contains a single field, {\tt status}, which can be set to
 one of three values: \textsl{COMMITTED}, \textsl{IN-PROGRESS}, or
-\textsl{ABORTED}.  When the transaction identifier is created, the
+\textsl{ABORTED}\@.  When the transaction identifier is created, the
 status field is initialized to \textsl{IN-PROGRESS}, and it will be
-updated exactly once thereafter, to either \textsl{COMMITTED} or
-\textsl{ABORTED}.  A \textsl{COMMITTED} transaction identifier never
+updated exactly once thereafter to either \textsl{COMMITTED} or
+\textsl{ABORTED}\@.  A \textsl{COMMITTED} transaction identifier never
 later becomes \textsl{IN-PROGRESS} or \textsl{ABORTED}, and
 a \textsl{ABORTED} transaction identifier never becomes
-\textsl{COMMITTED} or \textsl{IN-PROGRESS}.
+\textsl{COMMITTED} or \textsl{IN-PROGRESS}\@.
 
 We create an transaction identifier when we begin or restart a transaction
 and place it in a local variable \emph{tid}.  At the end of the
 transaction, we use CAS to set \fref{\var{tid}}{status} to
-{\sl COMMITTED} if and only if it was {\sl IN-PROGRESS}.  If the CAS is successful,
+{\sl COMMITTED} if and only if it was {\sl IN-PROGRESS}\@.  If the CAS is successful,
 the transaction has also executed successfully; otherwise
 $\fref{\var{tid}}{status}=\text{\sl ABORTED}$ (which indicates that
-our transaction has been aborted) and we must back off and retry.
+our transaction has been aborted), and we must back off and retry.
 All {\tt Version} structures
-created while in the transaction will reference \emph{tid} in
+created while in the transaction reference \emph{tid} in
 their {\tt owner} field.
 
-Semantically, the current field values for the object will be given by
+Semantically, the current field values for the object are given by
 the first version in 
-the versions list whose transaction identifier is {\sl COMMITTED}.
-This allows us to link {\sl IN-PROGRESS} versions in at the head of
+the versions list whose transaction identifier is {\sl COMMITTED}\@.
+These semantics allow us to link {\sl IN-PROGRESS} versions in at the head of
 multiple objects' versions lists and atomically change the values of
 all these objects by setting the one common transaction identifier to
-{\sl COMMITTED}.  We only allow one {\sl IN-PROGRESS} version on the
-versions list, and it must be at the head, so
-before we can link a new version at the head we
+{\sl COMMITTED}\@.  We only allow one {\sl IN-PROGRESS} version on the
+versions list, and it must be at the head. Thus,
+before we can link a new version at the head, we
 must ensure that every other version on the list is {\sl ABORTED} or
-{\sl COMMITTED}.
+{\sl COMMITTED}\@.
 
-Since we will never look past the first {\sl COMMITTED} version in the
+Since we never look past the first {\sl COMMITTED} version in the
 versions list, we can free all versions past that point.  In our
-presentation of the algorithm, we do this by explicitly setting the
+presentation of the algorithm, we do this deallocation by explicitly setting the
 {\tt next} field of every {\sl COMMITTED} version we see to {\bf null};
-this allows the versions past that point to be garbage collected.
-An optimization would be to have the garbage collector do the list
+overwriting the reference allows the versions past that point to be garbage collected.
+An optimization is for the garbage collector to do the list
 trimming for us when it does a collection.
+
 % always must read u.next before u.owner.status to ensure we don't
 % get caught with a null pointer from a version that just committed.
 
-We don't want to inadvertently chase the null {\tt next} pointer
-of a {\sl COMMITTED} version, so we always load the {\tt next}
+Because we don't want to inadvertently chase the null {\tt next} pointer
+of a {\sl COMMITTED} version, we always load the {\tt next}
 field of a version \emph{before} we load {\tt owner.status}.  Since
 the writes occur in the reverse order ({\sl COMMITTED} to
-{\tt owner.status}, then {\bf null} to {\tt next}) we have ensured that
-our {\tt next} pointer is valid whenever the status is not {\sl COMMITTED}.
+{\tt owner.status}, then {\bf null} to {\tt next}), we have ensured that
+our {\tt next} pointer is valid whenever the status is not {\sl COMMITTED}\@.
 
 We begin an atomic method with \funcname{TransStart} and attempt to
 complete an atomic method with \funcname{TransEnd}.  They are defined as
 follows:
 \begin{itemize}
-\item $\funcname{TransStart}$: create a new transaction identifier, with
-  its status initialized to {\sl IN-PROGRESS}.  Assign it to the
+\item $\funcname{TransStart}$: create a new transaction identifier with
+  its status initialized to {\sl IN-PROGRESS}\@.  Assign it to the
   thread-local variable \var{tid}.
 \item $\funcname{TransEnd}$:
   If
  $$\text{CAS}(\text{\sl IN-PROGRESS}, \text{\sl COMMITTED},
              \addr{\fref{\var{tid}}{status}})$$
-  is successful, the transaction as a whole has completed successfully,
-  and can be linearized at the location of the CAS.
+  is successful, the transaction as a whole has completed successfully
+  and can be linearized at the location of the CAS.\@
   Otherwise, the transaction has been aborted.  Back off and retry from
   \funcname{TransStart}.
 \end{itemize}
-Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{ReadT},
+Pseudocode describing \funcname{Read}, \funcname{Write}, \funcname{ReadT},
 and \funcname{WriteT} is presented in Figures~\ref{fig:reads} and
 \ref{fig:writes}.  In the absence of contention, all operations take
 constant time plus an invocation of \funcname{FA-Read} or
 \funcname{FA-Update}.
 
 \section{Lock-free functional arrays}\label{sec:lf-fun-arr}
-\begin{figure}\centering
+\begin{figure}[t]\centering
 \includegraphics[width=5in,clip=true]{Figures/chuang}
 \caption[Shallow binding scheme for functional arrays.]
   {Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
 \end{figure}
-In this section I will present a lock-free implementation of functional
-arrays with $O(1)$ performance in the absence of contention.
+This section presents a lock-free implementation of functional
+arrays with $O(1)$ performance for both read and update in the absence of contention.
 The crucial operation is a rotation of a \emph{difference node} with the
 main body of the array. Using this implementation of functional arrays
-in the multi-object transaction protocol of the previous chapter
-will complete our re-implementation of non-blocking transactions,
-solving the large object problem.
+in the multi-object transaction protocol of the previous section
+creates \lapex, our reimplementation of nonblocking transactions which
+solves the large-object problem.
 
 Let's begin by reviewing the well-known functional array
 implementations.  As mentioned previously,
@@ -2820,7 +2830,7 @@ or \emph{shallow-binding}.
 Tree-based implementations typically have a logarithmic term in their
 complexity.  The simplest is the persistent binary tree with $O(\ln
 n)$ look-up time; Chris Okasaki 
-\cite{Okasaki95} has implemented a purely-functional random-access list
+\cite{Okasaki95} has implemented a purely functional random-access list
 with $O(\ln i)$ expected lookup time, where $i$ is the index of the
 desired element.
 
@@ -2879,8 +2889,8 @@ widely separated versions of the array, as we will continually
 re-root the array from one version to the other.
 Chuang's contribution is to provide for \emph{cuts} to the chain of
 differential nodes: once in a while we clone the cache and create a
-new root instead of performing a rotation.  This operation takes
-$O(n)$ time, so we amortize it over $n$ operations by randomly
+new root instead of performing a rotation.  Since this operation takes
+$O(n)$ time, we amortize it over $n$ operations by randomly
 choosing to perform a cut with probability $1/n$.
 
 \begin{figure}\centering%
@@ -2974,11 +2984,11 @@ end\\
 \end{figure}
 
 Figure~\ref{fig:funarr} shows the data structures used for the
-functional array implementation, and the series of atomic steps used
-to implement a rotation.  The {\tt Array} class represents a
-functional array; it consists of a {\tt size} for the array and a
+functional array implementation, as well as the series of atomic steps used
+to implement a rotation.  The {\tt Array} class, which represents a
+functional array, consists of a {\tt size} for the array and a
 pointer to a {\tt Node}.  There are two types of nodes: a {\tt
-  CacheNode} stores a value for every index in the array, and a {\tt
+  CacheNode} stores a value for every index in the array, whereas a {\tt
   DiffNode} stores a single change to an array.  {\tt Array} objects
 that point to {\tt CacheNode}s are roots.
 
@@ -2994,32 +3004,32 @@ $A$ and its cache.  The {\tt DiffNode} $d_A$ contains the value for
 element $x$ contained in the cache, $z$, so there is no change in
 the value of $A$.
 
-We continue swinging pointers until step 5, when can finally set
+We continue swinging pointers until step 5, when we can finally set
 the element $x$ in the cache to $y$.  We perform this operation with a
 DCAS operation that checks that $\fref{C}{node}$ is still pointing to
 the cache as we expect.  A concurrent rotation would swing
 $\fref{C}{node}$ in its step 1.  In general, therefore, the location
 pointing to the cache serves as a reservation on the cache.
 
-Thus in step 6 we need to again use DCAS to simultaneously swing
+Thus, in step 6 we need to again use DCAS to simultaneously swing
 $\fref{C}{node}$ away 
 from the cache as we swing $\fref{B}{node}$ to point to the cache.
 
 Figures~\ref{fig:fun-impl1} and \ref{fig:fun-impl2} present pseudocode
 for \funcname{FA-Rotate}, \funcname{FA-Read}, and
-\funcname{FA-Update}.  The \funcname{FA-Read} procedure also uses the
+\funcname{FA-Update}.  Like \funcname{FA-Rotate}, \funcname{FA-Read} procedure also uses the
 cache pointer as a reservation, double-checking the cache pointer
 after it finishes its read to ensure that the cache hasn't been stolen
 from it.
 
 Let us now consider cuts, where \funcname{FA-Read} clones the cache
 instead of performing a rotation.   Cuts also check the cache pointer
-to protect against concurrent rotations.  But what if the cut occurs
-while a rotation is mutating the cache in step 5?  In this case the
-only array adjacent to the root is $B$, so the cut must be occurring
-during an invocation of $\funcname{FA-Rotate}(B)$.  But then the
+to protect against concurrent rotations.  But, what if the cut occurs
+while a rotation is mutating the cache in step 5?  In this case, because the
+only array adjacent to the root is $B$, the cut must be occurring
+during an invocation of $\funcname{FA-Rotate}(B)$, in which case the
 differential node $d_B$ will be applied after the cache is copied,
-which will safely overwrite the mutation we were concerned about.
+thereby safely overwriting the mutation we were concerned about.
 
 With hardware support for small transactions \cite{HerlihyMo93}
 we could cheaply perform the entire rotation atomically, instead of
@@ -3063,3 +3073,4 @@ XXX: continue previous microbenchmarks, as function of object size.
 % LocalWords:  parameterized datatype Herlihy ensureReader nontransactional UTM
 % LocalWords:  transactification mpegaudio raytrace LTM microarchitecture RISC
 % LocalWords:  backoff syscall livelock subword subwords lookup Chuang
+% LocalWords:  nonblocking Herlihy's Pseudocode
