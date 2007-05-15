@@ -43,3 +43,5 @@ Fix sketchy numbers at end of ch 3.
 Be specific, better topic para for chapter 4 (CEL)
 
 Global search: "will", "we", "our".
+
+Need topic para at start of chapter 5. (CEL)

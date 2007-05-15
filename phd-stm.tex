@@ -2238,8 +2238,8 @@ with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
 section counsel that the numbers I obtain ought to be considered
 guidelines to potential performance, not fundamental limits.
 Previous work has adequately demonstrated the scalability
-benefits of non-blocking synchronization; I concentrate in this
-thesis on single-threaded efficiency measures.
+benefits of non-blocking synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05};
+I concentrate in this thesis on single-threaded efficiency measures.
 
 I examine the SPECjvm98 benchmark suite, a collection of
 practical Java programs including an expert system, a simple database,
@@ -2434,12 +2434,6 @@ FLAGS'' section.
 }
 
 \chapter{Arrays and large objects}\label{cha:largeobj}
-\punt{
-\epigraphhead[70]{\epigraph{%
-In this life, one thing counts\\
-In the bank, large amounts\ldots
-}{\textit{Oliver!}}}
-}
 \setlength{\epigraphwidth}{.55\textwidth}
 \epigraphhead[40]{\epigraph{%
 Well, you go in and you ask for some tooth- paste---the small size---and
@@ -2449,13 +2443,6 @@ thought the large size was the largest size, but he says that the
 family size, the economy size and the giant size are all larger than
 the large size---that the large size is the smallest size there is.
 }{\textit{Charade} (1963)}}
-%\setlength{\epigraphwidth}{.4\textwidth}
-\punt{
-\epigraphhead[70]{\epigraph{%
-There are no small problems.  Problems that appear small are large
-problems that are not understood.
-}{\textit{Santiago~Ram{\'o}n~y~Cajal}}}
-}
 
 \begin{figure}
 \begin{center}
@@ -2465,51 +2452,50 @@ problems that are not understood.
   smaller than a given size.}
 \label{fig:tr-w}%
 \end{figure}%
-The software transaction system implemented in the previous chapter
-clones objects on
-transactional writes, so that the previous state of the object can be
+The basic \apex software transaction system clones objects on
+transactional writes so that the previous state of the object can be
 restored if the transaction aborts.  \figref{tr-w} shows the object
 size distribution of transactional writes for SPECjvm98, and
 indicates that over 10\% of writes may be to large objects.
 As we've seen in \secref{full-bench}, the copying cost can become
 excessive.
 
-The solution I will propose will
-represent objects as \defn{functional
+The solution I propose
+represents objects as \defn{functional
   arrays}.  O'Neill and Burton \cite{ONeillBu97} give a fairly
 inclusive overview of such algorithms; I've chosen Tyng-Ruey Chuang's
 version \cite{Chuang94} of \emph{shallow binding}, which uses
 randomized cuts to the version tree to limit the cost of a read to
-$O(n)$ in the worst case.  Single-threaded accesses to the array are
-$O(1)$.  Our use of functional arrays is single-threaded in the common
-case, when transactions do not abort.  Chuang's scheme is attractive
-because it limits the worst-case cost of an abort, with very little
+$O(n)$ in the worst case.  Single-threaded accesses to the array run in
+$O(1)$ time.  My use of functional arrays is single-threaded in the common
+case when transactions do not abort.  Chuang's scheme is attractive,
+because it limits the worst-case cost of an abort, with little
 added complexity.
 
-In this chapter I will recast the transaction system design of
-\charef{stm} as a
-``small object protocol,'' then show how to extend it to a ``large
-object protocol,'' in the process addressing the large object performance
-problems.  The large object protocol will use a lock-free variant of
-Chuang's algorithm, which I will present in \secref{lf-fun-arr}.
+In this chapter I recast the basic \apex design of the previous
+chapters as a
+``small-object protocol,'' and then show how to extend it to a ``large-object protocol,'' in the process addressing the large-object performance
+problems.  The large-object protocol, which we'll call \lapex, uses a
+lock-free variant of 
+Chuang's algorithm, which I present in \secref{lf-fun-arr}.
 
 \section{Basic operations on functional arrays}
 Let us begin by reviewing the basic operations on functional arrays.
 Functional arrays are \emph{persistent}; that is,
-after an element is updated both the new and the old contents of the
+after an element is updated, both the new and the old contents of the
 array are available for use.  Since arrays are simply maps from
-integers (indexes) to values; any functional map datatype (for
+integers (indexes) to values, any functional-map datatype (for
 example, a functional balanced tree) can be used to implement
 functional arrays.
 
-However, the distinguishing characteristic of an imperative array is its
-time complexity: $O(1)$ access or update of any element.
+The distinguishing characteristic of an imperative array is its
+time complexity: $O(1)$ time to access or update any element.
 Implementing functional arrays with a functional balanced tree yields
-$O(\lg n)$ worst-case access or update.\footnote{I will return to
+$O(\lg n)$ worst-case access or update.\footnote{I return to
 a discussion of operational complexity in \secref{lf-fun-arr}.}
 
-For concreteness, functional arrays have the following three
-operations defined:
+For concreteness, a functional array defines the following three
+operations:
 \begin{itemize}
 \item $\funcname{FA-Create}(n)$: Return an array $A$ of size $n$.  The
   contents of the array are initialized to zero.
