@@ -144,7 +144,7 @@ of a transaction.  A runtime check or simple type system may be used
 to enforce this restriction.
 
 A useful programmer technique in this model is to create a separate concurrent
-thread for I/O.  A transaction can interact with a queue to request
+thread for I/O\@.  A transaction can interact with a queue to request
 I/O, and the I/O thread will dequeue requests and enqueue responses.
 This works best for unidirectional communication.
 Round-trip communication with the I/O thread can not be accomplished
@@ -193,7 +193,7 @@ It is worth noting that modern interface hardware is often designed
 such that it works well with this approach.  For example, a GPU
 or network card will take commands from or deliver input to a
 buffer; a single operation is sufficient to hand over a buffer to
-the card to commence I/O.  This single I/O action may be made atomic
+the card to commence I/O\@.  This single I/O action may be made atomic
 with the transaction commit.
 
 \subsection{Integrating do/undo}

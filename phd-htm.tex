@@ -153,7 +153,7 @@ thread, and two processor control registers hold the base and bounds
 of the currently active thread's log.  Each log consists of a
 \defn{commit record} and a vector of \defn{log entries}.  The commit
 record maintains the transaction's status: \texttt{PENDING},
-\texttt{COMMITTED}, or \texttt{ABORTED}.  Each log entry corresponds
+\texttt{COMMITTED}, or \texttt{ABORTED}\@.  Each log entry corresponds
 to a block of memory that has been read or written by the transaction.
 The entry provides a pointer to the block and the old (backup) value
 for the block so that memory can be restored in case the transaction
@@ -169,7 +169,7 @@ may have been the target of a transaction's store.  When a processor
 running a transaction reads or writes a block, the block's log pointer
 is made to point to a transaction log entry for that block.  Further,
 if the access is a write, the RW bit for the block is set to
-\texttt{W}.  Whenever another processor references a block that is
+\texttt{W}\@.  Whenever another processor references a block that is
 already part of a pending transaction, the system consults the RW bit
 and log pointer to determine the correct action, for example, to use
 the old value, to use the new value, or to abort the transaction.
@@ -208,7 +208,7 @@ By following the log pointer to the log entry, then following the log
 entry pointer to the commit record, one can determine the transaction
 status (pending, committed, or aborted) of each block.  To commit a
 transaction, the system simply changes the commit record from
-\texttt{PENDING} to \texttt{COMMITTED}.  At this point, a reference to
+\texttt{PENDING} to \texttt{COMMITTED}\@.  At this point, a reference to
 the block produces the new value stored in memory, albeit after some
 delay in chasing pointers to discover that the transaction has been
 committed.  To avoid this delay, as well as to free the transaction
@@ -218,7 +218,7 @@ each block mentioned, thereby finalizing the contents of the block.
 Future references to that block will continue to produce the new value
 stored in memory, but without the delay of chasing pointers.  To abort
 a transaction, the system changes the commit record from
-\texttt{PENDING} to \texttt{ABORTED}.  To clean up, it iterates
+\texttt{PENDING} to \texttt{ABORTED}\@.  To clean up, it iterates
 through the entries, storing the old value back to memory and then
 clearing the log pointer.  We chose to store the old value of a block
 in the transaction log and the new value in memory, rather than the
@@ -326,7 +326,7 @@ while typically not visible to a user-level programmer, are
 themselves stored in addressable physical memory to allow the
 operating system to page this information to disk.  The location of
 the memory holding the log pointer information for a given user data
-page is kept in the page table and cached in the TLB.
+page is kept in the page table and cached in the TLB\@.
 
 During execution of a single load or store instruction, the processor can
 potentially touch a large number of disparate memory locations in the
@@ -392,7 +392,7 @@ area of physical memory allocated by the operating system.
 \figput[LTM cache modifications.]{cachemods}{LTM cache modifications. The T bit indicates if the line is
 transactional. The O bit indicates if the set has
 overflowed. Overflowed data is stored in a data structure in uncached
-DRAM.}
+DRAM\@.}
 
 LTM requires only a few small modifications to the cache, as shown
 in \figref{cachemods}.  For small transactions, the cache is used to
@@ -434,7 +434,7 @@ so that the operating system can increase the size of the hash table
 and retry the transaction.
 
 LTM was designed to be a first step towards a truly unbounded
-transactional memory system such as UTM.  LTM has most of the
+transactional memory system such as UTM\@.  LTM has most of the
 advantages of UTM while being much easier to implement.  As I will
 show at the end of the chapter, LTM's
 more practical implementation of quasi-unbounded transactional memory
@@ -458,7 +458,7 @@ system proposed in the next section.
 %% \includegraphics{uvsimLinkedListRuntime.eps}
 \end{tabular}
 \end{center}
-\caption{\texttt{Counter} performance on UVSIM.}
+\caption{\texttt{Counter} performance on UVSIM\@.}
 \label{fig:microbenchperf}
 \end{figure}
 
@@ -502,7 +502,7 @@ coherency mechanism to handle small transactions, LTM is able to
 execute with almost no overhead over serial code in the common
 case. In this section, we discuss qualitatively how the LTM
 implementation is optimized for the common case and how similar
-techniques are used in UTM. The discussion is broken into the
+techniques are used in UTM\@. The discussion is broken into the
 following three cases: starting, running, committing a transaction.
 
 Starting a transaction in LTM requires virtually no overhead in the
@@ -531,7 +531,7 @@ serviced, an additional cache lookup is necessary. However, the lookup
 is local and thus can be done relatively quickly. \note{Is this
 enough?  Seems like the additional lookup in the cache could increase
 cache latency significantly} Therefore, the common case overhead of
-running a transaction can be minimal even in UTM.
+running a transaction can be minimal even in UTM\@.
 
 Committing a transaction in LTM has virtually no overhead in the
 common case since it can be done in one clock cycle. LTM transaction
@@ -556,7 +556,7 @@ a \defn{Base} version that uses no synchronization, a \defn{Locks}
 version that uses spin-locks for synchronization, and a \defn{Trans}
 version that uses LTM transactions for synchronization. To measure
 overheads, we ran these versions of the SPECjvm98 benchmark suite on
-one processor of UVSIM.
+one processor of UVSIM\@.
 
 As described in \secref{synctrans}, our transactional version uses method
 cloning to flatten transactions; we performed the same cloning on the
@@ -568,7 +568,7 @@ compiled the files generated by the ``Precise C'' backend
 (\secref{precisec}) of \flex with
 \texttt{-O9} for a \texttt{-mips4} target using the
 \texttt{n64} API to generate fully-static binaries executable by
-UVSIM.}  to remove or replace all invocations of lock and transaction
+UVSIM\@.}  to remove or replace all invocations of lock and transaction
 entry and exit code with appropriate implementations.  No garbage
 collection was performed during these benchmark runs.
 
@@ -620,7 +620,7 @@ application               &  time       & time          & time                  
 SPECjvm98 performance on a 1-processor UVSIM simulation.  The {\em
 Time in trans} and {\em Time in overflow} are the times spent actually
 running a transaction and handling overflows respectively. The input
-size is 1. The overflow hash table is 128MB.}
+size is 1. The overflow hash table is 128MB\@.}
 \label{fig:specperf}
 \end{figure}
 
@@ -640,7 +640,7 @@ requires one additional access of memory to retrieve the requested
 cache line.  UTM may require an additional access of memory, however,
 to retrieve the transactional record entry. UTM requires at most one
 more access to memory than LTM when there is overflow.  Therefore, the
-overflow overhead of UTM will be very similar to that of UTM.
+overflow overhead of UTM will be very similar to that of UTM\@.
 }
 
 

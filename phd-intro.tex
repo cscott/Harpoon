@@ -227,7 +227,7 @@ One of the common synchronization mistakes made in lock-based
 object-oriented code is
 the ``multiple object problem'': when lock A protects object A, and
 lock B protects object B, it is easy to get into trouble when writing
-routines that involve both objects A and B.  Either insufficient
+routines that involve both objects A and B\@.  Either insufficient
 locks are taken, or both locks are taken without carefully considering
 deadlock, or else one object's locks are released and reacquired during the
 operation allowing atomicity to be broken.
@@ -785,7 +785,7 @@ methods are meant to accomplish this.
 The {\tt append()} method is \emph{not} atomic, however.  Another
 thread may change the length of the parameter \texttt{sb} (by adding
 or removing characters) between the call to \texttt{sb.length()} at
-label A and the call to \texttt{sb.getChars(\ldots)} at label B.
+label A and the call to \texttt{sb.getChars(\ldots)} at label B\@.
 This non-atomicity may cause incorrect data to be appended to the
 target or a \texttt{StringIndexOutOfBoundException} to be thrown. 
 Although the calls to

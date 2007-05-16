@@ -46,8 +46,6 @@ Global search: "will", "we", "our".
 
 Need topic para at start of chapter 5. (CEL)
 
-[A-Z]. => [A-Z]\@.
-
 non-blocking => nonblocking
 multi-object => multiobject
 pseudo-code => pseudocode
