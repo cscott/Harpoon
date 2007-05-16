@@ -78,32 +78,32 @@ well.
 
 The transaction primitives presented in this thesis can exploit
 optimistic concurrency, provide fault tolerance, and prevent delays by
-using non-blocking synchronization.  Although transactions can be
+using nonblocking synchronization.  Although transactions can be
 implemented using mutual exclusion (locks), our algorithms
-utilize non-blocking synchronization \index{Non-blocking
-synchronization}\index{Synchronization!non-blocking}
+utilize nonblocking synchronization \index{Nonblocking
+synchronization}\index{Synchronization!nonblocking}
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
-exploit optimistic concurrency among transactions.  Non-blocking
+exploit optimistic concurrency among transactions.  Nonblocking
 synchronization offers several advantages; from the system
 builder's perspective the principle advantage is fault tolerance.
 In a traditionally constructed system, a process that
 fails or pauses while holding a lock within a critical region can
 prevent all other processes from making progress.  It is in general
 not possible to restore locked data structures to a
-consistent state after such a failure.  Non-blocking synchronization
+consistent state after such a failure.  Nonblocking synchronization
 offers a graceful solution, as non-progress or failure
 of any one thread does not affect the progress or consistency of other
 threads or the system.
 
 Implementing transactions using
-non-blocking synchronization offers performance benefits as well.
+nonblocking synchronization offers performance benefits as well.
 When mutual exclusion is used to enforce atomicity, page
 faults, cache misses, context
 switches, I/O, and other unpredictable events may result in delays to the
-entire system. Non-blocking
+entire system. Nonblocking
 synchronization allows undelayed processes or processors to continue
 to make progress.
-In real-time systems, the use of non-blocking
+In real-time systems, the use of nonblocking
 synchronization can prevent \defnlti{Priority inversion}
 \index{Lock(s)!priority inversion} in the system
 \cite{Jones97}, although \naive implementations may result in
@@ -258,7 +258,7 @@ considerably.%
 \item The transaction
 primitives presented in this thesis can exploit optimistic
 concurrency, provide fault tolerance, and prevent delays by using
-non-blocking synchronization.
+nonblocking synchronization.
 \punt{
 \item 
 I show how transactions can be integrated into an
@@ -464,7 +464,7 @@ Michael and Scott demonstrated in 1996 \cite{MichaelSc96}.
 
 The simple ``one lock'' solution to the double-ended queue
 problem, ruled out as unscalable in the locking case, is scalable and
-efficient for non-blocking transactions \cite{HerlihyLuMo03,Herlihy05}.
+efficient for nonblocking transactions \cite{HerlihyLuMo03,Herlihy05}.
 
 \subsection{Handle asynchronous exceptions}
 Properly handling asynchronous events is difficult with locks, because
@@ -709,7 +709,7 @@ void pushFlow(Vertex v1, Vertex v2, double flow) {
 \end{inlinecode}
 
 This {\tt atomic} region can be implemented as a transaction, and
-with an appropriately non-blocking implementation, it
+with an appropriately nonblocking implementation, it
 will scale better, execute faster, and use less memory than the locking version
 \cite{AnanianAsKuLeLi05,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
 From the programmer's point of view, I have also eliminated the
@@ -807,7 +807,7 @@ updates to more than one object.
 Monitor synchronization is not
 well-suited to this task.  Atomic regions implemented with
 transactions can be used to simplify the locking discipline required
-to synchronize multi-object mutation
+to synchronize multiobject mutation
 and provide a more intuitive specification for the desired
 concurrent properties.  Further, the {\tt StringBuffer} example shows
 that simply replacing {\tt synchronized} with {\tt atomic} provides a

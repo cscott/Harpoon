@@ -354,7 +354,7 @@ of legacy code (but see \secref{semantic}!).}
 I now present algorithms that have these desired properties.
 The \apex algorithms provide strongly-atomic object-oriented
 transactions with low bloat and fast reads.  Further, the \apex
-algorithms are completely non-blocking, which allows good
+algorithms are completely nonblocking, which allows good
 scaling and proper fault-tolerant behavior.  Specifically, one faulty or slow
 processor cannot hold up the remaining good processors.
 
@@ -694,7 +694,7 @@ A transactional read is split into two parts.  The first part, which
 occurs before the read, is encapsulated in a routine named
 \texttt{ensureReader}.  Its primary task is to
 ensure that our transaction is on the reader list for the
-object.  This check is straightforward to do in a non-blocking manner as
+object.  This check is straightforward to do in a nonblocking manner as
 long as we always add readers to the head of the list.  The
 \texttt{ensureReader} routine must also
 walk the versions list to abort any uncommitted transaction other
@@ -1860,14 +1860,14 @@ starts at a different offset from the first field (since array data starts with
 an immutable length field).
 
 \Secref{multiword} discusses some of the other challenges involved in
-synthesizing atomic operations on subword and multi-word datatypes.
+synthesizing atomic operations on subword and multiword datatypes.
 
 \section{Limitations}
 The present \apex implementation contains a few non-fundamental
 limitations with well-understood solutions which, nonetheless, would
 add additional implementation complexity.  These limitations involve static
 fields, coarse granularity of LL/SC instructions, subword and
-multi-word fields, and condition variables (\texttt{Object.wait()}).
+multiword fields, and condition variables (\texttt{Object.wait()}).
 In addition, there are
 limitations related to the manipulation of large objects (usually
 arrays); we put off to \charef{largeobj} a full discussion of the
@@ -1971,7 +1971,7 @@ from their thread, or by packing multiple objects into a cache line
 if they are known never to participate in transactions that might
 conflict.
 
-\subsection{Handling subword and multi-word reads/writes}
+\subsection{Handling subword and multiword reads/writes}
 \label{sec:multiword}
 The granularity of the store-conditional instruction is more
 problematic.  Although we have specified our algorithms assuming that
@@ -2238,7 +2238,7 @@ with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
 section counsel that the numbers I obtain ought to be considered
 guidelines to potential performance, not fundamental limits.
 Previous work has adequately demonstrated the scalability
-benefits of non-blocking synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05};
+benefits of nonblocking synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05};
 I concentrate in this thesis on single-threaded efficiency measures.
 
 I examine the SPECjvm98 benchmark suite, a collection of
@@ -2538,11 +2538,11 @@ a new lock-free variant.
 \section{A single-object protocol}
 \begin{figure}\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj}
-\caption{Implementing non-blocking single-object concurrent operations
+\caption{Implementing nonblocking single-object concurrent operations
   with functional arrays.}
 \label{fig:single-o}
 \end{figure}
-Given a non-blocking implementation of functional arrays, we can
+Given a nonblocking implementation of functional arrays, we can
 construct a transaction implementation for single objects.  In
 this implementation, fields of at most one object may be referenced
 during the execution of the transaction.
@@ -2605,8 +2605,8 @@ may be referenced within a transaction.
 \section{Extension to multiple objects}
 \begin{figure}\centering
 \includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj}
-\caption[Data structures to support non-blocking multi-object
-  concurrent operations.]{Data structures to support non-blocking multi-object
+\caption[Data structures to support nonblocking multiobject
+  concurrent operations.]{Data structures to support nonblocking multiobject
   concurrent operations.  Objects point to a linked list of versions,
   which reference transaction identifiers.  Versions created within the
   same execution of a transaction share the same transaction
@@ -2665,7 +2665,7 @@ begin\\
 end\\
 \end{tabular}
 \caption{\funcname{Read} and \funcname{ReadT} implementations for the
-  multi-object protocol.}\label{fig:reads}
+  multiobject protocol.}\label{fig:reads}
 \end{figure}
 
 \begin{figure}
@@ -2718,7 +2718,7 @@ begin\\
 end\\
 \end{tabular}
 \caption{\funcname{Write} and \funcname{WriteT} implementations for the
-  multi-object protocol.}\label{fig:writes}
+  multiobject protocol.}\label{fig:writes}
 \end{figure}
 
 I extend the implementation to allow the fields of any number of
@@ -2816,7 +2816,7 @@ This section presents a lock-free implementation of functional
 arrays with $O(1)$ performance for both read and update in the absence of contention.
 The crucial operation is a rotation of a \emph{difference node} with the
 main body of the array. Using this implementation of functional arrays
-in the multi-object transaction protocol of the previous section
+in the multiobject transaction protocol of the previous section
 creates \lapex, our reimplementation of nonblocking transactions which
 solves the large-object problem.
 

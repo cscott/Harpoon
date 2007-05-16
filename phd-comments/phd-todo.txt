@@ -46,9 +46,6 @@ Global search: "will", "we", "our".
 
 Need topic para at start of chapter 5. (CEL)
 
-non-blocking => nonblocking
-multi-object => multiobject
-pseudo-code => pseudocode
 re-root => reroot (?)
 
 make figure 5.6 (shallow binding scheme for functional arrays) larger,

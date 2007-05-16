@@ -6,12 +6,12 @@ given enough ingenuity on the part of the interpreter.
 
 A number of researchers have been investigating transactional memory
 systems.  This thesis is the first to present a hybrid hardware/software
-model-checked non-blocking
+model-checked nonblocking
 object-oriented system that allows co-existence of nontransactional and
 transactional accesses to a dynamic set of object fields.
 \note{Martin wants citations here: ask him about this?}
 
-\section{Non-blocking synchronization}\label{sec:nb-sync}
+\section{Nonblocking synchronization}\label{sec:nb-sync}
 
 Lamport presented the first alternative to synchronization via mutual
 exclusion in \cite{Lamport77}, for a limited situation involving a single
@@ -50,20 +50,20 @@ to halt all progress in all threads
 indefinitely.  External mechanisms are used to reduce contention
 (thus, achieve progress) including backoff, queueing, or timestamping.
 
-We will use the term \emph{non-blocking} to describe
+We will use the term \emph{nonblocking} to describe
 generally any synchronization mechanism that doesn't rely on mutual
 exclusion or locking, including wait-free, lock-free,
 and obstruction-free implementations.
 We will be concerned mainly with lock-free algorithms.%
-\footnote{Some authors use ``non-blocking'' and
+\footnote{Some authors use ``nonblocking'' and
   ``lock-free'' as synonyms, usually meaning what we here call
   \emph{lock-free}.  Others exchange our definitions for ``lock-free''
-  and ``non-blocking'', using lock-free as a generic term and non-blocking
+  and ``nonblocking'', using lock-free as a generic term and nonblocking
   to describe a specific class of implementations.  As there is
   variation in the field, we choose to use the parallel construction
   \emph{wait-free}, \emph{lock-free}, and \emph{obstruction-free} for
   our three specific progress criteria, and the dissimilar
-  \emph{non-blocking} for the general class.}
+  \emph{nonblocking} for the general class.}
 
 \section{Efficiency}\label{sec:efficiency}
 Herlihy presented the first \emph{universal} method for wait-free
@@ -106,10 +106,10 @@ be copied efficiently (in, say, $O(1)$ time).  He also presented a
 manually break the object into small blocks, after which the small
 object protocol can be employed. 
 [This trouble with large objects is
-common to many non-blocking implementations; our solution is presented
+common to many nonblocking implementations; our solution is presented
 in \charef{largeobj}.]
 
-Barnes provided the first universal non-blocking implementation
+Barnes provided the first universal nonblocking implementation
 method that avoids object copying \cite{Barnes93}.  He eliminates the
 need to store ``old'' object
 state in case of operation failure by having all threads cooperate to
@@ -120,7 +120,7 @@ cooperation by creating a parallel state machine for each operation,
 so that each thread can independently try to advance the machine from state
 to state and thus advance incomplete operations.%
 \footnote{It is interesting to note that Barnes' cooperative method
-  for non-blocking 
+  for nonblocking 
   situation plays out in a real-time system very similarly to priority
   inheritance for locking synchronization.}
 Although this avoids
@@ -131,7 +131,7 @@ of the operations, which could cause \emph{every} thread to fail in turn
 as one by one they attempt to execute a buggy operation.
 
 Alemany and Felten \cite{AlemanyFe92} identified two factors hindering the
-performance of non-blocking algorithms to date: resources wasted by operations
+performance of nonblocking algorithms to date: resources wasted by operations
 that fail, and the cost of data copying.  Unfortunately, they
 proceeded to
 ``solve'' these problems by ignoring short delays and failures and
@@ -423,7 +423,7 @@ a given implementation using standard Java monitors correctly
 guarantees method atomicity.
 
 The transaction implementations presented in this thesis will use
-non-blocking synchronization to implement atomic methods.
+nonblocking synchronization to implement atomic methods.
 
 
 % LocalWords:  atomicity transactional linearization SMP LTM UTM TCC backoff
