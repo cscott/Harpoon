@@ -10,34 +10,33 @@ it.}{\textit{Alan Kay}}}
 \index{Kay, Alan}
 % http://www.folklore.org/StoryView.py?project=Macintosh&story=Creative_Think.txt
 
-The previous chapters have detailed the design of an efficient
-software-only transaction system for object-oriented programs.  Given
-hardware support, we can construct even more efficient transaction
-systems for certain types of transactions.  In this chapter, we will
-present UTM, an implementation of unbounded transactional memory
-\cite{AnanianAsKuLeLi05,AnanianAsKuLeLi06} which fully virtualizes transactions.  We
-will follow this with LTM, a much simpler design which can be
-pin-compatible with today's processors.  LTM supports more limited
-transactions, but we conclude by showing how LTM can be combined with
-the efficient software system we have already demonstrated to yield a
+With hardware support, we can construct transaction systems that are
+more efficient than \apex for certain types of transactions. This chapter
+presents UTM, an implementation of unbounded transactional memory
+\cite{AnanianAsKuLeLi05,AnanianAsKuLeLi06} which fully virtualizes transactions.  I
+also present LTM, a much simpler design which can be
+pin-compatible with today's processors.
+Although LTM supports more limited
+transactions, I show how LTM can be combined with the software \apex
+transaction system to yield \hyx, a
 hybrid system with a great deal of power and
 flexibility.\footnote{Portions of this chapter are adapted
 from~\cite{AnanianAsKuLeLi05,AnanianAsKuLeLi06}, co-written with Krste Asanovi\'c,
 Bradley C. Kuszmaul, Charles E. Leiserson, and Sean Lie.}
 
 \section{The UTM architecture}\label{sec:utm}
-We begin by describing UTM, a system that implements
-unbounded transactional memory in hardware.  UTM allows
+UTM, a system that implements
+unbounded transactional memory in hardware, allows
 transactions to grow (nearly) as large as virtual memory.  It also
 supports a semantics for nested transactions, where interior
 transactions are subsumed into the atomic region represented by the
 outer transaction.  Unlike previous schemes that tie a thread's
 transactional state to a particular processor and/or cache, UTM
 maintains bookkeeping information for a transaction in a
-memory-resident data structure, the \defn{transaction log}.  This
+memory-resident data structure, the \defn{transaction log}.  This log
 enables transactions to survive timeslice interrupts and process
 migration from one processor to another.  We first present the
-software interface to UTM, and then describe the implementation
+software interface to UTM and then describe the implementation
 details.
 
 \subsection{New instructions}
@@ -67,10 +66,10 @@ the processor realizes that the transaction cannot commit, at which
 point it reverts all processor and memory state back to the point of
 misprediction and branches to the abort handler.
 
-In the same manner as our software implementation (\secref{withtrans}),
+In the same manner as the \apex software implementation (\secref{withtrans}),
 UTM supports the nesting of transactions by subsuming the inner
 transaction.  For example, within an outer transaction, a
-subroutine may be called that contains an inner transaction.
+subroutine that contains an inner transaction may be called.
 UTM simply treats the inner transaction as part of the atomic
 region defined by the outer one.  This strategy is correct, because it
 maintains the property that the inner transaction executes atomically.
@@ -102,18 +101,18 @@ the transaction commits.
 The rename stage maintains an additional ``saved'' bit
 for each physical register 
 to indicate which registers are part of the working
-architectural state, and takes a snapshot as
+architectural state, and it takes a snapshot as
 each branch or \texttt{XBEGIN} is decoded and renamed.
 When an \texttt{XBEGIN} instruction
 graduates, activating the transaction, the associated ``\texttt{S} bit''
-snapshot will have bits set
+snapshot has bits set
 on exactly those registers holding the graduated architectural state.  Physical
 registers are normally freed on graduation of a later instruction that
 overwrites the same architectural register.  If the \texttt{S} bit on
 the snapshot for the active transaction is
 set, the physical register is added to a FIFO called a \defn{Register
-Reserved List} instead of the normal \defn{Register Free List}.  This
-prevents physical registers containing saved data from being
+Reserved List} instead of the normal \defn{Register Free List}, thereby
+preventing physical registers containing saved data from being
 overwritten during a transaction.  When the
 transaction's \texttt{XEND} commits, the active snapshot's \texttt{S}
 bits are cleared and the Register
@@ -204,7 +203,7 @@ system can avoid writing multiple entries into the transaction log by
 checking the log pointer to see whether a log entry for the block
 already exists as part of the running transaction.
 
-By following the log pointer to the log entry, then following the log
+By following the log pointer to the log entry and then following the log
 entry pointer to the commit record, one can determine the transaction
 status (pending, committed, or aborted) of each block.  To commit a
 transaction, the system simply changes the commit record from
@@ -275,7 +274,7 @@ UTM system does not actually need to create a log entry or update
 the log pointer for a cached block unless it is evicted.  After a
 transaction commits or aborts, the log entries of unspilled cached
 blocks can be discarded and the log pointer of each such block can be
-marked clean to avoid writeback traffic for the log pointer, which is
+marked clean to avoid write-back traffic for the log pointer, which is
 no longer needed.  Most of the overhead is borne in the uncommon case,
 allowing the common case to run fast.
 
@@ -346,22 +345,22 @@ is executed during a transaction.
 
 \section{The LTM architecture}\label{sec:ltm}
 
-UTM is an idealized design for HTM that requires significant
-changes to both the processor and the memory subsystem of a current
+UTM is an idealized design for HTM which requires significant
+changes to both the processor and the memory subsystem of a contemporary
 computer architecture.  By scaling back on the degree of
 ``unboundedness,'' however, a compromise between programmability and
 practicality can be achieved.  This section presents such an
 architectural compromise, called LTM, for which we have implemented
 a detailed cycle-level simulation using UVSIM~\cite{Zhang03}.
 The limited transactions supported by LTM are still powerful enough to
-serve as the basic for an hybrid system, as we will show in
+serve as the basis for a hybrid system, as we will show in
 \secref{hybrid}.
 
 LTM's design is easier to implement than UTM, because it does
 not support transactions of virtual-memory size.  Instead, LTM
 avoids the intricacies of virtual memory by limiting the footprint of
 a transaction to (nearly) the size of physical memory.  In addition,
-the duration of a transaction must be less than a time slice and
+the duration of a transaction must be less than a time slice, and
 transactions cannot migrate between processors.  With these
 restrictions, LTM can be implemented by only modifying the cache
 and processor core and without making changes to the main memory, the
@@ -435,19 +434,19 @@ and retry the transaction.
 
 LTM was designed to be a first step towards a truly unbounded
 transactional memory system such as UTM\@.  LTM has most of the
-advantages of UTM while being much easier to implement.  As I will
-show at the end of the chapter, LTM's
+advantages of UTM while being much easier to implement. LTM's
 more practical implementation of quasi-unbounded transactional memory
-suffices for many real-world concerns, and can be symbiotically paired
-with our more flexible software transaction system to achieve truely
-unbounded transactions at minimal hardware cost.
+suffices for many real-world concerns.  Moreover, as \secref{hybrid}
+shows, LTM can be symbiotically paired
+with the more flexible \apex software transaction system to achieve
+truly unbounded transactions at minimal hardware cost.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Evaluation}\label{sec:htm-benchmarks}
-In this section we will evaluate the UTM and LTM designs,
-demonstrating low overhead and scalability.  We will also
-consider overflow behavior, providing some motivation for the hybrid
-system proposed in the next section.
+This section evaluates the UTM and LTM designs,
+demonstrating low overhead and scalability.  We examine
+overflow behavior, providing motivation for the hybrid
+system proposed in \secref{hybrid}.
 
 \subsection{Scalability}\label{sec:htm-counter}
 
@@ -513,8 +512,8 @@ however that overhead is generally insignificant compared to the cost
 of the transaction. Further, instruction decode overhead is much lower
 in LTM than with locks. Even schemes where the lock is not actually
 held such as SLE~\cite{RajwarGo01} have higher decode overhead since they have more
-instructions. LTM's low transaction startup overhead is a very good
-indicator of the corresponding overhead in UTM since transaction start
+instructions. LTM's low transaction startup overhead is a good
+indicator of the corresponding overhead in UTM, since transaction start
 up in UTM is virtually the same.
 
 Running a transaction in LTM requires no more overhead than running
@@ -522,44 +521,44 @@ the corresponding non-synchronized code in the common case. In LTM,
 the T bit is simply set on each transactional cache access. LTM's low
 overhead in this case unfortunately does not translate directly to UTM
 since UTM modifies the transaction record on each memory
-request. However, in the common case the transaction record entry is
-also in the cache. Thus all operations are local and no external
+request. In the common case, however, the transaction record entry is
+also in the cache. Thus, all operations are local and no external
 communication is needed. Also, in some cases, the cache can respond to
-the memory request once the requested data is found. However, if the
+the memory request once the requested data is found.  If the
 request requires data from the transaction record before it can be
-serviced, an additional cache lookup is necessary. However, the lookup
-is local and thus can be done relatively quickly. \note{Is this
+serviced, however, an additional cache lookup is necessary, but the lookup
+is local and can be done relatively quickly. \note{Is this
 enough?  Seems like the additional lookup in the cache could increase
 cache latency significantly} Therefore, the common case overhead of
 running a transaction can be minimal even in UTM\@.
 
 Committing a transaction in LTM has virtually no overhead in the
-common case since it can be done in one clock cycle. LTM transaction
-commits only requires a simply flash clear of all the transaction bits
+common case, since it can be done in one clock cycle. LTM transaction
+commits only requires a simple flash clear of all the transaction bits
 in the cache. Similarly, UTM transaction commits only require a single
-change of the cached transaction record to ``committed''. UTM
+change of the cached transaction record to ``committed.''  Although UTM
 transaction commit also writes the updated values from the transaction
-record back to memory. However, this write back can be done lazily in
+record back to memory, this write-back can be done lazily in
 the background.  Therefore, since transaction commit requires only a
 single change in the cache for both LTM and UTM, the overhead is
 minimal in both cases.
 
 \subsection{Overflows}
 
-Overflows occur only in the uncommon case
-however our studies show that it is important to have a scalable data
+Although overflows occur only in the uncommon case,
+our studies show that it is important to have a scalable data
 structure even though it is used infrequently.
 
 For evaluation, we compiled three versions of the SPECjvm98 benchmark
 suite to run under UVSIM using \flex. We compiled
-a \defn{Base} version that uses no synchronization, a \defn{Locks}
-version that uses spin-locks for synchronization, and a \defn{Trans}
-version that uses LTM transactions for synchronization. To measure
+a \defn{Base} version which uses no synchronization, a \defn{Locks}
+version which uses spin-locks for synchronization, and a \defn{Trans}
+version which uses LTM transactions for synchronization. To measure
 overheads, we ran these versions of the SPECjvm98 benchmark suite on
 one processor of UVSIM\@.
 
 As described in \secref{synctrans}, our transactional version uses method
-cloning to flatten transactions; we performed the same cloning on the
+cloning to flatten transactions.  We performed the same cloning on the
 other compiled versions so that performance improvements due to the
 specialization would not be improperly attributed to
 transactionification.  The three different benchmark versions were
@@ -567,17 +566,17 @@ built from a common code-base using method inlining in \texttt{gcc}\footnote{We
 compiled the files generated by the ``Precise C'' backend
 (\secref{precisec}) of \flex with
 \texttt{-O9} for a \texttt{-mips4} target using the
-\texttt{n64} API to generate fully-static binaries executable by
+\texttt{n64} API to generate fully static binaries executable by
 UVSIM\@.}  to remove or replace all invocations of lock and transaction
 entry and exit code with appropriate implementations.  No garbage
 collection was performed during these benchmark runs.
 
 \label{sec:javac}
 Our initial results from \secref{properties} suggested that
-overflows ought to be infrequent, thus the efficiency of the overflow
+overflows ought to be infrequent, implying that the efficiency of the overflow
 data structure would 
-have a negligible effect on overall performance. Therefore, our first
-LTM implementation used an unsorted array that required a linear
+have a negligible effect on overall performance.  Consequently, our first
+LTM implementation used an unsorted array which required a linear
 search on each miss to an overflowed set. The unsorted array was
 effective for most of our test cases, as they had less overhead than
 locks.  Using LTM with the unsorted array, however, the transactional
@@ -594,7 +593,7 @@ overflows.
 
 Since the entire application was enclosed in a transaction, the
 \texttt{213\_javac} application was clearly not written to be a
-parallel application. However, it is important that an unbounded
+parallel application.  It is important, however, that an unbounded
 transactional memory system be able to support even such applications
 with reasonable performance. Therefore, we redesigned LTM to use hash
 table as described in \secref{ltm}.
@@ -687,8 +686,9 @@ overflow overhead of UTM will be very similar to that of UTM\@.
 
 % LocalWords:  UTM XBEGIN XEND mispredicted misprediction superscalar Herlihy
 % LocalWords:  mispredict LTM UVSIM SGI transactionally uncached lookup SPECjvm
-% LocalWords:  inlining microbenchmark xstate RW RISC
+% LocalWords:  inlining microbenchmark xstate RW RISC nontransactional API
 
 \section{A Real Implementation}
 \input{phd-utm-impl}
 }
+% LocalWords:  backend
