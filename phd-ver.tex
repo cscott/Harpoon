@@ -32,18 +32,19 @@ cannot otherwise exploit SMP).  Some representative costs include:
   model-checking a range of values caused the state space explosion
   in this case.
 \end{itemize}
-\Spin's unreachable code reporting was used to ensure that our test
-cases exercised every code path, although this doesn't guarantee that
-every interesting interaction is checked.
+\Spin's unreachable code reporting was used to ensure that my test
+cases exercised every code path, although exercising all code paths
+does not guarantee that
+every interesting interaction was checked.
 
-In the process one bug in \Spin was discovered\footnote{Breadth-first
+In the process one bug in \Spin was discovered,\footnote{Breadth-first
 search of atomic regions was performed incorrectly in \Spin 4.0.7;
-this was fixed in \Spin 4.1.0.}
-and a number of subtle race conditions in the model were discovered and
-corrected.  These included a number of modeling artifacts: in
-particular, we were extremely aggressive about reference-counting and
+after I reported this bug, a fix was incorporated in \Spin 4.1.0.}
+and several subtle race conditions in the model were discovered and
+corrected.  These race conditions included several modeling artifacts.
+In particular, I was extremely aggressive about reference-counting and
 deallocating objects in order to control the size of the state space,
-and this proved difficult to do correctly.  We also discovered some
+which proved difficult to do correctly.  I also discovered some
 subtle-but-legitimate race conditions in the transactions algorithm.
 For example:
 \begin{itemize}
@@ -56,18 +57,18 @@ For example:
   had unexpected corner cases.
 \item Using a bitmask to provide per-field granularity
   to the list of readers proved unmanageable as there were three-way
-  races between the bitmask, the readers list, and the version tree.
+  races among the bitmask, the readers list, and the version tree.
 \end{itemize}
 In addition, the model-in-progress proved a valuable design tool, as
 portions of the algorithm could readily be mechanically checked to
 validate (or discredit) the designer's reasoning about the concurrent
-system.  Humans do not excel at exhaustive state space exploration.
+system.  Humans do not excel at exhaustive state-space exploration.
 
 \Spin is not particularly suited to checking models with dynamic
 allocation and deallocation.  In particular, it considers the
-location of objects part of the state space, and allocating object
+location of objects as part of the state space, and allocating object
 A before object B produces a different state than if object B
-were allocated first.  This artificially enlarges the
+were allocated first.  This behavior artificially enlarges the
 state space.  A great deal of effort was expended tweaking the
 model to approach a canonical allocation ordering.  A better solution
 to this problem would allow larger model instances to be checked.
@@ -75,12 +76,12 @@ to this problem would allow larger model instances to be checked.
 
 \section{Promela primer}\label{sec:promela}\index{Promela}
 A concise Promela reference is available at
-\url{http://spinroot.com/spin/Man/Quick.html}; we will here attempt to
-summarize just enough of the language to allow the model we've
+\url{http://spinroot.com/spin/Man/Quick.html}. Here, I attempt to
+summarize just enough of the language to allow the model I've
 presented in this thesis to be understood.
 
 Promela syntax is C-like, with the same lexical and commenting
-conventions.  Statements are separated by either a semi-colon, or,
+conventions.  Statements are separated by either a semicolon, or,
 equivalently, an arrow.  The arrow is typically used to separate a
 guard expression from the statements it is guarding.
 
@@ -92,7 +93,7 @@ expression is true (non-zero).
 Our model uses three basic Promela statements: selection, repetition,
 and {\tt atomic}.
 
-The selection statement,
+The selection statement
 \begin{inlinecode}
 if
 :: guard -> statements
@@ -104,13 +105,13 @@ selects one among its options and executes it.  An option can be
 selected if and only if its first statement (the guard) is enabled.  The
 special guard {\tt else} is enabled if and only if all other guards are not.
 
-The repetition statement,
+The repetition statement
 \begin{inlinecode}
 do
 :: statements
 ...
 :: statements
-fi
+od
 \end{inlinecode}
 is similar: one among its enabled statements is selected and executed,
 and then the process is repeated (with a different statement possibly
@@ -122,15 +123,19 @@ Finally,
 atomic { statements }
 \end{inlinecode}
 executes the given statements in one indivisible step.  For the
-purposes of this model, a {\tt d\_step} block is functionally identical.
+purposes of this model, a {\tt d\_step} block
+\begin{inlinecode}
+d_step { statements }
+\end{inlinecode}
+is functionally identical.
 Outside {\tt atomic} or {\tt d\_step} blocks, Promela allows
 interleaving before and after every statement, but statements are
 indivisible.
 
 Functions as specified in this model are similar to C macros: every
 parameter is potentially both an input {\it and} an output.  Calls to
-functions with names starting with {\tt move} are simple assignments;
-they've been turned into macros so that reference counting
+functions with names starting with {\tt move} are simple assignments,
+but I've turned them into macros so that reference counting
 can be performed.
 
 \section{\Spin model for software transaction system}
