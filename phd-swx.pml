@@ -1,7 +1,7 @@
 /************************************************************************
- * Very detailed model of software transaction code.
+ * Detailed model of software transaction code.
  * Checking for safety and correctness properties.  Not too worried about
- * liveness at the moment.
+ * liveness.
  *
  * (C) 2006 C. Scott Ananian <cananian@alumni.princeton.edu>
  ************************************************************************/
@@ -22,7 +22,7 @@
                         * plus addition nonce for NT copyback in test3 */
 #define NUM_READERS 4 /* both 'read' trans reading both objs */
 #define NUM_TRANS 5 /* two 'real' TIDs, plus 2 outstanding TIDs for
-		     * writeNT(FLAG) [test3], plus perma-aborted TID. */
+                     * writeNT(FLAG) [test3], plus perma-aborted TID. */
 #define NUM_FIELDS 2
 
 #define NIL 255 /* special value to represent 'alloc impossible', etc. */
@@ -83,9 +83,9 @@ end:
      if
      :: empty(pool) -> assert(0); client!NIL /* deny */
      :: nempty(pool) ->
-	pool?nodenum;
-	client!nodenum;
-	nodenum=0
+        pool?nodenum;
+        client!nodenum;
+        nodenum=0
      fi
   :: allocchan?return(client,nodenum) ->
      pool!!nodenum; /* sorted, to reduce state space */
@@ -107,10 +107,10 @@ active proctype VersionManager() {
     d_step {
       do
       :: i<NUM_VERSIONS ->
-	 version[i].owner=NIL; version[i].next=NIL;
-	 version[i].field[0]=FLAG; version[i].field[1]=FLAG;
-	 assert(NUM_FIELDS==2);
-	 i++
+         version[i].owner=NIL; version[i].next=NIL;
+         version[i].field[0]=FLAG; version[i].field[1]=FLAG;
+         assert(NUM_FIELDS==2);
+         i++
       :: else -> break
       od;
     }
@@ -124,8 +124,8 @@ active proctype ReaderListManager() {
     d_step {
       do
       :: i<NUM_READERS ->
-	 readerlist[i].transid=NIL; readerlist[i].next=NIL;
-	 i++
+         readerlist[i].transid=NIL; readerlist[i].next=NIL;
+         i++
       :: else -> break
       od;
     }
@@ -388,10 +388,10 @@ inline CAS_Version(loc1, oval1, nval1, st) {
        fi;
        if
        :: (oval1!=NIL) -> version[oval1].ref--;
-	  if
-	  :: (version[oval1].ref==0) -> _free = oval1
-	  :: else
-	  fi
+          if
+          :: (version[oval1].ref==0) -> _free = oval1
+          :: else
+          fi
        :: else
        fi;
 #endif /* REFCOUNT */
@@ -422,10 +422,10 @@ inline CAS_Reader(loc1, oval1, nval1, st) {
        fi;
        if
        :: (oval1!=NIL) -> readerlist[oval1].ref--;
-	  if
-	  :: (readerlist[oval1].ref==0) -> _free = oval1
-	  :: else
-	  fi
+          if
+          :: (readerlist[oval1].ref==0) -> _free = oval1
+          :: else
+          fi
        :: else
        fi;
 #endif /* REFCOUNT */
@@ -467,7 +467,7 @@ inline copyBackField(o, f, mode, st) {
   :: moveVersion(_ver, object[o].version);
      if
      :: (_ver==NIL) ->
-	st = saw_race; break /* someone's done the copyback for us */
+        st = saw_race; break /* someone's done the copyback for us */
      :: else
      fi;
       /* move owner to local var to avoid races (owner set to NIL behind
@@ -476,16 +476,16 @@ inline copyBackField(o, f, mode, st) {
      moveTransID(_tmp_tid, version[_ver].owner);
      if
      :: (_tmp_tid==NIL) ->
-	break; /* found a committed version */
+        break; /* found a committed version */
      :: else
      fi;
      tryToAbort(_tmp_tid);
      if
      :: (transid[_tmp_tid].status==committed) ->
-	moveTransID(_tmp_tid, NIL);
-	moveTransID(version[_ver].owner, NIL); /* opportunistic free */
-	moveVersion(version[_ver].next, NIL); /* opportunistic free */
-	break /* found a committed version */
+        moveTransID(_tmp_tid, NIL);
+        moveTransID(version[_ver].owner, NIL); /* opportunistic free */
+        moveVersion(version[_ver].next, NIL); /* opportunistic free */
+        break /* found a committed version */
      :: else
      fi;
      /* link out an aborted version */
@@ -502,7 +502,7 @@ inline copyBackField(o, f, mode, st) {
      CAS_Version(object[o].version, _ver, _nonceV, _cas_stat);
      if
      :: (!_cas_stat) ->
-	st = saw_race_cleanup
+        st = saw_race_cleanup
      :: else
      fi
   :: else
@@ -512,23 +512,23 @@ inline copyBackField(o, f, mode, st) {
   :: (st==success) ->
      if
      :: (object[o].field[f]==FLAG) ->
-	_val = version[_ver].field[f];
-	if
-	:: (_val==FLAG) -> /* false flag... */
-	   st = false_flag /* ...no copy back needed */
-	:: else -> /* not a false flag */
-	   d_step { /* could be DCAS */
-	     if
-	     :: (object[o].version == _nonceV) ->
-		object[o].fieldLock[f] = _thread_id;
-		object[o].field[f] = _val;
-	     :: else /* hmm, fail.  Must retry. */
-		st = saw_race_cleanup /* need to clean up nonce */
-	     fi
-	   }
-	fi
+        _val = version[_ver].field[f];
+        if
+        :: (_val==FLAG) -> /* false flag... */
+           st = false_flag /* ...no copy back needed */
+        :: else -> /* not a false flag */
+           d_step { /* could be DCAS */
+             if
+             :: (object[o].version == _nonceV) ->
+                object[o].fieldLock[f] = _thread_id;
+                object[o].field[f] = _val;
+             :: else /* hmm, fail.  Must retry. */
+                st = saw_race_cleanup /* need to clean up nonce */
+             fi
+           }
+        fi
      :: else /* may arrive here because of readT, which doesn't set _val=FLAG*/
-	st = saw_race_cleanup /* need to clean up nonce */
+        st = saw_race_cleanup /* need to clean up nonce */
      fi
   :: else /* !success */
   fi;
@@ -541,13 +541,13 @@ inline copyBackField(o, f, mode, st) {
   :: (mode == kill_all) ->
      do /* kill all readers */
      :: moveReaderList(_r, object[o].readerList);
-	if
-	:: (_r==NIL) -> break
-	:: else
-	fi;
-	tryToAbort(readerlist[_r].transid);
-	/* link out this reader */
-	CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _);
+        if
+        :: (_r==NIL) -> break
+        :: else
+        fi;
+        tryToAbort(readerlist[_r].transid);
+        /* link out this reader */
+        CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _);
      od;
   :: else /* no more killing needed. */
   fi;
@@ -578,8 +578,8 @@ inline readNT(o, f, v) {
      copyBackField(o, f, kill_writers, _st);
      if
      :: (_st==false_flag) ->
-	v = FLAG;
-	break
+        v = FLAG;
+        break
      :: else
      fi
   od
@@ -589,36 +589,36 @@ inline writeNT(o, f, nval) {
   :: (nval != FLAG) ->
      do
      ::
-	atomic {
-	  if /* this is a LL(readerList)/SC(field) */
-	  :: (object[o].readerList == NIL) ->
-	     object[o].fieldLock[f] = _thread_id;
-	     object[o].field[f] = nval;
-	     break /* success! */
-	  :: else
-	  fi
-	}
-	/* unsuccessful SC */
-	copyBackField(o, f, kill_all, _st)
-	/* ignore return status */
+        atomic {
+          if /* this is a LL(readerList)/SC(field) */
+          :: (object[o].readerList == NIL) ->
+             object[o].fieldLock[f] = _thread_id;
+             object[o].field[f] = nval;
+             break /* success! */
+          :: else
+          fi
+        }
+        /* unsuccessful SC */
+        copyBackField(o, f, kill_all, _st)
+        /* ignore return status */
      od
   :: else -> /* create false flag */
      /* implement this as a short *transactional* write.  this may be slow,
       * but it greatly reduces the race conditions we have to think about. */
      do
      :: allocTransID(_retval, _writeTID);
-	ensureWriter(_writeTID, o, _tmp_ver);
-	checkWriteField(o, f);
-	writeT(_tmp_ver, f, nval);
-	tryToCommit(_writeTID);
-	moveVersion(_tmp_ver, NIL);
-	if
-	:: (transid[_writeTID].status==committed) ->
-	   moveTransID(_writeTID, NIL);
-	   break /* success! */
-	:: else ->/* try again */
-	   moveTransID(_writeTID, NIL)
-	fi
+        ensureWriter(_writeTID, o, _tmp_ver);
+        checkWriteField(o, f);
+        writeT(_tmp_ver, f, nval);
+        tryToCommit(_writeTID);
+        moveVersion(_tmp_ver, NIL);
+        if
+        :: (transid[_writeTID].status==committed) ->
+           moveTransID(_writeTID, NIL);
+           break /* success! */
+        :: else ->/* try again */
+           moveTransID(_writeTID, NIL)
+        fi
      od
   fi;
 }
@@ -630,35 +630,35 @@ inline readT(tid, o, f, ver, result) {
        if
        :: (transid[tid].status == aborted) -> skip /* okay then */
        :: else ->
-	  assert (transid[tid].status == waiting);
-	  _r = object[o].readerList;
-	  do
-	  :: (_r==NIL || readerlist[_r].transid==tid) -> break
-	  :: else -> _r = readerlist[_r].next
-	  od;
-	  assert (_r!=NIL); /* we're on the list */
-	  _r = NIL /* back to normal */
+          assert (transid[tid].status == waiting);
+          _r = object[o].readerList;
+          do
+          :: (_r==NIL || readerlist[_r].transid==tid) -> break
+          :: else -> _r = readerlist[_r].next
+          od;
+          assert (_r!=NIL); /* we're on the list */
+          _r = NIL /* back to normal */
        fi
      }
      /* okay, sanity checking done -- now let's get to work! */
      result = object[o].field[f];
      if
      :: (result==FLAG) ->
-	if
-	:: (ver!=NIL) ->
-	   result = version[ver].field[f];
-	   break /* done! */
-	:: else ->
-	   findVersion(tid, o, ver);
-	   if
-	   :: (ver==NIL) -> /* use value from committed version */
-	      assert (_r!=NIL);
-	      result = version[_r].field[f]; /* false flag? */
-	      moveVersion(_r, NIL);
-	      break /* done */
-	   :: else /* try, try, again */
-	   fi
-	fi
+        if
+        :: (ver!=NIL) ->
+           result = version[ver].field[f];
+           break /* done! */
+        :: else ->
+           findVersion(tid, o, ver);
+           if
+           :: (ver==NIL) -> /* use value from committed version */
+              assert (_r!=NIL);
+              result = version[_r].field[f]; /* false flag? */
+              moveVersion(_r, NIL);
+              break /* done */
+           :: else /* try, try, again */
+           fi
+        fi
      :: else -> break /* done! */
      fi
   od
@@ -677,37 +677,37 @@ inline ensureReaderList(tid, o) {
      moveReaderList(_r, _rr);
      do
      :: (_r==NIL) ->
-	break /* not on the list */
+        break /* not on the list */
      :: (_r!=NIL && readerlist[_r].transid==tid) ->
-	break /* on the list */
+        break /* on the list */
      :: else ->
-	/* opportunistic free? */
-	if
-	:: (_r==_rr && transid[readerlist[_r].transid].status != waiting) ->
-	   CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _)
-	   if
-	   :: (_cas_stat) -> moveReaderList(_rr, readerlist[_r].next)
-	   :: else
-	   fi
-	:: else
-	fi;
-	/* keep looking */
-	moveReaderList(_r, readerlist[_r].next)
+        /* opportunistic free? */
+        if
+        :: (_r==_rr && transid[readerlist[_r].transid].status != waiting) ->
+           CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _)
+           if
+           :: (_cas_stat) -> moveReaderList(_rr, readerlist[_r].next)
+           :: else
+           fi
+        :: else
+        fi;
+        /* keep looking */
+        moveReaderList(_r, readerlist[_r].next)
      od;
      if
      :: (_r!=NIL) ->
-	break /* on the list; we're done! */
+        break /* on the list; we're done! */
      :: else ->
-	/* try to put ourselves on the list. */
-	assert(tid!=NIL && _r==NIL);
-	allocReaderList(_retval, _r, tid, _rr);
-	CAS_Reader(object[o].readerList, _rr, _r, _cas_stat);
-	if
-	:: (_cas_stat) ->
-	   break /* we're on the list */
-	:: else
-	fi
-	/* failed to put ourselves on the list, retry. */
+        /* try to put ourselves on the list. */
+        assert(tid!=NIL && _r==NIL);
+        allocReaderList(_retval, _r, tid, _rr);
+        CAS_Reader(object[o].readerList, _rr, _r, _cas_stat);
+        if
+        :: (_cas_stat) ->
+           break /* we're on the list */
+        :: else
+        fi
+        /* failed to put ourselves on the list, retry. */
      fi
   od;
   moveReaderList(_rr, NIL);
@@ -733,28 +733,28 @@ inline findVersion(tid, o, ver) {
      moveTransID(_tmp_tid, version[_r].owner);/*use local copy to avoid races*/
      if
      :: (_tmp_tid==tid) ->
-	ver = _r; /* found a version: ourself! */
-	_r = NIL; /* transfer owner of the reference to ver, without ++/-- */
-	break
+        ver = _r; /* found a version: ourself! */
+        _r = NIL; /* transfer owner of the reference to ver, without ++/-- */
+        break
      :: (_tmp_tid==NIL) ->
-	/* perma-committed version.  Return in _r. */
-	moveVersion(version[_r].next, NIL); /* opportunistic free */
-	break
+        /* perma-committed version.  Return in _r. */
+        moveVersion(version[_r].next, NIL); /* opportunistic free */
+        break
      :: else -> /* strange version.  try to kill it. */
-	/* ! could double-check that our own transid is not aborted here. */
-	tryToAbort(_tmp_tid);
-	if
-	:: (transid[_tmp_tid].status==committed) ->
-	   /* committed version.  Return this in _r. */
-	   moveTransID(version[_r].owner, NIL); /* opportunistic free */
-	   moveVersion(version[_r].next, NIL); /* opportunistic free */
-	   break /* no need to look further. */
-	:: else ->
-	   assert (transid[_tmp_tid].status==aborted);
-	   /* unlink this useless version */
-	   CAS_Version(object[o].version, _r, version[_r].next, _)
-	   /* repeat */
-	fi
+        /* ! could double-check that our own transid is not aborted here. */
+        tryToAbort(_tmp_tid);
+        if
+        :: (transid[_tmp_tid].status==committed) ->
+           /* committed version.  Return this in _r. */
+           moveTransID(version[_r].owner, NIL); /* opportunistic free */
+           moveVersion(version[_r].next, NIL); /* opportunistic free */
+           break /* no need to look further. */
+        :: else ->
+           assert (transid[_tmp_tid].status==aborted);
+           /* unlink this useless version */
+           CAS_Version(object[o].version, _r, version[_r].next, _)
+           /* repeat */
+        fi
      fi
   od;
   moveTransID(_tmp_tid, NIL); /* free tmp transid copy */
@@ -784,59 +784,59 @@ inline ensureWriter(tid, o, ver) {
      if
      :: (ver!=NIL) -> break /* found a writable version for us */
      :: (ver==NIL && _r==NIL) ->
-	/* create and link a fully-committed root version, then
-	 * use this as our base. */
-	allocVersion(_retval, _r, NIL, NIL);
-	CAS_Version(object[o].version, NIL, _r, _cas_stat)
+        /* create and link a fully-committed root version, then
+         * use this as our base. */
+        allocVersion(_retval, _r, NIL, NIL);
+        CAS_Version(object[o].version, NIL, _r, _cas_stat)
      :: else ->
-	_cas_stat = true
+        _cas_stat = true
      fi;
      if
      :: (_cas_stat) ->
-	/* so far, so good. */
-	assert (_r!=NIL);
-	assert (version[_r].owner==NIL ||
-		transid[version[_r].owner].status==committed);
-	/* okay, make new version for this transaction. */
-	assert (ver==NIL);
-	allocVersion(_retval, ver, tid, _r);
-	/* want copy of committed version _r.  Race here because _r can be
-	 * written to under peculiar circumstances, namely: _r has
-	 * non-flag value, non-flag value is copied back to parent,
-	 * flag_value is written to parent -- this forces flag_value to
-	 * be written to committed version. */
-	/* IF WRITES ARE ALLOWED TO COMMITTED VERSIONS, THERE IS A RACE HERE.
-	 * But our implementation of false_flag writes at the moment does
-	 * not permit *any* writes to committed versions. */
-	version[ver].field[0] = version[_r].field[0];
-	version[ver].field[1] = version[_r].field[1];
-	assert(NUM_FIELDS==2); /* else ought to initialize more fields */
-	CAS_Version(object[o].version, _r, ver, _cas_stat);
-	moveVersion(_r, NIL); /* free _r */
-	if
-	:: (_cas_stat) ->
-	   /* kill all readers (except ourself) */
-	   /* note that all changes have to be made from the front of the
-	    * list, so we unlink ourself and then re-add us. */
-	   do
-	   :: moveReaderList(_r, object[o].readerList);
-	      if
-	      :: (_r==NIL) -> break
-	      :: (_r!=NIL && readerlist[_r].transid!=tid)->
-		 tryToAbort(readerlist[_r].transid)
-	      :: else
-	      fi;
-	      /* link out this reader */
-	      CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _)
-	   od;
-	   /* okay, all pre-existing readers dead & gone. */
-	   assert(_r==NIL);
-	   /* link us back in. */
-	   ensureReaderList(tid, o);
-	   break
-	:: else
-	fi;
-	/* try again */
+        /* so far, so good. */
+        assert (_r!=NIL);
+        assert (version[_r].owner==NIL ||
+                transid[version[_r].owner].status==committed);
+        /* okay, make new version for this transaction. */
+        assert (ver==NIL);
+        allocVersion(_retval, ver, tid, _r);
+        /* want copy of committed version _r.  Race here because _r can be
+         * written to under peculiar circumstances, namely: _r has
+         * non-flag value, non-flag value is copied back to parent,
+         * flag_value is written to parent -- this forces flag_value to
+         * be written to committed version. */
+        /* IF WRITES ARE ALLOWED TO COMMITTED VERSIONS, THERE IS A RACE HERE.
+         * But our implementation of false_flag writes at the moment does
+         * not permit *any* writes to committed versions. */
+        version[ver].field[0] = version[_r].field[0];
+        version[ver].field[1] = version[_r].field[1];
+        assert(NUM_FIELDS==2); /* else ought to initialize more fields */
+        CAS_Version(object[o].version, _r, ver, _cas_stat);
+        moveVersion(_r, NIL); /* free _r */
+        if
+        :: (_cas_stat) ->
+           /* kill all readers (except ourself) */
+           /* note that all changes have to be made from the front of the
+            * list, so we unlink ourself and then re-add us. */
+           do
+           :: moveReaderList(_r, object[o].readerList);
+              if
+              :: (_r==NIL) -> break
+              :: (_r!=NIL && readerlist[_r].transid!=tid)->
+                 tryToAbort(readerlist[_r].transid)
+              :: else
+              fi;
+              /* link out this reader */
+              CAS_Reader(object[o].readerList, _r, readerlist[_r].next, _)
+           od;
+           /* okay, all pre-existing readers dead & gone. */
+           assert(_r==NIL);
+           /* link us back in. */
+           ensureReaderList(tid, o);
+           break
+        :: else
+        fi;
+        /* try again */
      :: else
      fi;
      /* try again from the top */
@@ -859,7 +859,7 @@ inline checkWriteField(o, f) {
      _val = object[o].field[f];
      if
      :: (_val==FLAG) ->
-	break; /* done! */
+        break; /* done! */
      :: else
      fi;
      /* okay, need to set write flag. */
@@ -869,45 +869,45 @@ inline checkWriteField(o, f) {
      do
      :: (_r==NIL) -> break /* done */
      :: else ->
-	object[o].fieldLock[f] = _thread_id;
-	if
-	/* this next check ensures that concurrent copythroughs don't stomp
-	 * on each other's versions, because the field will become FLAG
-	 * before any other version will be written. */
-	:: (object[o].field[f]==_val) ->
-	   if
-	   :: (object[o].version==_rr) ->
-	      atomic {
-		if
-		:: (object[o].fieldLock[f]==_thread_id) ->
-		   version[_r].field[f] = _val;
-		:: else -> break /* abort */
-		fi
-	      }
-	   :: else -> break /* abort */
-	   fi
-	:: else -> break /* abort */
-	fi;
-	moveVersion(_r, version[_r].next) /* on to next */
+        object[o].fieldLock[f] = _thread_id;
+        if
+        /* this next check ensures that concurrent copythroughs don't stomp
+         * on each other's versions, because the field will become FLAG
+         * before any other version will be written. */
+        :: (object[o].field[f]==_val) ->
+           if
+           :: (object[o].version==_rr) ->
+              atomic {
+                if
+                :: (object[o].fieldLock[f]==_thread_id) ->
+                   version[_r].field[f] = _val;
+                :: else -> break /* abort */
+                fi
+              }
+           :: else -> break /* abort */
+           fi
+        :: else -> break /* abort */
+        fi;
+        moveVersion(_r, version[_r].next) /* on to next */
      od;
      if
      :: (_r==NIL) ->
-	/* field has been successfully copied to all versions */
-	atomic {
-	  if
-	  :: (object[o].version==_rr) ->
-	     assert(object[o].field[f]==_val ||
-		    /* we can race with another copythrough and that's okay;
-		     * the locking strategy above ensures that we're all
-		     * writing the same values to all the versions and not
-		     * overwriting anything. */
-		    object[o].field[f]==FLAG);
-	     object[o].fieldLock[f]=_thread_id;
-	     object[o].field[f] = FLAG;
-	     break; /* success!  done! */
-	  :: else
-	  fi
-	}
+        /* field has been successfully copied to all versions */
+        atomic {
+          if
+          :: (object[o].version==_rr) ->
+             assert(object[o].field[f]==_val ||
+                    /* we can race with another copythrough and that's okay;
+                     * the locking strategy above ensures that we're all
+                     * writing the same values to all the versions and not
+                     * overwriting anything. */
+                    object[o].field[f]==FLAG);
+             object[o].fieldLock[f]=_thread_id;
+             object[o].field[f] = FLAG;
+             break; /* success!  done! */
+          :: else
+          fi
+        }
      :: else
      fi
      /* retry */
