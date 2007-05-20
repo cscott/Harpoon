@@ -1,6 +1,8 @@
-VAR=BASE RCHECK WCHECK WCHECKUNOPT RWCHECK RWCHECKUNOPT RWCHECKOPT
+BVAR=BASE RCHECK WCHECK WCHECKUNOPT RWCHECK RWCHECKUNOPT RWCHECKOPT
+AVAR=BASE COPYALL SHALLOW RANDOM
 
-all: $(foreach v,$(VAR),bench-$(v).s bench-$(v))
+all: $(foreach v,$(BVAR),bench-$(v).s bench-$(v)) \
+     $(foreach v,$(AVAR),array-$(v).s array-$(v))
 
 bench-%.s: bench.c llsc-unimpl.h llsc-ppc32.h
 	gcc -D$* -S -O9 $<
@@ -17,7 +19,7 @@ array-%: array-%.s
 clean:
 	$(RM) bench-*.s array-*.s
 	$(RM) bench-*[A-Z] array-*[A-Z]
-run: all run-init $(foreach v,$(VAR),run-$(v)) run-done
+run: all run-init $(foreach v,$(BVAR),run-$(v)) run-done
 run-init:
 	touch results.txt
 	echo >> results.txt
@@ -32,4 +34,4 @@ run-%: bench-%
 
 ####
 print.ps:
-	a2ps -o$@ -Mletter --prologue=color -E -g notes.txt results.txt Makefile bench.c bench-split.c llsc-ppc32.h llsc-unimpl.h 
+	a2ps -o$@ -Mletter --prologue=color -E -g notes.txt results.txt Makefile bench.c bench-split.c array.c llsc-*.h rdtsc-*.h

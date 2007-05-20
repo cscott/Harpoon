@@ -1,3 +1,4 @@
 *.s
 bench-[A-Z]*[A-Z]
+array-[A-Z]*[A-Z]
 print.ps
