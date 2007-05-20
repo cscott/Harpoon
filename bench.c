@@ -98,7 +98,7 @@ static inline field_t write(struct oobj *obj, int idx, field_t val) {
 
 void do_bench(struct oobj *obj, struct transid *tid) __attribute__((noinline));
 void do_bench(struct oobj *obj, struct transid *tid) {
-#if defined(RWCHECKOPT)
+#if defined(RWCHECKOPT) && defined(_ARCH_PPC)
 	struct readerList *rl;
 	int idx = 0, i=REPETITIONS;
 	field_t v1, v2, v3;
