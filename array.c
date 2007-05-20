@@ -16,15 +16,18 @@
 # endif
 #endif
 
+#ifdef LOCKFREE
+# define RANDOM
+#endif
 #ifdef RANDOM
-#define SHALLOW
+# define SHALLOW
 #endif
 #ifdef COPYALL
-#define BASE
+# define BASE
 #endif
 
-#define NUM_ELEM 10
-#define REPETITIONS 10000
+#define NUM_ELEM 100
+#define REPETITIONS 100000
 
 typedef int32_t field_t;
 
@@ -59,6 +62,7 @@ static inline struct aarray *make_array(unsigned len) {
     obj->u.root.cache = cache;
     return obj;
 }
+static inline field_t read(struct aarray *obj, unsigned index);
 static void reroot(struct aarray *obj) {
     struct aarray *rest;
     struct aarray_cache *cache;
@@ -67,14 +71,12 @@ static void reroot(struct aarray *obj) {
     static int first = 1;
     assert(obj->type != ROOT);
     // first, ensure that 'rest' is a ROOT node.
-    rest = obj->u.diff.rest;
-    if (rest->type != ROOT) reroot(rest);
-    assert(rest->type == ROOT);
-    // now let's read all the information we'll need.
-    cache = rest->u.root.cache;
     index = obj->u.diff.index;
     newv = obj->u.diff.value;
-    oldv = cache->elem[index];
+    rest = obj->u.diff.rest;
+    oldv = read(rest, index); // rotates rest as a side-effect.
+    assert(rest->type == ROOT);
+    cache = rest->u.root.cache;
     // maybe clone the cache here.
     if (
 #ifdef RANDOM
