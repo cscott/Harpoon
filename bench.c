@@ -115,7 +115,7 @@ void do_bench(struct oobj *obj, struct transid *tid) {
 1:                ori %[v3], %[v1], 3 # 1\n\
                   addi %[v2], %[v1], 1 # 1\n\
                   cmpwi 1, %[rl],0 # 1\n\
-                  cmpwi 2, %[v3], 0xFFFFCACA # 1\n\
+                  cmpwi 2, %[v3], 0xFFFFCACB # 1\n\
                   bne- 1, 0b # xxx: should do copyback\n\
                   beq- 2, 0b # xxx: should do copyback or transactional write\n\
                   stwcx. %[v2],0,%[fld] # 3:1{s} no forwarding from stwcx\n\
