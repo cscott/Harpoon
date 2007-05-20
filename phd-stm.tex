@@ -2297,8 +2297,8 @@ these benchmarks (safe because they are single-threaded) leaving only
 the costs of the \texttt{readNT} and \texttt{writeNT} protocols.
 
 The earlier microbenchmark hinted that we might expect
-nontransactional overheads as low as 15\%, although 20\% was the best
-we could obtain with a C implementation.  In fact, we see a 19\%
+nontransactional overheads as low as 15\%-20\%.
+In fact, we see a 19\%
 overhead on the \texttt{209\_db} benchmark, although the other
 benchmarks show that an overhead of around 60\% is more typical.
 Close inspection of the assembly code emitted by the C compiler for
