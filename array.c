@@ -6,8 +6,14 @@
 #include <gc/gc.h>
 #ifdef _ARCH_PPC
 # include "llsc-ppc32.h"
+# include "rdtsc-ppc32.h"
 #else
 # include "llsc-unimpl.h"
+# ifdef i386
+#  include "rdtsc-x86.h"
+# else
+#  include "rdtsc-unimpl.h"
+# endif
 #endif
 
 #ifdef RANDOM
@@ -18,7 +24,7 @@
 #endif
 
 #define NUM_ELEM 10
-#define REPETITIONS 1000
+#define REPETITIONS 10000
 
 typedef int32_t field_t;
 
@@ -68,13 +74,27 @@ static void reroot(struct aarray *obj) {
     index = obj->u.diff.index;
     newv = obj->u.diff.value;
     oldv = cache->elem[index];
-    // rewrite cache
-    cache->elem[index] = newv;
-    // rewrite old 'rest' node to be a diff
-    rest->type = DIFF;
-    rest->u.diff.index = index;
-    rest->u.diff.value = oldv;
-    rest->u.diff.rest = obj;
+    // maybe clone the cache here.
+    if (
+#ifdef RANDOM
+	(rdtsc() % cache->length) == 0 ||
+#endif
+	0) {
+	// clone the cache
+	int size = sizeof(struct aarray_cache)+cache->length*sizeof(field_t);
+	struct aarray_cache *ncache = GC_MALLOC_ATOMIC(size);
+	memcpy(ncache, cache, size);
+	ncache->elem[index] = newv;
+	cache = ncache;
+    } else {
+	// rewrite cache
+	cache->elem[index] = newv;
+	// rewrite old 'rest' node to be a diff
+	rest->type = DIFF;
+	rest->u.diff.index = index;
+	rest->u.diff.value = oldv;
+	rest->u.diff.rest = obj;
+    }
     // rewrite obj node to be a root.
     memset(obj, 0, sizeof(*obj)); // be nice to the gc.
     obj->type = ROOT;
