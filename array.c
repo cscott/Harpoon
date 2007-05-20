@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <gc/gc.h>
+#include <gc/gc_typed.h>
 #ifdef _ARCH_PPC
 # include "llsc-ppc32.h"
 # include "rdtsc-ppc32.h"
@@ -40,12 +40,13 @@ struct aarray {
 	    struct aarray_cache *cache;
 	} root;
 	struct {
+	    struct aarray *rest;
 	    unsigned index;
 	    field_t value;
-	    struct aarray *rest;
 	} diff;
     } u;
 };
+static GC_descr aarray_desc;
 static inline struct aarray *make_array(unsigned len) {
     struct aarray_cache *cache;
     struct aarray *a;
@@ -53,8 +54,7 @@ static inline struct aarray *make_array(unsigned len) {
     cache = GC_MALLOC_ATOMIC(sizeof(struct aarray_cache)+len*sizeof(field_t));
     cache->length = len;
     // now make a root node.
-    struct aarray *obj = GC_MALLOC(sizeof(struct aarray));
-    memset(obj, 0, sizeof(*obj)); // be nice to the gc.
+    struct aarray *obj = GC_CALLOC_EXPLICITLY_TYPED(1, sizeof(struct aarray), aarray_desc);
     obj->type = ROOT;
     obj->u.root.cache = cache;
     return obj;
@@ -64,6 +64,7 @@ static void reroot(struct aarray *obj) {
     struct aarray_cache *cache;
     unsigned index;
     field_t newv, oldv;
+    static int first = 1;
     assert(obj->type != ROOT);
     // first, ensure that 'rest' is a ROOT node.
     rest = obj->u.diff.rest;
@@ -79,13 +80,14 @@ static void reroot(struct aarray *obj) {
 #ifdef RANDOM
 	(rdtsc() % cache->length) == 0 ||
 #endif
-	0) {
+	first) {
 	// clone the cache
 	int size = sizeof(struct aarray_cache)+cache->length*sizeof(field_t);
 	struct aarray_cache *ncache = GC_MALLOC_ATOMIC(size);
 	memcpy(ncache, cache, size);
 	ncache->elem[index] = newv;
 	cache = ncache;
+	first = 0; //workaround for conservative collection: top-level obj held
     } else {
 	// rewrite cache
 	cache->elem[index] = newv;
@@ -107,7 +109,7 @@ static inline field_t read(struct aarray *obj, unsigned index) {
     return obj->u.root.cache->elem[index];
 }
 static inline struct aarray *write(struct aarray *obj, unsigned index, field_t value) {
-    struct aarray *obj2 = GC_MALLOC(sizeof(struct aarray));
+    struct aarray *obj2 = GC_MALLOC_EXPLICITLY_TYPED(sizeof(struct aarray), aarray_desc);
     obj2->type = DIFF;
     obj2->u.diff.index = index;
     obj2->u.diff.value = value;
@@ -168,7 +170,11 @@ int main(int argc, char **argv) {
 /* make these variables extern, or else the compiler will toss updates to them
  * because they do not escape. */
     unsigned len = argc>1 ? atoi(argv[1]) : NUM_ELEM;
-    struct aarray *m_obj = make_array(len);
-    do_bench(m_obj, len);
+#ifdef SHALLOW
+    GC_word aarray_bitmap[GC_BITMAP_SIZE(struct aarray)] = { 0 };
+    GC_set_bit(aarray_bitmap, GC_WORD_OFFSET(struct aarray, u.root.cache));
+    aarray_desc= GC_make_descriptor(aarray_bitmap, GC_WORD_LEN(struct aarray));
+#endif
+    do_bench(make_array(len), len);
     return 0;
 }
