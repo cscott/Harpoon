@@ -138,3 +138,12 @@ RWCHECK 21.13
 RWCHECKOPT 17.15
 RWCHECKUNOPT 22.14
 --- Run complete ---
+
+Normalized to BASE=1:
+BASE:    1.000
+RCHECK:  1.143
+WCHECK:  2.999 (C)
+         2.858 (opt write)
+RWCHECK: 3.136 (C)
+         2.993 (opt write)
+         2.429 (opt read/write)
