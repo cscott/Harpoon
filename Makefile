@@ -8,9 +8,15 @@ bench-%.s: bench.c llsc-unimpl.h llsc-ppc32.h
 bench-%: bench-%.s
 	gcc -o $@ -O9 $<
 
+array-%.s: array.c llsc-unimpl.h llsc-ppc32.h
+	gcc -D$* -S -O9 $<
+	mv array.s array-$*.s
+array-%: array-%.s
+	gcc -o $@ -O9 $< -lgc
+
 clean:
-	$(RM) bench-*.s
-	$(RM) bench-*[A-Z]
+	$(RM) bench-*.s array-*.s
+	$(RM) bench-*[A-Z] array-*[A-Z]
 run: all run-init $(foreach v,$(VAR),run-$(v)) run-done
 run-init:
 	touch results.txt
