@@ -3120,9 +3120,9 @@ multi-threaded variant.  These reads are not necessary for array reversal.
 \epsbigfigput[Functional array performance on an array reversal microbenchmark.]{phd-arrayperf}{Functional array performance on an
   array reversal microbenchmark as the size of the array is varied.
   Both axes are logarithmic.  The y axis shows the average time, in
-  microseconds, required to do an array read followed by an update.
-  The benchmark initialized the array and the reversed its contents
-  100,000 times.  The reversal swapped the
+  nanoseconds, required to do an array read followed by an update.
+  The benchmark initialized the array and then reversed its contents
+  200,000 times.  The reversal swapped the
   first and last elements, then the second and second-to-last
   elements, etc.}
 
@@ -3147,7 +3147,7 @@ single-threaded---or when transactions abort often, in a transactional
 application.
 
 Chuang's randomized-cut shallow-binding functional arrays
-\cite{Chuang94}, labeled ``Random cut'' in \figref{phd-arrayperf},
+\cite{Chuang94}, labeled ``Random Cut'' in \figref{phd-arrayperf},
 allow good performance even when transactions abort
 often.  My implementation averaged 259 ns per read-update.  The
 root-cloning which allows multi-threaded access imposes an additional
@@ -3155,7 +3155,7 @@ root-cloning which allows multi-threaded access imposes an additional
 array implementation.
 
 Finally, my lock-free version of Chuang's functional arrays, labeled
-``Lock-free'', averages
+``Lock-Free'', averages
 482 ns per read-update.  The penalty for performing the lock-free
 algorithm is 86\%, resulting in read-updates which are over 150 times slower
 than imperative array read-updates.   \figref{phd-arrayperf} shows
