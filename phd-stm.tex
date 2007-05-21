@@ -2479,7 +2479,7 @@ problems.  The large-object protocol, which we'll call \lapex, uses a
 lock-free variant of 
 Chuang's algorithm, which I present in \secref{lf-fun-arr}.
 
-\section{Basic operations on functional arrays}
+\section{Basic operations on functional arrays}\label{sec:naivefun}
 Let us begin by reviewing the basic operations on functional arrays.
 Functional arrays are \emph{persistent}; that is,
 after an element is updated, both the new and the old contents of the
@@ -3054,11 +3054,119 @@ using this six-step approach.
 
 %% % scales method of tagging fields.
 
-\punt{
-\section{Performance of functional array implementation}
+\section{Performance of functional array implementations}
+This section presents performance measurements for our lock-free functional
+array implementation using a simple read/update microbenchmark.  We
+compare our lock-free functional arrays with imperative arrays, \naive
+functional arrays (\secref{naivefun}), shallow-binding functional
+arrays \cite{Baker91}, and Chuang's randomized-cut shallow-binding
+functional arrays \cite{Chuang94}.
 
-XXX: continue previous microbenchmarks, as function of object size.
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+#define REPETITIONS 100000
+typedef int32_t field_t;
+typedef int32_t index_t;
+
+void do_bench(struct aarray *obj, index_t len) {
+  int i, j;
+
+  /** Initialize the array */
+  for (i=0; i<len; i++)
+    obj = write(obj, i, i);
+  /** Now reverse the array a number of times. */
+  for (j=0; j<(REPETITIONS*2); j++) {
+#if defined(SINGLETHREAD) // single-threaded access
+    for (i=0; i<len/2; i++) {
+      field_t v1 = read(obj, i);
+      field_t v2 = read(obj, len-i-1);
+      obj = write(obj, i, v2);
+      obj = write(obj, len-i-1, v1);
+    }
+#else // multi-threaded access
+    struct aarray *robj = obj;
+    for (i=0; i<len; i++)
+      obj = write(obj, len-i-1, read(robj, i));
+#endif
+  }
+  /** Check that the array has the expected values */
+  for (i=0; i<len; i++)
+    assert(read(obj, i)==i);
 }
+\end{verbatim}
+\caption{Array reversal microbenchmark to evaluate performance of
+  functional array implementations.}
+\label{fig:array-bench}
+\end{figure}
+
+\figref{array-bench} shows the basic structure of the microbenchmark.
+The \texttt{read()} and \texttt{write()} methods
+have appropriate definitions inlined for each variant of the
+benchmark.  This microbenchmark is patterned after that used in
+\cite[p.507]{ONeillBu97}.  With \texttt{SINGLETHREAD} defined,
+accesses are imperative or ``single-threaded''---only the latest
+version of the array is referenced.  The algorithm corresponds to the
+typical imperative array reversal algorithm.  We swap the leftmost and
+rightmost element of the array and move inward as we continue to swap.
+Without \texttt{SINGLETHREAD} defined,
+the reversal algorithm always reads from the original
+array.  This pattern of access corresponds to a frequent abort scenario.
+In our experiments the single-threaded and multi-threaded variants of
+the benchmark had almost identical performance, contrary to the claims
+of \cite{ONeillBu97}.  Standard shallow-binding will have poor
+performance only if reads of the half-reversed array were to occur in the
+multi-threaded variant.  These reads are not necessary for array reversal.
+
+\epsbigfigput[Functional array performance on an array reversal microbenchmark.]{phd-arrayperf}{Functional array performance on an
+  array reversal microbenchmark as the size of the array is varied.
+  Both axes are logarithmic.  The y axis shows the average time, in
+  microseconds, required to do an array read followed by an update.
+  The benchmark initialized the array and the reversed its contents
+  100,000 times.  The reversal swapped the
+  first and last elements, then the second and second-to-last
+  elements, etc.}
+
+\figref{phd-arrayperf} shows the performance of various array
+implementations using the single-threaded variant of the benchmark.
+I measured the number of microseconds required for a read and update pair
+on the array, as the size of the array ranged from 8 to 4096 elements.
+
+Standard imperative arrays averaged 3.1 nanoseconds per read-update,
+invariant with array size.  The \naive functional array
+implementation, described in \secref{naivefun}, ranged from 269 ns
+for 8-element arrays up to 10,880 ns for 1024-element arrays.  The
+exponential growth in run time with increasing array size demonstrates the
+``large object problem'' which motivated our investigation of
+lock-free functional arrays in this chapter.
+
+Shallow-binding functional arrays \cite{Baker91} averaged 181
+nanoseconds per read-update.  This is over 50 times slower than
+standard imperative arrays, but is invariant with array size.
+Shallow binding shows poor performance when accesses are not
+single-threaded---or when transactions abort often, in a transactional
+application.
+
+Chuang's randomized-cut shallow-binding functional arrays
+\cite{Chuang94}, labeled ``Random cut'' in \figref{phd-arrayperf},
+allow good performance even when transactions abort
+often.  My implementation averaged 259 ns per read-update.  The
+root-cloning which allows multi-threaded access imposes an additional
+43\% overhead when compared to the standard shallow binding functional
+array implementation.
+
+Finally, my lock-free version of Chuang's functional arrays, labeled
+``Lock-free'', averages
+482 ns per read-update.  The penalty for performing the lock-free
+algorithm is 86\%, resulting in read-updates which are over 150 times slower
+than imperative array read-updates.   \figref{phd-arrayperf} shows
+that the lock free algorithm is still faster than copying objects on
+update when the objects are 64 words long or larger.
+
+In a hybrid transaction system which used small hardware transaction
+support for the functional array implementation, one could expect
+performance similar to the standard randomized-cut shallow-binding
+implementation.  One would simply make the rotation operations atomic
+using the hardware transaction system.
 
 %%%%%%%%%%%%%%%%%%%%%
 
