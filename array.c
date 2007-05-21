@@ -31,6 +31,7 @@
 
 #define NUM_ELEM 100
 #define REPETITIONS 100000
+#define SINGLETHREAD
 
 typedef int32_t index_t;
 typedef int32_t field_t;
@@ -243,12 +244,18 @@ void do_bench(struct aarray *obj, index_t len) {
 	obj = write(obj, i, i);
     /** Now reverse the array a number of times. */
     for (j=0; j<(REPETITIONS*2); j++) {
+#if defined(SINGLETHREAD)
 	for (i=0; i<len/2; i++) {
 	    field_t v1 = read(obj, i);
 	    field_t v2 = read(obj, len-i-1);
 	    obj = write(obj, i, v2);
 	    obj = write(obj, len-i-1, v1);
 	}
+#else
+	struct aarray *robj = obj;
+	for (i=0; i<len; i++)
+	    obj = write(obj, len-i-1, read(robj, i));
+#endif
     }
     /** Check the array has the expected values */
     for (i=0; i<len; i++)
