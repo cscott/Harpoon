@@ -1,5 +1,26 @@
-Initial implementation.
+Benchmarks run on:
+
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 9
+model name	: Intel(R) Pentium(R) M processor 1400MHz
+stepping	: 5
+cpu MHz		: 1398.850
+cache size	: 1024 KB
+fdiv_bug	: no
+hlt_bug		: no
+f00f_bug	: no
+coma_bug	: no
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 2
+wp		: yes
+flags		: fpu vme de pse tsc msr mce cx8 sep mtrr pge mca cmov pat clflush dts acpi mmx fxsr sse sse2 tm pbe up est tm2
+bogomips	: 2799.69
+
 --- Run started: Sun May 20 16:43:04 EDT 2007
+/* Initial implementation.  x86. */
 BASE 8 0.00
 BASE 16 0.01
 BASE 32 0.02
@@ -40,9 +61,9 @@ RANDOM 2048 108.43
 RANDOM 4096 213.74
 --- Run complete ---
 
-Switch to using low bit of cache/diff pointer to indicate type.
-This is needed to help atomicity of lockfree version.
 --- Run started: Sun May 20 19:36:28 EDT 2007
+/* Switch to using low bit of cache/diff pointer to indicate type.  x86.
+ * This is needed to help atomicity of lockfree version. */
 BASE 8 0.00
 BASE 16 0.01
 BASE 32 0.02
@@ -75,8 +96,8 @@ RANDOM 2048 101.00
 RANDOM 4096 200.24
 --- Run complete ---
 
-Lock-free version with rotation.
 --- Run started: Sun May 20 20:47:48 EDT 2007
+/* Lock-free version with rotation.  x86. */
 BASE 8 0.00
 BASE 16 0.01
 BASE 32 0.02
@@ -118,3 +139,65 @@ LOCKFREE 1024 98.34
 LOCKFREE 2048 193.44
 LOCKFREE 4096 381.23
 --- Run complete ---
+
+--- Run started: Sun May 20 21:17:47 EDT 2007
+/* Validate results by re-running benchmarks.  x86. */
+BASE 8 0.00
+BASE 16 0.01
+BASE 32 0.02
+BASE 64 0.04
+BASE 128 0.07
+BASE 256 0.16
+BASE 512 0.31
+BASE 1024 0.63
+BASE 2048 1.30
+BASE 4096 2.59
+SHALLOW 8 0.29
+SHALLOW 16 0.58
+SHALLOW 32 1.16
+SHALLOW 64 2.38
+SHALLOW 128 4.63
+SHALLOW 256 9.05
+SHALLOW 512 18.84
+SHALLOW 1024 37.39
+SHALLOW 2048 74.34
+SHALLOW 4096 145.34
+RANDOM 8 0.43
+RANDOM 16 0.84
+RANDOM 32 1.64
+RANDOM 64 3.25
+RANDOM 128 6.39
+RANDOM 256 13.08
+RANDOM 512 26.66
+RANDOM 1024 54.20
+RANDOM 2048 105.81
+RANDOM 4096 209.08
+LOCKFREE 8 0.75
+LOCKFREE 16 1.56
+LOCKFREE 32 3.08
+LOCKFREE 64 6.14
+LOCKFREE 128 12.22
+LOCKFREE 256 24.56
+LOCKFREE 512 49.64
+LOCKFREE 1024 101.03
+LOCKFREE 2048 199.14
+LOCKFREE 4096 394.02
+--- Run complete ---
+
+Time per read/write pair:
+  run_time_in_seconds / (200001 * array_length)
+
+More graph friendly:
+  Time * 5 / arraylen ~= time in us
+
+SIZE	BASE	COPYALL   SHALLOW  RANDOM   LOCKFREE
+8	-	.26875	  .18125   .26875   .46875
+16	.003125	.328125	  .18125   .2625    .4875
+32	.003125	.403125	  .18125   .25625   .48125
+64	.003125	.790625	  .185938  .253906  .479688
+128	.002734	1.02031	  .180859  .249609  .477344
+256	.003125 2.02402	  .176758  .255469  .479688
+512	.003027	5.22070	  .183984  .260352  .484766
+1024	.003076	10.8803	  .182568  .264648  .493311
+2048	.003174	-	  .181494  .258325  .486182
+4096	.003162	-	  .177417  .255225  .480981

@@ -41,7 +41,7 @@ struct aarray_cache {
     VOLATILE field_t elem[0];
 };
 struct aarray {
-    VOLATILE void *cache_or_rest;
+    void * VOLATILE cache_or_rest;
     index_t index;
     field_t value;
 };
