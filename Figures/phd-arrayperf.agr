@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Mon May 21 00:47:09 2007"
+@timestamp def "Tue May 22 19:22:26 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -183,7 +183,7 @@
 @g0 fixedpoint format general general
 @g0 fixedpoint prec 6, 6
 @with g0
-@    world 7.9, 1, 4096.1, 11000
+@    world 7.9, 1, 4096.1, 20000
 @    stack world 0, 0, 0, 0
 @    znorm 1
 @    view 0.150000, 0.150000, 1.150000, 0.850000
@@ -191,7 +191,7 @@
 @    title font 0
 @    title size 1.500000
 @    title color 1
-@    subtitle ""
+@    subtitle "on PowerPC G4"
 @    subtitle font 0
 @    subtitle size 1.000000
 @    subtitle color 1
@@ -471,7 +471,7 @@
 @    s2 errorbar riser linestyle 1
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
-@    s2 comment "copy of set G0.S1"
+@    s2 comment "SHALLOW"
 @    s2 legend  "Shallow Binding"
 @    s3 hidden false
 @    s3 type xy
@@ -520,7 +520,7 @@
 @    s3 errorbar riser linestyle 1
 @    s3 errorbar riser clip off
 @    s3 errorbar riser clip length 0.100000
-@    s3 comment "copy of set G0.S2"
+@    s3 comment "RANDOM"
 @    s3 legend  "Random Cut"
 @    s4 hidden false
 @    s4 type xy
@@ -569,67 +569,70 @@
 @    s4 errorbar riser linestyle 1
 @    s4 errorbar riser clip off
 @    s4 errorbar riser clip length 0.100000
-@    s4 comment "copy of set G0.S3"
+@    s4 comment "LOCKFREE"
 @    s4 legend  "Lock-Free"
 @target G0.S0
 @type xy
-16 3.125
-32 3.125
-64 3.125
-128 2.734
-256 3.125
-512 3.027
-1024 3.076
-2048 3.174
-4096 3.162
+8 6.25
+16 6.25
+32 4.6875
+64 5.4688
+128 4.2969
+256 4.6875
+512 4.5898
+1024 4.5898
+2048 4.6387
+4096 4.5654
 &
 @target G0.S1
 @type xy
-8 268.75
-16 328.125
-32 403.125
-64 790.625
-128 1020.31
-256 2024.02
-512 5220.7
-1024 10880.3
+8 475
+16 587.5
+32 878.13
+64 1346.9
+128 2537.9
+256 5515
+512 9763.4
+1024 23194
+2048 28811
+4096 47629
 &
 @target G0.S2
 @type xy
-8 181.25
-16 181.25
-32 181.25
-64 185.938
-128 180.859
-256 176.758
-512 183.984
-1024 182.568
-2048 181.494
-4096 177.417
+8 331.25
+16 325
+32 326.56
+64 328.91
+128 325.39
+256 328.13
+512 324.71
+1024 324.17
+2048 326.95
+4096 324.41
 &
 @target G0.S3
 @type xy
-8 268.75
-16 262.5
-32 256.25
-64 253.906
-128 249.609
-256 255.469
-512 260.352
-1024 264.648
-2048 258.325
-4096 255.225
+8 437.5
+16 421.88
+32 412.5
+64 393.75
+128 394.92
+256 383.01
+512 385.64
+1024 396.73
+2048 389.65
+4096 383.13
 &
 @target G0.S4
 @type xy
-8 468.75
-16 487.5
-32 481.25
-64 479.688
-128 477.344
-256 479.688
-512 484.766
-1024 493.311
-2048 486.182
-4096 480.981
+8 868.75
+16 890.63
+32 889.06
+64 887.5
+128 891.41
+256 896.48
+512 893.75
+1024 903.66
+2048 906.62
+4096 911.08
 &

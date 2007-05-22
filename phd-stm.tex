@@ -1082,7 +1082,8 @@ instructions.
   and both read and write checks for nontransactional code, in both a
   pure C implementation and optimized assembly.}
 
-\figref{phd-counter} shows the performance of this benchmark.
+\figref{phd-counter} shows the performance of this benchmark on the
+PowerPC hardware fully described in \secref{full-bench}.
 Read checks, even in this worst case where the value read is demanded
 immediately, only add 14\% overhead.  Write checks are more costly,
 due to the load-linked and store-conditional pair.  Specifically, they add 200\%
@@ -3130,17 +3131,19 @@ multi-threaded variant.  These reads are not necessary for array reversal.
 implementations using the single-threaded variant of the benchmark.
 I measured the number of microseconds required for a read and update pair
 on the array, as the size of the array ranged from 8 to 4096 elements.
+Benchmarks were executed on the PowerPC hardware described in
+\secref{full-bench}.\footnote{Results on a 1.4GHz Pentium M were similar.}
 
-Standard imperative arrays averaged 3.1 nanoseconds per read-update,
-invariant with array size.  The \naive functional array
-implementation, described in \secref{naivefun}, ranged from 269 ns
-for 8-element arrays up to 10,880 ns for 1024-element arrays.  The
+Standard imperative arrays averaged 5.0 nanoseconds per read-update,
+mostly invariant with array size.  The \naive functional array
+implementation, described in \secref{naivefun}, ranged from 475 ns
+for 8-element arrays up to 47,629 ns for 4096-element arrays.  The
 exponential growth in run time with increasing array size demonstrates the
 ``large object problem'' which motivated our investigation of
 lock-free functional arrays in this chapter.
 
-Shallow-binding functional arrays \cite{Baker91} averaged 181
-nanoseconds per read-update.  This is over 50 times slower than
+Shallow-binding functional arrays \cite{Baker91} averaged 327
+nanoseconds per read-update.  This is over 60 times slower than
 standard imperative arrays, but is invariant with array size.
 Shallow binding shows poor performance when accesses are not
 single-threaded---or when transactions abort often, in a transactional
@@ -3149,18 +3152,18 @@ application.
 Chuang's randomized-cut shallow-binding functional arrays
 \cite{Chuang94}, labeled ``Random Cut'' in \figref{phd-arrayperf},
 allow good performance even when transactions abort
-often.  My implementation averaged 259 ns per read-update.  The
+often.  My implementation averaged 400 ns per read-update.  The
 root-cloning which allows multi-threaded access imposes an additional
-43\% overhead when compared to the standard shallow binding functional
+22\% overhead when compared to the standard shallow binding functional
 array implementation.
 
 Finally, my lock-free version of Chuang's functional arrays, labeled
 ``Lock-Free'', averages
-482 ns per read-update.  The penalty for performing the lock-free
-algorithm is 86\%, resulting in read-updates which are over 150 times slower
+894 ns per read-update.  The penalty for performing the lock-free
+algorithm is 124\%, resulting in read-updates which are over 175 times slower
 than imperative array read-updates.   \figref{phd-arrayperf} shows
 that the lock free algorithm is still faster than copying objects on
-update when the objects are 64 words long or larger.
+update when the objects are larger than 32 words long.
 
 In a hybrid transaction system which used small hardware transaction
 support for the functional array implementation, one could expect
