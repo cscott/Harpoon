@@ -2297,7 +2297,7 @@ jack &       9,882,846 & 0  (0\%)& 4,595,774 &  0 (0\%) \\ \hline
 \caption[Number of false flags read/written in SPECjvm98 benchmarks.]
 {Number of false flags read/written in SPECjvm98 benchmarks.  To
   compile this table the
-  applications were run with input size ``10''.}
+  applications were run with the 10\% input size.}
 \label{fig:false-flag}
 \end{figure}
 
@@ -2346,16 +2346,6 @@ store-conditional instructions are inside inline assembly blocks and
 thus opaque to the compiler, many opportunities for code motion and
 scheduling are being missed.
 
-The \texttt{222\_mpegaudio} benchmark shows another potential
-liability: it incurred a 249\% overhead for the nontransactional
-code.  The ``false flag'' counts shown in \figref{false-flag} hint at
-the problem: this benchmark is the only one to encounter false
-flags.  The hidden portion of the iceberg may partly consist of
-inefficiencies in our current implementation of byte-sized reads and
-writes, but since false flags cause creation of new version objects,
-most of the cost is probably a reflection of the ``large object
-problem'', which we will discuss further in a moment.
-
 \figref{phd-spec-full} demonstrates the performance of transactional
 code, broken down into the components of the final cost.  We see that
 creation of transaction objects at the start of every atomic region is
@@ -2372,6 +2362,35 @@ if the objects are large (such as the arrays in
 becomes excessive.  \Charef{largeobj} will discuss this problem at
 length and propose a solution based on functional array data
 structures.
+
+It is worth examining the overheads for the \texttt{222\_mpegaudio}
+benchmark in more depth, as they clearly illustrate the limitations of
+our present implementation.  \figref{phd-spec-nt} shows a
+a 249\% overhead for just the read and write checks.
+The \texttt{mpegaudio} benchmark
+consists almost entirely of byte accesses, and the PowerPC architecture
+has only a word-width store-conditional instruction.  For every byte
+write, we must read a word, perform a mask, shift, and or, and then
+write a word.  \figref{phd-spec-nt} shows that this process accounts
+for 72\% of the overhead.
+
+The ``false flag'' counts shown in \figref{false-flag} hint at
+the problem: this benchmark is the only one to encounter false
+flags.  When \texttt{mpegaudio} is profiled, 47\% of its time in
+\texttt{createVersion}, and almost all of the execution time of
+\texttt{createVersion} is charged to memory allocation and its
+associated garbage collection.  The \texttt{mpegaudio} benchmark
+writes to large arrays within small transactions, and each
+transactional write causes the array to be copied, a problem which we
+will discuss further in \charef{largeobj}.  Further, because
+\texttt{mpegaudio} does compression, its writes are evenly distributed
+among the 256 possible byte values, which implies that about 1/2\% of
+the writes to the array will be false flags (even though the
+percentage of the total writes, as shown in \figref{false-flag} are an
+order of magnitude smaller.   Once a false flag is written to an
+array, the \texttt{ensureWriter} protocol will slow down all future
+writes even when, as in \figref{phd-spec-nt},
+we have stripped all transactions from the code.
 
 Although the \apex transaction design ought to be able to perform direct
 read and writes on version objects in long-lived transactions, these
