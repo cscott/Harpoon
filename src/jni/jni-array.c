@@ -130,7 +130,7 @@ jobject FNI_GetObjectArrayElement(JNIEnv *env,
     return NULL;
   }
   /* do get */
-#if defined(WITH_TRANSACTIONS)
+#if defined(WITH_TRANSACTIONS) && !defined(TRANS_NO_ARRAY)
   result = TRANSJNI_Get_Array_Object(env, a, index);
 #else
   result = *( (jobject_unwrapped *)
@@ -180,7 +180,7 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
 			       (index*sizeof(result)) ));
 #endif
   /* do set */
-#if defined(WITH_TRANSACTIONS)
+#if defined(WITH_TRANSACTIONS) && !defined(TRANS_NO_ARRAY)
   TRANSJNI_Set_Array_Object(env, a, index, FNI_UNWRAP(value));
 #else
   *( (jobject_unwrapped *)
@@ -253,7 +253,7 @@ void FNI_Release##name##ArrayElements(JNIEnv *env, type##Array array,\
 }
 FORPRIMITIVETYPES(RELEASEPRIMITIVEARRAYELEMENTS);
 
-#if defined(WITH_TRANSACTIONS)
+#if defined(WITH_TRANSACTIONS) && !defined(TRANS_NO_ARRAY)
 /* all of the following methods have different implementations when
  * running with transactions support: */
 # include "transact/jni-array.h"
