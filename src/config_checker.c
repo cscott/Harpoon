@@ -87,6 +87,14 @@ FLAG check_with_claz_shrink_should_be_##x
  FLAG check_with_transactions_needed;
 #endif
 
+#ifdef TRANS_NO_ARRAY
+ FLAG check_trans_no_array_needed;
+#endif
+
+#ifdef TRANS_NT
+ FLAG check_trans_nt_needed;
+#endif
+
 #ifdef WITH_MASKED_POINTERS
  FLAG check_with_masked_pointers_needed;
 #endif
