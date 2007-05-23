@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Wed May 23 17:36:50 2007"
+@timestamp def "Wed May 23 18:15:39 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -556,11 +556,11 @@
 &
 @target G0.S2
 @type bar
-1 0
-2 0
-3 0
-4 0
-5 0
+1 2.79
+2 1.45
+3 4.91
+4 3.76
+5 1.92
 6 4.79
 &
 @target G0.S3
