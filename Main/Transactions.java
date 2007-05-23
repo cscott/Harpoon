@@ -21,7 +21,7 @@ import java.util.LinkedList;
  * <code>Transactions</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Transactions.java,v 1.6 2007-03-23 18:20:37 cananian Exp $
+ * @version $Id: Transactions.java,v 1.7 2007-05-23 18:05:24 cananian Exp $
  */
 public abstract class Transactions {
     
@@ -80,6 +80,12 @@ public abstract class Transactions {
 	    // config checking
 	    frame.getRuntime().configurationSet.add
 		("check_with_transactions_needed");   
+	    if (syncTransformer.noArrayModification)
+		frame.getRuntime().configurationSet.add
+		    ("check_trans_no_array_needed");
+	    if (syncTransformer.removeTransactions)
+		frame.getRuntime().configurationSet.add
+		    ("check_trans_nt_needed");
 	}
     }
 

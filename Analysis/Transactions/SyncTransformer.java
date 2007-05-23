@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.20 2007-04-05 20:47:34 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.21 2007-05-23 18:05:53 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -128,11 +128,11 @@ public class SyncTransformer
     // for statistics:
     private final boolean enabled = // turns off the transformation.
 	!Boolean.getBoolean("harpoon.synctrans.disabled");
-    private final boolean removeTransactions = // make all code non-trans
+    public final boolean removeTransactions = // make all code non-trans
 	Boolean.getBoolean("harpoon.synctrans.removetrans");
     private final boolean noFieldModification = // only do monitorenter/exit
 	Boolean.getBoolean("harpoon.synctrans.nofieldmods");
-    private final boolean noArrayModification = // only do regular objects
+    public final boolean noArrayModification = // only do regular objects
 	Boolean.getBoolean("harpoon.synctrans.noarraymods");
     private final boolean noNestedTransactions = // only top-level trans.
 	!Boolean.getBoolean("harpoon.synctrans.nestedtrans");
