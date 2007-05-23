@@ -4,6 +4,9 @@
 
 #include <assert.h>
 #include "transact/proto.h" /* double-check */
+#ifdef STUB_LLSC
+# include "transact/atomic.h"
+#endif
 
 struct commitrec;
 

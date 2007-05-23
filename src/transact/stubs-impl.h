@@ -16,11 +16,23 @@ extern inline VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
 }
 extern inline void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
 				     VALUETYPE value) {
+#ifdef STUB_LLSC
+    do {
+	load_linked((int32_t*)obj->field_start);
+    } while (!T(store_conditional)(FIELDBASE(obj), offset, value));
+#else
   *((VALUETYPE*)(FIELDBASE(obj)+offset)) = value;
+#endif
 }
 extern inline void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
 				    VALUETYPE value, struct vinfo *version) {
+#ifdef STUB_LLSC
+    do {
+	load_linked((int32_t*)obj->field_start);
+    } while (!T(store_conditional)(FIELDBASE(obj), offset, value));
+#else
   *((VALUETYPE*)(FIELDBASE(obj)+offset)) = value;
+#endif
 }
 extern inline void TA(EXACT_checkReadField)(struct oobj *obj, unsigned offset){
   /* do nothing */
