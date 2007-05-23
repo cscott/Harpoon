@@ -15,6 +15,12 @@
 #include "fni-stats.h" /* sometimes we keep statistics */
 #include "transact/atomic.h"
 
+DECLARE_STATS_EXTERN(transact_readnt)
+DECLARE_STATS_EXTERN(transact_writent)
+DECLARE_STATS_EXTERN(transact_false_flag_read)
+DECLARE_STATS_EXTERN(transact_false_flag_write)
+DECLARE_STATS_EXTERN(transact_long_write)
+
 #if !defined(DONT_REALLY_DO_TRANSACTIONS)
 
 #define NO_VALUETYPE
