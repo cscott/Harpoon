@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Wed May 23 16:27:27 2007"
+@timestamp def "Wed May 23 17:02:18 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -280,7 +280,7 @@
 @    yaxis  label place normal
 @    yaxis  tick on
 @    yaxis  tick major 1
-@    yaxis  tick minor ticks 5
+@    yaxis  tick minor ticks 4
 @    yaxis  tick default 6
 @    yaxis  tick place rounded true
 @    yaxis  tick in

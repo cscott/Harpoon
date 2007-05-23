@@ -2236,7 +2236,9 @@ In this section I evaluate the performance of the \apex implementation.
 All experiments were performed on a 1GHz MPC7447 (G4) PowerPC processor,
 with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
 6.10 on a Linux 2.6.17 kernel.  The \flex compiler and runtime system
-sources were from the head CVS revision on 2007-05-23.
+sources were from the head CVS revision on 2007-05-24.  \appref{cmd}
+contains the full \flex command-lines and configurations used to obtain the
+results in this section.
 
 The limitations noted in the previous
 section counsel that the numbers I obtain ought to be considered
@@ -2246,25 +2248,29 @@ benefits of nonblocking
 synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05},
 in this section I concentrate on single-threaded efficiency measures.
 
-I examine the SPECjvm98 benchmark suite, the collection of
-practical Java programs previously described and characterized in
-\secref{auto}. 
+I examine the SPECjvm98 benchmark suite, a collection of
+practical Java programs including an expert system, a simple database,
+a Java compiler, an audio encoder, and a parser generator.  These
+benchmarks were previously described and characterized in
+\secref{auto}.
 \figref{perfnums} listed the 7 benchmarks in SPECjvm98.  As in the
 previous section, we use the single-threaded {\tt 205\_raytrace} benchmark
-in the place of its multi-threaded variant {\tt 227\_mtrt}.  The
-SPECjvm98 benchmarks include an expert system, a simple database,
-a Java compiler, an audio encoder, and a parser generator.
-
-In addition to the full ``100\%'' input for each benchmark,
-SPECjvm98 defines two smaller inputs, sized to roughly correspond to
-1\% and 10\% of the runtime of the full benchmark.  Unless otherwise
-specified, all benchmarks were run on the full ``100\%'' input.
+in the place of its multi-threaded variant {\tt 227\_mtrt}.  We omit the
+{\tt 201\_compress} benchmark since a poor
+interaction with the blacklist mechanism of the Boehm-Demers-Weiser
+conservative garbage collector causes the large array it allocates to
+be leaked.  Runs of {\tt 201\_compress} are distorted by
+the resulting large memory working set.
 
 To clarify
 the measurements, the baseline for all comparisons will be a
 version of the benchmarks compiled with the same method cloning and
 desugaring (\secref{synctrans}) that is done for the transaction
 transformation.
+In addition to the full ``100\%'' input for each benchmark,
+SPECjvm98 defines two smaller inputs, sized to roughly correspond to
+1\% and 10\% of the runtime of the full benchmark.  Unless otherwise
+specified, all benchmarks were run on the full ``100\%'' input.
 
 \epsbigfigput[Nontransactional check overhead for SPECjvm98.]{phd-spec-nt}{%
   Nontransactional check overhead for SPECjvm98.  All benchmarks
@@ -2282,6 +2288,7 @@ transformation.
 Benchmark &\multicolumn{1}{c|}{reads}& false flags read &\multicolumn{1}{c|}{writes}& false flags written
 \\ \hline
 jess &      25,583,878 & 0  (0\%)&  703,303  &  0  (0\%) \\
+raytrace & fixme & fixme & fixme & fixme \\
 db &        11,078,177 & 0  (0\%)&  912,965  &  0  (0\%) \\
 javac &         10,315 & 0  (0\%)&    2,312  &  0  (0\%) \\
 mpegaudio& 239,928,276 & 2,056  ($<$0.001\%)&  42,164,416  &  9,132 (.02\%) \\
@@ -2313,13 +2320,17 @@ we are not using transactions at all.\footnote{Although, of course, in
   created.}  \figref{phd-spec-nt} shows equivalent measurements on
 full Java applications.  \Flex has removed all the synchronization in
 these benchmarks (safe because they are single-threaded) leaving only
-the costs of the \texttt{readNT} and \texttt{writeNT} protocols.
+the costs of the read and write checks required by the transaction
+protocols.
 
-The earlier microbenchmark hinted that we might expect
+In the figure, the rightmost bar in each group shows the costs of
+performing the \texttt{readNT} and \texttt{writeNT} protocols on every
+read and write in the application.  
+The earlier microbenchmark hinted that we might obtain
 nontransactional overheads as low as 15\%-20\%.
 In fact, we see a 19\%
 overhead on the \texttt{209\_db} benchmark, although the other
-benchmarks show that an overhead of around 60\% is more typical.
+benchmarks show that an overhead of around 40\% is more typical.
 Close inspection of the assembly code emitted by the C compiler for
 these benchmarks indicates that the compiler's limitations are
 the primary reason our performance falls short of mark set by the
@@ -2336,7 +2347,7 @@ thus opaque to the compiler, many opportunities for code motion and
 scheduling are being missed.
 
 The \texttt{222\_mpegaudio} benchmark shows another potential
-liability: it incurred a 149\% overhead for the nontransactional
+liability: it incurred a 249\% overhead for the nontransactional
 code.  The ``false flag'' counts shown in \figref{false-flag} hint at
 the problem: this benchmark is the only one to encounter false
 flags.  The hidden portion of the iceberg may partly consist of
