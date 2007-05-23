@@ -2235,29 +2235,47 @@ transaction when it awakes.  This is sufficient for the limited uses of
 In this section I evaluate the performance of the \apex implementation.
 All experiments were performed on a 1GHz MPC7447 (G4) PowerPC processor,
 with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
-6.10 on a Linux 2.6.17 kernel.  The limitations noted in the previous
+6.10 on a Linux 2.6.17 kernel.  The \flex compiler and runtime system
+sources were from the head CVS revision on 2007-05-23.
+
+The limitations noted in the previous
 section counsel that the numbers I obtain ought to be considered
 guidelines to potential performance, not fundamental limits.
-Previous work has adequately demonstrated the scalability
-benefits of nonblocking synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05};
-I concentrate in this thesis on single-threaded efficiency measures.
+Since previous work has adequately demonstrated the scalability
+benefits of nonblocking
+synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05},
+in this section I concentrate on single-threaded efficiency measures.
 
-I examine the SPECjvm98 benchmark suite, a collection of
-practical Java programs including an expert system, a simple database,
-a Java compiler, an audio encoder, and a parser generator.  To clarify
+I examine the SPECjvm98 benchmark suite, the collection of
+practical Java programs previously described and characterized in
+\secref{auto}. 
+\figref{perfnums} listed the 7 benchmarks in SPECjvm98.  As in the
+previous section, we use the single-threaded {\tt 205\_raytrace} benchmark
+in the place of its multi-threaded variant {\tt 227\_mtrt}.  The
+SPECjvm98 benchmarks include an expert system, a simple database,
+a Java compiler, an audio encoder, and a parser generator.
+
+In addition to the full ``100\%'' input for each benchmark,
+SPECjvm98 defines two smaller inputs, sized to roughly correspond to
+1\% and 10\% of the runtime of the full benchmark.  Unless otherwise
+specified, all benchmarks were run on the full ``100\%'' input.
+
+To clarify
 the measurements, the baseline for all comparisons will be a
 version of the benchmarks compiled with the same method cloning and
 desugaring (\secref{synctrans}) that is done for the transaction
 transformation.
 
 \epsbigfigput[Nontransactional check overhead for SPECjvm98.]{phd-spec-nt}{%
-  Nontransactional check overhead for SPECjvm98.  Both benchmarks in
-  each pair were compiled with the transformations in
+  Nontransactional check overhead for SPECjvm98.  All benchmarks
+  were compiled with the transformations in
   \secref{synctrans} (method cloning, desugaring) and all
-  synchronization was removed.  The version ``with checks'' had all
+  synchronization was removed.  The left bar in each group performed
+  direct field access.  The middle bar had all reads performed
+  with load-linked, and all writes performed with a
+  load-linked/store-conditional pair.  The right bar had all
   reads and writes transformed using the \texttt{readNT} and
-  \texttt{writeNT} protocols, while the base version performed direct
-  field access.}
+  \texttt{writeNT} protocols.}
 
 \begin{figure}\small % -s10
 \begin{tabular}{|l||r|c||r|c|}

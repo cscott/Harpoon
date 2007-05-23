@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Wed Apr 11 08:49:28 2007"
+@timestamp def "Wed May 23 16:27:27 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -183,7 +183,7 @@
 @g0 fixedpoint format general general
 @g0 fixedpoint prec 6, 6
 @with g0
-@    world 0, 0, 6, 4
+@    world 0, 0, 7, 4
 @    stack world 0, 0, 0, 0
 @    znorm 1
 @    view 0.150000, 0.150000, 1.150000, 0.850000
@@ -205,7 +205,7 @@
 @    xaxis  bar on
 @    xaxis  bar color 1
 @    xaxis  bar linestyle 1
-@    xaxis  bar linewidth 1.0
+@    xaxis  bar linewidth 1.5
 @    xaxis  label ""
 @    xaxis  label layout para
 @    xaxis  label place auto
@@ -245,23 +245,25 @@
 @    xaxis  ticklabel start 0.000000
 @    xaxis  ticklabel stop type auto
 @    xaxis  ticklabel stop 0.000000
-@    xaxis  ticklabel char size 1.000000
+@    xaxis  ticklabel char size 1.050000
 @    xaxis  ticklabel font 0
 @    xaxis  ticklabel color 1
 @    xaxis  tick place both
 @    xaxis  tick spec type both
-@    xaxis  tick spec 6
+@    xaxis  tick spec 7
 @    xaxis  tick minor 0, 0
 @    xaxis  tick major 1, 1
 @    xaxis  ticklabel 1, "jess"
 @    xaxis  tick major 2, 2
-@    xaxis  ticklabel 2, "db"
+@    xaxis  ticklabel 2, "raytrace"
 @    xaxis  tick major 3, 3
-@    xaxis  ticklabel 3, "javac"
+@    xaxis  ticklabel 3, "db"
 @    xaxis  tick major 4, 4
-@    xaxis  ticklabel 4, "mpegaudio"
+@    xaxis  ticklabel 4, "javac"
 @    xaxis  tick major 5, 5
-@    xaxis  ticklabel 5, "jack"
+@    xaxis  ticklabel 5, "mpegaudio"
+@    xaxis  tick major 6, 6
+@    xaxis  ticklabel 6, "jack"
 @    yaxis  on
 @    yaxis  type zero false
 @    yaxis  offset 0.000000 , 0.000000
@@ -317,7 +319,7 @@
 @    altyaxis  off
 @    legend on
 @    legend loctype view
-@    legend 0.9, 0.81
+@    legend 0.2, 0.81
 @    legend box color 1
 @    legend box pattern 1
 @    legend box linewidth 1.0
@@ -341,7 +343,7 @@
 @    s0 hidden false
 @    s0 type bar
 @    s0 symbol 0
-@    s0 symbol size 2.000000
+@    s0 symbol size 1.700000
 @    s0 symbol color 1
 @    s0 symbol pattern 1
 @    s0 symbol fill color 1
@@ -365,7 +367,7 @@
 @    s0 fill pattern 1
 @    s0 avalue off
 @    s0 avalue type 2
-@    s0 avalue char size 1.000000
+@    s0 avalue char size 1.950000
 @    s0 avalue font 0
 @    s0 avalue color 1
 @    s0 avalue rot 0
@@ -390,7 +392,7 @@
 @    s1 hidden false
 @    s1 type bar
 @    s1 symbol 0
-@    s1 symbol size 2.000000
+@    s1 symbol size 1.700000
 @    s1 symbol color 1
 @    s1 symbol pattern 1
 @    s1 symbol fill color 4
@@ -414,7 +416,7 @@
 @    s1 fill pattern 1
 @    s1 avalue on
 @    s1 avalue type 2
-@    s1 avalue char size 1.000000
+@    s1 avalue char size 0.850000
 @    s1 avalue font 0
 @    s1 avalue color 1
 @    s1 avalue rot 0
@@ -422,7 +424,7 @@
 @    s1 avalue prec 3
 @    s1 avalue prepend ""
 @    s1 avalue append ""
-@    s1 avalue offset 0.000000 , 0.000000
+@    s1 avalue offset -0.005000 , 0.005000
 @    s1 errorbar off
 @    s1 errorbar place both
 @    s1 errorbar color 1
@@ -434,12 +436,12 @@
 @    s1 errorbar riser linestyle 1
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
-@    s1 comment "With Checks"
-@    s1 legend  "w/ SC"
+@    s1 comment "With LL/SC"
+@    s1 legend  "LL loads, SC stores"
 @    s2 hidden false
 @    s2 type bar
 @    s2 symbol 0
-@    s2 symbol size 2.000000
+@    s2 symbol size 1.700000
 @    s2 symbol color 1
 @    s2 symbol pattern 1
 @    s2 symbol fill color 2
@@ -463,7 +465,7 @@
 @    s2 fill pattern 1
 @    s2 avalue on
 @    s2 avalue type 2
-@    s2 avalue char size 1.000000
+@    s2 avalue char size 0.850000
 @    s2 avalue font 0
 @    s2 avalue color 1
 @    s2 avalue rot 0
@@ -471,7 +473,7 @@
 @    s2 avalue prec 3
 @    s2 avalue prepend ""
 @    s2 avalue append ""
-@    s2 avalue offset 0.000000 , 0.000000
+@    s2 avalue offset 0.000000 , 0.005000
 @    s2 errorbar off
 @    s2 errorbar place both
 @    s2 errorbar color 1
@@ -483,8 +485,8 @@
 @    s2 errorbar riser linestyle 1
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
-@    s2 comment "copy of set G0.S1"
-@    s2 legend  "w/ Checks"
+@    s2 comment "With Checks"
+@    s2 legend  "Read & write checks"
 @target G0.S0
 @type bar
 1 1
@@ -492,20 +494,23 @@
 3 1
 4 1
 5 1
+6 1
 &
 @target G0.S1
 @type bar
 1 1.07
-2 1.01
-3 1.17
-4 1.72
-5 1.13
+2 1.078
+3 1.01
+4 1.17
+5 1.72
+6 1.13
 &
 @target G0.S2
 @type bar
 1 1.46
-2 1.08
-3 1.64
-4 3.49
-5 1.53
+2 1.33
+3 1.08
+4 1.64
+5 3.49
+6 1.53
 &
