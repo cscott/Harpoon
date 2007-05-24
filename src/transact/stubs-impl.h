@@ -11,7 +11,7 @@ extern inline VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
 extern inline VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
 					struct vinfo *version,
 					struct commitrec *cr) {
-  assert(cr!=NULL);
+  //assert(cr!=NULL);
   return *((VALUETYPE*)(FIELDBASE(obj)+offset));
 }
 extern inline void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
