@@ -1,0 +1,21 @@
+Performance-prediction curve fitting for SpecJVM98 applications.
+
+Proposed:
+t = transactions
+w = T writes
+s = average object size written to in a transaction
+r = T reads
+x = avg # writes per transaction = w/t
+
+overhead(s) = K1*t + K2*s*t + K3*r
+
+fit for K1,K2,K3.
+                t
+201_compress	2272
+202_jess	4892829
+205_raytrace	4177
+209_db		45222742
+213_javac	668
+222_mpegaudio	2991
+228_jack	12017041
+

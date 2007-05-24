@@ -12,26 +12,35 @@ foreach my $run (keys %runsize) {
     open(FH, "< $file") or die "Can't open $file for reading.\n";
     while (<FH>) {
         my ($sz, $op, $freq) = split;
+	# $freq operations of type $op to objects of size $sz
 	$count{$run}{$sz}{$op} = $freq;
-	$total{$run}{$op} += $freq;
-	$inttotal{$run}{$op} += $freq*$sz;
+	$total{$run}{$op} += $freq; # total number of this operation
+	$inttotal{$run}{$op} += $freq*$sz; # integrated total
     }
     close FH;
 }
 @allops = ( "r", "w", "R", "W" );
 
 foreach my $op (@allops) {
-    foreach my $run ( keys %baseline ) {
+    foreach my $run ( keys %runsize ) {
+	# average object size per $op.
 	$norm{$run}{$op} = $inttotal{$run}{$op} / $total{$run}{$op};
     }
 }
 
 foreach my $op (@allops) {
-    print $op.":\n";
-    foreach my $run (sort { $norm{$a}{$op} <=> $norm{$b}{$op} } keys %total){
+    print $op.": (";
+    print "non" if $op =~ m/[RW]/;
+    print "transactional ";
+    print (($op =~ m/[Rr]/) ? "read" : "write");
+    print ")\n";
+    print " benchmark\taverage object size\ttotal # of operations\n";
+    foreach my $run (sort keys %total){
 	my $name = $fullname{$run};
 	$name.=" " while length($name) < 9;
-	print " ".$name."\t".$norm{$run}{$op}."\t".$inttotal{$run}{$op}."\n";
+	print " ".$name."\t";
+	printf "%.1f", $norm{$run}{$op};
+	print "\t".$total{$run}{$op}."\n";
     }
     print "\n";
 }

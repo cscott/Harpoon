@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Thu May 24 00:57:03 2007"
+@timestamp def "Thu May 24 02:04:02 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -183,7 +183,7 @@
 @g0 fixedpoint format general general
 @g0 fixedpoint prec 6, 6
 @with g0
-@    world 0, -14000000, 7, 42000000
+@    world 0, -10000000, 7, 40000000
 @    stack world 0, 0, 0, 0
 @    znorm 0
 @    view 0.150000, 0.150000, 1.150000, 0.850000
@@ -385,7 +385,7 @@
 @g1 fixedpoint format general general
 @g1 fixedpoint prec 6, 6
 @with g1
-@    world 0, 0, 7, 4
+@    world 0, 0, 7, 5
 @    stack world 0, 0, 0, 0
 @    znorm 1
 @    view 0.150000, 0.150000, 1.150000, 0.850000
@@ -597,7 +597,7 @@
 @    s1 symbol size 1.700000
 @    s1 symbol color 1
 @    s1 symbol pattern 1
-@    s1 symbol fill color 4
+@    s1 symbol fill color 2
 @    s1 symbol fill pattern 1
 @    s1 symbol linewidth 1.0
 @    s1 symbol linestyle 1
@@ -626,7 +626,7 @@
 @    s1 avalue prec 3
 @    s1 avalue prepend ""
 @    s1 avalue append ""
-@    s1 avalue offset -0.005000 , 0.005000
+@    s1 avalue offset -0.005000 , 0.008000
 @    s1 errorbar off
 @    s1 errorbar place both
 @    s1 errorbar color 1
@@ -638,15 +638,15 @@
 @    s1 errorbar riser linestyle 1
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
-@    s1 comment "With LL/SC"
-@    s1 legend  "LL loads, SC stores"
+@    s1 comment "copy of set G1.S2"
+@    s1 legend  "Read & write checks (measured)"
 @    s2 hidden false
 @    s2 type bar
 @    s2 symbol 0
 @    s2 symbol size 1.700000
 @    s2 symbol color 1
 @    s2 symbol pattern 1
-@    s2 symbol fill color 2
+@    s2 symbol fill color 3
 @    s2 symbol fill pattern 1
 @    s2 symbol linewidth 1.0
 @    s2 symbol linestyle 1
@@ -671,11 +671,11 @@
 @    s2 avalue font 0
 @    s2 avalue color 1
 @    s2 avalue rot 0
-@    s2 avalue format general
-@    s2 avalue prec 3
+@    s2 avalue format decimal
+@    s2 avalue prec 2
 @    s2 avalue prepend ""
 @    s2 avalue append ""
-@    s2 avalue offset 0.000000 , 0.005000
+@    s2 avalue offset 0.005000 , 0.008000
 @    s2 errorbar off
 @    s2 errorbar place both
 @    s2 errorbar color 1
@@ -688,7 +688,7 @@
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
 @    s2 comment "With Checks"
-@    s2 legend  "Read & write checks"
+@    s2 legend  "Read & write checks (predicted)"
 @target G0.S0
 @type xy
 1 4071206.6
@@ -718,19 +718,19 @@
 &
 @target G1.S1
 @type bar
-1 1.07
-2 1.078
-3 1.01
-4 1.17
-5 1.72
-6 1.13
-&
-@target G1.S2
-@type bar
 1 1.46
 2 1.33
 3 1.08
 4 1.64
 5 3.49
+6 1.53
+&
+@target G1.S2
+@type bar
+1 1.33
+2 1.3
+3 1.14
+4 1.63
+5 3.97
 6 1.53
 &

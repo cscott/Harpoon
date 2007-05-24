@@ -133,7 +133,8 @@ phd-thesis.dvi: \
 	nb-single-obj nb-multi-obj \
 	chuang funarr bloat-color \
 	tr-sz-all-1 tr-w-all-1 sean_lie_6b \
-	phd-counter phd-counter-instr phd-arrayperf phd-spec-nt phd-spec-full,\
+	phd-counter phd-counter-instr phd-arrayperf \
+	phd-spec-nt phd-spec-nt-rate phd-spec-nt-pred phd-spec-full,\
 	Figures/$(f).eps Figures/$(f).pdf) \
 	$(foreach f, \
 	cachemods snapshot datastruct-entry tr-quad2 tr-multi-obj-big,\

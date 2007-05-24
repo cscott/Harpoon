@@ -2272,16 +2272,29 @@ SPECjvm98 defines two smaller inputs, sized to roughly correspond to
 1\% and 10\% of the runtime of the full benchmark.  Unless otherwise
 specified, all benchmarks were run on the full ``100\%'' input.
 
+\subsection{Nontransactional check overhead}
 \epsbigfigput[Nontransactional check overhead for SPECjvm98.]{phd-spec-nt}{%
   Nontransactional check overhead for SPECjvm98.  All benchmarks
-  were compiled with the transformations in
+  are compiled with the transformations in
   \secref{synctrans} (method cloning, desugaring) and all
-  synchronization was removed.  The left bar in each group performed
-  direct field access.  The middle bar had all reads performed
-  with load-linked, and all writes performed with a
-  load-linked/store-conditional pair.  The right bar had all
+  synchronization is removed.  The left bar in each group performs
+  direct field access.  The middle bar performs all reads
+  with load-linked, and performs all writes with a
+  load-linked/store-conditional pair.  The right bar has all
   reads and writes transformed using the \texttt{readNT} and
-  \texttt{writeNT} protocols.}
+  \texttt{writeNT} protocols.  The line graph in the background shows
+  the write rate (stores performed divided by runtime) for each benchmark.}
+
+\epsbigfigput[Read and write rates for SPECjvm98.]{phd-spec-nt-rate}{%
+  Read and write rates for SPECjvm98 benchmarks, in operations per
+  second.
+}
+
+\epsbigfigput[Predicted versus actual nontransactional check
+  overhead.]{phd-spec-nt-pred}{Predicted versus actual
+  nontransactional check overhead for SPECjvm98.  Measurement
+  methodology is identical to \figref{phd-spec-nt}.  Overhead is
+  predicted as 2.4 ns per read, and 63.5 ns per write.}
 
 \begin{figure}\small % -s10
 \begin{tabular}{|l||r|c||r|c|}
@@ -2300,15 +2313,6 @@ jack &       9,882,846 & 0  (0\%)& 4,595,774 &  0 (0\%) \\ \hline
   applications were run with the 10\% input size.}
 \label{fig:false-flag}
 \end{figure}
-
-\epsbigfigput[Transaction overhead for SPECjvm98.]{phd-spec-full}{%
-  Transaction overhead for SPECjvm98.  The leftmost bar is compiled
-  with method cloning and desugaring, all transactions removed, and
-  direct reads and writes.  The next bar adds creation of commit
-  records at the start of each transaction and the CAS commit
-  operation at the end.  The next bar uses the transactional and
-  nontransactional read and write protocols for non-array objects.
-  The final bar is fully transactional.}
 
 In \secref{counter-bench} I examined a microbenchmark to discover the
 lower limits on our nontransactional overhead.  These are the
@@ -2331,26 +2335,74 @@ nontransactional overheads as low as 15\%-20\%.
 In fact, we see a 19\%
 overhead on the \texttt{209\_db} benchmark, although the other
 benchmarks show that an overhead of around 40\% is more typical.
+The middle bar in the figure shows the overhead incurred by simply
+replacing the loads and stores with load-linked and store-conditional
+instructions, as our protocol must do.
+
+The line graph in the background of \figref{phd-spec-nt} shows the
+write rate for each benchmark.  Read and write rates for the benchmark
+are shown in more detail in \figref{phd-spec-nt-rate}.  Write rate is
+a very good predictor for check overhead.  The \texttt{mpegaudio}
+benchmark, for example, has the largest measured overhead, 249\%, and
+a write rate 4 times as large as any other benchmark.
+
+Using the measured benchmark performance, we can compute a minimum norm
+solution to the linear equation $o = k_1 r + k_2 w$, where $o$ is overhead,
+$r$ and $w$ are read and write rates, respectively, and $k_1$ and $k_2$
+are the unknown coefficients.  This yield overhead contributions
+$k_1 = 2.4 \text{ns}/\text{read}$ and
+$k_2 = 63.5 \text{ns}/\text{write}$.  The write checks are 26 times as
+expensive as the read checks.
+
+\figref{phd-spec-nt-pred} shows the predicted performance overlaid on
+actual performance.  The \texttt{jess}, \texttt{raytrace}, and
+\texttt{db} benchmarks have very similar read rates.  The
+\texttt{jess} benchmark has 39\% higher overhead than
+\texttt{raytrace}, however, although
+its write rate is only 9\% higher. Similarly, \texttt{db} has a 64\%
+lower write rate than \texttt{raytrace} but a 76\% lower overhead.
+Our linear model only approximates this behavior.  The actual
+performance is affected by the programs' read and write dependencies.
+The \texttt{jess} benchmark contains tight dependencies which make its
+overhead more sensitive to a small increase in write rate, while
+\texttt{db} has loose dependencies that lower its overhead.
+
 Close inspection of the assembly code emitted by the C compiler for
-these benchmarks indicates that the compiler's limitations are
-the primary reason our performance falls short of mark set by the
-microbenchmark.   As discussed in \secref{synctrans}, it is hard to
-obtain maximum performance with a C implementation (such as we are
-using here) due to expressive limits, and the emitted assembly
+these benchmarks indicates that, as in the microbenchmark of
+\secref{counter-bench}, compiler limitations account for part of this
+overhead. It is hard to
+obtain maximum performance with a C backend (such as used by \flex)
+due to expressive limits, and the emitted assembly
 indicates that the compiler is not optimally acting on the hints we
 can give it.  In particular, we want as little extraneous code as
 possible on the fast path through the common case, but the compiler
-adds register spills and moves here that are necessary only in
+adds register spills and moves on the fast path that are necessary only in
 unusual cases.  Further, because the fundamental load-linked and
 store-conditional instructions are inside inline assembly blocks and
 thus opaque to the compiler, many opportunities for code motion and
 scheduling are being missed.
 
+The nontransactional versions of the benchmarks must still properly
+handle false flag values.  \figref{false-flag} shows that false flags
+are not a significant percentage of values read or written, and thus
+not a major contribution to overhead.
+
+\subsection{Transaction overhead}
 \figref{phd-spec-full} demonstrates the performance of transactional
 code, broken down into the components of the final cost.  We see that
 creation of transaction objects at the start of every atomic region is
-a considerable fraction of the total cost.  If transactions are going
-to be frequent and small, this cost must be kept in line.
+a considerable fraction of the total cost for some benchmarks.  If
+transactions are going to be frequent and small, this cost must be
+kept in line.
+
+\epsbigfigput[Transaction overhead for SPECjvm98.]{phd-spec-full}{%
+  Transaction overhead for SPECjvm98.  The leftmost bar is compiled
+  with method cloning and desugaring, all transactions removed, and
+  direct reads and writes.  The next bar adds creation of commit
+  records at the start of each transaction and the CAS commit
+  operation at the end.  The next bar uses the transactional and
+  nontransactional read and write protocols for non-array objects.
+  The final bar is fully transactional.}
 
 Transactions that mutate arrays also account for a large amount of
 the total cost.  In the extreme case, the SPECjvm98 benchmark
