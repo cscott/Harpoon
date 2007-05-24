@@ -2283,7 +2283,8 @@ specified, all benchmarks were run on the full ``100\%'' input.
   load-linked/store-conditional pair.  The right bar has all
   reads and writes transformed using the \texttt{readNT} and
   \texttt{writeNT} protocols.  The line graph in the background shows
-  the write rate (stores performed divided by runtime) for each benchmark.}
+  the write rate (stores performed divided by base runtime) for each
+  benchmark.}
 
 \epsbigfigput[Read and write rates for SPECjvm98.]{phd-spec-nt-rate}{%
   Read and write rates for SPECjvm98 benchmarks, in operations per
@@ -2314,7 +2315,8 @@ jack &       9,882,846 & 0  (0\%)& 4,595,774 &  0 (0\%) \\ \hline
 \label{fig:false-flag}
 \end{figure}
 
-In \secref{counter-bench} I examined a microbenchmark to discover the
+In \secref{counter-bench} I examined a simple counter microbenchmark
+to discover the
 lower limits on our nontransactional overhead.  These are the
 fundamental costs of strong atomicity: the penalty we must pay even if
 we are not using transactions at all.\footnote{Although, of course, in
@@ -2334,15 +2336,21 @@ The earlier microbenchmark hinted that we might obtain
 nontransactional overheads as low as 15\%-20\%.
 In fact, we see a 19\%
 overhead on the \texttt{209\_db} benchmark, although the other
-benchmarks show that an overhead of around 40\% is more typical.
+benchmarks show that an overhead of 40\%--50\% is more typical.
+
 The middle bar in the figure shows the overhead incurred by simply
 replacing the loads and stores with load-linked and store-conditional
-instructions, as our protocol must do.
+instructions, as our protocol must do.  The PowerPC is not optimized
+to perform frequent ``synchronization'' instructions such as
+load-linked and store-conditional, and store buffers and other
+architectural features are bypassed for their execution.  For most
+applications, the performance impact is not significant.  Applications
+with large write rates are affected to a greater degree.
 
 The line graph in the background of \figref{phd-spec-nt} shows the
 write rate for each benchmark.  Read and write rates for the benchmark
 are shown in more detail in \figref{phd-spec-nt-rate}.  Write rate is
-a very good predictor for check overhead.  The \texttt{mpegaudio}
+a very good predictor for overall check overhead.  The \texttt{mpegaudio}
 benchmark, for example, has the largest measured overhead, 249\%, and
 a write rate 4 times as large as any other benchmark.
 
@@ -2418,7 +2426,7 @@ structures.
 It is worth examining the overheads for the \texttt{222\_mpegaudio}
 benchmark in more depth, as they clearly illustrate the limitations of
 our present implementation.  \figref{phd-spec-nt} shows a
-a 249\% overhead for just the read and write checks.
+249\% overhead for just the read and write checks.
 The \texttt{mpegaudio} benchmark
 consists almost entirely of byte accesses, and the PowerPC architecture
 has only a word-width store-conditional instruction.  For every byte

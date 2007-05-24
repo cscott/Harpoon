@@ -144,3 +144,9 @@ a*K
 
 # this results in 855.8ns per transaction plus 5.5ns per trans. read
 
+a1=a([1,3,6],1)
+b1=b([1,3,6],1)
+K=a1\b1
+a(:,1)*K
+
+# 880ns per transaction
