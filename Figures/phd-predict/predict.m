@@ -169,15 +169,15 @@ b=[2.16
    3.55
    3.27
    6.89];
-K=a\b
-a*K
+K=a\b;
+a*K;
 
 # this gives a model that say NT writes cost 83ns, T writes cost 390ns,
 # and transactions cost 3.5us. (transaction cost looks too high)
 tc = a(:,3)*880e-9;
 b1 = b - tc;
-K=a(:,1:2)\b1
-a(:,1:2)*K + tc
+K=a(:,1:2)\b1;
+a(:,1:2)*K + tc;
 
 # with transactions at only 880ns each, then jess, db, and jack come out
 # low (.8 vs 2.16, 1.4 vs 5.81, 3.0 vs 6.89)
@@ -205,3 +205,66 @@ r = [0.67727
      2.87521 ];
 
 # this isn't a very good prediction.
+
+# okay, looking at transaction rate combined with transactional memory op rate
+# (as a proxy for transaction size) to predict NOT
+
+a = [408416.44	3063525.63
+     300.72	525172.64
+     1328517.69	5739554.05
+     54.71	38667836.94
+     287.04	3975.24
+     1815262.99	9654438.97];
+b = [0.3
+     0.06
+     1.47
+     0.17
+     0.01
+     1.39];
+K=a\b;
+a*K;
+
+# much better!
+# this is 859ns / trans + 4ns per transactional memory op
+# (what we really want is transactional method calls)
+
+# okay, repeat previous w/ this new model
+
+# fields:
+# 1: NT read rate
+# 2: NT write rate
+# 3: T read rate
+# 4: T write rate
+# 5: t*sz / time
+# 6: write*sz / time
+# 7: trans rate
+a=[26700325.79	4054333.64	3046652.67	16872.95	548299076.17	22651941.99	408416.44
+   26104153.92	3608662.13	403441.61	121731.03	17381.61	7036053.51	300.72
+   18187254.41	987483.78	5378122.91	361431.14	53424080225.28	14534338855.55	1328517.69
+   15090.83	7982.88	29804501.31	8863335.63	76297.53	12360807864.77	54.71
+   212850162.38	38663920.83	3236.37	738.87	95700.52	246338.45	287.04
+   12695066.01	5902722.21	8016196.68	1638242.3	83320571.28	75195321.39	1815262.99];
+b=[2.16
+   0.59
+   5.81
+   3.55
+   3.27
+   6.89];
+tc = a(:,7)*859e-9 + (a(:,3)+a(:,4))*4e-9 + a(:,1)*2.4e-9 + a(:,2)*63.5e-9;
+b1 = b - tc;
+# ignore raytrace and mpegaudio, they're nontrans
+K = a([1,3,4,6],[4,6]) \ b1([1,3,4,6],:)
+a(:,[4,6])*K + tc
+
+# 123 ns / T write + .26ns / write-byte
+
+# both have poor predictive power
+
+# but maybe nontransactional reads/writes are more expensive now,
+# since they've got to copy back trans?
+tc = a(:,7)*859e-9 + (a(:,3)+a(:,4))*4e-9;
+b1 = b - tc;
+K = a(:,[2,4,6]) \ b1;
+a(:,[2,4,6])*K + tc;
+
+# NT write: 107ns, T write: 115ns, T write*sz: .26ns
