@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Wed May 23 18:15:39 2007"
+@timestamp def "Thu May 24 16:06:58 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -349,7 +349,7 @@
 @    s0 symbol fill color 1
 @    s0 symbol fill pattern 1
 @    s0 symbol linewidth 1.0
-@    s0 symbol linestyle 0
+@    s0 symbol linestyle 1
 @    s0 symbol char 65
 @    s0 symbol char font 0
 @    s0 symbol skip 0
@@ -393,12 +393,12 @@
 @    s1 type bar
 @    s1 symbol 0
 @    s1 symbol size 1.250000
-@    s1 symbol color 2
+@    s1 symbol color 1
 @    s1 symbol pattern 1
 @    s1 symbol fill color 2
 @    s1 symbol fill pattern 1
 @    s1 symbol linewidth 1.0
-@    s1 symbol linestyle 0
+@    s1 symbol linestyle 1
 @    s1 symbol char 65
 @    s1 symbol char font 0
 @    s1 symbol skip 0
@@ -427,7 +427,7 @@
 @    s1 avalue offset 0.000000 , 0.000000
 @    s1 errorbar on
 @    s1 errorbar place both
-@    s1 errorbar color 2
+@    s1 errorbar color 1
 @    s1 errorbar pattern 1
 @    s1 errorbar size 1.000000
 @    s1 errorbar linewidth 1.0
@@ -442,12 +442,12 @@
 @    s2 type bar
 @    s2 symbol 0
 @    s2 symbol size 1.250000
-@    s2 symbol color 3
+@    s2 symbol color 1
 @    s2 symbol pattern 1
 @    s2 symbol fill color 3
 @    s2 symbol fill pattern 1
 @    s2 symbol linewidth 1.0
-@    s2 symbol linestyle 0
+@    s2 symbol linestyle 1
 @    s2 symbol char 65
 @    s2 symbol char font 0
 @    s2 symbol skip 0
@@ -476,7 +476,7 @@
 @    s2 avalue offset 0.000000 , 0.000000
 @    s2 errorbar on
 @    s2 errorbar place both
-@    s2 errorbar color 3
+@    s2 errorbar color 1
 @    s2 errorbar pattern 1
 @    s2 errorbar size 1.000000
 @    s2 errorbar linewidth 1.0
@@ -491,12 +491,12 @@
 @    s3 type bar
 @    s3 symbol 0
 @    s3 symbol size 1.250000
-@    s3 symbol color 4
+@    s3 symbol color 1
 @    s3 symbol pattern 1
 @    s3 symbol fill color 4
 @    s3 symbol fill pattern 1
 @    s3 symbol linewidth 1.0
-@    s3 symbol linestyle 0
+@    s3 symbol linestyle 1
 @    s3 symbol char 65
 @    s3 symbol char font 0
 @    s3 symbol skip 0
@@ -525,7 +525,7 @@
 @    s3 avalue offset 0.000000 , 0.000000
 @    s3 errorbar on
 @    s3 errorbar place both
-@    s3 errorbar color 4
+@    s3 errorbar color 1
 @    s3 errorbar pattern 1
 @    s3 errorbar size 1.000000
 @    s3 errorbar linewidth 1.0

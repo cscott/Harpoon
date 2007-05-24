@@ -44,12 +44,17 @@ b = [0.46;
      0.53];
 
 K = a\b;
-p1 = a * K
+p1 = a * K;
 
 # This is a very good predictor, although it underpredicts jess and
 # overpredicts db
 
 # overhead % = 100 * (2.4 ns/read * reads/s + 63.5 ns/write * writes/s)
+
+a=a(:,2);
+K = a\b;
+
+# w/ just write: 76.3ns / write
 
 #################################3
 
@@ -137,16 +142,66 @@ b = [0.3
      0.17
      0.01
      1.39];
-#a=a([1,3,6],:)
-#b=b([1,3,6],:)
-K=a\b
-a*K
+K=a\b;
+a*K;
 
 # this results in 855.8ns per transaction plus 5.5ns per trans. read
 
-a1=a([1,3,6],1)
-b1=b([1,3,6],1)
-K=a1\b1
-a(:,1)*K
+a1=a([1,3,6],1);
+b1=b([1,3,6],1);
+K=a1\b1;
+a(:,1)*K;
 
 # 880ns per transaction
+
+# okay, try predicting overall transaction performance using:
+# non-transactional write rate, transaction rate, and transactional write rate.
+a=[26700325.79	4054333.64	3046652.67	16872.95	548299076.17	22651941.99	408416.44
+   26104153.92	3608662.13	403441.61	121731.03	17381.61	7036053.51	300.72
+   18187254.41	987483.78	5378122.91	361431.14	53424080225.28	14534338855.55	1328517.69
+   15090.83	7982.88	29804501.31	8863335.63	76297.53	12360807864.77	54.71
+   212850162.38	38663920.83	3236.37	738.87	95700.52	246338.45	287.04
+   12695066.01	5902722.21	8016196.68	1638242.3	83320571.28	75195321.39	1815262.99];
+a=a(:,[2,4,7]);
+b=[2.16
+   0.59
+   5.81
+   3.55
+   3.27
+   6.89];
+K=a\b
+a*K
+
+# this gives a model that say NT writes cost 83ns, T writes cost 390ns,
+# and transactions cost 3.5us. (transaction cost looks too high)
+tc = a(:,3)*880e-9;
+b1 = b - tc;
+K=a(:,1:2)\b1
+a(:,1:2)*K + tc
+
+# with transactions at only 880ns each, then jess, db, and jack come out
+# low (.8 vs 2.16, 1.4 vs 5.81, 3.0 vs 6.89)
+# NT writes: 107ns, T writes 501ns
+
+r = [0.80020
+     0.44608
+     1.45551
+     4.44223
+     4.12363
+     3.04779];
+
+# w/ 880ns trans and 76.3ns NT write
+tc = ( 880e-9 * a(:,3) ) + (76.3e-9 * a(:,1));
+b2 = b - tc;
+K=a(:,2)\b2;
+a(:,2)*K + tc;
+
+# yields 505ns T write
+r = [0.67727
+     0.33709
+     1.42698
+     4.47712
+     2.95068
+     2.87521 ];
+
+# this isn't a very good prediction.
