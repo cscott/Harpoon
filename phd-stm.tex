@@ -2466,7 +2466,8 @@ The linear model only approximates this behavior.  The actual
 performance is affected by the programs' read and write dependencies.
 The \texttt{jess} benchmark contains tight dependencies which make its
 overhead more sensitive to a small increase in write rate, while
-\texttt{db} has loose dependencies that lower its overhead.
+\texttt{db} has loose dependencies that lower its overhead.  The model
+matches actual performance within 14\% for these benchmarks.
 
 Close inspection of the assembly code emitted by the C compiler for
 these benchmarks indicates that, as in the microbenchmark of
