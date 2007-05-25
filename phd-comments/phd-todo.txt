@@ -44,11 +44,5 @@ make figure 5.7 bigger.
 Topic paragraph chapter 7. (CEL)
 
 -------------
-Get ns/write numbers from counter benchmark; compare to numbers for
-full benchmarks.
-
-Appendix B with command-lines.
 
 Fix array section to match microbenchmark? (figure 5.9, etc)
-
-Fix CVS repository date in benchmark section in ch 4.
