@@ -123,9 +123,9 @@ ecoop04.dvi: csallncs.cls
 popl05.dvi: csaacmconfbig.cls acmconfbig.cls
 
 # Phd Thesis dependencies
-phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex \
-	phd-intro.tex phd-stm.tex phd-htm.tex phd-hybrid.tex phd-ver.tex \
-	phd-chall.tex phd-concl.tex phd-opt.tex phd-ack.tex
+phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex phd-ack.tex \
+	phd-intro.tex phd-stm.tex phd-htm.tex phd-hybrid.tex \
+	phd-chall.tex phd-related.tex phd-concl.tex phd-ver.tex phd-cmd.tex
 #    figure dependencies
 phd-thesis.dvi: \
 	$(foreach f, \
@@ -143,7 +143,7 @@ phd-thesis.dvi: \
 phd-thesis.pdf: phd-thesis.dvi
 	pdflatex phd-thesis && pdflatex phd-thesis
 phd-thesis.munged: phd-thesis.tex phd-titlepage.tex phd-abstract.tex phd-ack.tex phd-intro.tex phd-stm.tex phd-htm.tex \
-        phd-hybrid.tex phd-chall.tex phd-related.tex phd-concl.tex phd-ver.tex
+        phd-hybrid.tex phd-chall.tex phd-related.tex phd-concl.tex phd-ver.tex phd-cmd.tex
 	munge $^ > $@
 phd-thesis-unmunge:
 	unmunge phd-thesis.munged
