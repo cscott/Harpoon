@@ -2915,10 +2915,15 @@ constant time plus an invocation of \funcname{FA-Read} or
 
 \section{Lock-free functional arrays}\label{sec:lf-fun-arr}
 \begin{figure}[tp]\centering
-\includegraphics[width=5in,clip=true]{Figures/chuang}
+\includegraphics[width=5in,clip=true]{Figures/chuang-trim}
 \caption[Shallow binding scheme for functional arrays.]
-  {Shallow binding scheme for functional arrays, from
-  \cite[Figure~1]{Chuang94}.}
+  {Shallow binding scheme for functional arrays
+  \cite[Figure~1]{Chuang94}.  The array is of size 2 and is indexed by
+  $x$ and $y$.  The initial array $A$ is undefined, and $B$ is defined
+  as an update to $A$ at index $x$ by value $0$.  Similarly for $C$
+  and $D$.  The dark node is the root node which has the cache.  White
+  nodes are differential nodes which must first be rerooted before
+  being read.  Note that only the root node has the cache.}
 \label{fig:chuang}
 \end{figure}
 This section presents a lock-free implementation of functional
@@ -2985,17 +2990,17 @@ operation.  A read to the root simply reads the appropriate value from
 the cache.  A read to a differential node, however, triggers a series
 of rotations that swap the direction of differential nodes and result
 in the current array acquiring the cache and becoming the new root.
-This sequence of rotations is called \emph{re-rooting}, and is
+This sequence of rotations is called \emph{rerooting}, and is
 illustrated in Figure~\ref{fig:chuang}.  Each rotation
 exchanges the root nodes for a differential node pointing to it, after
 which the differential node becomes the new root and the root becomes
 a differential node pointing to the new root. The cost of a read is
-proportional to its re-rooting length, but after the first read
-accesses to the same version are $O(1)$ until the array is re-rooted again.
+proportional to its rerooting length, but after the first read
+accesses to the same version are $O(1)$ until the array is rerooted again.
 
 Shallow binding performs badly if read operations ping-pong between two
 widely separated versions of the array, as we will continually
-re-root the array from one version to the other.
+reroot the array from one version to the other.
 Chuang's contribution is to provide for \emph{cuts} to the chain of
 differential nodes: once in a while we clone the cache and create a
 new root instead of performing a rotation.  Since this operation takes
@@ -3073,16 +3078,16 @@ retry:\\
 \\
 \>$s \gets \text{CAS}(d_C, d_A, \addr{\fref{A}{node}})$\com{step (2)}\\
 \>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
-\\
+%\\
 \>$s\gets\text{CAS}(A, C, \addr{\fref{d_B}{array}})$\com{step (3)}\\
 \>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
-\\
+%\\
 \>$s \gets\text{CAS}(C, B, \addr{\fref{d_A}{array}})$\com{step (4)}\\
 \>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
-\\
+%\\
 \>$s \gets \text{DCAS}(z, y, \addr{d_C[x]},  d_C, d_C, \addr{\fref{C}{node}})$\com{step (5)}\\
 \>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
-\\
+%\\
 \>$s \gets \text{DCAS}(d_B, d_C, \addr{\fref{B}{node}}, d_C, {\bf nil}, \addr{\fref{C}{node}})$\com{step (6)}\\
 \>if $(s\neq \text{\sl SUCCESS})$ goto retry\\
 end\\
@@ -3146,7 +3151,7 @@ using this six-step approach.
 
 
 %% \section{Optimizations}
-%% Re-rooting is the most complicated part of the functional array
+%% Rerooting is the most complicated part of the functional array
 %% algorithm.  It can be optimized in several ways.  For example,
 
 %% %unsync rotate for transaction-local data.

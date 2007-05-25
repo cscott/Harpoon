@@ -131,7 +131,7 @@ phd-thesis.dvi: \
 	$(foreach f, \
 	uvsimCounterRuntime \
 	nb-single-obj nb-multi-obj \
-	chuang funarr bloat-color \
+	chuang-trim funarr bloat-color \
 	tr-sz-all-1 tr-w-all-1 sean_lie_6b \
 	phd-counter phd-counter-instr phd-arrayperf \
 	phd-spec-nt phd-spec-nt-rate phd-spec-nt-pred phd-spec-full,\
