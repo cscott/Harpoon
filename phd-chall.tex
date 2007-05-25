@@ -1,23 +1,17 @@
 % 'Challenges' chapter.
 \chapter{Challenges}\label{cha:chall}
-\punt{
-\epigraphhead[70]{\epigraph{%
-To create a new standard, it takes something that's not just a little
-bit different; it takes something that's really new and really
-captures people's imagination\ldots.}{\textit{Bill Gates}, 1984.}}
-}
 \epigraphhead[70]{\epigraph{%
 The thing is to remember that the future comes one day at a time.
 }{\textit{Dean Acheson}}}
 
-In this section we will review objections that have been raised to
+This chapter reviews objections that have been raised to
 straightforward or \naive transaction implementations.
-Some of these objections do not apply to our implementation;
-discussion of these may further illuminate our design choices.
-Others apply to certain situations, and should be kept in mind when
-creating applications.  Some of the problems raised remain unsolved,
-and are the subject of future work; for these we will attempt to sketch
-research directions.
+Although some of these objections do not apply to our implementation,
+discussing them may further illuminate our design choices.
+Other objections apply to certain situations, and should be kept in mind when
+creating applications.  Some of the problems raised remain unsolved
+and are the subject of future work.  For these problems we
+attempt to sketch research directions.
 
 \section{Performance isolation}\index{Performance isolation}
 Zilles and Flint~\cite{ZillesFl05} identified
@@ -30,13 +24,13 @@ a system with N processors, it is ideal if a task is guaranteed to
 complete at least as quickly as it would running alone on 1
 processor.
 
-It is obvious that most common systems do not provide any guarantee of
-performance isolation: on a typical multiuser system, the execution
+Most common systems do not provide any guarantee of
+performance isolation.  On a typical multiuser system, the execution
 of a given task can be made arbitrarily slow by the concurrent
 execution of competing tasks.\footnote{Grunwald and
   Ghiasi~\cite{GrunwaldGh02} call this a ``microarchitectural denial
   of service'' attack.}
-However, a nontransactional system can
+A nontransactional system can nevertheless
 be constructed with a good deal of performance isolation by
 appropriately restricting the processes that can be run and the
 resources they consume.
@@ -68,24 +62,24 @@ transactions to progress.
 \section{Progress guarantees}\label{sec:progress}
 \index{Transaction(s)!progress guarantees}
 Aborting troublesome transactions raises another potential pitfall:
-how do we guarantee that our system will make forward progress?
+how do we guarantee that our system makes forward progress?
 Zilles and Flint~\cite{ZillesFl05} note that transaction systems are
 subject to an ``all-or-nothing'' problem: it's fine to abort a
 troublesome large transaction to allow other work to complete, but
 then we throw away any progress in that transaction.  The operating
-system is forced to either allocate a large transaction all the
+system is forced either to allocate for a large transaction all the
 resources it requires, or to refuse to make any progress on the
-transaction; there is no middle ground.
+transaction.  There is no middle ground.
 
 This criticism applies to the LTM hardware scheme and other
 unvirtualized transaction implementation.  In an LTM system, it is the
 programmer's responsibility to structure transactions such that the
-application is likely to complete.  The operating system will deny
+application is likely to complete.  The operating system can deny
 progress when necessary to prevent priority inversion.
 
 The UTM, hybrid, and software-only implementations do not suffer the
 same problem.  UTM and software-only implementations can virtualize
-the transaction, as all transaction state is in memory.  This allows
+the transaction, as all transaction state resides in memory, thereby allowing
 the resources required to be paged in incrementally as
 needed.  The hybrid scheme, even when built on an unvirtualized
 mechanism such as LTM, can abort and fail-over to a virtualized
@@ -96,91 +90,96 @@ software system if sufficient resources are not available.
 In a vein of optimism, transactions are often casually said to be
 ``compatible'' with locks: transform your lock acquisition and release
 statements to begin-transaction and end-transaction, respectively, and
-your application is transformed.  We might even claim that your
+your application is transformed.  Some even claim that your
 application will suddenly be faster/more parallel and that some
 lingering locking bugs and race conditions will be cured by the change
 as well.
 
-It is the latter part of the claim that draws first scrutiny: if
+It is the latter part of the claim that draws first scrutiny.  If
 you've ``fixed'' my race conditions, haven't you altered the semantics
 of my program?  What other behaviors might have changed?
 
 Blundell, Lewis, and Martin~\cite{BlundellLeMa05} describe the
 ``semantic gap'' opened between the locking and
-\naive{}ly-transactified code.  They point out that programs with
-data races -- even ``benign'' ones -- may deadlock when converted to
+\naive{}ly transactified code.  They point out that programs with
+data races---even ``benign'' ones---may deadlock when converted to
 use transactions, since the data race will never occur.  One may even
 wrap every access with a location-specific lock to ``remove'' the race
 (for some definitions) without altering the behavior of the locking
 code or the deadlock for the transactional version.
 
 This concern is valid, and claims of automatic transactification
-should not be taken too lightly.  However, most ``best-practices''
+should not be taken too lightly.  Nevertheless, most ``best-practices''
 concurrent code \emph{will} behave as expected, and (unlike
-timing-dependent code with races) deadlocks make it very obvious where
+timing-dependent code with races) deadlocks make it obvious where
 things go wrong.  Further, type systems are capable of detecting the
 deadlocks in transactified code\note{Need citation here.} and alerting
 the programmer of the problem.
 
 Blundell, Lewis, and Martin also point out that some transaction
-implementations ignore ``nontransactional'' accesses -- even if these
-are to locations which are currently involved in a transaction.  This
+implementations ignore ``nontransactional'' accesses---even if they access
+locations that are currently involved in a transaction.  This oversight
 leads to additional alterations in the semantics of the code.  In the
 implementations described in this thesis, we are careful to ensure
 that ``nontransactional'' code still executes as if each statement
-was its own individual transaction, what Blundell, Lewis, and Martin
+is its own individual transaction, what Blundell, Lewis, and Martin
 term \defn{strong atomicity}.\index{Strong atomicity}\index{Atomicity!strong}
 
-\section{I/O Mechanisms}\label{sec:io}\index{Transaction(s)!I/O, issues with|(}
-To be useful, computing systems must be connected to the outside world
-in some fashion.  This creates a discontinuity in the transactional model:
-real world events can not be rolled back in the same way as can changes
-to program state.
+\section{I/O mechanisms}\label{sec:io}\index{Transaction(s)!I/O, issues with|(}
+To be useful, computing systems must be effectively connected to the
+outside world.  ``Reality'' creates a discontinuity in the transactional model:
+real-world events cannot be rolled back in the same way as can changes
+to program state.  This section presents four mechanisms to
+accommodate I/O in a transactional model.  We can forbid I/O inside a
+transaction, via runtime check or type system.  If we must have I/O,
+we can either create uninterruptible transactions to perform the I/O,
+or move the I/O to the start or end of the transaction.  The most
+general mechanism is to integrate programmer-specified compensating
+actions to achieve ``rollback'' of irrevocable actions within transactions.
 
 \subsection{Forbidding I/O}
 The most straightforward means to accommodate I/O in the
 transactional framework is to forbid it: I/O may only happen outside
-of a transaction.  A runtime check or simple type system may be used
+of a transaction.  A runtime check or simple type system can be used
 to enforce this restriction.
 
 A useful programmer technique in this model is to create a separate concurrent
 thread for I/O\@.  A transaction can interact with a queue to request
-I/O, and the I/O thread will dequeue requests and enqueue responses.
-This works best for unidirectional communication.
-Round-trip communication with the I/O thread can not be accomplished
-within a single transaction (deadlock will result), so transactions
-still must be broken between a request and reply: some forms of
-interaction can not be accomplished atomically.
+I/O, and the I/O thread dequeues requests and enqueues responses.
+This strategy works well for unidirectional communication.
+Since round-trip communication with the I/O thread cannot be accomplished
+within a single transaction (deadlock will result), transactions
+still must be broken between a request and reply.  Thus, some forms of
+interaction cannot be accomplished atomically.
 
 \subsection{Mutual exclusion}
 Another alternative is to integrate mutual exclusion into the
-transaction model: once we start an I/O activity within a transaction,
+transaction model.  Once we start an I/O activity within a transaction,
 the transaction becomes \defn{uninterruptible}: it may no longer be
-aborted, and must be successfully executed through commit.
+aborted and must be successfully executed through commit.
 \index{Transaction(s)!uninterruptible}
 Only a single uninterruptible transaction may execute at a given time
 (although other interruptible transactions may be concurrent).
 Effectively there is a single global mutual exclusion lock for I/O
-activity; transactions attempting I/O while the lock is already held
+activity.  Transactions attempting I/O while the lock is already held
 are either delayed or aborted.
 
-This scheme is reasonable as long as I/O is infrequent in
-transactions, and is convenient for the programmer.
+This scheme is reasonable as long as I/O is infrequent in transactions.
 A single debugging print-statement, however, is sufficient to
 serialize a transaction, and efforts to make the single global I/O
-lock more fine-grained may ultimately give back the gains in
+lock more fine-grained may ultimately dissipate the gains in
 simplicity and concurrency afforded by transactions in the first place.
 
 \subsection{Postponing I/O}
 A hybrid approach attempts to anticipate or postpone I/O operations so
 that they run only at transaction start or end.
-Only the I/O operations then need to be run serially; the remainder of
+Only the I/O operations then need to be run serially, and the remainder of
 the transaction may still execute concurrently.  Input must be moved
 to the start of a transaction, and once the input has been consumed,
-that transaction must still run uninterruptibly; it may be aborted
+the transaction must run uninterrupted.  It may be aborted
 only if a push-back buffer can be constructed for the input, which is
 not always reasonable.  Output is moved to the end of the transaction,
-but only the actual I/O must be performed uninterruptibly: the
+but only the actual I/O must be performed uninterrupted: the
 transaction can still be aborted at any time prior to commit.
 
 If output and input need to be interleaved, or the input occurs after
@@ -191,25 +190,25 @@ a single misplaced debugging statement can still force serialization.
 
 It is worth noting that modern interface hardware is often designed
 such that it works well with this approach.  For example, a GPU
-or network card will take commands from or deliver input to a
-buffer; a single operation is sufficient to hand over a buffer to
+or network card takes commands from or delivers input to a
+buffer.  A single operation is sufficient to hand over a buffer to
 the card to commence I/O\@.  This single I/O action may be made atomic
 with the transaction commit.
 
 \subsection{Integrating do/undo}
 The most sophisticated integration of I/O with transactions allows the
-programmer to specify ``undo'' code for I/O which can not otherwise be
-rolled back.  In the database community, these are referred to as
-\defn{compensating transactions}.\index{Transaction(s)!compensating}
+programmer to specify ``undo'' code for I/O which cannot otherwise be
+rolled back.  In the database community, undo code is referred to as a
+\defn{compensating transaction}.\index{Transaction(s)!compensating}
 
-Again, I/O would be forbidden within ``pure'' transactions; however,
+Again, I/O is forbidden within ``pure'' transactions, but
 do/undo blocks may be nested within transactions.  A \texttt{do} block
 executes uninterruptibly.  If a transaction aborts before it reaches a
 \texttt{do} block, rollback occurs conventionally.  If it aborts after it
 has executed a \texttt{do} block, then the \texttt{undo} block is
 executed uninterruptibly as part of transactional rollback.
 Mutual exclusion must still be used in portions of the transaction
-processing; ideally the critical regions are short and infrequently
+processing, but ideally the critical regions are short and infrequently
 invoked.
 
 The do/undo behavior allows sophisticated exception processing: an
@@ -217,17 +216,17 @@ The do/undo behavior allows sophisticated exception processing: an
 \texttt{do} emits a character, or it may send an apology email after
 an email is sent irrevocably in a \texttt{do} block.  The do/undo is
 invisible to clients outside the transaction.  Sophisticated
-libraries can be built up using this mechanism.  For example, disk i/o
-may be made transactional using file versioning and journalling.
+libraries can be built up using this mechanism.  For example, disk I/O
+can be made transactional using file versioning and journalling.
 
 The \texttt{undo} blocks may be difficult to program.  The most
-straightforward implementation would prevent the \texttt{undo} from
+straightforward implementation prevents the \texttt{undo} from
 accessing any transactional state, and the programmer must take
 special care if she is to maintain a consistent view of program state.
-A friendlier implementation would present a view of program state such
+A friendlier implementation presents a view of program state such
 that it appears that the \texttt{undo} block executes immediately
-after the \texttt{do} block, in the same lexical environment
-(regardless of what ultimately-aborted transactional code has executed
+after the \texttt{do} block in the same lexical environment
+(regardless of what ultimately aborted transactional code has executed
 in the interim).  The programmer is then able to naturally write code
 such as the following:
 \begin{inlinecode}
@@ -243,7 +242,7 @@ do {
 
 Presenting a time-warped view to the \texttt{undo} block can be
 difficult or impossible, depending on the history mechanism involved.
-In particular, if the \texttt{undo} reads a new location, previously
+In particular, if the \texttt{undo} reads a new location previously
 untouched by the transaction, the value of this location at the
 (previous) time immediately following the \texttt{do} might be
 unavailable.  Presenting an inconsistent view of memory may be
@@ -271,7 +270,7 @@ Since the role of an operating system is to administer shared
 resources, special care must be taken that transactions involving
 operating system requests do not ``contaminate'' other processes.
 In particular, if data in kernel space is to be included in a
-transaction:
+transaction, the following challenges arise:
 \begin{itemize}
 \item If mutual exclusion may used to implement any part of the
 transaction semantics (as in the various I/O schemes above), then it
@@ -279,11 +278,11 @@ may be possible to tie up the entire system (including unrelated
 processes) until a transaction touching kernel structures commits.
 \item If transaction state if to be tracked in the cache, the
 kernel address space must be reserved from the application memory map
- on architectures with virtually-addressed caches.
+ on architectures with virtually addressed caches.
 \item It may be desirable to include some loophole mechanism
- so that kernel data structures may be released from the transaction.
- Similarly, the operating system may wish to use transactions within
- itself; it may be desirable for these transactions to be independent
+ so that kernel data structures can be released from the transaction.
+ Similarly, if the operating system wishes to use transactions within
+ itself, it may be desirable for these transactions to be independent
  from the application's invoking transaction.  Motivating examples
  include fault handlers and the paging mechanism, which ought to be
  transparent to the application's transaction.  \punt{Section~\ref{sec:nit}
@@ -316,4 +315,6 @@ OS interactions.  All OS interactions can then be performed in
 the OS boundary.
 
 % LocalWords:  interruptible uninterruptible uninterruptibly transactification
-% LocalWords:  LTM UTM
+% LocalWords:  LTM UTM multiuser transactified Blundell nontransactional Zilles
+% LocalWords:  runtime dequeue enqueue virtualize microarchitectural dequeues
+% LocalWords:  unvirtualized enqueues

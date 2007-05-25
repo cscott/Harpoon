@@ -58,3 +58,16 @@ make figure 5.9 smaller.
 
 very => damn
 However, =>
+can not => cannot
+-- => ---
+
+Topic paragraph chapter 7. (CEL)
+
+-------------
+Get ns/write numbers from counter benchmark; compare to numbers for
+full benchmarks.
+
+Appendix B with command-lines.
+
+Fix array section to match microbenchmark?
+
