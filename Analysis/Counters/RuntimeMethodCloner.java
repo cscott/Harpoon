@@ -46,7 +46,7 @@ import java.util.Set;
  * statistics as we're attempting to report them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeMethodCloner.java,v 1.6 2004-02-08 01:51:01 cananian Exp $
+ * @version $Id: RuntimeMethodCloner.java,v 1.7 2007-05-25 02:42:36 cananian Exp $
  */
 public class RuntimeMethodCloner extends MethodMutator<Quad> {
     private static final String classname = "harpoon.Runtime.Counters";
@@ -167,6 +167,9 @@ public class RuntimeMethodCloner extends MethodMutator<Quad> {
 	// let's assume exceptions never occur.
 	if (hm.getDeclaringClass().isInstanceOf
 	    (linker.forName("java.lang.Throwable"))) return false;
+	// special implementation helper classes.
+	if (hm.getDeclaringClass().getName().equals
+	    ("harpoon.Runtime.Transactions.ImplHelper")) return false;
 	// okay, we'll relocate everything else.
 	return true;
     }
