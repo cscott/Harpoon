@@ -390,7 +390,7 @@ unnecessarily difficult: making localized changes to synchronization,
 performing atomic operations on containers, creating a thread-safe
 double-ended queue, and handling asynchronous exceptions.
 
-\subsection{Tweak performance with localized changes}
+\subsection*{Tweak performance with localized changes}
 % global lock orders, oh my!
 Preventing deadlocks and races requires global protocols and non-local
 reasoning.  It is not enough to simply specify a lock of a certain
@@ -416,7 +416,7 @@ reported kernel bugs involve races and deadlocks.
 
 % races, lost wakeups ?
 
-\subsection{Atomically move data between thread-safe containers}
+\subsection*{Atomically move data between thread-safe containers}
 % locks don't compose
 Another common programming pitfall with locks is their
 \defn{non-composability}.\index{Lock(s)!non-composability}
@@ -452,7 +452,7 @@ properties, not the locks required, the programmer's job is made easier and
 implementations are free to optimistically synchronize in any way that
 preserves atomicity.\footnote{\Secref{flow} presents a concrete example.}
 
-\subsection{Create a thread-safe double-ended queue}
+\subsection*{Create a thread-safe double-ended queue}
 % publishable result: michael/scott, 1996 PPoPP
 Herlihy suggests creating a thread-safe double-ended queue using locks
 as ``sadistic homework'' for computer science students \cite{Herlihy05}.
@@ -468,7 +468,7 @@ The simple ``one lock'' solution to the double-ended queue
 problem, ruled out as unscalable in the locking case, is scalable and
 efficient for nonblocking transactions \cite{HerlihyLuMo03,Herlihy05}.
 
-\subsection{Handle asynchronous exceptions}
+\subsection*{Handle asynchronous exceptions}
 Properly handling asynchronous events is difficult with locks, because
 it is impossible to safely go off to handle the event while holding an
 arbitrary set of locks---and it is impossible to safely drop the
@@ -492,7 +492,8 @@ can support fault tolerance and backtracking, simplify locking, and
 provide a more intuitive means for specifying thread-safety
 properties.  I first examine a destructive traversal algorithm,
 showing how a transaction implementation can be treated as an
-exception-handling mechanism.  A variant of this mechanism can be used
+exception-handling mechanism.  I show how a variant of this mechanism
+can be used
 to implement backtracking search.  Using a network flow example, I
 then show how the transaction mechanism can be used to simplify the
 locking discipline required when synchronizing concurrent
@@ -501,7 +502,7 @@ in the Java standard libraries (in the class
 \texttt{java.lang.StringBuffer}).  ``Transactification'' of the
 existing class corrects this race.
 
-\subsection{Destructive traversal}\label{sec:destruct}
+\subsection*{Destructive traversal}\label{sec:destruct}
 Many recursive data structures can be traversed without the use of a
 stack by using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
@@ -576,7 +577,7 @@ the {\tt try}.  Exceptions or faults cause the transaction to abort;
 when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
-\subsection{Backtracking search}\label{sec:backtrack}
+\subsection*{Backtracking search}\label{sec:backtrack}
 Introducing an explicit {\tt fail} statement allows us to use the same
 {\tt try}/{\tt else} to facilitate backtracking
 search.\index{Backtracking} Backtracking search is used to implement
@@ -640,7 +641,7 @@ inside the \texttt{eat()} method, in the process undoing any data
 structure updates performed on this path, and then attempt the other
 possible production.
 
-\subsection{Optimistic synchronization}\label{sec:flow}\index{Network flow}
+\subsection*{Optimistic synchronization}\label{sec:flow}\index{Network flow}
 
 Let's now turn our attention now to parallel codes, the more
 conventional application of transaction systems.
@@ -741,7 +742,7 @@ fault tolerance and backtracking provides atomic regions for
 synchronization as well.
 \note{Mention optimistic parallelism here?}
 
-\subsection{Bug fixing}\label{sec:stringbuffer}
+\subsection*{Bug fixing}\label{sec:stringbuffer}
 The existing \defni{Monitor synchronization}\index{Synchronization!monitor} methodology for Java,
 building on such features in progenitors such as Emerald
 \cite{BlackHuJuLe86,JulSt91},\index{Emerald}\footnote{See \secref{emerald}.}
