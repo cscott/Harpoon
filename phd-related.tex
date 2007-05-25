@@ -58,7 +58,7 @@ I use the term \emph{nonblocking} to describe
 generally any synchronization mechanism that doesn't rely on mutual
 exclusion or locking, including wait-free, lock-free,
 and obstruction-free implementations.
-I will be concerned mainly with lock-free algorithms.%
+I consider mainly lock-free algorithms.%
 \footnote{Some authors use ``nonblocking'' and
   ``lock-free'' as synonyms, usually meaning what we here call
   \emph{lock-free}.  Others exchange our definitions for ``lock-free''
@@ -221,7 +221,8 @@ timer interrupts, or thread migrations.
 
 \note{Insert VTM reference here \cite{RajwarHeLa05}.}
 
-Several software transaction systems have been proposed.  Some constrain the
+Several software transaction systems have been proposed
+\cite{ShavitTo95,RudysWa02,HerlihyLuMoSc03,HarrisFr03}.  Some constrain the
 programmer and make transactions difficult to use.  All have
 relatively high overheads, which make transactions unattractive for
 uniprocessor and small SMP systems. (Once the number of processors is

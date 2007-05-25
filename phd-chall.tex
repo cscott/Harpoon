@@ -43,8 +43,8 @@ and then never closing the transaction, a malicious application may
 deny service to all concurrent applications in a transaction system.
 
 For this reason, it is important that there are no global resources
-required to complete a transaction.  Our UTM hardware implementation
-achieves this end, but the LTM design uses a per-processor overflow
+required to complete a transaction.  \apex and the UTM hardware implementation
+achieve this end, but the LTM design uses a per-processor overflow
 table.  If an LTM design is implemented with a snoopy bus for
 coherence traffic, overflows on one processor can impact the
 performance of all other processors on the bus.  A directory-based
@@ -103,7 +103,13 @@ Blundell, Lewis, and Martin~\cite{BlundellLeMa05} describe the
 ``semantic gap'' opened between the locking and
 \naive{}ly transactified code.  They point out that programs with
 data races---even ``benign'' ones---may deadlock when converted to
-use transactions, since the data race will never occur.  One may even
+use transactions, since the data race will never occur.\footnote{For
+  example, one thread can acquire lock L1 and then loop waiting for
+  flag F1 to be set.  Another thread can acquire lock L2, set
+  flag F1 and loop waiting for F2.  The first thread sees the update to
+  F1, sets F2, and then releases L1.  The second thread sees the
+  update to F2 and releases L2.  Neither thread will be able to
+  complete if these locks are turned into atomic regions.}  One may even
 wrap every access with a location-specific lock to ``remove'' the race
 (for some definitions) without altering the behavior of the locking
 code or the deadlock for the transactional version.
@@ -148,7 +154,10 @@ thread for I/O\@.  A transaction can interact with a queue to request
 I/O, and the I/O thread dequeues requests and enqueues responses.
 This strategy works well for unidirectional communication.
 Since round-trip communication with the I/O thread cannot be accomplished
-within a single transaction (deadlock will result), transactions
+within a single transaction,\footnote{Deadlock would result, since I
+  can't send a message and then wait for a reply atomically---my
+  communication partner won't see the sent message and know to reply
+  until the transaction is committed.} transactions
 still must be broken between a request and reply.  Thus, some forms of
 interaction cannot be accomplished atomically.
 
@@ -306,13 +315,17 @@ improved performance.
 \section{Recommendations for future work}
 Based on the discussion in this section, a virtualizable transaction
 mechanism is recommended: if LTM is implemented in hardware, a hybrid
-scheme should support it in order to provide performance isolation and
-progress guarantees.  A do/undo mechanism for transactions allows
+scheme like \hyx should back it up in order to provide performance
+isolation and progress guarantees.  The \apex and UTM systems are
+already virtualizable.
+
+A do/undo mechanism for transactions allows
 better management of critical regions where mutual exclusion must be
 integrated with the transaction mechanism to support I/O and certain
 OS interactions.  All OS interactions can then be performed in
 \texttt{do} block so that mutual exclusion need not be extended across
-the OS boundary.
+the OS boundary.  The complexity of do/undo probably argues for \apex
+or \hyx instead of a pure hardware scheme.
 
 % LocalWords:  interruptible uninterruptible uninterruptibly transactification
 % LocalWords:  LTM UTM multiuser transactified Blundell nontransactional Zilles

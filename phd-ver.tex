@@ -63,6 +63,9 @@ In addition, the model-in-progress proved a valuable design tool, as
 portions of the algorithm could readily be mechanically checked to
 validate (or discredit) the designer's reasoning about the concurrent
 system.  Humans do not excel at exhaustive state-space exploration.
+In fact, after discovering the above bugs and fixing them in the
+model, I replaced my original ad-hoc implementation of \apex with new
+code which more closely followed the model.
 
 \Spin is not particularly suited to checking models with dynamic
 allocation and deallocation.  In particular, it considers the
@@ -70,7 +73,11 @@ location of objects as part of the state space, and allocating object
 A before object B produces a different state than if object B
 were allocated first.  This behavior artificially enlarges the
 state space.  A great deal of effort was expended tweaking the
-model to approach a canonical allocation ordering.  A better solution
+model to approach a canonical allocation ordering.  The
+\texttt{\#ifdef REFCOUNT} bracketed portions of the model are evidence
+of this; they
+can be safely ignored when studying the semantics of the model, but
+are necessary for mechanical verification.  A better solution
 to this problem would allow larger model instances to be checked.
 
 

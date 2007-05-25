@@ -291,7 +291,7 @@ indefinite length of time (surviving time slice interrupts), can
 migrate from one processor to another along with the rest of a
 process's state, and can have footprints bigger than the physical
 memory.  Several system issues must be solved for UTM to achieve that
-goal.  The main technique that we propose is to treat the xstate as
+goal.  The ``big idea'' of UTM is to treat the xstate as
 a system-wide data structure that uses global virtual addresses.
 
 Treating the xstate as data structure directly solves part of the

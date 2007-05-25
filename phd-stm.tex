@@ -2585,9 +2585,9 @@ o_T = k_{w_T} w_T + k_s w_T s_T
 where $o_{T}$ is the overhead fraction due to transactional accesses,
 $w_T$ is the transactional write rate, $s_T$ is the average size of an
 object targeted by a transactional write, and $k_{w_T}$ and $k_s$ are
-unknown constants.  Solving for the constants yields
- $k_{w_T} = 123 \text{ ns}/\text{transactional write}$ and 
- $k_s = 0.23 \text{ ns}/\text{transactional write-byte}$.
+unknown constants.  Solving for the constants yields:
+ $$k_{w_T} = 123 \text{ ns}/\text{transactional write}$$
+ $$k_s = 0.23 \text{ ns}/\text{transactional write-byte}$$
 Transactional writes are about twice as expensive as nontransactional
 writes, and $k_s$ reflects the object cloning costs associated with
 the transactional write.  The magenta striped bar in
@@ -2649,6 +2649,20 @@ performance numbers indicate that it is not achieving its goal.
 }
 
 \section{Performance recommendations}
+\begin{figure}\small
+\begin{tabular}{l|rrrrrr}
+Benchmark & $w_T s_T/1000$& $r_{NT}/1000$ & $r_T/1000$ & $w_{NT}$ & $w_T$ & $t$ \\ \hline
+jess & 22,652 & 26,700 & 3,047 & 4,054,334 & 16,873 & 408,416\\
+raytrace & 7,036 & 26,104 & 403 & 3,608,662 & 121,731 & 301\\
+db & 14,534,339 & 18,187 & 5,378 & 987,484 & 361,431 & 1,328,518\\
+javac & 12,360,808 & 15 & 29,805 & 7,983 & 8,863,336 & 55\\
+mpegaudio & 246 & 212,850 & 3 & 38,663,921 & 739 & 287\\
+jack & 75,195 & 12,695 & 8,016 & 5,902,722 & 1,638,242 & 1,815,263\\
+\hline
+\end{tabular}
+\caption{Read, write, and transaction rates for SPECjvm98 benchmarks.}
+\label{fig:rates}
+\end{figure}
 
 Our predictive model of \apex performance uses 6 parameters, ordered here
 by their contribution to overall overhead:\footnote{I've distributed
@@ -2658,11 +2672,11 @@ by their contribution to overall overhead:\footnote{I've distributed
 \item $w_T s_T$, the product of the transactional write rate with the
   average object size written to in a transaction.  This contributes
   0.23 ns overhead per transactional write-byte.
-\item $r_NT$, the number of nontransactional read.  Each
+\item $r_{NT}$, the number of nontransactional read.  Each
   nontransactional read adds 2.4 ns overhead.
 \item $r_T$, the number of transactional reads.  Each transactional
   read adds 4 ns overhead.
-\item $w_NT$, the number of nontransactional writes.  Each
+\item $w_{NT}$, the number of nontransactional writes.  Each
   nontransactional write adds 63.5 ns overhead.
 \item $w_T$, the number of transactional writes.  Each transactional
   write adds 127 ns overhead.
@@ -3063,7 +3077,9 @@ of a {\sl COMMITTED} version, we always load the {\tt next}
 field of a version \emph{before} we load {\tt owner.status}.  Since
 the writes occur in the reverse order ({\sl COMMITTED} to
 {\tt owner.status}, then {\bf null} to {\tt next}), we have ensured that
-our {\tt next} pointer is valid whenever the status is not {\sl COMMITTED}\@.
+our {\tt next} pointer is valid whenever the status is not
+{\sl COMMITTED}\@.\footnote{Memory barriers will be necessary here if
+the architecture does not support sequential consistency.}
 
 We begin an atomic method with \funcname{TransStart} and attempt to
 complete an atomic method with \funcname{TransEnd}.  They are defined as
