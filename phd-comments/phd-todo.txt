@@ -9,7 +9,7 @@ almost too much. Three is definitely too much.  Consider Chapter 2:
   2.3 some (other) things
 (and page 31 talks about what will occur in Section
 4.4.4.  Bleah)
-I would try to get it down to no numbering within the chapter.  I
+SORTA I would try to get it down to no numbering within the chapter.  I
 would be happy if it went to only subsection numbers.  Use writing to
 do the rest of the organization.
 
@@ -27,13 +27,6 @@ introduction.
 
 -------
 NO Abstract: "More bottom-line numbers" (CEL)
-
-"Four new things transactions make easy", topic paragraph: itemize
-(CEL).
-
-Fix sketchy numbers at end of ch 3.
-
-Be specific, better topic para for chapter 4 (CEL)
 
 Global search: "will", "we", "our".
 

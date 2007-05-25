@@ -932,21 +932,23 @@ implementation details of our software transaction system.
 In theory, there is no difference between theory and practice.
 }{\textit{Jan~L.~A.~van~de~Snepscheut}}}
 
-This chapter discusses the challenges involved in translating the
-design from \charef{stm} to a practical Java
-compiler and the implementation techniques I used.
-I conclude by listing some limitations of the
-implementation, and describing how they may be overcome in a
-production-quality compiler.
+This chapter discusses the challenges involved in transforming the
+design of \charef{stm} into a practical Java compiler.  I describe the
+foundation of the implementation, the \flex compiler infrastructure
+and its ``Precise C'' backend.  I then outline the transformations and
+analyses \flex performs.  The runtime system must also be modified to
+support transactions; \flex modifies the Java Native Interface to
+allow most native libraries to work seamlessly with \apex.  I list
+some limitations of the present implementation, including access
+granularity and support for static fields and condition variables, and
+discuss how they may be overcome in a production-quality compiler.
+I conclude by listing additional optimizations which could be
+implemented to improve \apex performance.
 
 \section{The \flex compiler infrastructure}
 In 1998 I began implementing the \flex compiler infrastructure for
-Java \cite{Flex}, which I used to evaluate the transaction system
-implementations in this thesis.  \Flex has been used in over 20
-published papers
-\cite{DallmeierLiWaZe06,AnanianAsKuLeLi06,Ananian05,AnanianAsKuLeLi05,SalcianuRi05,RinardSaBu04,AnanianRi03,BoyapatiSaBeRi03,FeizabadiBeRaLiRi03,GheorghioiuSaRi03,ZeeRi02,WitchelCaAs02,Gheorghioiu02,Francu02,WitchelLaAnAs01,Whaley01,Salcianu01,BeebeeRi01,Beebee01,Klock01,SalcianuRi01,VivienRi01,Ananian99,WhaleyRi99},
-on a wide range of topics.
-
+Java \cite{Flex}, which I used to implement the transaction systems
+in this thesis.  
 \Flex is a whole-program static compiler for Java with a runtime
 system built around the GNU Classpath implementation of the Java
 standard libraries \cite{Classpath}.  \Flex takes as input Java
@@ -959,6 +961,11 @@ system and the GNU Classpath 0.08 native libraries to produce a
 stand-alone binary for the target system.  The \flex compiler and
 analysis code is written in Java, while the \flex runtime system is
 written in C\@.
+\Flex has been used in over 20
+published papers
+\cite{DallmeierLiWaZe06,AnanianAsKuLeLi06,Ananian05,AnanianAsKuLeLi05,SalcianuRi05,RinardSaBu04,AnanianRi03,BoyapatiSaBeRi03,FeizabadiBeRaLiRi03,GheorghioiuSaRi03,ZeeRi02,WitchelCaAs02,Gheorghioiu02,Francu02,WitchelLaAnAs01,Whaley01,Salcianu01,BeebeeRi01,Beebee01,Klock01,SalcianuRi01,VivienRi01,Ananian99,WhaleyRi99},
+on a wide range of topics.
+
 
 \subsection*{Using C as a target}\label{sec:precisec}
 The experiments in this thesis were conducted on either the x86 or
