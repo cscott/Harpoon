@@ -917,6 +917,14 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
+\section*{Implementation}
+Some details are not yet covered by our model.
+For example, how are fields of different byte lengths handled?  How does
+transactional Java code interact with the garbage collector, or with
+native code in the runtime system?  \Charef{stmimpl} addresses the
+real-world
+implementation details of our software transaction system.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Implementing efficient software transactions}\label{cha:stmimpl}
 \epigraphhead[70]{\epigraph{%
@@ -1519,7 +1527,7 @@ an immutable length field).
 \Secref{multiword} discusses some of the other challenges involved in
 synthesizing atomic operations on subword and multiword datatypes.
 
-\section{Limitations}
+\section{Limitations}\label{sec:apex-limits}
 The present \apex implementation contains a few non-fundamental
 limitations with well-understood solutions which, nonetheless, would
 add additional implementation complexity.  These limitations involve static
@@ -1942,11 +1950,38 @@ of versions could be hung from objects involved in many transactions:
 as soon as a version commits, the previous version can be added to the
 free list for the use of the next transaction.
 
-\chapter{Performance}\label{cha:perf}
+\chapter{\apex Performance}\label{cha:perf}
+% lots more performance-related quotes at
+% http://www.nonstopenglish.com/reading/quotations/k_Performance.asp
+\epigraphhead[70]{\epigraph{%
+All you owe the public is a good performance.
+}{\textit{Humphrey Bogart}}}
+
+This chapter presents measurements and analysis of the performance of
+the \apex software transaction system.  Since \apex adds read and
+write checks to even nontransactional code, we begin by examining a
+microbenchmark to discover the performance limits in the absence of
+transactions.  We then move on to full transactional application
+benchmarks.  We formulate a linear model to explain \apex overhead,
+and describe how a programmer can use this model to predict and
+improve the performance of their code running under \apex.
+
+Since previous work has adequately demonstrated the scalability
+benefits of nonblocking
+synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05},
+I concentrate on single-threaded efficiency measures.
+All experiments in this chapter were performed on a 1GHz MPC7447 (G4)
+PowerPC processor,
+with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
+6.10 on a Linux 2.6.17 kernel.  The \flex compiler and runtime system
+sources were from the head CVS revision on 2007-05-24.  C sources were
+compiled using \texttt{gcc-3.4}.  \appref{cmd}
+contains the full \flex command-lines and configurations used to obtain the
+results in this chapter.
 
 \section{Performance limits for nontransactional code}
 \label{sec:counter-bench}
-The software transaction system outlined in this section depends on
+The \apex software transaction system depends on
 the insertion of simple read and write checks in nontransactional
 code.  The performance of read and write barriers has been
 well-studied in the garbage collection community, but our checks are
@@ -1965,8 +2000,8 @@ the effects of ``false flags'' or other forays into the transactional
 code path, nor do I account for double-word or subword writes,
 cache effects due to code duplication, or other details of a real
 implementation.  I investigate these effects with full
-benchmarks in \secref{full-bench}.  I also freely
-optimize down to the assembly level to determine the fundamental
+benchmarks in \secref{full-bench}.  In this section I also freely
+hand-optimize down to the assembly level to better determine the fundamental
 performance limits.  
 
 The tight read/write dependency makes counter increment
@@ -2277,33 +2312,15 @@ aggressive optimization and scheduling.\footnote{This
   contribution of loads and stores to the run time.
   Scheduling, prefetching, and store buffers can pipeline the cost of
   the loads and stores, however, which might cause our overhead estimate to
-  exceed the actual cost.  \Secref{full-bench} presents actual
-  overhead measurements of real Java applications.}
+  exceed the actual cost.  \punt{\Secref{full-bench} presents actual
+  overhead measurements of real Java applications.}}
 
-\section*{Implementation}
-Some details are not yet covered by our model.
-For example, how are fields of different byte lengths handled?  How does
-transactional Java code interact with the garbage collector, or with
-native code in the runtime system?  \Charef{stmimpl} addresses the
-real-world
-implementation details of our software transaction system.
-
-\section{Performance}\label{sec:full-bench}
-In this section I evaluate the performance of the \apex implementation.
-All experiments were performed on a 1GHz MPC7447 (G4) PowerPC processor,
-with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
-6.10 on a Linux 2.6.17 kernel.  The \flex compiler and runtime system
-sources were from the head CVS revision on 2007-05-24.  \appref{cmd}
-contains the full \flex command-lines and configurations used to obtain the
-results in this section.
-
-The limitations noted in the previous
-section counsel that the numbers I obtain ought to be considered
+\section{Full application benchmarks}\label{sec:full-bench}
+In this section I evaluate the performance of the \apex implementation
+on full applications.
+The limitations noted in \secref{apex-limits}
+counsel that the numbers I obtain ought to be considered
 guidelines to potential performance, not fundamental limits.
-Since previous work has adequately demonstrated the scalability
-benefits of nonblocking
-synchronization~\cite{LaMarca94,GreenwaldCh96,MassalinPu91,RajwarGo01,RajwarGo02,HammondWoCh04,AnanianAsKuLeLi05},
-in this section I concentrate on single-threaded efficiency measures.
 
 I examine the SPECjvm98 benchmark suite, a collection of
 practical Java programs including an expert system, a simple database,
@@ -2509,9 +2526,14 @@ array, the \texttt{ensureWriter} protocol will slow down all future
 writes even when, as in \figref{phd-spec-nt},
 we have stripped all transactions from the code.
 
+\punt{
 Although the \apex transaction design ought to be able to perform direct
 read and writes on version objects in long-lived transactions, these
 performance numbers indicate that it is not achieving its goal.
+}
+
+\section{Performance guidelines}
+
 
 %   1. \# false conflicts
 %   2. read/write check overhead
@@ -2527,20 +2549,8 @@ performance numbers indicate that it is not achieving its goal.
    3. practice
    4. noa \#s
 
-Section on compiler optimizations here, too.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Performance of the basic implementation}
-\note{Fix me}
-
-XXX: microbenchmarks showing basic performance.
-
 XXX: microbenchmark showing improving performance with transaction
 length.  Ideally, contrast this with hardware performance?
-
-XXX: also benchmark the added read check, for ``The big idea, waving
-FLAGS'' section.
 
 }
 
