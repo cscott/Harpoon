@@ -147,3 +147,13 @@ WCHECK:  2.999 (C)
 RWCHECK: 3.136 (C)
          2.993 (opt write)
          2.429 (opt read/write)
+
+1,000,000,000 repetitions.
+
+Read rate (base):  141643059 read / s
+Write rate (base): 141643059 write / s
+RCHECK: 1.01ns/read
+WCHECK: 14.1ns/write (C)
+        13.1ns/write (opt write)
+
+RWCHECK: 10.1ns/read-write
