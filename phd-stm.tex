@@ -2772,6 +2772,23 @@ family size, the economy size and the giant size are all larger than
 the large size---that the large size is the smallest size there is.
 }{\textit{Charade} (1963)}}
 
+This chapter presents a solution to the ``large object problem.''
+Cloning objects to store rollback or transactional state becomes
+impractical when the objects are large.  My solution involves
+the \defn{functional array} datatype, which I first review.
+I then recast the basic \apex design of the previous
+chapters as a ``small-object protocol'' using \naive functional arrays.
+I extend the improved functional array implementations of
+Baker~\cite{Baker91} and Chuang~\cite{Chuang94} to obtain a
+lock-free variant of the data structure.
+Substituting this improved implementation for the \naive functional
+arrays in our recast transaction system creates \lapex, which solves
+the large object problem.  I conclude by evaluating the
+performance of lock-free functional arrays on a simple
+microbenchmark, showing that they become worthwhile when the object
+being accessed is larger than 32 words.
+
+
 \begin{figure}
 \begin{center}
 \includegraphics[height=2.75in,clip=true]{Figures/tr-w-all-1}%
@@ -2788,10 +2805,8 @@ indicates that over 10\% of writes may be to large objects.
 As we've seen in \secref{full-bench}, the copying cost can become
 excessive.
 
-The solution I propose
-represents objects as \defn{functional
-  arrays}.  O'Neill and Burton \cite{ONeillBu97} give a fairly
-inclusive overview of such algorithms; I've chosen Tyng-Ruey Chuang's
+\punt{
+to address this problem.  I've chosen Tyng-Ruey Chuang's
 version \cite{Chuang94} of \emph{shallow binding}, which uses
 randomized cuts to the version tree to limit the cost of a read to
 $O(n)$ in the worst case.  Single-threaded accesses to the array run in
@@ -2799,13 +2814,10 @@ $O(1)$ time.  My use of functional arrays is single-threaded in the common
 case when transactions do not abort.  Chuang's scheme is attractive,
 because it limits the worst-case cost of an abort, with little
 added complexity.
-
-In this chapter I recast the basic \apex design of the previous
-chapters as a
-``small-object protocol,'' and then show how to extend it to a ``large-object protocol,'' in the process addressing the large-object performance
-problems.  The large-object protocol, which we'll call \lapex, uses a
-lock-free variant of 
-Chuang's algorithm, which I present in \secref{lf-fun-arr}.
+Our ``large object protocol,'' which we'll call \lapex, uses a
+lock-free variant of Chuang's algorithm.  I present this variant in
+\secref{lf-fun-arr}. 
+}
 
 \section{Basic operations on functional arrays}\label{sec:naivefun}
 Let us begin by reviewing the basic operations on functional arrays.
@@ -2814,7 +2826,8 @@ after an element is updated, both the new and the old contents of the
 array are available for use.  Since arrays are simply maps from
 integers (indexes) to values, any functional-map datatype (for
 example, a functional balanced tree) can be used to implement
-functional arrays.
+functional arrays.  O'Neill and Burton \cite{ONeillBu97} give a fairly
+inclusive overview of functional array algorithms.
 
 In contrast, an imperative array---such as those in imperative
 languages such as Java---is mutable.  Elements of the array are
