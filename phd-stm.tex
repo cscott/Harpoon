@@ -2536,14 +2536,14 @@ where $o_t$ is the overhead fraction due to this portion of the
 transaction transformation, $t$ is the transaction rate, $c$
 is the number of method calls which are inside transactions, and $k_t$
 and $k_c$ are unknown constants.  Since I do not have direct
-measurements of $c$, I use $a_t = r_t + w_t$,
+measurements of $c$, I use $a_T = r_T + w_T$,
 the transactional memory access rate, as a proxy.  Applications which
 perform a large number of transactional loads and stores are likely to
 spend more of their time inside transactions, and thus to have a
 higher number of method calls inside transactions.  The
 revised model is:
 \begin{equation}\label{eqn:t-perf}
-o_t = k_t t + k_a a
+o_t = k_t t + k_a a_T
 \end{equation}
 I obtain
 $k_t = 859 \text{ ns}/\text{transaction}$ and
@@ -2648,8 +2648,54 @@ read and writes on version objects in long-lived transactions, these
 performance numbers indicate that it is not achieving its goal.
 }
 
-\section{Performance guidelines}
+\section{Performance recommendations}
 
+Our predictive model of \apex performance uses 6 parameters, ordered here
+by their contribution to overall overhead:\footnote{I've distributed
+  the $r_T$ and $w_T$ components of $a_T$ in \eqnref{t-perf} in this
+  presentation.}
+\begin{itemize}
+\item $w_T s_T$, the product of the transactional write rate with the
+  average object size written to in a transaction.  This contributes
+  0.23 ns overhead per transactional write-byte.
+\item $r_NT$, the number of nontransactional read.  Each
+  nontransactional read adds 2.4 ns overhead.
+\item $r_T$, the number of transactional reads.  Each transactional
+  read adds 4 ns overhead.
+\item $w_NT$, the number of nontransactional writes.  Each
+  nontransactional write adds 63.5 ns overhead.
+\item $w_T$, the number of transactional writes.  Each transactional
+  write adds 127 ns overhead.
+\item $t$, the number of transactions.  Each transaction adds 859 ns overhead.
+\end{itemize}
+
+A programmer seeking to improve the performance of their code should
+first reduce the number of transactions created.  \apex is suited to
+small numbers of large transactions.  \Charef{htm}
+presents an alternative better suited for large numbers of small transactions.
+Although our model does not reflect it, transactional write operations
+are cheaper after the initial cloning is done.  Combining smaller
+transactions allows fewer object copies to be made.
+
+An alternative to combining small transactions is to reduce the number
+of memory accesses covered by the transaction, since nontransactional
+accesses are half as expensive as transactional accesses.
+
+Decreasing the number of memory operations also directly reduces overhead.
+There are well-known compiler optimizations which
+cache memory contents in local variables or registers.  Traditionally,
+their widespread use is avoided because the increase in register
+pressure makes caching counterproductive.  \apex's more-expensive
+memory accesses should encourage use of these optimizations.
+
+Finally, reducing the size of objects written by a transaction will
+reduce the $w_T s_T$ term and improve performance.  In particular,
+several SPECjvm98 benchmarks allocate a large array and then perform
+multiple small transactions which modify a single element of the
+array.  This access pattern causes the large array to be copied
+multiple times, increasing overhead.  \Charef{largeobj} describes a
+modification to \apex which avoids this dependence on object size,
+removing the $w_T s_T$ term from the performance model.
 
 %   1. \# false conflicts
 %   2. read/write check overhead
