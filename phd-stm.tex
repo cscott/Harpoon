@@ -2372,8 +2372,8 @@ specified, all benchmarks were run on the full ``100\%'' input.
   second.
 }
 
-\epsbigfigput[Predicted versus actual nontransactional check
-  overhead.]{phd-spec-nt-pred}{Predicted versus actual
+\epsbigfigput[Actual versus predicted nontransactional check
+  overhead.]{phd-spec-nt-pred}{Actual (solid) versus predicted (striped)
   nontransactional check overhead for SPECjvm98.  Measurement
   methodology is identical to \figref{phd-spec-nt}.  Overhead is
   predicted as 2.4 ns per read, and 63.5 ns per write.}
@@ -2438,13 +2438,15 @@ a write rate 4 times as large as any other benchmark.
 Using the measured benchmark performance, we can compute a minimum norm
 solution to the linear equation 
 \begin{equation}\label{eqn:nt-perf}
-o = k_1 r + k_2 w
+o_{NT} = k_{r_{NT}} r_{NT} + k_{w_{NT}} w_{NT}
 \end{equation}
-where $o$ is overhead fraction,
-$r$ and $w$ are read and write rates, respectively, and $k_1$ and $k_2$
+where $o_{NT}$ is the overhead fraction due to nontransactional checks,
+$r$ and $w$ are (nontransactional) read and write rates, respectively,
+and $k_{r_{NT}}$ and $k_{w_{NT}}$
 are the unknown coefficients.  The solution yields overhead contributions
-$k_1 = 2.4 \text{ ns}/\text{read}$ and
-$k_2 = 63.5 \text{ ns}/\text{write}$.  These values are comparable to the
+$k_{r_{NT}} = 2.4 \text{ ns}/\text{read}$ and
+$k_{w_{NT}} = 63.5 \text{ ns}/\text{write}$.  These values are
+comparable to the
 $1.0 \text{ ns}/\text{read}$ and $13.1 \text{ ns}/\text{write}$
 overheads of the optimized checks we wrote for the counter
 microbenchmark of \secref{counter-bench}.  The \flex
@@ -2490,12 +2492,14 @@ are not a significant percentage of values read or written, and thus
 not a major contribution to overhead.
 
 \subsection{Transaction overhead}
-\figref{phd-spec-full} demonstrates the performance of transactional
-code, broken down into the components of the final cost.  We see that
-creation of transaction objects at the start of every atomic region is
-a considerable fraction of the total cost for some benchmarks.  If
-transactions are going to be frequent and small, this cost must be
-kept in line.
+
+\figref{phd-spec-full} presents the performance of the transactional
+versions of the SPECjvm98 benchmarks.  The leftmost bar represents the
+original performance, as before.  The next two bars represent partial
+transaction transforms, used to evaluate different components of the
+overhead.  The penultimate bar shows the overhead of the full
+transactified benchmark.  The final bar shows predicted overhead for
+the application, broken down by contribution.
 
 \epsbigfigput[Transaction overhead for SPECjvm98.]{phd-spec-full}{%
   Transaction overhead for SPECjvm98.  The leftmost bar is compiled
@@ -2504,19 +2508,110 @@ kept in line.
   records at the start of each transaction and the CAS commit
   operation at the end.  The next bar uses the transactional and
   nontransactional read and write protocols for non-array objects.
-  The final bar is fully transactional.}
+  The penultimate bar is fully transactional.  The striped final bar
+  shows predicted performance for the benchmark, broken down by
+  contributing factor.}
 
-Transactions that mutate arrays also account for a large amount of
-the total cost.  In the extreme case, the SPECjvm98 benchmark
+Creation of a transaction record at the start of every atomic region
+can be a considerable fraction of the overhead if the number of
+transactions is large.  The second bar in \figref{phd-spec-full} shows
+the performance of the transactified benchmark after all transactional
+read and write operations have been replaced by direct reads and
+writes.   Four changes to the application remain: transaction records
+are created at the start of every atomic region, method calls inside
+transactions are transformed to pass the transaction record and to
+check for abort on an exceptional return, method cloning occurs to
+separate transactional from nontransactional code, and a few live
+variables are passed around inside the method body, increasing
+register pressure.
+
+The transaction rate is the largest contributor
+to overhead at this stage.  The number of transactional method calls
+is a secondary factor.  The ``create transaction''
+contribution should be modeled as:
+\begin{equation}
+o_t = k_t t + k_c c
+\end{equation}
+where $o_t$ is the overhead fraction due to this portion of the
+transaction transformation, $t$ is the transaction rate, $c$
+is the number of method calls which are inside transactions, and $k_t$
+and $k_c$ are unknown constants.  Since I do not have direct
+measurements of $c$, I use $a_t = r_t + w_t$,
+the transactional memory access rate, as a proxy.  Applications which
+perform a large number of transactional loads and stores are likely to
+spend more of their time inside transactions, and thus to have a
+higher number of method calls inside transactions.  The
+revised model is:
+\begin{equation}\label{eqn:t-perf}
+o_t = k_t t + k_a a
+\end{equation}
+I obtain
+$k_t = 859 \text{ ns}/\text{transaction}$ and
+$k_a = 4 \text{ ns}/\text{transactional memory access}$ as a minimum
+norm solution.  The high
+value for $k_t$ represents the high cost of memory allocation under
+the Boehm-Demers-Weiser conservative collector.  In
+\figref{phd-spec-full} the red striped component
+represents $o_t$, computed according to \eqnref{t-perf}.  The
+prediction tracks the actual measured values (red solid bars) within
+20\% of the actual overhead (ignoring \texttt{raytrace} and
+\texttt{mpegaudio}, where $o_t$ is within the measurement
+noise).
+
+I can use \eqnref{nt-perf} from the previous section to compute the
+overhead contribution from nontransactional read and write checks.
+The violet striped portion of the predicted overhead in
+\figref{phd-spec-full} represents $o_{NT}$, computed using
+\eqnref{nt-perf} from the rate of nontransactional reads and writes
+and the previously computed $k_{r_{NT}}$ and $k_{w_{NT}}$ values.
+
+The final component of the overhead is from the transactional read and
+write protocols on accesses occurring inside transactions.
+Modeling this component is more difficult, due to the number of
+factors involved.  Transactional read cost depends on whether the
+object involved was previously written inside the transaction.
+Transactional write cost depends on whether this is
+the first time this particular object has been written inside a
+transaction, and if so, on the size of the object.  Both read and
+write costs are also affected by the effectiveness of check hoisting
+and coalescing (\secref{hoist}).
+
+The model I will use for transactional access costs ignores reads, as
+the transactional write costs dominate.  I model transactional access
+overhead as:
+\begin{equation}
+o_T = k_{w_T} w_T + k_s w_T s_T
+\end{equation}
+where $o_{T}$ is the overhead fraction due to transactional accesses,
+$w_T$ is the transactional write rate, $s_T$ is the average size of an
+object targeted by a transactional write, and $k_{w_T}$ and $k_s$ are
+unknown constants.  Solving for the constants yields
+ $k_{w_T} = 123 \text{ ns}/\text{transactional write}$ and 
+ $k_s = 0.23 \text{ ns}/\text{transactional write-byte}$.
+Transactional writes are about twice as expensive as nontransactional
+writes, and $k_s$ reflects the object cloning costs associated with
+the transactional write.  The magenta striped bar in
+\figref{phd-spec-full} reflects this component of the cost prediction.
+The overall prediction is within 70\% of actual costs.
+
+The green bar in \figref{phd-spec-full} represents another way of
+breaking down the transaction overhead.  Another variant of the
+benchmark was compiled which replaced array reads and writes with
+direct accesses.  The resulting overhead includes $o_t$, the ``create
+transaction'' overhead, as well as both transactional and
+nontransactional overheads for nonarray objects.  This view was
+motivated by the observation that in some cases array mutations
+account for a large amount of the total overhead.
+\punt{In the extreme case, the SPECjvm98 benchmark
 \texttt{201\_compress} allocates a 1MB array and writes compressed
-data into it.  The design of the \apex transaction system necessitates an
+data into it.}  The design of the \apex transaction system necessitates an
 object copy for every unique object written to inside a transaction;
-if the objects are large (such as the arrays in
-\texttt{201\_compress} and \texttt{222\_mpegaudio}), then this cost
-becomes excessive.  \Charef{largeobj} will discuss this problem at
+if the objects are large, then this cost becomes excessive.
+\Charef{largeobj} will discuss this problem at
 length and propose a solution based on functional array data
 structures.
 
+\punt{
 It is worth examining the overheads for the \texttt{222\_mpegaudio}
 benchmark in more depth, as they clearly illustrate the limitations of
 our present implementation.  \figref{phd-spec-nt} shows a
@@ -2538,13 +2633,14 @@ writes to large arrays within small transactions, and each
 transactional write causes the array to be copied, a problem which we
 will discuss further in \charef{largeobj}.  Further, because
 \texttt{mpegaudio} does compression, its writes are evenly distributed
-among the 256 possible byte values, which implies that about 1/2\% of
+among the 256 possible byte values, which implies that about $\frac{1}{2}$\% of
 the writes to the array will be false flags (even though the
 percentage of the total writes, as shown in \figref{false-flag} are an
 order of magnitude smaller.   Once a false flag is written to an
 array, the \texttt{ensureWriter} protocol will slow down all future
 writes even when, as in \figref{phd-spec-nt},
 we have stripped all transactions from the code.
+}
 
 \punt{
 Although the \apex transaction design ought to be able to perform direct
