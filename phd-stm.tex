@@ -2154,6 +2154,13 @@ expected 214\% overhead, as our microbenchmark was carefully constructed to
 avoid the opportunities for instruction-level parallelism one might
 expect in real-world applications.
 
+The base benchmark performs $10^9$ reads and $10^9$ writes in an
+elapsed time of 7.06 seconds.  Our read (write) rate is thus $142M$
+reads (writes) / second.  Read checks cost 1.0 ns/read, and write
+checks cost 14.1 ns/write.  We can predict the overhead fraction $o$
+for an arbitrary program with the linear equation
+$o = 1.0 r + 14.1 w$ where $r$ ($w$) is the read (write) rate.
+
 \begin{figure}
 \sis\fontsize{9}{10}\begin{alltt}
 \textit{do_bench:              do_bench:
@@ -2254,8 +2261,8 @@ calling convention; \texttt{gcc} makes it difficult to ensure that
 this thunk is ``near enough'' for a direct branch (within a 24-bit
 signed displacement) without duplicating it needlessly.}
 The optimized store-conditional test reduces write-check overhead to
-186\% and combined read- and write-check overhead to 199\%, as shown
-in \figref{phd-counter}.
+186\% (13.1 ns/write) and combined read- and write-check overhead to
+199\%, as shown in \figref{phd-counter}.
 
 Further performance improvement is possible by optimizing the
 benchmark with both read and write checks as a whole. \figref{rw-assem}
@@ -2429,21 +2436,33 @@ benchmark, for example, has the largest measured overhead, 249\%, and
 a write rate 4 times as large as any other benchmark.
 
 Using the measured benchmark performance, we can compute a minimum norm
-solution to the linear equation $o = k_1 r + k_2 w$, where $o$ is overhead,
+solution to the linear equation 
+\begin{equation}\label{eqn:nt-perf}
+o = k_1 r + k_2 w
+\end{equation}
+where $o$ is overhead fraction,
 $r$ and $w$ are read and write rates, respectively, and $k_1$ and $k_2$
-are the unknown coefficients.  This yield overhead contributions
-$k_1 = 2.4 \text{ns}/\text{read}$ and
-$k_2 = 63.5 \text{ns}/\text{write}$.  The write checks are 26 times as
-expensive as the read checks.
+are the unknown coefficients.  The solution yields overhead contributions
+$k_1 = 2.4 \text{ ns}/\text{read}$ and
+$k_2 = 63.5 \text{ ns}/\text{write}$.  These values are comparable to the
+$1.0 \text{ ns}/\text{read}$ and $13.1 \text{ ns}/\text{write}$
+overheads of the optimized checks we wrote for the counter
+microbenchmark of \secref{counter-bench}.  The \flex
+check implementation is slower than the hand-tuned assembly code.
+Reasons include the presence of subword and multiword accesses in the
+full benchmarks, and the difficulty of properly scheduling loads and
+stores when they are hidden inside \texttt{asm} statements which are
+opaque to the \texttt{gcc-3.4} backend compiler.
 
-\figref{phd-spec-nt-pred} shows the predicted performance overlaid on
-actual performance.  The \texttt{jess}, \texttt{raytrace}, and
-\texttt{db} benchmarks have similar read rates.  The
+\figref{phd-spec-nt-pred} shows the performance predicted by \eqnref{nt-perf}
+overlaid on actual performance.  The
 \texttt{jess} benchmark has 39\% higher overhead than
-\texttt{raytrace}, however, although
+\texttt{raytrace}, although
 its write rate is only 9\% higher. Similarly, \texttt{db} has a 64\%
 lower write rate than \texttt{raytrace} but a 76\% lower overhead.
-Our linear model only approximates this behavior.  The actual
+The read rates for these three benchmarks are too similar to explain
+the difference.
+The linear model only approximates this behavior.  The actual
 performance is affected by the programs' read and write dependencies.
 The \texttt{jess} benchmark contains tight dependencies which make its
 overhead more sensitive to a small increase in write rate, while
@@ -2451,8 +2470,8 @@ overhead more sensitive to a small increase in write rate, while
 
 Close inspection of the assembly code emitted by the C compiler for
 these benchmarks indicates that, as in the microbenchmark of
-\secref{counter-bench}, compiler limitations account for part of this
-overhead. It is hard to
+\secref{counter-bench}, compiler limitations account for part of the
+check overhead. It is hard to
 obtain maximum performance with a C backend (such as used by \flex)
 due to expressive limits, and the emitted assembly
 indicates that the compiler is not optimally acting on the hints we

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.cls,v 1.20 2007-05-12 19:34:05 cananian Exp $
+% $Id: phd-thesis.cls,v 1.21 2007-05-25 07:52:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{phd-thesis}[2005/06/07 csa PhD thesis class]
@@ -65,6 +65,7 @@
 \newcommand{\Secref}[1]         {Section~\ref{sec:#1}}
 \newcommand{\charef}[1]         {Chapter~\ref{cha:#1}}
 \newcommand{\Charef}[1]         {Chapter~\ref{cha:#1}}
+\newcommand{\eqnref}[1]         {Equation~\ref{eqn:#1}}
 
 \newcommand{\figput}[3][]{%
 \begin{figure}[tp]\sis%
