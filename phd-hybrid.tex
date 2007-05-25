@@ -44,7 +44,7 @@ transaction size increases.  The hardware transaction mechanism is
 fastest, as one would expect, but its performance falters and then
 fails at a transaction size of around 2500 nodes pushed.  At this
 transaction size, the hardware scheme ran out of cache; in a
-more-realistic system it might also have run out of its timeslice,
+more realistic system it might also have run out of its timeslice,
 aborting (LTM) or spilling (UTM) the transaction at the context
 switch.
 
