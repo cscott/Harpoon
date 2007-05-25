@@ -125,7 +125,8 @@ popl05.dvi: csaacmconfbig.cls acmconfbig.cls
 # Phd Thesis dependencies
 phd-thesis.dvi: phd-thesis.cls phd-titlepage.tex phd-abstract.tex phd-ack.tex \
 	phd-intro.tex phd-stm.tex phd-htm.tex phd-hybrid.tex \
-	phd-chall.tex phd-related.tex phd-concl.tex phd-ver.tex phd-cmd.tex
+	phd-chall.tex phd-related.tex phd-concl.tex phd-ver.tex phd-cmd.tex \
+	phd-config.txt
 #    figure dependencies
 phd-thesis.dvi: \
 	$(foreach f, \
