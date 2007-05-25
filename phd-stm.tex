@@ -2147,7 +2147,7 @@ instructions.
   pure C implementation and optimized assembly.}
 
 \figref{phd-counter} shows the performance of this benchmark on the
-PowerPC hardware fully described in \secref{full-bench}.
+PowerPC hardware fully described in \charef{perf}.
 Read checks, even in this worst case where the value read is demanded
 immediately, only add 14\% overhead.  Write checks are more costly,
 due to the load-linked and store-conditional pair.  Specifically, they add 200\%
@@ -2343,7 +2343,7 @@ benchmarks were previously described and characterized in
 \secref{auto}.
 \figref{perfnums} lists the 7 benchmarks in SPECjvm98.  As in the
 previous section, we use the single-threaded {\tt 205\_raytrace} benchmark
-in the place of its multi-threaded variant {\tt 227\_mtrt}.  We omit the
+in the place of its multithreaded variant {\tt 227\_mtrt}.  We omit the
 {\tt 201\_compress} benchmark since a poor
 interaction with the blacklist mechanism of the Boehm-Demers-Weiser
 conservative garbage collector causes the large array it allocates to
@@ -3411,7 +3411,7 @@ void do_bench(struct aarray *obj, index_t len) {
       obj = write(obj, i, v2);
       obj = write(obj, len-i-1, v1);
     }
-#else // multi-threaded access
+#else // multithreaded access
     struct aarray *robj = obj;
     for (i=0; i<len; i++)
       obj = write(obj, len-i-1, read(robj, i));
@@ -3438,12 +3438,13 @@ typical imperative array reversal algorithm.  We swap the leftmost and
 rightmost element of the array and move inward as we continue to swap.
 Without \texttt{SINGLETHREAD} defined,
 the reversal algorithm always reads from the original
-array.  This pattern of access corresponds to a frequent abort scenario.
-In our experiments the single-threaded and multi-threaded variants of
+array.  This pattern of access corresponds to a scenario where aborts
+are frequent.
+In our experiments the single-threaded and multithreaded variants of
 the benchmark had almost identical performance, contrary to the claims
 of \cite{ONeillBu97}.  Standard shallow-binding will have poor
 performance only if reads of the half-reversed array were to occur in the
-multi-threaded variant.  These reads are not necessary for array reversal.
+multithreaded variant.  These reads are not necessary for array reversal.
 
 \epsbigfigput[Functional array performance on an array reversal microbenchmark.]{phd-arrayperf}{Functional array performance on an
   array reversal microbenchmark as the size of the array is varied.
@@ -3473,19 +3474,20 @@ Shallow-binding functional arrays \cite{Baker91} averaged 327
 nanoseconds per read-update.  This is over 60 times slower than
 standard imperative arrays, but is invariant with array size.
 Shallow binding shows poor performance when accesses are not
-single-threaded---or when transactions abort often, in a transactional
-application.
+single-threaded---in a transactional application,
+when transactions abort often.
+
 
 Chuang's randomized-cut shallow-binding functional arrays
-\cite{Chuang94}, labeled ``Random Cut'' in \figref{phd-arrayperf},
+\cite{Chuang94}, labeled ``random cut'' in \figref{phd-arrayperf},
 allow good performance even when transactions abort
 often.  My implementation averaged 400 ns per read-update.  The
-root-cloning which allows multi-threaded access imposes an additional
+root-cloning which allows multithreaded access imposes an additional
 22\% overhead when compared to the standard shallow binding functional
 array implementation.
 
 Finally, my lock-free version of Chuang's functional arrays, labeled
-``Lock-Free'', averages
+``lock-free'' in the figure, averages
 894 ns per read-update.  The penalty for performing the lock-free
 algorithm is 124\%, resulting in read-updates which are over 175 times slower
 than imperative array read-updates.   \figref{phd-arrayperf} shows
