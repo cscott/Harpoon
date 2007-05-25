@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.21 2007-05-23 18:05:53 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.22 2007-05-25 02:46:34 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -585,6 +585,8 @@ public class SyncTransformer
 	    if (safeMethods.contains(q.method()) && !q.isVirtual())
 		return; // it's safe. (this is an optimization)
 	    */
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0), "synctrans.trans_call");
 	    Temp[] nparams = new Temp[q.paramsLength()+1];
 	    int i=0;
 	    if (!q.isStatic())
