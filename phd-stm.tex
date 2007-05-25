@@ -212,7 +212,7 @@ the transactified applications may contain large transactions, prior
 proposed hardware support for transactions is inadequate.
 
 
-\section{Designing efficient transactions}\label{sec:efficient}
+\section{Design goals}\label{sec:efficient}
 
 In this section I briefly describe the desired properties of the
 \apex software transaction system: strong atomicity,
@@ -309,7 +309,7 @@ program & memory ops    & stores \% \\\hline
   SPECjvm98 benchmark suite, full input runs.}
 \label{fig:writepercent}
 \end{figure}
-\subsection{Designing for reads vs. writes}
+\subsection{Reads vs. writes}
 I also measured the number and types of reads and writes for the
 SpecJVM98 benchmarks.
 \figref{writepercent} shows that transactional reads typically
@@ -926,7 +926,8 @@ real-world
 implementation details of our software transaction system.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Implementing efficient software transactions}\label{cha:stmimpl}
+\chapter{\apex implementation: efficient software transactions}\label{cha:stmimpl}
+\markboth{CHAPTER 4:~~APEX IMPLEMENTATION}{}
 \epigraphhead[70]{\epigraph{%
 In theory, there is no difference between theory and practice.
 }{\textit{Jan~L.~A.~van~de~Snepscheut}}}
@@ -1278,7 +1279,7 @@ Only the crucial \texttt{commit()} and \texttt{abort()} operations,
 which atomically set the transaction status if and only if it is still
 \texttt{WAITING}, were written in C, as JNI methods.
 
-\subsection{Implementing the JNI}
+\subsection{Implementing the Java Native Interface}
 \begin{figure}\sis\fontsize{9}{10}\begin{alltt}
 struct JNINativeInterface \{
   \(\cdots\)
@@ -1950,7 +1951,8 @@ of versions could be hung from objects involved in many transactions:
 as soon as a version commits, the previous version can be added to the
 free list for the use of the next transaction.
 
-\chapter{\apex Performance}\label{cha:perf}
+\chapter{\apex performance}\label{cha:perf}
+\markboth{CHAPTER 5:~~APEX PERFORMANCE}{}
 % lots more performance-related quotes at
 % http://www.nonstopenglish.com/reading/quotations/k_Performance.asp
 \epigraphhead[70]{\epigraph{%

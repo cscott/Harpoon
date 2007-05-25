@@ -1,6 +1,6 @@
 Be consistent on "I" vs. "We".
 
-Don't go into 3 levels of hierarchy.  Two levels of hierarchy is
+NO Don't go into 3 levels of hierarchy.  Two levels of hierarchy is
 almost too much. Three is definitely too much.  Consider Chapter 2:
   intro par
   2.1 four old things
@@ -13,27 +13,20 @@ I would try to get it down to no numbering within the chapter.  I
 would be happy if it went to only subsection numbers.  Use writing to
 do the rest of the organization.
 
-Come up with a better word than "things".  Something like "challenges"
+NO Come up with a better word than "things".  Something like "challenges"
 would be better.
 
-Chapter 3's title "Designing a Software Transaction System" makes no
+NO Chapter 3's title "Designing a Software Transaction System" makes no
 sense to me.  What about this chapter is about designing a system.
 This chapter is a mix of some measurements and some design choices.
 
-Chapter 4: "Implementing" ?  This title also makes no sense to me.
-This chapter i about a Java implementation.  Does it have a name?
-
 Chapter 5:  Topic paragraph needs work.  What is Chapter 5 about?
 
-Chapter 9:  I would flush it, and put all the content into the
+NO Chapter 9:  I would flush it, and put all the content into the
 introduction.
 
-I think it would be advantageous to Make the code examples be
-single-spaced (especially in the appendix).  Also what are all those
-#ifdef's doing in the code.  Can you simplify the presentation by
-getting rid of unused cases?
 -------
-Abstract: "More bottom-line numbers" (CEL)
+NO Abstract: "More bottom-line numbers" (CEL)
 
 "Four new things transactions make easy", topic paragraph: itemize
 (CEL).
