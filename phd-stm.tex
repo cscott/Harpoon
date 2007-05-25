@@ -2157,11 +2157,15 @@ avoid the opportunities for instruction-level parallelism one might
 expect in real-world applications.
 
 The base benchmark performs $10^9$ reads and $10^9$ writes in an
-elapsed time of 7.06 seconds.  Our read (write) rate is thus $142M$
-reads (writes) / second.  Read checks cost 1.0 ns/read, and write
+elapsed time of 7.06 seconds.  Our read (write) rate is thus
+$142\times 10^6$
+reads (writes) per second.  Read checks cost 1.0 ns/read, and write
 checks cost 14.1 ns/write.  We can predict the overhead fraction $o$
-for an arbitrary program with the linear equation
-$o = 1.0 r + 14.1 w$ where $r$ ($w$) is the read (write) rate.
+for an arbitrary program with the linear equation:
+\begin{equation}\label{eqn:micro-perf}
+o = (1.0\times 10^9) r + (14.1 \times 10^9) w
+\end{equation}
+where $r$ ($w$) is the read (write) rate.
 
 \begin{figure}
 \sis\fontsize{9}{10}\begin{alltt}
@@ -2278,7 +2282,8 @@ replaced our canonical \texttt{FLAG} value with
 \texttt{0xFFFFCACA}, which can be represented by the PowerPC's 16-bit
 signed immediate instruction field (eliminating the need for a
 register), and combined the flag checks in
-the read and write routines.\footnote{Again, the branches to
+the read and write routines by masking and comparing against
+\texttt{0xFFFFCACB}.\footnote{Again, the branches to
 \texttt{unusualRead()} and 
 \texttt{unusualWrite()} are difficult to express in this hybrid of C
 and assembly, but small stubs would be written to save registers and
@@ -2336,7 +2341,7 @@ practical Java programs including an expert system, a simple database,
 a Java compiler, an audio encoder, and a parser generator.  These
 benchmarks were previously described and characterized in
 \secref{auto}.
-\figref{perfnums} listed the 7 benchmarks in SPECjvm98.  As in the
+\figref{perfnums} lists the 7 benchmarks in SPECjvm98.  As in the
 previous section, we use the single-threaded {\tt 205\_raytrace} benchmark
 in the place of its multi-threaded variant {\tt 227\_mtrt}.  We omit the
 {\tt 201\_compress} benchmark since a poor
@@ -2423,19 +2428,21 @@ benchmarks show that an overhead of 40\%--50\% is more typical.
 
 The middle bar in the figure shows the overhead incurred by simply
 replacing the loads and stores with load-linked and store-conditional
-instructions, as our protocol must do.  The PowerPC is not optimized
-to perform frequent ``synchronization'' instructions such as
+instructions, as our protocol must do.  The PowerPC G4 is not optimized
+for frequent ``synchronization'' instructions such as
 load-linked and store-conditional, and store buffers and other
 architectural features are bypassed for their execution.  For most
 applications, the performance impact is not significant.  Applications
-with large write rates are affected to a greater degree.
+with large write rates, such as \texttt{mpegaudio}, are affected to a
+greater degree.
 
 The line graph in the background of \figref{phd-spec-nt} shows the
 write rate for each benchmark.  Read and write rates for the benchmark
 are shown in more detail in \figref{phd-spec-nt-rate}.  Write rate is
-a good predictor for overall check overhead.  The \texttt{mpegaudio}
-benchmark, for example, has the largest measured overhead, 249\%, and
-a write rate 4 times as large as any other benchmark.
+a good predictor for overall check overhead. 
+The largest measured overhead, 249\%, comes from
+a \texttt{mpegaudio}, which has a write rate 4 times as large as any
+other benchmark. 
 
 Using the measured benchmark performance, we can compute a minimum norm
 solution to the linear equation 
@@ -2445,38 +2452,22 @@ o_{NT} = k_{r_{NT}} r_{NT} + k_{w_{NT}} w_{NT}
 where $o_{NT}$ is the overhead fraction due to nontransactional checks,
 $r$ and $w$ are (nontransactional) read and write rates, respectively,
 and $k_{r_{NT}}$ and $k_{w_{NT}}$
-are the unknown coefficients.  The solution yields overhead contributions
-$k_{r_{NT}} = 2.4 \text{ ns}/\text{read}$ and
-$k_{w_{NT}} = 63.5 \text{ ns}/\text{write}$.  These values are
-comparable to the
+are the unknown coefficients.  The solution yields overhead
+contributions:
+\begin{eqnarray*}
+k_{r_{NT}} &=& 2.4 \text{ ns}/\text{read} \\
+k_{w_{NT}} &=& 63.5 \text{ ns}/\text{write}
+\end{eqnarray*}
+These values are comparable to the
 $1.0 \text{ ns}/\text{read}$ and $13.1 \text{ ns}/\text{write}$
 overheads of the optimized checks we wrote for the counter
-microbenchmark of \secref{counter-bench}.  The \flex
+microbenchmark of \secref{counter-bench}.  The \apex
 check implementation is slower than the hand-tuned assembly code.
-Reasons include the presence of subword and multiword accesses in the
-full benchmarks, and the difficulty of properly scheduling loads and
-stores when they are hidden inside \texttt{asm} statements which are
-opaque to the \texttt{gcc-3.4} backend compiler.
-
-\figref{phd-spec-nt-pred} shows the performance predicted by \eqnref{nt-perf}
-overlaid on actual performance.  The
-\texttt{jess} benchmark has 39\% higher overhead than
-\texttt{raytrace}, although
-its write rate is only 9\% higher. Similarly, \texttt{db} has a 64\%
-lower write rate than \texttt{raytrace} but a 76\% lower overhead.
-The read rates for these three benchmarks are too similar to explain
-the difference.
-The linear model only approximates this behavior.  The actual
-performance is affected by the programs' read and write dependencies.
-The \texttt{jess} benchmark contains tight dependencies which make its
-overhead more sensitive to a small increase in write rate, while
-\texttt{db} has loose dependencies that lower its overhead.  The model
-matches actual performance within 14\% for these benchmarks.
 
 Close inspection of the assembly code emitted by the C compiler for
 these benchmarks indicates that, as in the microbenchmark of
-\secref{counter-bench}, compiler limitations account for part of the
-check overhead. It is hard to
+\secref{counter-bench}, compiler limitations account for some of the
+difference. It is hard to
 obtain maximum performance with a C backend (such as used by \flex)
 due to expressive limits, and the emitted assembly
 indicates that the compiler is not optimally acting on the hints we
@@ -2485,41 +2476,64 @@ possible on the fast path through the common case, but the compiler
 adds register spills and moves on the fast path that are necessary only in
 unusual cases.  Further, because the fundamental load-linked and
 store-conditional instructions are inside inline assembly blocks and
-thus opaque to the compiler, many opportunities for code motion and
-scheduling are being missed.
+thus opaque to the \texttt{gcc-3.4} backend compiler, many
+opportunities for code motion and scheduling are being missed.
+
+Slower checks are also partially the result of
+subword and multiword accesses in the
+full benchmarks, which are not present in our microbenchmark.
 
 The nontransactional versions of the benchmarks must still properly
 handle false flag values.  \figref{false-flag} shows that false flags
 are not a significant percentage of values read or written, and thus
 not a major contribution to overhead.
 
+\figref{phd-spec-nt-pred} shows the performance predicted by \eqnref{nt-perf}
+overlaid on actual performance.  The
+\texttt{jess} benchmark has 39\% higher overhead than
+\texttt{raytrace}, although
+its write rate is only 9\% higher. Similarly, \texttt{db} has a 64\%
+lower write rate than \texttt{raytrace} but a 76\% lower overhead.
+The read rates for these three benchmarks are too similar to explain
+the difference.  The overhead nonlinearity can't be captured by the
+linear model.  Furthermore, actual
+performance is affected by unmodeled factors such as the programs'
+read and write dependencies. 
+The \texttt{jess} benchmark contains tight dependencies which make its
+overhead more sensitive to a small increase in write rate, while
+\texttt{db} has loose dependencies that lower its overhead.
+Nevertheless, the model
+matches actual performance within 14\% for all benchmarks.
+
 \subsection{Transaction overhead}
 
 \figref{phd-spec-full} presents the performance of the transactional
-versions of the SPECjvm98 benchmarks.  The leftmost bar represents the
-original performance, as before.  The next two bars represent partial
-transaction transforms, used to evaluate different components of the
-overhead.  The penultimate bar shows the overhead of the full
-transactified benchmark.  The final bar shows predicted overhead for
-the application, broken down by contribution.
+versions of the SPECjvm98 benchmarks.  As in
+\figref{phd-spec-nt-pred}, the leftmost bar represents the
+original performance.  The next two bars represent versions of the
+benchmarks compiled with only part of the transaction transformation
+enabled.  These are used to evaluate different components of the
+overhead.  The rightmost solid bar shows the overhead of the full
+transactified benchmark.  The final, striped, bar shows predicted overhead for
+the application, broken down by source.
 
 \epsbigfigput[Transaction overhead for SPECjvm98.]{phd-spec-full}{%
-  Transaction overhead for SPECjvm98.  The leftmost bar is compiled
+  Transaction overhead for SPECjvm98.  The leftmost ``Base'' bar is compiled
   with method cloning and desugaring, all transactions removed, and
-  direct reads and writes.  The next bar adds creation of commit
-  records at the start of each transaction and the CAS commit
-  operation at the end.  The next bar uses the transactional and
-  nontransactional read and write protocols for non-array objects.
+  direct reads and writes.  The ``No checks'' bar transforms methods, creates
+  commit records at the start of each transaction, checks for abort
+  after every call, but uses direct loads and stores for all accesses.
+  The ``No arrays'' bar is similar, but only uses direct loads and
+  stores for array accesses.
   The penultimate bar is fully transactional.  The striped final bar
   shows predicted performance for the benchmark, broken down by
-  contributing factor.}
+  contribution source.}
 
-Creation of a transaction record at the start of every atomic region
-can be a considerable fraction of the overhead if the number of
-transactions is large.  The second bar in \figref{phd-spec-full} shows
+The second bar in \figref{phd-spec-full} shows
 the performance of the transactified benchmark after all transactional
 read and write operations have been replaced by direct reads and
-writes.   Four changes to the application remain: transaction records
+writes.   We label this the ``no check'' variant.
+Four changes to the application remain: transaction records
 are created at the start of every atomic region, method calls inside
 transactions are transformed to pass the transaction record and to
 check for abort on an exceptional return, method cloning occurs to
@@ -2528,9 +2542,12 @@ variables are passed around inside the method body, increasing
 register pressure.
 
 The transaction rate is the largest contributor
-to overhead at this stage.  The number of transactional method calls
-is a secondary factor.  The ``create transaction''
-contribution should be modeled as:
+to overhead for the ``no check'' variant.  The number of transactional
+method calls is a secondary factor.
+Creation of a transaction record at the start of every atomic region
+can be a considerable fraction of the overhead if the number of
+transactions is large.  The ``no check''
+contribution is modeled as follows:
 \begin{equation}
 o_t = k_t t + k_c c
 \end{equation}
@@ -2543,15 +2560,16 @@ the transactional memory access rate, as a proxy.  Applications which
 perform a large number of transactional loads and stores are likely to
 spend more of their time inside transactions, and thus to have a
 higher number of method calls inside transactions.  The
-revised model is:
+proxy model is:
 \begin{equation}\label{eqn:t-perf}
 o_t = k_t t + k_a a_T
 \end{equation}
-I obtain
-$k_t = 859 \text{ ns}/\text{transaction}$ and
-$k_a = 4 \text{ ns}/\text{transactional memory access}$ as a minimum
-norm solution.  The high
-value for $k_t$ represents the high cost of memory allocation under
+The minimum norm solution is:
+\begin{eqnarray*}
+k_t &=& 859 \text{ ns}/\text{transaction} \\
+k_a &=& 4 \text{ ns}/\text{transactional memory access}
+\end{eqnarray*}
+The high value for $k_t$ represents the high cost of memory allocation under
 the Boehm-Demers-Weiser conservative collector.  In
 \figref{phd-spec-full} the red striped component
 represents $o_t$, computed according to \eqnref{t-perf}.  The
@@ -2588,8 +2606,10 @@ where $o_{T}$ is the overhead fraction due to transactional accesses,
 $w_T$ is the transactional write rate, $s_T$ is the average size of an
 object targeted by a transactional write, and $k_{w_T}$ and $k_s$ are
 unknown constants.  Solving for the constants yields:
- $$k_{w_T} = 123 \text{ ns}/\text{transactional write}$$
- $$k_s = 0.23 \text{ ns}/\text{transactional write-byte}$$
+\begin{eqnarray*}
+ k_{w_T} &=& 123 \text{ ns}/\text{transactional write}\\
+ k_s &=& 0.23 \text{ ns}/\text{transactional write-byte}
+\end{eqnarray*}
 Transactional writes are about twice as expensive as nontransactional
 writes, and $k_s$ reflects the object cloning costs associated with
 the transactional write.  The magenta striped bar in
@@ -2599,8 +2619,8 @@ The overall prediction is within 70\% of actual costs.
 The green bar in \figref{phd-spec-full} represents another way of
 breaking down the transaction overhead.  Another variant of the
 benchmark was compiled which replaced array reads and writes with
-direct accesses.  The resulting overhead includes $o_t$, the ``create
-transaction'' overhead, as well as both transactional and
+direct accesses.  The resulting overhead includes $o_t$, the ``no
+checks'' overhead, as well as both transactional and
 nontransactional overheads for nonarray objects.  This view was
 motivated by the observation that in some cases array mutations
 account for a large amount of the total overhead.
@@ -2682,13 +2702,15 @@ by their contribution to overall overhead:\footnote{I've distributed
   nontransactional write adds 63.5 ns overhead.
 \item $w_T$, the number of transactional writes.  Each transactional
   write adds 127 ns overhead.
-\item $t$, the number of transactions.  Each transaction adds 859 ns overhead.
+\item $t$, the number of transactions.  Each transaction adds 859 ns
+  overhead.\footnote{A faster allocator might reduce this factor.}
 \end{itemize}
 
 A programmer seeking to improve the performance of their code should
 first reduce the number of transactions created.  \apex is suited to
 small numbers of large transactions.  \Charef{htm}
-presents an alternative better suited for large numbers of small transactions.
+presents an alternative transaction system which is better suited for large
+numbers of small transactions. 
 Although our model does not reflect it, transactional write operations
 are cheaper after the initial cloning is done.  Combining smaller
 transactions allows fewer object copies to be made.

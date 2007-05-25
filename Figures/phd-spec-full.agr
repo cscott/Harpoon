@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri May 25 05:29:26 2007"
+@timestamp def "Fri May 25 13:02:39 2007"
 @with string
 @    string on
 @    string loctype view
@@ -343,7 +343,7 @@
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
 @    s1 comment "Transaction Rate"
-@    s1 legend  "Create transaction"
+@    s1 legend  "No checks"
 @    s2 hidden false
 @    s2 type bar
 @    s2 symbol 0
@@ -707,7 +707,7 @@
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
 @    s1 comment "w/ Trans (NOT)"
-@    s1 legend  "w/ createTransaction"
+@    s1 legend  "No checks"
 @    s2 hidden false
 @    s2 type bar
 @    s2 symbol 0
@@ -756,7 +756,7 @@
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
 @    s2 comment "2-NOA"
-@    s2 legend  "Transactional (no arrays)"
+@    s2 legend  "No array checks"
 @    s3 hidden false
 @    s3 type bar
 @    s3 symbol 0

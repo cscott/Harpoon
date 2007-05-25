@@ -5,8 +5,8 @@
 @page scroll 5%
 @page inout 5%
 @link page off
-@map font 8 to "Courier", "Courier"
-@map font 10 to "Courier-Bold", "Courier-Bold"
+@map font 39 to "Courier", "Courier"
+@map font 40 to "Courier-Bold", "Courier-Bold"
 @map font 11 to "Courier-BoldOblique", "Courier-BoldOblique"
 @map font 9 to "Courier-Oblique", "Courier-Oblique"
 @map font 4 to "Helvetica", "Helvetica"
@@ -36,8 +36,6 @@
 @map font 36 to "CharterBT-BoldItalic", "CharterBT-BoldItalic"
 @map font 37 to "CharterBT-Italic", "CharterBT-Italic"
 @map font 38 to "CharterBT-Roman", "CharterBT-Roman"
-@map font 39 to "Courier", "Courier"
-@map font 40 to "Courier-Bold", "Courier-Bold"
 @map font 41 to "Courier-BoldItalic", "Courier-BoldItalic"
 @map font 42 to "Courier-Italic", "Courier-Italic"
 @map font 43 to "Hershey-Gothic-English", "Hershey-Gothic-English"
@@ -101,9 +99,7 @@
 @map font 101 to "LuxiSerif-Bold", "LuxiSerif-Bold"
 @map font 102 to "LuxiSerif-BoldOblique", "LuxiSerif-BoldOblique"
 @map font 103 to "LuxiSerif-Oblique", "LuxiSerif-Oblique"
-@map font 104 to "TeX-tipa10", "TeX-tipa10"
 @map font 105 to "TeX-tipa10", "TeX-tipa10"
-@map font 106 to "TeX-tipa12", "TeX-tipa12"
 @map font 107 to "TeX-tipa12", "TeX-tipa12"
 @map color 0 to (255, 255, 255), "white"
 @map color 1 to (0, 0, 0), "black"
@@ -140,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Apr  6 23:27:22 2007"
+@timestamp def "Fri May 25 12:37:21 2007"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -327,7 +323,7 @@
 @    legend length 4
 @    legend vgap 1
 @    legend hgap 1
-@    legend invert false
+@    legend invert true
 @    frame type 0
 @    frame linestyle 1
 @    frame linewidth 1.0
@@ -344,7 +340,7 @@
 @    s0 symbol fill color 1
 @    s0 symbol fill pattern 1
 @    s0 symbol linewidth 1.0
-@    s0 symbol linestyle 0
+@    s0 symbol linestyle 1
 @    s0 symbol char 65
 @    s0 symbol char font 0
 @    s0 symbol skip 0
@@ -388,12 +384,12 @@
 @    s1 type bar
 @    s1 symbol 0
 @    s1 symbol size 5.000000
-@    s1 symbol color 2
+@    s1 symbol color 1
 @    s1 symbol pattern 1
 @    s1 symbol fill color 2
 @    s1 symbol fill pattern 1
 @    s1 symbol linewidth 1.0
-@    s1 symbol linestyle 0
+@    s1 symbol linestyle 1
 @    s1 symbol char 65
 @    s1 symbol char font 0
 @    s1 symbol skip 0
@@ -422,7 +418,7 @@
 @    s1 avalue offset 0.000000 , 0.000000
 @    s1 errorbar off
 @    s1 errorbar place both
-@    s1 errorbar color 2
+@    s1 errorbar color 1
 @    s1 errorbar pattern 1
 @    s1 errorbar size 1.000000
 @    s1 errorbar linewidth 1.0
@@ -432,17 +428,17 @@
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
 @    s1 comment "Call/Return"
-@    s1 legend  "Call/Return"
+@    s1 legend  "Calls/Returns"
 @    s2 hidden false
 @    s2 type bar
 @    s2 symbol 0
 @    s2 symbol size 5.000000
-@    s2 symbol color 3
+@    s2 symbol color 1
 @    s2 symbol pattern 1
 @    s2 symbol fill color 3
 @    s2 symbol fill pattern 1
 @    s2 symbol linewidth 1.0
-@    s2 symbol linestyle 0
+@    s2 symbol linestyle 1
 @    s2 symbol char 65
 @    s2 symbol char font 0
 @    s2 symbol skip 0
@@ -471,7 +467,7 @@
 @    s2 avalue offset 0.000000 , 0.000000
 @    s2 errorbar off
 @    s2 errorbar place both
-@    s2 errorbar color 3
+@    s2 errorbar color 1
 @    s2 errorbar pattern 1
 @    s2 errorbar size 1.000000
 @    s2 errorbar linewidth 1.0
@@ -486,12 +482,12 @@
 @    s3 type bar
 @    s3 symbol 0
 @    s3 symbol size 5.000000
-@    s3 symbol color 4
+@    s3 symbol color 1
 @    s3 symbol pattern 1
 @    s3 symbol fill color 4
 @    s3 symbol fill pattern 1
 @    s3 symbol linewidth 1.0
-@    s3 symbol linestyle 0
+@    s3 symbol linestyle 1
 @    s3 symbol char 65
 @    s3 symbol char font 0
 @    s3 symbol skip 0
@@ -520,7 +516,7 @@
 @    s3 avalue offset 0.000000 , 0.000000
 @    s3 errorbar off
 @    s3 errorbar place both
-@    s3 errorbar color 4
+@    s3 errorbar color 1
 @    s3 errorbar pattern 1
 @    s3 errorbar size 1.000000
 @    s3 errorbar linewidth 1.0
@@ -530,17 +526,17 @@
 @    s3 errorbar riser clip off
 @    s3 errorbar riser clip length 0.100000
 @    s3 comment "Immediate Load"
-@    s3 legend  "Imm. Load"
+@    s3 legend  "Imm. Loads"
 @    s4 hidden false
 @    s4 type bar
 @    s4 symbol 0
 @    s4 symbol size 5.000000
-@    s4 symbol color 5
+@    s4 symbol color 1
 @    s4 symbol pattern 1
 @    s4 symbol fill color 5
 @    s4 symbol fill pattern 1
 @    s4 symbol linewidth 1.0
-@    s4 symbol linestyle 0
+@    s4 symbol linestyle 1
 @    s4 symbol char 65
 @    s4 symbol char font 0
 @    s4 symbol skip 0
@@ -569,7 +565,7 @@
 @    s4 avalue offset 0.000000 , 0.000000
 @    s4 errorbar off
 @    s4 errorbar place both
-@    s4 errorbar color 5
+@    s4 errorbar color 1
 @    s4 errorbar pattern 1
 @    s4 errorbar size 1.000000
 @    s4 errorbar linewidth 1.0
@@ -584,12 +580,12 @@
 @    s5 type bar
 @    s5 symbol 0
 @    s5 symbol size 5.000000
-@    s5 symbol color 6
+@    s5 symbol color 1
 @    s5 symbol pattern 1
 @    s5 symbol fill color 6
 @    s5 symbol fill pattern 1
 @    s5 symbol linewidth 1.0
-@    s5 symbol linestyle 0
+@    s5 symbol linestyle 1
 @    s5 symbol char 65
 @    s5 symbol char font 0
 @    s5 symbol skip 0
@@ -618,7 +614,7 @@
 @    s5 avalue offset 0.000000 , 0.000000
 @    s5 errorbar off
 @    s5 errorbar place both
-@    s5 errorbar color 6
+@    s5 errorbar color 1
 @    s5 errorbar pattern 1
 @    s5 errorbar size 1.000000
 @    s5 errorbar linewidth 1.0
@@ -633,12 +629,12 @@
 @    s6 type bar
 @    s6 symbol 0
 @    s6 symbol size 5.000000
-@    s6 symbol color 7
+@    s6 symbol color 1
 @    s6 symbol pattern 1
 @    s6 symbol fill color 7
 @    s6 symbol fill pattern 1
 @    s6 symbol linewidth 1.0
-@    s6 symbol linestyle 0
+@    s6 symbol linestyle 1
 @    s6 symbol char 65
 @    s6 symbol char font 0
 @    s6 symbol skip 0
@@ -667,7 +663,7 @@
 @    s6 avalue offset 0.000000 , 0.000000
 @    s6 errorbar off
 @    s6 errorbar place both
-@    s6 errorbar color 7
+@    s6 errorbar color 1
 @    s6 errorbar pattern 1
 @    s6 errorbar size 1.000000
 @    s6 errorbar linewidth 1.0
@@ -677,17 +673,17 @@
 @    s6 errorbar riser clip off
 @    s6 errorbar riser clip length 0.100000
 @    s6 comment "Loads"
-@    s6 legend  "Load"
+@    s6 legend  "Loads"
 @    s7 hidden false
 @    s7 type bar
 @    s7 symbol 0
 @    s7 symbol size 5.000000
-@    s7 symbol color 8
+@    s7 symbol color 1
 @    s7 symbol pattern 1
 @    s7 symbol fill color 8
 @    s7 symbol fill pattern 1
 @    s7 symbol linewidth 1.0
-@    s7 symbol linestyle 0
+@    s7 symbol linestyle 1
 @    s7 symbol char 65
 @    s7 symbol char font 0
 @    s7 symbol skip 0
@@ -716,7 +712,7 @@
 @    s7 avalue offset 0.000000 , 0.000000
 @    s7 errorbar off
 @    s7 errorbar place both
-@    s7 errorbar color 8
+@    s7 errorbar color 1
 @    s7 errorbar pattern 1
 @    s7 errorbar size 1.000000
 @    s7 errorbar linewidth 1.0
