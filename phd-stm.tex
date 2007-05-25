@@ -109,7 +109,7 @@ applications into quadrants based on the number and size of the
 transactions that they perform.  Applications in Quads II and IV
 require an efficient transaction implementation, because they contain
 many transactional operations.
-Quads III and IV contain at least some very large transactions, which
+Quads III and IV contain at least some large transactions, which
 pose difficulties for currently proposed hardware transactional memory
 schemes.  We now
 examine the benchmarks in each quadrant to determine why its program
@@ -135,7 +135,7 @@ comfortably fit the known hardware transactional memory schemes
 one were to be implemented.
 
 Quad III includes \texttt{205\_raytrace}, a ray-tracing renderer.  A
-small number of transactions are performed, but they may grow very
+small number of transactions are performed, but they may grow
 large.  Existing bounded hardware transactional schemes do not
 suffice.  The large
 transactions may account for a large percentage of total memory
@@ -195,7 +195,7 @@ hardware transactional memory schemes only efficiently handle
 relatively short-lived and small transactions (Quad I or II),
 although they are efficient for these transactions.  Object-based
 transaction systems can asymptotically approach that efficiency for
-very long-lived transactions;  the existence of which is shown in
+long-lived transactions;  the existence of which is shown in
 \figref{tr-sz-all-1}, which plots
 the distribution of transaction sizes in SPECjvm98
 on a semi-log scale.
@@ -487,7 +487,7 @@ procedure to commit or abort a transaction.
 
 I could support nontransactional read and write (that is,
 reads and writes that take place outside of any transaction) by
-creating a new very short transaction that encloses only the single
+creating a new short transaction that encloses only the single
 read or write.  Since nontransactional accesses to objects can be
 frequent, I provide more efficient implementations with
 the same semantics.
@@ -946,7 +946,7 @@ The tight read/write dependency makes counter increment
 a ``worst case'' benchmark, however.  In general,
 modern compilers are good at separating reads from writes in
 ``real'' code to mask load latency, but this particular microbenchmark
-can not be reasonably unrolled to accomplish the separation.  My
+cannot be reasonably unrolled to accomplish the separation.  My
 conclusions about the fundamental costs of read and write costs should
 thus be tempered by the knowledge that some of these costs are in
 practice masked by the same standard compiler techniques used to
@@ -2350,7 +2350,7 @@ with large write rates are affected to a greater degree.
 The line graph in the background of \figref{phd-spec-nt} shows the
 write rate for each benchmark.  Read and write rates for the benchmark
 are shown in more detail in \figref{phd-spec-nt-rate}.  Write rate is
-a very good predictor for overall check overhead.  The \texttt{mpegaudio}
+a good predictor for overall check overhead.  The \texttt{mpegaudio}
 benchmark, for example, has the largest measured overhead, 249\%, and
 a write rate 4 times as large as any other benchmark.
 
@@ -2364,7 +2364,7 @@ expensive as the read checks.
 
 \figref{phd-spec-nt-pred} shows the predicted performance overlaid on
 actual performance.  The \texttt{jess}, \texttt{raytrace}, and
-\texttt{db} benchmarks have very similar read rates.  The
+\texttt{db} benchmarks have similar read rates.  The
 \texttt{jess} benchmark has 39\% higher overhead than
 \texttt{raytrace}, however, although
 its write rate is only 9\% higher. Similarly, \texttt{db} has a 64\%
@@ -2965,7 +2965,7 @@ accesses are $O(1)$.
 
 Our use of functional arrays is single-threaded in the common case,
 when transactions do not abort.  Chuang's scheme is attractive because
-it limits the worst-case cost of an abort, with very little added
+it limits the worst-case cost of an abort with little added
 complexity.   In this section I will present a lock-free version of
 Chuang's randomized algorithm.
 
@@ -2982,7 +2982,7 @@ updating.
 
 The key to constant-time access for single-threaded use is provided by the read
 operation.  A read to the root simply reads the appropriate value from
-the cache.  However, a read to a differential node triggers a series
+the cache.  A read to a differential node, however, triggers a series
 of rotations that swap the direction of differential nodes and result
 in the current array acquiring the cache and becoming the new root.
 This sequence of rotations is called \emph{re-rooting}, and is
@@ -3147,7 +3147,7 @@ using this six-step approach.
 
 %% \section{Optimizations}
 %% Re-rooting is the most complicated part of the functional array
-%% algorithm.  It can be optimized in a number of ways.  For example,
+%% algorithm.  It can be optimized in several ways.  For example,
 
 %% %unsync rotate for transaction-local data.
 %% The first is to recognize that some array versions can only be seen by
@@ -3183,7 +3183,7 @@ void do_bench(struct aarray *obj, index_t len) {
   /** Initialize the array */
   for (i=0; i<len; i++)
     obj = write(obj, i, i);
-  /** Now reverse the array a number of times. */
+  /** Now reverse the array many times. */
   for (j=0; j<(REPETITIONS*2); j++) {
 #if defined(SINGLETHREAD) // single-threaded access
     for (i=0; i<len/2; i++) {

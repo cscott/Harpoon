@@ -183,7 +183,7 @@ but only the actual I/O must be performed uninterrupted: the
 transaction can still be aborted at any time prior to commit.
 
 If output and input need to be interleaved, or the input occurs after
-an output and thus can not be moved to the start of the transaction,
+an output and thus cannot be moved to the start of the transaction,
 uninterruptible transactions are still required.  This approach thus
 works around the disadvantages of mutual exclusion in some cases, but
 a single misplaced debugging statement can still force serialization.

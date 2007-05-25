@@ -56,11 +56,6 @@ make figure 5.7 bigger.
 
 make figure 5.9 smaller.
 
-very => damn
-However, =>
-can not => cannot
--- => ---
-
 Topic paragraph chapter 7. (CEL)
 
 -------------
