@@ -917,350 +917,6 @@ copy-through.  The {\tt checkWriteField} routine is shown in
 Then, for each write, we simply write to the identified version, as
 shown at the bottom of \figref{promrwt}.
 
-\section{Performance limits for nontransactional code}
-\label{sec:counter-bench}
-The software transaction system outlined in this section depends on
-the insertion of simple read and write checks in nontransactional
-code.  The performance of read and write barriers has been
-well-studied in the garbage collection community, but our checks are
-slightly different: in particular, they are checks on the
-\textit{contents} of a memory cell, rather than on its address.  
-Thus our checks
-introduce a more direct dependency which may affect performance.
-Further, our write check involves a LL/SC instruction pair, which may
-behave differently from the standard loads and stores used in
-barriers.
-
-In this section I use a simple counter microbenchmark to evaluate the
-``best worst case'' nontransactional performance of \apex.
-It is an idealized ``best case'' in that I don't benchmark
-the effects of ``false flags'' or other forays into the transactional
-code path, nor do I account for double-word or subword writes,
-cache effects due to code duplication, or other details of a real
-implementation.  I investigate these effects with full
-benchmarks in \secref{full-bench}.  I also freely
-optimize down to the assembly level to determine the fundamental
-performance limits.  
-
-The tight read/write dependency makes counter increment
-a ``worst case'' benchmark, however.  In general,
-modern compilers are good at separating reads from writes in
-``real'' code to mask load latency, but this particular microbenchmark
-cannot be reasonably unrolled to accomplish the separation.  My
-conclusions about the fundamental costs of read and write costs should
-thus be tempered by the knowledge that some of these costs are in
-practice masked by the same standard compiler techniques used to
-mitigate memory-access latencies.
-
-\begin{figure}
-\sis\fontsize{9}{10}\begin{verbatim}
-typedef int32_t field_t;
-
-struct oobj {
-  struct version *version;
-  struct readerList * volatile readerList;
-  volatile field_t field[NUM_FIELDS];
-};
-void do_bench(struct oobj *obj) {
-  int i;
-  for (i=0; i<REPETITIONS; i++) {
-    field_t v = read(obj, 0);
-    v++;
-    write(obj, 0, v);
-  }
-}
-\end{verbatim}
-\caption{Counter microbenchmark to evaluate read- and write-check
-  overhead for nontransactional code.}
-\label{fig:counter-bench}
-\end{figure}
-
-\begin{figure}
-\sis\fontsize{9}{10}\begin{verbatim}
-#if !defined(WITH_READ_CHECKS)
-
-static inline field_t read(struct oobj *obj, int idx) {
-  field_t val = obj->field[idx];
-  return val;
-}
-
-#else
-
-static inline field_t read(struct oobj *obj, int idx) {
-  field_t val = obj->field[idx];
-  if (unlikely(val==FLAG))
-    return unusualRead(obj,idx);
-  else return val;
-}
-
-#endif
-\end{verbatim}
-\caption{C implementation of read checks for counter microbenchmark.}
-\label{fig:counter-read}
-\end{figure}
-
-\begin{figure}
-\sis\fontsize{9}{10}\begin{verbatim}
-#if !defined(WITH_WRITE_CHECKS)
-
-static inline void write(struct oobj *obj, int idx, field_t val) {
-  obj->field[idx] = val;
-}
-
-#else
-
-static inline void write(struct oobj *obj, int idx, field_t val) {
-  if (unlikely(val==FLAG))
-    unusualWrite(obj,idx,val); // never called
-  else {
-    do {
-      if (unlikely(NULL != LL(&(obj->readerList)))) {
-        unusualWrite(obj,idx,val); // never called
-        break;
-      }
-    } while (unlikely(!SC(&(obj->field[idx]), val)));
-  }
-}
-
-#endif
-\end{verbatim}
-\caption{C implementation of write checks for counter microbenchmark.}
-\label{fig:counter-write}
-\end{figure}
-
-\figref{counter-bench} presents the basic structure of the counter
-microbenchmark. The \texttt{read()} and \texttt{write()} methods
-have appropriate definitions inlined for each variant of the
-benchmark.  The \texttt{readerList} and \texttt{field}
-fields of the \texttt{struct oobj} are marked \texttt{volatile} to
-prevent the C compiler from optimizing away the accesses we are
-interested in benchmarking.  Without these declarations, \texttt{gcc}
-4.1.2 optimizes away the entire benchmark loop and replaces it with
-a direct addition of \texttt{REPETITIONS}\@.
-
-\figref{counter-read} shows the baseline \texttt{read()}
-implementation, which inlines to a single \texttt{lwz} instruction on
-PowerPC, along with the C implementation of the read check necessary
-for nontransactional code under our transaction system.  We use 
-the \texttt{unlikely()} macro, implemented using the
-\texttt{gcc} extension \texttt{\_\_builtin\_expect()}, to apply the
-appropriate static prediction bits indicating that \texttt{FLAG} is
-expected to be an unusual value.  In our microbenchmark, this
-prediction is always correct.  The C compiler must still save
-whatever registers are necessary to allow the call to
-\texttt{unusualRead()}, although this function is never actually called
-during the microbenchmark.  The \texttt{unusualRead} function would be
-expected to perform the remainder of the \texttt{readNT} algorithm
-from \figref{promrwnt}, including looking up and copying back the most
-recently-committed value for this field.
-
-\figref{counter-write} shows the equivalent implementation pairs for a
-nontransactional write.  The basic implementation inlines to a single
-\texttt{stw} instruction.  The write-check version at the bottom must
-perform three tests.  First, it must ensure that the value to be
-written is not \texttt{FLAG}\@.  If it is, we must use the ``false flag''
-mechanism to write it, modeled here by a call to
-\texttt{unusualWrite()}.  This check can be optimized away when
-writing a constant,\footnote{Hennessy and Patterson indicate that 35\%
-  of integer instructions use an immediate operand \cite[p. 78]{HennessyPa96}.
-  Their methodology does not
-  allow breaking out the percentage of stores specifically.}
- but the \texttt{volatile} declarations ensure that
-our benchmark always performs the check.  Second, we must perform
-a load-linked of the object's \texttt{readerList} to check that there
-are not any current transactional readers of this object.  Last, we
-perform a store-conditional of the value we wish to write and check
-that it was successful.  Unlike the other two tests, this check
-fails occasionally\footnote{Experimentally, about 3,600 times in
-  the 1 billion repetitions of the write during the counter microbenchmark.}
- during the benchmark run due to context switches
-that may occur between the load-linked and the store-conditional
-instructions.
-
-\epsbigfigput[Check overhead for counter microbenchmark]{phd-counter}{%
-  Time overhead of read checks, write checks,
-  and both read and write checks for nontransactional code, in both a
-  pure C implementation and optimized assembly.}
-
-\figref{phd-counter} shows the performance of this benchmark on the
-PowerPC hardware fully described in \secref{full-bench}.
-Read checks, even in this worst case where the value read is demanded
-immediately, only add 14\% overhead.  Write checks are more costly,
-due to the load-linked and store-conditional pair.  Specifically, they add 200\%
-overhead to the benchmark.  Combining read and write checks yields the
-expected 214\% overhead, as our microbenchmark was carefully constructed to
-avoid the opportunities for instruction-level parallelism one might
-expect in real-world applications.
-
-\begin{figure}
-\sis\fontsize{9}{10}\begin{alltt}
-\textit{do_bench:              do_bench:
-  mflr 0                 mflr 0
-  stwu 1,-16(1)          stwu 1,-16(1)
-  lis 5,0x3b9a           addi 10,3,8
-  li 8,0                 addi 11,3,4
-  ori 5,5,51712          stw 0,20(1)
-  addi 6,3,4             lis 0,0x3b9a
-  addi 7,3,8             ori 0,0,51712
-  stw 0,20(1)            mtctr 0
-  b .L4                  b .L4
-.L22:
-  mr 10,6
-  mr 11,7              }\textbf{.L5:
-.L5:                   0:
-  lwarx 0,0,10           lwarx 0,0,11
-  cmpwi 7,0,0            cmpwi 0,0
-  bne- 7,.L19            beq+ 1f
-  stwcx. 9,0,11          b . # stub for unusualWrite branch
-  li 0,0               1:stwcx. 9,0,10
-  bne- 0f                bne 0b
-  li 0,1
-0:                       bdz .L14
-  cmpwi 7,0,0
-  beq- 7,.L5
-  addi 8,8,1
-  cmpw 7,8,5
-  beq- 7,.L21}\textit{
-.L4:                   .L4:
-  lwz 9,8(3)             lwz 9,8(3)
-  cmpwi 7,9,-13623       cmpwi 7,9,-13623
-  addi 9,9,1             addi 9,9,1
-  bne+ 7,.L22            bne+ 7,.L5
-.L21:                  .L14:
-  lwz 0,8(3)             lwz 0,8(3)
-                         xoris 9,0,0xc465
-  cmpw 7,0,8             cmpwi 7,9,-13824
-  bne- 7,.L23            bne 7,.L15
-  lwz 0,20(1)            lwz 0,20(1)
-  addi 1,1,16            addi 1,1,16
-  mtlr 0                 mtlr 0             
-  blr                    blr}
-\end{alltt}
-\caption[PowerPC assembly for counter microbenchmark with
-  write checks.]{PowerPC assembly for counter microbenchmark with
-  write checks.  The right-hand column is generated from the C
-  implementation.  The left-hand column has an optimized version of the
-  write check inlined into the code using the \texttt{asm} keyword.
-  Italicized code is essentially unchanged.  The optimized section is
-  shown in boldface.}
-\label{fig:write-assem}
-\end{figure}
-\begin{figure}
-\sis\fontsize{9}{10}\begin{verbatim}
-    # repetition count is in the count register to start
-    b 0f
-    .balign 32 # align to 32-byte cache-line boundary
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-0:  lwarx 5,0,0
-    lwz 6, 0(9)
-1:  ori 8, 6, 3
-    addi 7, 6, 1
-    cmpwi 1, 5,0
-    cmpwi 2, 8, 0xFFFFCACB
-    bne- 1, 0b # stub: unusualWrite
-    beq- 2, 0b # stub: unusualRead or unusualWrite
-    stwcx. 7,0,9
-    lwarx 5,0,0
-    lwz 6, 0(9)
-    bne- 0, 1b
-    bdnz 1b
-\end{verbatim}
-\caption{Optimized PowerPC assembly for counter microbenchmark with both read
-  and write checks.}
-\label{fig:rw-assem}
-\end{figure}
-Examination of the assembly code generated for this simple benchmark
-seems to indicate substantial scope for improvement.  The inline
-assembly mechanism of \texttt{gcc}/C provides no inherent support for
-instructions 
-like the PowerPC's ``store-conditional'' (\texttt{stwcx.}) that leave
-their results in a condition code register.  \figref{write-assem}
-shows the assembly emitted for the write-check version of the
-microbenchmark, with the cumbersome mechanism required to move the
-condition code to a register so that it can then be retested.  We can
-easily hand-code a better write-check mechanism, shown in the
-right-hand column of the figure.\footnote{This version has a stub where a
-function call to \texttt{unusualWrite} would usually go; the correct
-code here would branch to a small thunk that performs the
-frame operations and register saves necessary to adhere to the C
-calling convention; \texttt{gcc} makes it difficult to ensure that
-this thunk is ``near enough'' for a direct branch (within a 24-bit
-signed displacement) without duplicating it needlessly.}
-The optimized store-conditional test reduces write-check overhead to
-186\% and combined read- and write-check overhead to 199\%, as shown
-in \figref{phd-counter}.
-
-Further performance improvement is possible by optimizing the
-benchmark with both read and write checks as a whole. \figref{rw-assem}
-shows an
-optimized assembly version of our \texttt{do\_bench()} function.  I've
-primarily rescheduled the code here to separate dependent instructions
-as much as possible, but I've also ensured repeatable instruction
-cache alignment,\footnote{The MPC7447 (G4) PowerPC has a 32-byte cache
-  line, although fetches occur in 16-byte (4 instruction) chunks.}
-replaced our canonical \texttt{FLAG} value with
-\texttt{0xFFFFCACA}, which can be represented by the PowerPC's 16-bit
-signed immediate instruction field (eliminating the need for a
-register), and combined the flag checks in
-the read and write routines.\footnote{Again, the branches to
-\texttt{unusualRead()} and 
-\texttt{unusualWrite()} are difficult to express in this hybrid of C
-and assembly, but small stubs would be written to save registers and
-perform a branch with the appropriate calling conventions.}
-The read-and-write check overhead is improved to 143\% with these
-optimizations.  The remaining overhead is
-due mostly to the irreducible dependency between the
-load-linked and store-conditional instructions.
-\note{It may be worth looking closely at the instruction schedule for
-this optimized counter loop to understand the fundamental performance
-limits.}
-
-\epsbigfigput[Check overhead as percentage of total dynamic instruction count]
-  {phd-counter-instr}{%
-  Check overhead as percentage of total dynamic instruction count.
-  The bar on the left is the DLX instruction mix for SPECint92 from
-  \cite[p.105]{HennessyPa96}.  On the right is the same instruction
-  mix after scaling the loads and stores according to
-  \figref{phd-counter}.}
-
-Hennessy and Patterson's measurements indicate that load and store
-instructions comprise respectively 26\% and 9\% of dynamic instruction
-counts in SPECint92 on a RISC microarchitecture (DLX)
-\cite[p. 105]{HennessyPa96}.
-As a rough estimate, using dynamic instruction count as a proxy for
-instruction time,
-the 14\% read overhead and 186\% write overhead measured
-in this microbenchmark thus translate into 20\% net overhead for
-nontransactional code.\footnote{$0.65 + (1.14 \times 0.26) + (2.86
-  \times 0.09) = 1.20$} If we conservatively assume that most of the
-improvement in \figref{rw-assem}'s optimized checks should be credited
-to reduced write-check overhead, giving the same 14\% read overhead
-but only 129\% write overhead, the same metric gives only 15\% net
-overhead, as shown in \figref{phd-counter-instr}.  This figure should be
-considered a rough lower bound for the time overhead, possible with
-aggressive optimization and scheduling.\footnote{This
-  calculation combines over- and underestimation, making this number
-  only a rough bound.  The use of dynamic instruction count, rather
-  than dynamic instruction time, likely underestimates the
-  contribution of loads and stores to the run time.
-  Scheduling, prefetching, and store buffers can pipeline the cost of
-  the loads and stores, however, which might cause our overhead estimate to
-  exceed the actual cost.  \Secref{full-bench} presents actual
-  overhead measurements of real Java applications.}
-
-\section*{Implementation}
-Some details are not yet covered by our model.
-For example, how are fields of different byte lengths handled?  How does
-transactional Java code interact with the garbage collector, or with
-native code in the runtime system?  \Charef{stmimpl} addresses the
-real-world
-implementation details of our software transaction system.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Implementing efficient software transactions}\label{cha:stmimpl}
 \epigraphhead[70]{\epigraph{%
@@ -1269,8 +925,8 @@ In theory, there is no difference between theory and practice.
 
 This chapter discusses the challenges involved in translating the
 design from \charef{stm} to a practical Java
-compiler, the implementation techniques I used, and the performance
-achieved.  I conclude by listing some limitations of the
+compiler and the implementation techniques I used.
+I conclude by listing some limitations of the
 implementation, and describing how they may be overcome in a
 production-quality compiler.
 
@@ -2231,6 +1887,407 @@ attempting to commit the transaction, and resumes executing in the same
 transaction when it awakes.  This is sufficient for the limited uses of
 \texttt{wait} in the benchmarks of this thesis.
 
+\section{Additional optimizations}\label{sec:moreopt}
+
+\note{include \#s from unique object benchmarks?}
+This section discusses some additional optimizations
+that could improve performance on transactional code; they have
+not been implemented in the present compiler.  The improvements
+include version passing, escape analysis, object immutability
+analysis, and fast allocation.
+
+As described in \secref{synctrans}, the basic transaction
+transformation inserts a call to
+\texttt{ensureReader}/\texttt{ensureWriter} once per object prior to a
+read/write of a field in the object.  These methods return a version
+object (the ``current version'') which is then passed to the
+\texttt{readT}/\texttt{writeT} methods.  A straightforward improvement
+would avoid redundant calls to
+\texttt{ensureReader}/\texttt{ensureWriter} by passing the ``current
+version'' of the various parameters when a method is invoked.  A
+strictness analysis should be performed, to avoid marking fields as
+read/written that are not guaranteed to be read/written by the
+transaction, and the ``current version'' added as an extra argument
+for the strict parameters of the method.  This allows the caller to
+combine redundant \texttt{ensureReader}/\texttt{ensureWriter}
+invocations for the argument.\footnote{One could also consider adding
+``current version'' arguments even for non-strict parameters, with the
+  caveat that the caller pass in NULL if it had not already
+  read/written the non-strict parameter.
+  All variables used in a method or the method's callees would then be
+  potentially eligible for version passing, however.  Some more sophisticated
+  heuristic would be needed to determine for which objects
+  version passing is worthwhile.}
+
+Escape analysis \cite{WhaleyRi99} is a standard technique to reduce
+unnecessary synchronization in Java programs.  In a typical
+application, monitor locks on objects that do not escape their thread
+are eliminated; these lock eliminations can translate to transaction
+eliminations as well.  Further, escape analysis can identify
+individual objects that do not escape their method, thread,
+or call context, and replace the \texttt{readT}/\texttt{writeT} or
+\texttt{readNT}/\texttt{writeNT} protocol with direct access.
+
+Another orthogonal analysis can identify object immutability
+\cite{ZibinPoArKiEr07}.  Immutable objects can be read directly and
+their field values can be safely cached across transaction boundaries.
+Further, the initialization of immutable objects typically can be done
+with direct writes as well.
+
+Finally, a substantial portion of the cost of small transactions is
+spent allocating the version object, especially for the conservative
+collector used in the present implementation.  Fast allocators could
+alleviate this bottleneck \cite{Appel89}.  Alternatively, a free list
+of versions could be hung from objects involved in many transactions:
+as soon as a version commits, the previous version can be added to the
+free list for the use of the next transaction.
+
+\chapter{Performance}\label{cha:perf}
+
+\section{Performance limits for nontransactional code}
+\label{sec:counter-bench}
+The software transaction system outlined in this section depends on
+the insertion of simple read and write checks in nontransactional
+code.  The performance of read and write barriers has been
+well-studied in the garbage collection community, but our checks are
+slightly different: in particular, they are checks on the
+\textit{contents} of a memory cell, rather than on its address.  
+Thus our checks
+introduce a more direct dependency which may affect performance.
+Further, our write check involves a LL/SC instruction pair, which may
+behave differently from the standard loads and stores used in
+barriers.
+
+In this section I use a simple counter microbenchmark to evaluate the
+``best worst case'' nontransactional performance of \apex.
+It is an idealized ``best case'' in that I don't benchmark
+the effects of ``false flags'' or other forays into the transactional
+code path, nor do I account for double-word or subword writes,
+cache effects due to code duplication, or other details of a real
+implementation.  I investigate these effects with full
+benchmarks in \secref{full-bench}.  I also freely
+optimize down to the assembly level to determine the fundamental
+performance limits.  
+
+The tight read/write dependency makes counter increment
+a ``worst case'' benchmark, however.  In general,
+modern compilers are good at separating reads from writes in
+``real'' code to mask load latency, but this particular microbenchmark
+cannot be reasonably unrolled to accomplish the separation.  My
+conclusions about the fundamental costs of read and write costs should
+thus be tempered by the knowledge that some of these costs are in
+practice masked by the same standard compiler techniques used to
+mitigate memory-access latencies.
+
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+typedef int32_t field_t;
+
+struct oobj {
+  struct version *version;
+  struct readerList * volatile readerList;
+  volatile field_t field[NUM_FIELDS];
+};
+void do_bench(struct oobj *obj) {
+  int i;
+  for (i=0; i<REPETITIONS; i++) {
+    field_t v = read(obj, 0);
+    v++;
+    write(obj, 0, v);
+  }
+}
+\end{verbatim}
+\caption{Counter microbenchmark to evaluate read- and write-check
+  overhead for nontransactional code.}
+\label{fig:counter-bench}
+\end{figure}
+
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+#if !defined(WITH_READ_CHECKS)
+
+static inline field_t read(struct oobj *obj, int idx) {
+  field_t val = obj->field[idx];
+  return val;
+}
+
+#else
+
+static inline field_t read(struct oobj *obj, int idx) {
+  field_t val = obj->field[idx];
+  if (unlikely(val==FLAG))
+    return unusualRead(obj,idx);
+  else return val;
+}
+
+#endif
+\end{verbatim}
+\caption{C implementation of read checks for counter microbenchmark.}
+\label{fig:counter-read}
+\end{figure}
+
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+#if !defined(WITH_WRITE_CHECKS)
+
+static inline void write(struct oobj *obj, int idx, field_t val) {
+  obj->field[idx] = val;
+}
+
+#else
+
+static inline void write(struct oobj *obj, int idx, field_t val) {
+  if (unlikely(val==FLAG))
+    unusualWrite(obj,idx,val); // never called
+  else {
+    do {
+      if (unlikely(NULL != LL(&(obj->readerList)))) {
+        unusualWrite(obj,idx,val); // never called
+        break;
+      }
+    } while (unlikely(!SC(&(obj->field[idx]), val)));
+  }
+}
+
+#endif
+\end{verbatim}
+\caption{C implementation of write checks for counter microbenchmark.}
+\label{fig:counter-write}
+\end{figure}
+
+\figref{counter-bench} presents the basic structure of the counter
+microbenchmark. The \texttt{read()} and \texttt{write()} methods
+have appropriate definitions inlined for each variant of the
+benchmark.  The \texttt{readerList} and \texttt{field}
+fields of the \texttt{struct oobj} are marked \texttt{volatile} to
+prevent the C compiler from optimizing away the accesses we are
+interested in benchmarking.  Without these declarations, \texttt{gcc}
+4.1.2 optimizes away the entire benchmark loop and replaces it with
+a direct addition of \texttt{REPETITIONS}\@.
+
+\figref{counter-read} shows the baseline \texttt{read()}
+implementation, which inlines to a single \texttt{lwz} instruction on
+PowerPC, along with the C implementation of the read check necessary
+for nontransactional code under our transaction system.  We use 
+the \texttt{unlikely()} macro, implemented using the
+\texttt{gcc} extension \texttt{\_\_builtin\_expect()}, to apply the
+appropriate static prediction bits indicating that \texttt{FLAG} is
+expected to be an unusual value.  In our microbenchmark, this
+prediction is always correct.  The C compiler must still save
+whatever registers are necessary to allow the call to
+\texttt{unusualRead()}, although this function is never actually called
+during the microbenchmark.  The \texttt{unusualRead} function would be
+expected to perform the remainder of the \texttt{readNT} algorithm
+from \figref{promrwnt}, including looking up and copying back the most
+recently-committed value for this field.
+
+\figref{counter-write} shows the equivalent implementation pairs for a
+nontransactional write.  The basic implementation inlines to a single
+\texttt{stw} instruction.  The write-check version at the bottom must
+perform three tests.  First, it must ensure that the value to be
+written is not \texttt{FLAG}\@.  If it is, we must use the ``false flag''
+mechanism to write it, modeled here by a call to
+\texttt{unusualWrite()}.  This check can be optimized away when
+writing a constant,\footnote{Hennessy and Patterson indicate that 35\%
+  of integer instructions use an immediate operand \cite[p. 78]{HennessyPa96}.
+  Their methodology does not
+  allow breaking out the percentage of stores specifically.}
+ but the \texttt{volatile} declarations ensure that
+our benchmark always performs the check.  Second, we must perform
+a load-linked of the object's \texttt{readerList} to check that there
+are not any current transactional readers of this object.  Last, we
+perform a store-conditional of the value we wish to write and check
+that it was successful.  Unlike the other two tests, this check
+fails occasionally\footnote{Experimentally, about 3,600 times in
+  the 1 billion repetitions of the write during the counter microbenchmark.}
+ during the benchmark run due to context switches
+that may occur between the load-linked and the store-conditional
+instructions.
+
+\epsbigfigput[Check overhead for counter microbenchmark]{phd-counter}{%
+  Time overhead of read checks, write checks,
+  and both read and write checks for nontransactional code, in both a
+  pure C implementation and optimized assembly.}
+
+\figref{phd-counter} shows the performance of this benchmark on the
+PowerPC hardware fully described in \secref{full-bench}.
+Read checks, even in this worst case where the value read is demanded
+immediately, only add 14\% overhead.  Write checks are more costly,
+due to the load-linked and store-conditional pair.  Specifically, they add 200\%
+overhead to the benchmark.  Combining read and write checks yields the
+expected 214\% overhead, as our microbenchmark was carefully constructed to
+avoid the opportunities for instruction-level parallelism one might
+expect in real-world applications.
+
+\begin{figure}
+\sis\fontsize{9}{10}\begin{alltt}
+\textit{do_bench:              do_bench:
+  mflr 0                 mflr 0
+  stwu 1,-16(1)          stwu 1,-16(1)
+  lis 5,0x3b9a           addi 10,3,8
+  li 8,0                 addi 11,3,4
+  ori 5,5,51712          stw 0,20(1)
+  addi 6,3,4             lis 0,0x3b9a
+  addi 7,3,8             ori 0,0,51712
+  stw 0,20(1)            mtctr 0
+  b .L4                  b .L4
+.L22:
+  mr 10,6
+  mr 11,7              }\textbf{.L5:
+.L5:                   0:
+  lwarx 0,0,10           lwarx 0,0,11
+  cmpwi 7,0,0            cmpwi 0,0
+  bne- 7,.L19            beq+ 1f
+  stwcx. 9,0,11          b . # stub for unusualWrite branch
+  li 0,0               1:stwcx. 9,0,10
+  bne- 0f                bne 0b
+  li 0,1
+0:                       bdz .L14
+  cmpwi 7,0,0
+  beq- 7,.L5
+  addi 8,8,1
+  cmpw 7,8,5
+  beq- 7,.L21}\textit{
+.L4:                   .L4:
+  lwz 9,8(3)             lwz 9,8(3)
+  cmpwi 7,9,-13623       cmpwi 7,9,-13623
+  addi 9,9,1             addi 9,9,1
+  bne+ 7,.L22            bne+ 7,.L5
+.L21:                  .L14:
+  lwz 0,8(3)             lwz 0,8(3)
+                         xoris 9,0,0xc465
+  cmpw 7,0,8             cmpwi 7,9,-13824
+  bne- 7,.L23            bne 7,.L15
+  lwz 0,20(1)            lwz 0,20(1)
+  addi 1,1,16            addi 1,1,16
+  mtlr 0                 mtlr 0             
+  blr                    blr}
+\end{alltt}
+\caption[PowerPC assembly for counter microbenchmark with
+  write checks.]{PowerPC assembly for counter microbenchmark with
+  write checks.  The right-hand column is generated from the C
+  implementation.  The left-hand column has an optimized version of the
+  write check inlined into the code using the \texttt{asm} keyword.
+  Italicized code is essentially unchanged.  The optimized section is
+  shown in boldface.}
+\label{fig:write-assem}
+\end{figure}
+\begin{figure}
+\sis\fontsize{9}{10}\begin{verbatim}
+    # repetition count is in the count register to start
+    b 0f
+    .balign 32 # align to 32-byte cache-line boundary
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+0:  lwarx 5,0,0
+    lwz 6, 0(9)
+1:  ori 8, 6, 3
+    addi 7, 6, 1
+    cmpwi 1, 5,0
+    cmpwi 2, 8, 0xFFFFCACB
+    bne- 1, 0b # stub: unusualWrite
+    beq- 2, 0b # stub: unusualRead or unusualWrite
+    stwcx. 7,0,9
+    lwarx 5,0,0
+    lwz 6, 0(9)
+    bne- 0, 1b
+    bdnz 1b
+\end{verbatim}
+\caption{Optimized PowerPC assembly for counter microbenchmark with both read
+  and write checks.}
+\label{fig:rw-assem}
+\end{figure}
+Examination of the assembly code generated for this simple benchmark
+seems to indicate substantial scope for improvement.  The inline
+assembly mechanism of \texttt{gcc}/C provides no inherent support for
+instructions 
+like the PowerPC's ``store-conditional'' (\texttt{stwcx.}) that leave
+their results in a condition code register.  \figref{write-assem}
+shows the assembly emitted for the write-check version of the
+microbenchmark, with the cumbersome mechanism required to move the
+condition code to a register so that it can then be retested.  We can
+easily hand-code a better write-check mechanism, shown in the
+right-hand column of the figure.\footnote{This version has a stub where a
+function call to \texttt{unusualWrite} would usually go; the correct
+code here would branch to a small thunk that performs the
+frame operations and register saves necessary to adhere to the C
+calling convention; \texttt{gcc} makes it difficult to ensure that
+this thunk is ``near enough'' for a direct branch (within a 24-bit
+signed displacement) without duplicating it needlessly.}
+The optimized store-conditional test reduces write-check overhead to
+186\% and combined read- and write-check overhead to 199\%, as shown
+in \figref{phd-counter}.
+
+Further performance improvement is possible by optimizing the
+benchmark with both read and write checks as a whole. \figref{rw-assem}
+shows an
+optimized assembly version of our \texttt{do\_bench()} function.  I've
+primarily rescheduled the code here to separate dependent instructions
+as much as possible, but I've also ensured repeatable instruction
+cache alignment,\footnote{The MPC7447 (G4) PowerPC has a 32-byte cache
+  line, although fetches occur in 16-byte (4 instruction) chunks.}
+replaced our canonical \texttt{FLAG} value with
+\texttt{0xFFFFCACA}, which can be represented by the PowerPC's 16-bit
+signed immediate instruction field (eliminating the need for a
+register), and combined the flag checks in
+the read and write routines.\footnote{Again, the branches to
+\texttt{unusualRead()} and 
+\texttt{unusualWrite()} are difficult to express in this hybrid of C
+and assembly, but small stubs would be written to save registers and
+perform a branch with the appropriate calling conventions.}
+The read-and-write check overhead is improved to 143\% with these
+optimizations.  The remaining overhead is
+due mostly to the irreducible dependency between the
+load-linked and store-conditional instructions.
+\note{It may be worth looking closely at the instruction schedule for
+this optimized counter loop to understand the fundamental performance
+limits.}
+
+\epsbigfigput[Check overhead as percentage of total dynamic instruction count]
+  {phd-counter-instr}{%
+  Check overhead as percentage of total dynamic instruction count.
+  The bar on the left is the DLX instruction mix for SPECint92 from
+  \cite[p.105]{HennessyPa96}.  On the right is the same instruction
+  mix after scaling the loads and stores according to
+  \figref{phd-counter}.}
+
+Hennessy and Patterson's measurements indicate that load and store
+instructions comprise respectively 26\% and 9\% of dynamic instruction
+counts in SPECint92 on a RISC microarchitecture (DLX)
+\cite[p. 105]{HennessyPa96}.
+As a rough estimate, using dynamic instruction count as a proxy for
+instruction time,
+the 14\% read overhead and 186\% write overhead measured
+in this microbenchmark thus translate into 20\% net overhead for
+nontransactional code.\footnote{$0.65 + (1.14 \times 0.26) + (2.86
+  \times 0.09) = 1.20$} If we conservatively assume that most of the
+improvement in \figref{rw-assem}'s optimized checks should be credited
+to reduced write-check overhead, giving the same 14\% read overhead
+but only 129\% write overhead, the same metric gives only 15\% net
+overhead, as shown in \figref{phd-counter-instr}.  This figure should be
+considered a rough lower bound for the time overhead, possible with
+aggressive optimization and scheduling.\footnote{This
+  calculation combines over- and underestimation, making this number
+  only a rough bound.  The use of dynamic instruction count, rather
+  than dynamic instruction time, likely underestimates the
+  contribution of loads and stores to the run time.
+  Scheduling, prefetching, and store buffers can pipeline the cost of
+  the loads and stores, however, which might cause our overhead estimate to
+  exceed the actual cost.  \Secref{full-bench} presents actual
+  overhead measurements of real Java applications.}
+
+\section*{Implementation}
+Some details are not yet covered by our model.
+For example, how are fields of different byte lengths handled?  How does
+transactional Java code interact with the garbage collector, or with
+native code in the runtime system?  \Charef{stmimpl} addresses the
+real-world
+implementation details of our software transaction system.
+
 \section{Performance}\label{sec:full-bench}
 In this section I evaluate the performance of the \apex implementation.
 All experiments were performed on a 1GHz MPC7447 (G4) PowerPC processor,
@@ -2462,61 +2519,6 @@ performance numbers indicate that it is not achieving its goal.
 %   4. cache effects etc due to code splitting
 %   5. array impact
 %   6. transaction creation cost
-
-\section{Additional optimizations}\label{sec:moreopt}
-
-\note{include \#s from unique object benchmarks?}
-This section discusses some additional optimizations
-that could improve performance on transactional code; they have
-not been implemented in the present compiler.  The improvements
-include version passing, escape analysis, object immutability
-analysis, and fast allocation.
-
-As described in \secref{synctrans}, the basic transaction
-transformation inserts a call to
-\texttt{ensureReader}/\texttt{ensureWriter} once per object prior to a
-read/write of a field in the object.  These methods return a version
-object (the ``current version'') which is then passed to the
-\texttt{readT}/\texttt{writeT} methods.  A straightforward improvement
-would avoid redundant calls to
-\texttt{ensureReader}/\texttt{ensureWriter} by passing the ``current
-version'' of the various parameters when a method is invoked.  A
-strictness analysis should be performed, to avoid marking fields as
-read/written that are not guaranteed to be read/written by the
-transaction, and the ``current version'' added as an extra argument
-for the strict parameters of the method.  This allows the caller to
-combine redundant \texttt{ensureReader}/\texttt{ensureWriter}
-invocations for the argument.\footnote{One could also consider adding
-``current version'' arguments even for non-strict parameters, with the
-  caveat that the caller pass in NULL if it had not already
-  read/written the non-strict parameter.
-  All variables used in a method or the method's callees would then be
-  potentially eligible for version passing, however.  Some more sophisticated
-  heuristic would be needed to determine for which objects
-  version passing is worthwhile.}
-
-Escape analysis \cite{WhaleyRi99} is a standard technique to reduce
-unnecessary synchronization in Java programs.  In a typical
-application, monitor locks on objects that do not escape their thread
-are eliminated; these lock eliminations can translate to transaction
-eliminations as well.  Further, escape analysis can identify
-individual objects that do not escape their method, thread,
-or call context, and replace the \texttt{readT}/\texttt{writeT} or
-\texttt{readNT}/\texttt{writeNT} protocol with direct access.
-
-Another orthogonal analysis can identify object immutability
-\cite{ZibinPoArKiEr07}.  Immutable objects can be read directly and
-their field values can be safely cached across transaction boundaries.
-Further, the initialization of immutable objects typically can be done
-with direct writes as well.
-
-Finally, a substantial portion of the cost of small transactions is
-spent allocating the version object, especially for the conservative
-collector used in the present implementation.  Fast allocators could
-alleviate this bottleneck \cite{Appel89}.  Alternatively, a free list
-of versions could be hung from objects involved in many transactions:
-as soon as a version commits, the previous version can be added to the
-free list for the use of the next transaction.
 
 \punt {
 \section{Arrays} % this should be moved into its own chapter
