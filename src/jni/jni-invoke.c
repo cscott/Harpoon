@@ -55,6 +55,10 @@ static int move_and_unwrapA (JNIEnv *env, jmethodID methodID,
       else {
 	union { jlong l; struct { ptroff_t p1; ptroff_t p2; } p; } u;
 	u.l = args[j++].j;
+#ifdef _ARCH_PPC
+	/* PPC wants longs to start in an odd-numbered register */
+	if (i&1) { argtable[i++]=0; extra++; }
+#endif
 	argtable[i++] = u.p.p1;
 	argtable[i++] = u.p.p2;
       }
