@@ -52,6 +52,12 @@ DECL struct vinfo *EXACT_ensureWriter(struct oobj *obj, struct commitrec *cr) {
     return EXACT_ensureWriter_full(obj, cr);
 }				      
 
+/* used in uniqueRW counters in transactions transformation */
+extern jlong EXACT_objectSize(struct oobj *obj);
+#if !defined(IN_FASTPATH_HEADER) /* don't actually inline this function */
+jlong EXACT_objectSize(struct oobj* obj) { return FNI_ObjectSize(obj); }
+#endif
+
 #else /* !NO_VALUETYPE */
 
 DECL void TA(EXACT_checkReadField)(struct oobj *obj, unsigned offset) {

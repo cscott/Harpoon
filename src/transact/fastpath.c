@@ -13,6 +13,7 @@
 #include "transact/flags.h"
 #include "transact/objinfo.h"
 #include "fni-stats.h" /* sometimes we keep statistics */
+#include "fni-objsize.h" /* FLEX statistics sometimes need object size */
 #include "transact/atomic.h"
 
 DECLARE_STATS_EXTERN(transact_readnt)
