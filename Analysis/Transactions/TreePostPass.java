@@ -48,7 +48,7 @@ import java.util.Set;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.8 2004-07-02 00:08:52 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.9 2007-05-26 19:50:31 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -285,6 +285,10 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 	methodTransformer.put("traceRead_Array", arrayTransformer);
 	methodTransformer.put("traceWrite", fieldTransformer);
 	methodTransformer.put("traceWrite_Array", arrayTransformer);
+
+	// methods related to counters
+	
+	methodTransformer.put("objectSize", nullTransformer);
     }
 
     /** Code factory for applying the post pass to the given tree

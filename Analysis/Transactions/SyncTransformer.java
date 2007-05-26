@@ -90,7 +90,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.22 2007-05-25 02:46:34 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.23 2007-05-26 19:50:31 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -1276,11 +1276,30 @@ public class SyncTransformer
 	    Quad.addEdge(q2, 0, in.to(), in.which_pred());
 	    // increment counters
 	    CounterFactory.spliceIncrement
-		(qf, q1.nextEdge(0), "synctrans." +
-		 (isRead ? "virgin_read" : "virgin_write") + suffix);
-	    CounterFactory.spliceIncrement
 		(qf, q1.nextEdge(1), "synctrans." +
 		 (isRead ? "read_of_written" : "write_of_read") + suffix);
+	    String virginName = isRead ? "virgin_read" : "virgin_write";
+	    Edge e = CounterFactory.spliceIncrement
+		(qf, q1.nextEdge(0), "synctrans." + virginName + suffix);
+	    // for write, accumulate sizes
+	    if (CounterFactory.isEnabled
+		("synctrans."+virginName+suffix+"_size")) {
+		Temp tSz = new Temp(tf, "size"), tX = new Temp(tf, "retex");
+		Quad q3 = new CALL(qf, src,
+				   gen.lookupMethod("objectSize",
+						    new HClass[] { HCobj },
+						    HClass.Long),
+				   new Temp[] { Tobj }, tSz, tX,
+				   false, false, new Temp[0]);
+		Quad q4 = new PHI(qf, src, new Temp[0], 2);
+		Quad.addEdge(e.from(), e.which_succ(), q3, 0);
+		Quad.addEdge(q3, 0, q4, 0);
+		Quad.addEdge(q3, 1, q4, 1);
+		Quad.addEdge(q4, 0, e.to(), e.which_pred());
+		CounterFactory.spliceIncrement
+		    (qf, q3.nextEdge(0),
+		     "synctrans."+virginName+suffix+"_size", tSz, true);
+	    }
 	    // done.
 	    return q2.nextEdge(0);
 	}
