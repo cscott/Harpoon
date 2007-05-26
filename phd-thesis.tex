@@ -1,26 +1,26 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-thesis.tex,v 1.59 2007-05-26 16:39:56 cananian Exp $
+% $Id: phd-thesis.tex,v 1.60 2007-05-26 20:52:44 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% REMOVE DRAFTNOTICE FOR FINAL COPY %%%%%%%%%%%%%%%%%%%
 %\documentclass[letterpaper,draftnotice]{phd-thesis}
 \documentclass[letterpaper]{phd-thesis}
+\newboolean{phdcolor}
+\setboolean{phdcolor}{true} % set to false for b&w copy of thesis for archive
+\notesfalse % comment out this line to turn on notes.
+
 \usepackage{verbatim}
 \usepackage{alltt}
 \usepackage{epigraph}
 \usepackage{makeidx}
 \usepackage[square,sort&compress,numbers]{natbib}
 \usepackage[pdfusetitle,pagebackref,bookmarks,bookmarksnumbered,pdfpagelayout=TwoPageRight,breaklinks]{hyperref} % ooh, hyperlinks!
-%\hypersetup[colorlinks]
-%\hypersetup[linktocpage] % useful when previewing with dvi
+\ifthenelse{\boolean{phdcolor}}{\hypersetup{colorlinks}}{}
+%\hypersetup{linktocpage} % useful when previewing with dvi
 \usepackage{hypernat}
 \usepackage{bold-extra}
 %\makeindex % punting!
-
-% draft options:
-%\usepackage[light,first,bottomafter,timestamp]{draftcopy}
-%\usepackage{showidx}
-%\draftcopyName{DRAFT $Revision: 1.59 $}{70}
-
-\notesfalse % comment out this line to turn on notes.
+%\usepackage{showidx} % for draft only.
 
 % nicer bibliography back-references.
 \renewcommand*{\backref}[1]{} % tell backref we're using the alt interface

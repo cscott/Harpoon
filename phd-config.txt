@@ -1,33 +1,33 @@
-Four variants of the spec benchmarks were compiled, labelled T, TNOA,
+Four variants of the spec benchmarks were compiled, labeled T, TNOA,
 NT, and TUNIQ.
 
 T: Basic transaction transformation
-$ SPECSUFFIX=T KEEP_ARCHIVE=1 \
+$ SPECSUFFIX=T \
   CLASSPATH_HOME=.../classpath-0.08-install \
-  RUNTIME_DIR=.../Runtime \
   bin/build-spec-precisec -T 1 10
 
 TNOA: "No array" transformation
-$ SPECSUFFIX=TNOA KEEP_ARCHIVE=1 \
+$ SPECSUFFIX=TNOA \
   CLASSPATH_HOME=.../classpath-0.08-install \
-  RUNTIME_DIR=.../Runtime \
   bin/build-spec-precisec -Dharpoon.synctrans.noarraymods=true -T 1 10
 
 NT: Strip all transactions so we can discover non-transactional overhead.
-$ SPECSUFFIX=NT KEEP_ARCHIVE=1 \
+$ SPECSUFFIX=NT \
   CLASSPATH_HOME=.../classpath-0.08-install \
-  RUNTIME_DIR=.../Runtime \
   bin/build-spec-precisec -Dharpoon.synctrans.removetrans=true -T 1 10
 
 TUNIQ: Count methods called within a transaction and unique objects
        touched during a transaction.
 $ FLEXSTACK=64m OPT_FLEX_SUPPORT_FILES=Support/jutil.jar \
-  SPECSUFFIX=TUNIQ3 KEEP_ARCHIVE=1 \
-  CLASSPATH_HOME=.../classpath-0.08-install
-  RUNTIME_DIR=.../Runtime \
+  SPECSUFFIX=TUNIQ \
+  CLASSPATH_HOME=.../classpath-0.08-install \
   bin/build-spec-precisec -Dharpoon.synctrans.uniquerwcounters=true \
      -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_array=true \
+     -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_array_size=true \
      -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_object=true \
+     -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_object_size=true\
+     -Dharpoon.counters.enabled.synctrans.{read,write}_t_{array,object}=true \
+     -Dharpoon.counters.enabled.synctrans.{read,write}_nt_{array,object}=true \
      -Dharpoon.counters.enabled.synctrans.trans_call=true \
      -T 6 7
 

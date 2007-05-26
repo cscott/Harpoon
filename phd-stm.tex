@@ -1983,7 +1983,7 @@ All experiments in this chapter were performed on a 1GHz MPC7447 (G4)
 PowerPC processor,
 with 512kB unified L2 cache and 512MB of main memory, running Ubuntu
 6.10 on a Linux 2.6.17 kernel.  The \flex compiler and runtime system
-sources were from the head CVS revision on 2007-05-25.  C sources were
+sources were from the head CVS revision on 2007-05-27.  C sources were
 compiled using \texttt{gcc-3.4}.  \appref{cmd}
 contains the full \flex command-lines and configurations used to obtain the
 results in this chapter.
@@ -2555,33 +2555,23 @@ Creation of a transaction record at the start of every atomic region
 can be a considerable fraction of the overhead if the number of
 transactions is large.  The ``no check''
 contribution is modeled as follows:
-\begin{equation}
-o_t = k_t t + k_c c
+\begin{equation}\label{eqn:t-perf}
+o_t = k_t t + k_{c_T} c_T
 \end{equation}
 where $o_t$ is the overhead fraction due to this portion of the
-transaction transformation, $t$ is the transaction rate, $c$
+transaction transformation, $t$ is the transaction rate, $c_T$
 is the number of method calls which are inside transactions, and $k_t$
-and $k_c$ are unknown constants.  Since I do not have direct
-measurements of $c$, I use $a_T = r_T + w_T$,
-the transactional memory access rate, as a proxy.  Applications which
-perform a large number of transactional loads and stores are likely to
-spend more of their time inside transactions, and thus to have a
-higher number of method calls inside transactions.  The
-proxy model is:
-\begin{equation}\label{eqn:t-perf}
-o_t = k_t t + k_a a_T
-\end{equation}
-The minimum norm solution is:
+and $k_{c_T}$ are unknown constants.  The least squares solution is:
 \begin{eqnarray*}
-k_t &=& 859 \text{ ns}/\text{transaction} \\
-k_a &=& 4 \text{ ns}/\text{transactional memory access}
+k_t &=& 855 \text{ ns}/\text{transaction} \\
+k_{c_T} &=& 18.2\text{ ns}/\text{method call within transaction}
 \end{eqnarray*}
 The high value for $k_t$ represents the high cost of memory allocation under
 the Boehm-Demers-Weiser conservative collector.  In
 \figref{phd-spec-full} the red striped component
 represents $o_t$, computed according to \eqnref{t-perf}.  The
 prediction tracks the actual measured values (red solid bars) within
-20\% of the actual overhead (ignoring \texttt{raytrace} and
+21\% of the actual overhead (ignoring \texttt{raytrace} and
 \texttt{mpegaudio}, where $o_t$ is within the measurement
 noise).
 
@@ -2680,36 +2670,48 @@ performance numbers indicate that it is not achieving its goal.
 \section{Performance recommendations}
 \begin{figure}\small
 \begin{tabular}{l|rrrrrr}
-Benchmark & $w_T s_T/1000$& $r_{NT}/1000$ & $r_T/1000$ & $w_{NT}$ & $w_T$ & $t$ \\ \hline
-jess & 22,652 & 26,700 & 3,047 & 4,054,334 & 16,873 & 408,416\\
-raytrace & 7,036 & 26,104 & 403 & 3,608,662 & 121,731 & 301\\
-db & 14,534,339 & 18,187 & 5,378 & 987,484 & 361,431 & 1,328,518\\
-javac & 12,360,808 & 15 & 29,805 & 7,983 & 8,863,336 & 55\\
-mpegaudio & 246 & 212,850 & 3 & 38,663,921 & 739 & 287\\
-jack & 75,195 & 12,695 & 8,016 & 5,902,722 & 1,638,242 & 1,815,263\\
+Benchmark & $t$ & $c_T$ \\ \hline
+jess     &   408,416 &	1,006,376 \\
+raytrace &       301 &	  133,686 \\
+db       & 1,328,518 &	2,015,319 \\
+javac    &        55 &	9,817,721 \\
+mpegaudio&       287 &	    9,618 \\
+jack     & 1,815,263 &	2,236,720 \\
 \hline
 \end{tabular}
-\caption{Read, write, and transaction rates for SPECjvm98 benchmarks.}
-\label{fig:rates}
+\caption{Transaction and call rates for SPECjvm98 benchmarks.}
+\label{fig:rates1}
+\end{figure}
+\begin{figure}\small
+\begin{tabular}{l|rrrr}
+Benchmark & $r_{NT}$ & $w_{NT}$ & $w_T$ & $w_T s_t$ \\ \hline
+jess     &	26,700,326 &	4,054,334 &	16,873 &	22,651,942 \\
+raytrace &	26,104,154 &	3,608,662 &	121,731 &	7,036,054 \\
+db       &	18,187,254 &	987,484 &	361,431 &	14,534,338,856 \\
+javac    &	15,091 &	 7,983 &	8,863,336 &	12,360,807,865 \\
+mpegaudio&	212,850,162 &	38,663,921 &	   739 &	246,338 \\
+jack     &	12,695,066 &	5,902,722 &	1,638,242 &	75,195,321 \\
+\hline
+\end{tabular}
+\caption{Read and write rates for SPECjvm98 benchmarks.}
+\label{fig:rates2}
 \end{figure}
 
 Our predictive model of \apex performance uses 6 parameters, ordered here
-by their contribution to overall overhead:\footnote{I've distributed
-  the $r_T$ and $w_T$ components of $a_T$ in \eqnref{t-perf} in this
-  presentation.}
+by their contribution to overall overhead:
 \begin{itemize}
 \item $w_T s_T$, the product of the transactional write rate with the
   average object size written to in a transaction.  This contributes
-  0.23 ns overhead per transactional write-byte.
+  0.23 ns overhead per byte in a object transactionally written.
 \item $r_{NT}$, the number of nontransactional read.  Each
   nontransactional read adds 2.4 ns overhead.
-\item $r_T$, the number of transactional reads.  Each transactional
-  read adds 4 ns overhead.
+\item $c_T$, the number of method calls within transactions.  Each
+  call adds 18.2 ns overhead.
 \item $w_{NT}$, the number of nontransactional writes.  Each
   nontransactional write adds 63.5 ns overhead.
 \item $w_T$, the number of transactional writes.  Each transactional
-  write adds 127 ns overhead.
-\item $t$, the number of transactions.  Each transaction adds 859 ns
+  write adds 123 ns overhead.
+\item $t$, the number of transactions.  Each transaction adds 855 ns
   overhead.\footnote{A faster allocator might reduce this factor.}
 \end{itemize}
 

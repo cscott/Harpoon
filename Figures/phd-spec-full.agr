@@ -136,7 +136,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri May 25 13:02:39 2007"
+@timestamp def "Sat May 26 13:06:39 2007"
 @with string
 @    string on
 @    string loctype view
@@ -817,12 +817,12 @@
 &
 @target G0.S1
 @type bar
-1 0.3631
-2 0.0024
-3 1.1642
-4 0.1547
-5 0.0003
-6 1.5979
+1 0.368
+2 0.003
+3 1.173
+4 0.179
+5 0
+6 1.593
 &
 @target G0.S2
 @type bar
