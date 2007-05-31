@@ -2528,13 +2528,14 @@ the application, broken down by source.
   Transaction overhead for SPECjvm98.  The leftmost ``Base'' bar is compiled
   with method cloning and desugaring, all transactions removed, and
   direct reads and writes.  The ``No checks'' bar transforms methods, creates
-  commit records at the start of each transaction, checks for abort
+  commit records at the start of each transaction, and checks for abort
   after every call, but uses direct loads and stores for all accesses.
-  The ``No arrays'' bar is similar, but only uses direct loads and
-  stores for array accesses.
-  The penultimate bar is fully transactional.  The striped final bar
-  shows predicted performance for the benchmark, broken down by
-  contribution source.}
+  The ``Transactional (nonarray)'' bar is fully transactional for
+  object accesses, but uses direct loads and stores for reads and
+  writes of arrays.
+  The ``Transactional'' bar is fully transactional.  The striped final bar
+  shows predicted performance for the benchmark, broken down by the
+  modeled source of the overhead.}
 
 The second bar in \figref{phd-spec-full} shows
 the performance of the transactified benchmark after all transactional
@@ -2577,8 +2578,8 @@ noise).
 
 I can use \eqnref{nt-perf} from the previous section to compute the
 overhead contribution from nontransactional read and write checks.
-The violet striped portion of the predicted overhead in
-\figref{phd-spec-full} represents $o_{NT}$, computed using
+The light green and light blue striped portions of the predicted overhead in
+\figref{phd-spec-full} represent $o_{NT}$, computed using
 \eqnref{nt-perf} from the rate of nontransactional reads and writes
 and the previously computed $k_{r_{NT}}$ and $k_{w_{NT}}$ values.
 
@@ -2593,42 +2594,65 @@ transaction, and if so, on the size of the object.  Both read and
 write costs are also affected by the effectiveness of check hoisting
 and coalescing (\secref{hoist}).
 
-The model I will use for transactional access costs ignores reads, as
-the transactional write costs dominate.  I model transactional access
-overhead as:
+The model I use for transactional access costs distinguishes
+\defn{virgin writes} (\defn{virgin reads}),  which are writes (reads)
+to an object which has not previously been written to (read from) in
+the current transaction.  These accesses involve transaction
+bookkeeping which is not required for subsequent accesses.  I also
+accumulate the object sizes involved in a virgin write, to model the
+costs of creating a transactional clone.  The resulting model is:
 \begin{equation}
-o_T = k_{w_T} w_T + k_s w_T s_T
+o_T = k_{w_v} w_v + k_{ws} w_v s_v + k_{r_v} r_v + k_{r_T} r_T
 \end{equation}
 where $o_{T}$ is the overhead fraction due to transactional accesses,
-$w_T$ is the transactional write rate, $s_T$ is the average size of an
-object targeted by a transactional write, and $k_{w_T}$ and $k_s$ are
-unknown constants.  Solving for the constants yields:
+$w_v$ is the (transactional) virgin write rate, $s_v$ is the average
+size of an object targeted by a virgin write, $r_v$ is the
+(transactional) virgin read rate, $r_T$ is the transactional read
+rate, and $k_{w_v}$, $k_{ws}$, $k_{r_v}$, and $k_{r_T}$ are unknown
+constants.  Solving for the constants yields:
 \begin{eqnarray*}
- k_{w_T} &=& 123 \text{ ns}/\text{transactional write}\\
- k_s &=& 0.23 \text{ ns}/\text{transactional write-byte}
+ k_{w_v} &=& 680 \text{ ns}/\text{virgin write}\\
+ k_{ws} &=& 85 \text{ ns}/\text{byte targeted by a virgin write}\\
+ k_{r_v} &=& 660 \text{ ns}/\text{virgin read}\\
+ k_{r_T} &=& 54 \text{ ns}/\text{transactional read}
 \end{eqnarray*}
-Transactional writes are about twice as expensive as nontransactional
-writes, and $k_s$ reflects the object cloning costs associated with
-the transactional write.  The magenta striped bar in
-\figref{phd-spec-full} reflects this component of the cost prediction.
-The overall prediction is within 70\% of actual costs.
+The $k_{w_v}$ (virgin write) and $k_{r_v}$ (virgin read) costs are
+comparable to $k_t$, since the primary component of all of these costs
+is memory allocation (of a clone object, a reader list entry, and a
+transaction commit record, respectively).  When the object touched by
+the virgin write is large, $k_{ws}$ accounts for the more expensive
+allocation and initialization.  The transactional read cost, $k_{r_T}$
+is comparable to $k_{w_{NT}}$, the nontransactional write cost.  The
+operations involved are similar: a read of the head of the reader
+list, a comparison, and then typically an access to the field
+location.  The light green, green, light blue, and blue striped bars in
+\figref{phd-spec-full} reflects these component of the cost prediction.
+The overall prediction is within 10\% of actual costs for every
+application except for \texttt{raytrace}, where the prediction
+underestimates actual costs by 38\%.
 
-The green bar in \figref{phd-spec-full} represents another way of
-breaking down the transaction overhead.  Another variant of the
-benchmark was compiled which replaced array reads and writes with
+The constants in our model were derived from the transactional
+performance.  I can validate the model by deriving predictions for the object
+and array components of the overhead separately.
+The green bar in \figref{phd-spec-full} represents variants of the
+benchmarks which replaced array reads and writes with
 direct accesses.  The resulting overhead includes $o_t$, the ``no
 checks'' overhead, as well as both transactional and
-nontransactional overheads for nonarray objects.  This view was
-motivated by the observation that in some cases array mutations
-account for a large amount of the total overhead.
-\punt{In the extreme case, the SPECjvm98 benchmark
-\texttt{201\_compress} allocates a 1MB array and writes compressed
-data into it.}  The design of the \apex transaction system necessitates an
+nontransactional overheads for nonarray objects.  This breakdown was
+motivated by the observation that $s_v$, the average size of an object
+touched by a virgin write, in some cases varies quite a lot between
+array and nonarray objects, as \figref{virgin-size} shows.
+The design of the \apex transaction system necessitates an
 object copy for every unique object written to inside a transaction;
 if the objects are large, then this cost becomes excessive.
 \Charef{largeobj} will discuss this problem at
 length and propose a solution based on functional array data
 structures.
+
+The light green and dark green bars in \figref{phd-spec-full} show our
+predictions for the nonarray variants of the benchmarks, based on the
+$w_v$, $s_v$, $r_T$, and $r_v$ values for nonarray accesses.  These
+track the solid green bar indicating actual performance fairly well.
 
 \punt{
 It is worth examining the overheads for the \texttt{222\_mpegaudio}
@@ -2669,64 +2693,80 @@ performance numbers indicate that it is not achieving its goal.
 
 \section{Performance recommendations}
 \begin{figure}\small
-\begin{tabular}{l|rrrrrr}
-Benchmark & $t$ & $c_T$ \\ \hline
-jess     &   408,416 &	1,006,376 \\
-raytrace &       301 &	  133,686 \\
-db       & 1,328,518 &	2,015,319 \\
-javac    &        55 &	9,817,721 \\
-mpegaudio&       287 &	    9,618 \\
-jack     & 1,815,263 &	2,236,720 \\
+\begin{tabular}{l|rrrr}
+Benchmark & $t$ & $c_T$ & $r_{NT}$ & $w_{NT}$ \\ \hline
+jess     &   408,416 &	1,006,376 &	26,700,326 &	4,054,334 \\
+raytrace &       301 &	  133,686 &	26,104,154 &	3,608,662 \\
+db       & 1,328,518 &	2,015,319 &	18,187,254 &	987,484 \\
+javac    &        55 &	9,817,721 &	15,091 &	 7,983 \\
+mpegaudio&       287 &	    9,618 &	212,850,162 &	38,663,921 \\
+jack     & 1,815,263 &	2,236,720 &	12,695,066 &	5,902,722 \\
 \hline
 \end{tabular}
-\caption{Transaction and call rates for SPECjvm98 benchmarks.}
+\caption{Transaction, call, and nontransactional read and write rates
+  for SPECjvm98 benchmarks.}
 \label{fig:rates1}
 \end{figure}
 \begin{figure}\small
-\begin{tabular}{l|rrrr}
-Benchmark & $r_{NT}$ & $w_{NT}$ & $w_T$ & $w_T s_t$ \\ \hline
-jess     &	26,700,326 &	4,054,334 &	16,873 &	22,651,942 \\
-raytrace &	26,104,154 &	3,608,662 &	121,731 &	7,036,054 \\
-db       &	18,187,254 &	987,484 &	361,431 &	14,534,338,856 \\
-javac    &	15,091 &	 7,983 &	8,863,336 &	12,360,807,865 \\
-mpegaudio&	212,850,162 &	38,663,921 &	   739 &	246,338 \\
-jack     &	12,695,066 &	5,902,722 &	1,638,242 &	75,195,321 \\
+\begin{tabular}{l|rrrr|rr}
+          &       &       &       &       & nonarray & array \\
+Benchmark & $w_v$ & $s_v$ & $r_v$ & $r_T$ & $s_v$ & $s_v$ \\ \hline
+jess     & 5,291 &	710 &	1,573,712 &	3,046,653 & 30 & 851 \\
+raytrace & 10,833 &	44  &	    1,421 &	  403,442 & 29 &  67 \\
+db       & 90,649 &	263 &	2,832,970 &	5,378,123 & 24 &4,247\\
+javac    & 464,294 &	 37 &	    4,630 &	29,804,501& 32 &  50\\
+mpegaudio& 700 &	 35 &	    2,285 &	    3,236 & 13 & 283\\
+jack     & 412,891 &	 64 &	3,268,924 &	8,016,197 & 32 &  69\\
 \hline
 \end{tabular}
-\caption{Read and write rates for SPECjvm98 benchmarks.}
-\label{fig:rates2}
+\caption[Transaction performance model inputs for SPECjvm98 benchmarks.]
+ {Transaction performance model inputs for SPECjvm98
+  benchmarks. Each benchmark lists $w_v$, the virgin write rate,
+  $s_v$, the average object size touched by a virgin write, $r_v$, the
+  virgin read rate, and $r_T$, the transactional read rate.  The
+  nonarray and array values of $s_v$ are broken out in the final
+  two columns.}
+\label{fig:virgin-size}
 \end{figure}
 
-Our predictive model of \apex performance uses 6 parameters, ordered here
+Our predictive model of \apex performance uses 8 parameters, ordered here
 by their contribution to overall overhead:
 \begin{itemize}
-\item $w_T s_T$, the product of the transactional write rate with the
-  average object size written to in a transaction.  This contributes
-  0.23 ns overhead per byte in a object transactionally written.
-\item $r_{NT}$, the number of nontransactional read.  Each
+\item $r_{NT}$, the number of nontransactional reads.  Each
   nontransactional read adds 2.4 ns overhead.
 \item $c_T$, the number of method calls within transactions.  Each
   call adds 18.2 ns overhead.
+\item $r_T$, the number of transactional reads.  Each transactional
+  read adds 54 ns overhead.
 \item $w_{NT}$, the number of nontransactional writes.  Each
   nontransactional write adds 63.5 ns overhead.
-\item $w_T$, the number of transactional writes.  Each transactional
-  write adds 123 ns overhead.
+\item $w_v s_v$, the product of the virgin write rate with the average
+  object size touched in a virgin write.  This contributes 85 ns
+  overhead per byte in an object touched by a virgin write.
+\item $r_v$, the number of virgin reads.  Each virgin read adds 660 ns
+  overhead.
+\item $w_v$, the number of virgin writes.  Each virgin write adds 680
+  ns overhead.
 \item $t$, the number of transactions.  Each transaction adds 855 ns
-  overhead.\footnote{A faster allocator might reduce this factor.}
+  overhead.
 \end{itemize}
+
+The costs associated with $t$, $w_v$, and $r_v$ might be reduced with
+the use of a faster allocator.
 
 A programmer seeking to improve the performance of their code should
 first reduce the number of transactions created.  \apex is suited to
 small numbers of large transactions.  \Charef{htm}
 presents an alternative transaction system which is better suited for large
-numbers of small transactions. 
-Although our model does not reflect it, transactional write operations
-are cheaper after the initial cloning is done.  Combining smaller
-transactions allows fewer object copies to be made.
+numbers of small transactions.
 
+The programmer can also reduce the number of virgin reads and writes
+by structuring transactions to group fields involved in a transaction
+inside a single object.   Combining smaller transactions will
+also tend to reduce the number of expensive virgin reads and writes.
 An alternative to combining small transactions is to reduce the number
 of memory accesses covered by the transaction, since nontransactional
-accesses are half as expensive as transactional accesses.
+reads are twenty times cheaper than transactional reads.
 
 Decreasing the number of memory operations also directly reduces overhead.
 There are well-known compiler optimizations which
@@ -2735,14 +2775,14 @@ their widespread use is avoided because the increase in register
 pressure makes caching counterproductive.  \apex's more-expensive
 memory accesses should encourage use of these optimizations.
 
-Finally, reducing the size of objects written by a transaction will
-reduce the $w_T s_T$ term and improve performance.  In particular,
+Reducing the size of objects written by a transaction will
+reduce the $w_v s_v$ term and improve performance.  In particular,
 several SPECjvm98 benchmarks allocate a large array and then perform
 multiple small transactions which modify a single element of the
 array.  This access pattern causes the large array to be copied
 multiple times, increasing overhead.  \Charef{largeobj} describes a
 modification to \apex which avoids this dependence on object size,
-removing the $w_T s_T$ term from the performance model.
+removing the $w_v s_v$ term from the performance model.
 
 %   1. \# false conflicts
 %   2. read/write check overhead

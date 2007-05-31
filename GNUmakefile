@@ -154,7 +154,7 @@ phd-defense: $(foreach f, snapshot-color-2 cachemods-color-2 \
 .PHONY: phd-defense
 
 martin-happy: phd-thesis.pdf
-	rsync -avz phd-thesis.pdf k2.csail.mit.edu:public_html/Publications/
+	rsync -avz phd-thesis.pdf vhost.cscott.net:web/cscott.net/Publications/
 	mkdir -p phd-bak
 	cp phd-thesis.pdf phd-bak/phd-thesis-`date "+%Y%m%d-%H%M"`.pdf
 
