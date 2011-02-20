@@ -1,0 +1,868 @@
+<!-- SCCS @(#)gcsafety.html	1.8 00/04/07 -->
+
+<!-- 
+TODO:
+     Give example of tryLock() vs. lock().
+     Figure out allocation, as maybe a special-case of the above. 
+     CVMD_gcSafeExec() and family with restoration points.
+     Mention stackmaps at blocking points (any GC-safe point must have
+     a stackmap available)
+
+TODO:
+     This document only talks about indirect memory interface.
+		 Should also mention what is direct memory interface.
+-->
+
+<BODY BGCOLOR=white>
+
+<title>How to be GC-safe in CVM</title>
+<font color=blue><h1>How to be GC-safe in CVM</h1></font>
+
+<font color=blue><h2>Table of Contents</h2></font>
+<ul>
+    <li><A HREF=#icells>Living with ICells</A>
+    <ul>
+        <li><A HREF=#typing>ICell types</A>
+	<li><A HREF=#roots>Explicitly registered roots</A>
+        <li><A HREF=#localroots>Declaring and using local roots</A>
+        <li><A HREF=#globalroots>Declaring and using global roots</A>
+    </ul>
+    <li><A HREF=#threads>GC-safety of threads</A>
+    <ul>
+        <li><A HREF=#gcatomic>GC-atomic blocks</A>
+        <li><A HREF=#gcoffer>Offering a GC-safe point</A>
+    </ul>
+</ul>
+<font color=blue><h2>Introduction</h2></font>
+
+<p>In CVM, garbage collection may be running at any time during
+program execution, searching for program state or changing object
+addresses behind your back. Therefore, you should be very careful
+whenever you want to access and change Java objects from native
+code. 
+
+<p>The <i>indirect memory interface</i> allows you to safely
+manipulate objects from native code. The calls that make up the
+indirect memory interface operate on pointers to <i>ICells</i>
+(indirection cells), which are non-moving locations in memory holding
+object references. ICells must be <i>registered</i> with GC, so they
+can be found and updated when a GC occurs. Registered ICells may be
+<i>local roots</i>, or <i>global roots.</i>
+
+<p>The implementation of the indirect memory interface makes use of a
+per-thread <i>GC-safety</i> flag. Each indirect memory call on an
+ICell marks the caller thread as <i>GC-unsafe</i>, manipulates the
+Java object encapsulated by the ICell, and marks the thread as
+<i>GC-safe</i> again. Threads that are marked GC-unsafe cannot
+tolerate GC until they are marked GC-safe again. GC is only allowed to
+proceed if all threads are GC-safe. Use of the indirect interface in
+conjunction with registered ICells makes your C code safe from garbage
+collection, and makes the garbage collector aware of your Java object
+use.
+
+<p>Please refer to <a href=directmem.html>the direct memory
+interface</a> and the <a href=indirectmem.html>the indirect memory
+interface</a> for reference.
+
+
+<a name=icells>
+<font color=blue><h2>Living with ICells</h2></font>
+
+<p>ICells and the indirect memory interface form the foundation of the
+<i>exactness</i> architecture of CVM. Therefore it is critical to understand
+the various ways these calls can be used to ensure GC-safety.
+
+<p>Working on an exact system is different than working on a
+conservative system. In a conservative system, the garbage collector
+scans the native stacks and native registers, searching for values
+that <i>look like</i> pointers. So in order to keep a heap object
+<i>alive</i>, it is sufficient to keep around references to it in
+registers or stack locations, and GC will find them.
+
+<p>In an exact system, all locations holding pointers to heap objects
+must be known to the garbage collector. There are two types of
+such known locations:
+
+<ol>
+<li> <b>Implicitly registered locations</b>: The garbage collector has
+a <i>default root scan</i>, and certain well-known VM data structures
+are considered to be default roots. Among this group are class
+statics, string intern tables, JNI tables holding global Ref's, and
+others. All the references in these data structures are considered
+<i>implicitly registered</i> with GC.
+
+<li> <b>Explicitly registered locations</b>: Any ICells that are not
+included in the default root scan of GC must be explicitly registered,
+either by the local roots mechanism or the global roots mechanism.
+</ol>
+
+<A name=typing>
+<font color=blue><h3>ICell types</h3></font>
+
+<p>ICells encapsulate direct heap object references. Heap objects may
+be regular Java objects or arrays. There are different ICell types to
+express each. ICells for all non-array object types are declared as
+<tt>CVMObjectICell</tt>. Arrays of different Java types have
+corresponding ICell types. For basic type <tt>&lt;T&gt;</tt>, the
+right ICell type is <tt>CVMArrayOf&lt;T&gt;ICell</tt>.
+
+<p>Here's the list:
+<pre>
+    CVMObjectICell         ocell;   /* for CVMObject references         */
+
+    CVMArrayOfByteICell    acellb;  /* for CVMArrayOfByte references    */
+    CVMArrayOfShortICell   acells;  /* for CVMArrayOfShort references   */
+    CVMArrayOfCharICell    acellc;  /* for CVMArrayOfChar references    */
+    CVMArrayOfBooleanICell acellz;  /* for CVMArrayOfBoolean references */
+    CVMArrayOfIntICell     acelli;  /* for CVMArrayOfInt references     */
+    CVMArrayOfRefICell     acellr;  /* for CVMArrayOfRef references     */
+    CVMArrayOfFloatICell   acellf;  /* for CVMArrayOfFloat references   */
+    CVMArrayOfLongICell    acelll;  /* for CVMArrayOfLong references    */
+    CVMArrayOfDoubleICell  acelld;  /* for CVMArrayOfDouble references  */
+</pre>
+
+<p>Since ICells contain references that may be manipulated by GC,
+their referents should be set, nulled, and assigned to one another
+using calls from the indirect memory interface (see <a
+href=indirectmem.html#icell>ICell manipulations</a> from the <a
+href=indirectmem.html>indirect memory interface reference</a>). Their
+values should only be passed around as <tt>ICell*</tt> to ensure
+GC-safety. So given <tt>ocell1</tt> and <tt>ocell2</tt> of type
+<tt>CVMObjectICell</tt>:
+
+<pre>
+    CVMObjectICell* ocell1;
+    CVMObjectICell* ocell2;
+    CVMExecEnv*     ee = CVMgetEE();
+    CVMBool res;
+
+    <... make sure ocell1 and ocell2 point to registered ICells. They could be
+    local roots or global roots, for example. See below ...>
+
+    CVMID_icellSetNull(ee, ocell1);
+    CVMID_icellSetNull(ee, ocell2);
+
+    CVMassignDirectReferenceTo(ee, ocell1);
+    CVMID_icellIsNull(ee, ocell1, res);
+    if (!res) {
+        /* Assign the referent of ocell1 to the referent of ocell2 */
+        CVMID_icellAssign(ee, ocell2, ocell1); 
+    }
+</pre>
+
+In the example above, the only values passed around are
+<i>pointers</i> to ICells. Any assignment to the encapsulated direct
+object reference of an ICell (as <tt>assignDirectReferenceTo()</tt>
+does) must happen in a <i>GC-unsafe</i> region, created in the body of
+the implementation of <tt>CVMID_icellAssign()</tt>. GC-unsafe regions
+are to be explained in the section on <a href=#threads>GC-safety of
+threads</a>.
+
+<a name=roots>
+<font color=blue><h3>Explicitly Registered Roots</h3></font>
+
+Heap object references that are not part of the default root scan of
+garbage collection need to be explicitly registered with the
+collector. There are two separate mechanisms for explicit
+registration:
+
+<ol>
+<li><b>Local roots:</b> These are short-lived values, like local
+variables. They are allocated and deallocated in a stack-like
+fashion. The interface for using them is geared towards fast
+allocation and deallocation, and does not allow out-of-order
+deallocation.
+
+<li><b>Global roots:</b> These are long-lived values, like global
+variables. The program can obtain registered global root locations
+through the global roots API. Global roots may be created and
+destroyed out-of-order.
+</ol>
+
+<a name=localroots>
+<font color=blue><h3>Declaring and Using Local Roots</h3></font>
+
+<p> Local roots are an efficient way of declaring, registering and
+unregistering ICells of local scope. They are typically used to hold
+relatively short-lived values; think of them as GC-registered local
+variables. Also note that local roots are thread-local; they are
+created, used and discarded in the same thread.
+
+<p> The use pattern is the following:
+<pre>
+    //
+    // Start a local root block, passing in the current 'ee'
+    // (execution environment), which contains per-thread information.
+    //
+    CVMID_localrootBegin(<font color=#CC0000>ee</font>); {
+        CVMID_localrootDeclare(Type1ICell, var1);
+        CVMID_localrootDeclare(Type2ICell, var2);
+	//
+        // use var1 and var2 as Type1ICell* and Type2ICell*
+        // respectively
+	//
+        // do NOT leave the block without executing
+        // CVMID_localrootEnd()!
+	//	
+    } CVMID_localrootEnd();
+</pre>    
+
+<p>Since local roots occur more often (dynamically) than global roots,
+the interface for using local roots is optimized for allowing
+stack-like fast allocation and deallocation. Conceptually:
+
+<ol>
+<li> <tt>CVMID_localrootBegin()</tt> marks the beginning of a scope
+containing a list of <tt>CVMID_localrootDeclare()</tt> calls.
+
+<li> The implementation keeps track of <tt>CVMID_localrootDeclare()</tt>
+calls. For each, it allocates and registers a local ICell and declares
+an <tt>ICell</tt> pointer to that registered ICell.
+
+<li> When the programmer is done with the local roots in the scope,
+he/she calls <tt>CVMID_localrootEnd()</tt>, which discards all allocated
+local roots in that scope.
+</ol>
+
+<p>Note that it is important to call <tt>CVMID_localrootEnd()</tt> when
+leaving a local root scope; this call discards all registered local
+roots declared since the last <tt>CVMID_localrootBegin()</tt>. Also note
+that <tt>CVMID_localrootBegin()</tt> and <tt>CVMID_localrootEnd()</tt> may
+nest arbitrarily.
+
+<p>Here is a good example to illustrate local root use:
+
+<blockquote>
+<h4>Example:</h4> 
+
+<p>You want to call an allocating operation that is possibly a few
+functions deep. Therefore you want the caller to declare a local root,
+and pass its corresponding <tt>ICell*</tt> as a result argument to the
+operation. This keeps the allocated object safe from garbage
+collection the moment it is stored in the result argument. When the
+operation is complete, the caller can unregister the local root.
+
+<p>The following creates a Java string from a Utf8 string. It is an
+inlined (fast) version of the String constructor. It uses two local
+roots for temporary values, and discards them after a String has been
+successfully created and assigned to a <tt>result</tt> ICell.
+
+<pre>
+void CVMmakeStringFromUtf8(CVMUtf8* chars, CVMObjectICell* result) {
+    CVMID_localrootBegin(); {
+	// Two local roots to be used as temporaries
+	CVMID_localRootDeclare(CVMObjectICell,      string);
+	CVMID_localRootDeclare(CVMArrayOfCharICell, theChars);
+
+	CVMJavaInt length;
+
+	// Make the string object
+	CVMID_objectNewInstance   (CVMjavaLangStringClassblock, string);
+
+	// .. . and the chars array
+	// Pass the local root in to receive the resulting char[]
+	CVMmkArrayOfCharFromUtf8  (chars, theChars);
+	
+	CVMID_arrayGetLength      (theChars, length);
+
+	//
+	// Assign the values of the string
+        //
+	CVMID_fieldWriteRef(string,
+	                    CVM_offsetOf_java_lang_String_value,  
+	                    theChars);
+
+	CVMID_fieldWriteInt(string, 
+	                    CVM_offsetOf_java_lang_String_length, 
+	                    length);
+
+	CVMID_fieldWriteInt(string, 
+	                    CVM_offsetOf_java_lang_String_offset, 
+	                    0);
+
+	// We write the result back to the result ICell. 
+	CVMID_icellAssign  (result, string);
+
+	// We can now discard the local roots, assuming 'result' was
+	// a pointer to a registered ICell.
+    } CVMID_localrootEnd();
+</pre>
+
+A possible caller of this may be the constant resolution code,
+resolving a constant pool entry of type <tt>CONSTANT_String</tt>. The
+result ICell may be the actual constant pool slot, which is updatable
+by GC when it scans class information. (In other words, the constant
+pool slot for a String constant is an implicitly registered ICell).
+
+<p>So the call would be something like:
+
+<pre>
+    void CVMresolveStringConstant(CVMConstantPool* cp,
+                                  CVMJavaShort strIdx,
+			          CVMJavaShort utf8Idx)
+    {
+        CVM_CLASS_RESOLUTION_LOCK();
+            CVMID_icellSetNull(&cp.entries[strIdx].str);
+            //
+            // Mark it as being resolved. This way, no thread can
+            // yet use this c.p. entry; however GC can scan it
+            // if necessary.
+            //
+            CVMcpSetBeingResolved(cp, strIdx);
+            CVMmakeStringFromUtf8(cp.entries[utf8Idx],
+	                          &cp.entries[strIdx].str);
+            CVMcpSetResolved(cp, strIdx);
+        CVM_CLASS_RESOLUTION_UNLOCK();
+    }
+</pre>
+</blockquote>
+
+<a name=globalroots>
+<font color=blue><h3>Declaring and Using Global Roots</h3></font>
+
+<p> Global root registration allows for declaring, registering and
+unregistering ICells of global scope. Global roots are typically used
+to hold long-lived values that are to be included in the GC root scan;
+think of them as GC-registered global variables.
+
+<p> The use pattern is the following:
+<pre>
+    //
+    // Part of CVMglobals
+    //
+    struct CVMGlobalState {
+        ....
+        CVMObjectICell*      globalRoot1;
+        CVMObjectICell*      globalRoot2;
+	....
+    }
+    ...
+    void CVMinitThisModule()
+    {
+        CVMglobals.globalRoot1 = CVMID_getGlobalRoot();
+	CVMglobals.globalRoot2 = CVMID_getGlobalRoot();
+	...
+    }
+    ...
+    void CVMuseThisModule()
+    {
+	// globalRoot1 and globalRoot2 may safely be used as
+	// ICell* arguments to CVMID_ operations.
+	CVMID_objectNewInstance(CVMclassJavaLangStringClassblock,
+	                        CVMglobals.globalRoot2);
+	CVMID_icellAssign(CVMglobals.globalRoot1, CVMglobals.globalRoot2);
+    }
+    ...
+    void CVMexitThisModule()
+    {
+        CVMID_freeGlobalRoot(CVMglobals.globalRoot1);
+        CVMID_freeGlobalRoot(CVMglobals.globalRoot2);
+    }
+</pre>    
+
+Any long-lived ICell declaration should be registered as a global
+root. These include C structure fields and global variables.
+
+<p>Here are some examples:
+<blockquote>
+<h4>Example 1:</h4> 
+<p>Registering an ICell referred to by a C struct. There
+may be long-lived C structures in the system with heap object
+references, like a C hash table with a Java array as the list of
+values. Such a table existed in JavaOS. The declaration for that hash
+table in CVM would be:
+<pre>
+typedef struct CVMStrIDhash {
+    < ... Other hashtable fields ...>
+    CVMArrayOfRefICell* params;	/* param table, if needed */
+} CVMStrIDhash;
+</pre>
+where the <tt>params</tt> array is declared as an ICell* holding an
+array of references. We would allocate these <tt>StrIDhash</tt> nodes
+as follows:
+<pre>
+/* Create a hash table of the specified size */
+static CVMStrIDhash *
+CVMcreateHash(int sizeInBytes)
+{
+    CVMStrIDhash *h;
+    h = (StrIDhash *)CVMCcalloc(1, sizeInBytes); 
+    if (h != NULL) { 
+        CVMinitNode(h);
+	//
+	// Register and null out the value
+	//
+	h->params = CVMID_getGlobalRoot();
+    }
+    return h;
+}
+</pre>
+After registration, <tt>h->params</tt> may be used as a registered
+<tt>ICell*</tt> parameter to other <tt>CVMID_</tt> operations. So to
+allocate the <tt>params</tt> array:
+<pre>
+CVMBool
+CVMmkParams(CVMStrIDhash* hash, int size)
+{
+    CVMArrayOfRefICell* params = hash->params;
+    CVMID_newArrayOfRef(CVMjavaLangObjectClassblock, size, params);
+    if (CVMID_icellIsNull(params)) {
+        return CVM_FALSE; // Allocation failed
+    } else {
+        return CVM_TRUE;
+    }
+}
+</pre>
+</blockquote>
+
+<blockquote>
+<h4>Example 2:</h4> Here is another example of a C structure that
+contains a Java pointer. This declaration is from the
+<tt>CVMClassblock</tt> structure. Whenever a new
+<tt>CVMClassblock</tt> is allocated, the <tt>ICell*</tt> typed fields
+are initialized to point to fresh global roots:
+
+<pre>
+    struct CVMClassblock {
+        ...
+        CVMObjectICell* classLoader;
+        ...
+    };
+    typedef struct CVMClassblock CVMClassblock;
+
+    ...
+    CVMClassblock*  class    = (CVMClassblock*)CVMCcalloc(1, sizeof(CVMClassblock));
+
+    //
+    // Get a new, nulled global root to hold a classloader reference
+    //
+    class->classLoader       = CVMID_getGlobalRoot();
+
+    //
+    // Make a new ClassLoader instance, and assign it to its location
+    // in class 'class'.
+    //
+    CVMID_objectNewInstance(CVMglobals.javaLangClassLoaderClassblock, class->classLoader);
+</pre>
+
+<p>When the <tt>CVMClassblock</tt> is freed, all its registered global
+roots must be freed first:
+
+<pre>
+void CVMclassUnload(CVMClassblock* class)
+{
+    //
+    // Free all class-related data structures
+    //  
+    ...
+    //
+    // Now get rid of the global roots
+    //
+    CVMID_freeGlobalRoot(class->classLoader);
+
+    // And finally the Classblock itself
+    CVMCfree(class);
+}
+</pre>
+
+</blockquote>
+
+<blockquote>
+<h4>Example 3:</h4> Registering well-known values. Let's assume that
+we want to have global instances of the <tt>java.lang.Class</tt>
+versions of some Java classes. Note that CVM would not necessarily do
+this, since <tt>Classblock</tt>s are not allocated on the heap, but it
+is a good example for global roots.
+<pre>
+    //
+    // Part of CVMglobals
+    //
+    struct CVMGlobalState {
+        ....
+        CVMObjectICell* classJavaLangObject;
+        CVMObjectICell* classJavaLangString;
+	....
+    }
+    ...
+    CVMinitVM()
+    {
+        /* Allocate and null out global roots */
+        CVMglobals.classJavaLangObject = CVMID_getGlobalRoot();
+        CVMglobals.classJavaLangString = CVMID_getGlobalRoot();
+
+	// ... and they lived happily ever after
+	CVMfindSystemClass("java/lang/Object", CVMglobals.classJavaLangObject);
+	CVMfindSystemClass("java/lang/String", CVMglobals.classJavaLangString);
+    }
+</pre>
+</blockquote>
+
+<a name=threads>
+<font color=blue><h2>GC-safety of threads</h2></font>
+
+<p>Each thread in CVM has a flag called the <i>GC-safety
+flag</i>. Whenever a thread performs an operation that manipulates
+heap objects directly, it is marked as GC-unsafe. If another thread
+initiates a GC at this time, all threads must be rolled to GC-safe
+points in order for GC to proceed safely.
+
+<p>The byte-code interpreter typically works in a GC-unsafe manner to
+allow for efficient direct access to heap objects. To bound the time
+the thread remains GC-unsafe, backwards branches, method calls, and
+method returns are designated as GC-safe points. At those points each
+thread polls for GC. If there is a GC request, the thread suspends itself to
+rendezvous with all the other threads rolling forward to their GC
+points. Execution continues after GC.
+
+<p>The implementation of the indirect memory interface marks the caller
+thread GC-unsafe while it is manipulating object references
+directly. These are typically very simple operations, and result in
+only a small window of GC-unsafety.
+
+<p>CVM also allows arbitrary sets of operations to proceed in GC-unsafe
+regions. These operations should be bounded in execution time, and are
+not allowed to block.
+
+<p>To see the full set of GC-safety operations, see <a
+href=directmem.html#threads>GC-safety of threads</a> from the <a
+href=directmem.html>direct memory interface reference</a>.
+
+<a name=gcatomic>
+<font color=blue><h3>GC-atomic blocks</h3></font>
+
+<p>If you want GC disallowed while executing a certain set of
+operations, use:
+
+<p>
+<pre>
+    CVMD_gc<font color=#CC0000>U</font>nsafeExec(ee,
+	<... gc-unsafe code ...>
+    )
+</pre>
+
+where <tt>ee</tt> is a pointer to the execution environment
+(<tt>CVMExecEnv</tt>) of the current thread.
+
+<p>The GC-unsafe code may not block, perform I/O, or otherwise take
+too long to execute, in order to keep the time GC is diabled to a minimum.
+
+<p>When writing GC-unsafe code, extreme care must be taken to avoid
+calls to arbitrary library routines. These may take too long to
+execute, or grab platform locks that might end up blocking. The example of
+<tt>malloc()</tt> comes to mind. So make sure you become GC-safe
+before making such a call (see <a href=#gcoffer>Offering a GC-safe
+point</a> below).
+
+<p>Direct pointers to objects may be used within the unsafe block;
+however, you should make sure that all direct values are written back
+into registered ICells before exiting the <tt>gcunsafe</tt> block.
+
+<p>Use this model rarely and with great care. In some cases, if you
+really feel it must be used, then maybe it is because it would be
+useful to add new functions to the CVMID_ interface. Then we might choose
+to do that, and avoid CVMD_gcUnsafeExec().
+
+<blockquote>
+<h4>Example 1:</h4>
+<p>Let's say that you want to use two direct memory accesses
+consecutively without the overhead of being GC-unsafe around
+each. Here's how you would do that:
+
+<p>
+<pre>
+CVMObjectICell* cell1;
+CVMObjectICell* cell2;
+CVMJavaInt      val1, val2;
+
+...
+&lt; Assume cell1 and cell2 point to registered ICells &gt;
+...
+CVMD_gcUnsafeExec(<font color=#CC0000>ee</font>, {
+    CVMObject* o1 = CVMID_icellDirect(cell1);
+    CVMObject* o2 = CVMID_icellDirect(cell2);
+
+    // Read the third integer field of
+    // each object.
+    CVMD_fieldReadInt(o1, 2, val1);
+    CVMD_fieldReadInt(o2, 2, val2);
+} ); // End of gcunsafe region
+</pre>        
+</blockquote>
+
+<blockquote>
+<h4>Example 2:</h4> 
+
+<p>Setting the referent of an ICell. The example below takes an ICell*
+for a <tt>char[]</tt> array, allocates a string, starts a GC-unsafe
+region, and calls out to initialize the string's fields. The ICell
+pointed to by <tt>resultString</tt> gets a reference to the allocated
+string before the GC-unsafe region is exited.
+
+<p>Note that this sort of long GC-unsafe region is intended as an
+example only; this style should only be used in performance critical
+points, where direct accesses help make the code faster.
+
+<pre>
+void CVMmakeString(CVMArrayOfCharICell* theChars,
+                   CVMObjectICell* resultString) {
+    CVMID_localrootBegin(<font color=#CC0000>ee</font>); {
+        CVMID_localrootDeclare(CVMObjectICell, tempString);
+        // Allocate a String
+	CVMID_objectNewInstance(CVMjavaLangStringClassblock, tempString);
+
+        CVMD_gcUnsafeExec(<font color=#CC0000>ee</font>, {
+	    CVMObject*      str   = CVMID_icellDirect(tempString);
+	    CVMArrayOfChar* chars = CVMID_icellDirect(theChars);
+	    CVMJavaInt      a_len;  
+
+	    CVMD_arrayGetLength(chars, a_len);
+	    CVMinitializeDirectStringRef(str, chars, a_len, 0);
+
+	    // Set the referent of the ICell that resultString points to
+	    CVMID_icellSetDirect(resultString, str);
+	} );
+    } CVMID_localrootEnd();
+}
+</pre>
+</blockquote>
+
+<blockquote>
+<h4>Example 3:</h4>
+
+<p>Performing an operation that modifies a data structure that is a
+default GC root. In the example below <tt>CVMicellList[]</tt> is a
+thread-local list of free ICells, and is a default GC
+root. <tt>CVMgetICell()</tt> allocates ICells from the list. All assigned
+ICells from the list are scanned by GC during the root scan. The
+operation needs to disable GC; otherwise a GC scan might find the
+ICell list in an inconsistent state.
+
+<pre>
+CVMObjectICell CVMicellList[];
+CVMUint32      CVMicellListPtr;
+
+CVMObjectICell* CVMgetICell()
+{
+    CVMObjectICell* ret;
+    CVMD_gcUnsafeExec(<font color=#CC0000>ee</font>, {
+        ret = &CVMicellList[icellListPtr++];
+	*((CVMUint32*)ret) = 0;
+    } );
+    return ret;
+}
+</pre>
+Without <tt>CVMD_gcUnsafeExec()</tt>, garbage values might be scanned as
+live as soon as <tt>icellListPtr</tt> is incremented, and before the
+returned ICell is initialized to 0.
+</blockquote>
+
+<a name=gcoffer>
+<font color=blue><h3>Offering a GC-safe point</h3></font>
+
+Code that is GC-unsafe for long segments must periodically
+<i>offer</i> a GC-safe point. For example, the interpreter runs in a
+GC-unsafe way, manipulating direct pointers, etc., but at backwards
+branches, at method calls, and maybe other points, it must offer to be
+GC-safe to bound the time from a GC request to a GC cycle start. Also,
+long running operations like data structure expansions or lengthy
+computations must offer to be GC-safe occasionally. And finally, the
+VM must offer GC-safe points before doing potentially blocking OS
+calls like dynamic linker resolution for natives, acquiring locks, or
+I/O in order to make sure there are no blocked, GC-unsafe threads in
+the system.
+
+<p>The standard pattern of doing this is to use the
+<tt>CVMD_gcSafeExec()</tt> or the
+<tt><font color=#CC0000>CVMD_gcSafeCheckPoint</font>()</tt>
+macros. For details, refer to <a href=directmem.html#threads>GC-safety
+of threads</a> from the <a href=directmem.html>direct memory interface
+reference</a>.
+
+<p><tt><font color=#CC0000>CVMD_gcSafeCheckPoint</font>()</tt> is used
+to offer a GC-safe point for operations that will definitely not block:
+<pre>
+    <font color=#CC0000>CVMD_gcSafeCheckPoint</font>(
+        ee,
+        {
+            &lt;Save your state for possible GC&gt;
+        },
+        {
+            &lt;Restore your state after possible GC&gt;
+        }
+    );
+</pre>
+
+<p><tt><font color=#CC0000>CVMD_gcSafeExec</font>()</tt> is used to offer
+a GC-safe point for operations that might block<font color=#CC0000>:</font>
+<font color=#CC0000><s>
+Here, the state saving operation and
+the potentially blocking operation are separated:
+</s></font>
+<pre>
+    <font color=#CC0000>CVMD_gcSafeExec</font>(
+        ee,
+        <font color=#CC0000><s>{
+            &lt;Save your state for possible GC&gt;
+        },</s></font>
+        {
+            &lt;Do potentially blocking operation&gt;
+	}<font color=#CC0000><s>,
+        {
+            &lt;Restore your state after possible GC&gt;
+        }</s></font>
+    );
+</pre>
+
+<font color=#CC0000><s>
+<p> Note that in the case of <tt>CVMD_gcSafeExecMayBlock(),</tt> the state
+saving and restoration are executed unconditionally. They are included
+in the definition of <tt>CVMD_gcSafeExecMayBlock()</tt> to associate the
+state saving and restoration operations with ensuring the GC-safety of
+the blocking operation.
+</s></font>
+
+<p>At the end of one of these macros, the executing thread is once
+again GC-unsafe.
+
+<blockquote>
+<h4>Example 1:</h4> 
+
+<p>The interpreter becomes GC-safe on a backwards branch.
+<p><pre>
+    <...>
+    case opc_goto: {
+        CVMJavaShort skip = CVMgetJavaShort(currentPc + 1);
+        if (skip <= 0) {
+	    <font color=#CC0000>CVMD_gcSafeCheckPoint</font>(<font color=#CC0000>ee</font>,
+                {
+		    CVM_DECACHE_INTERPRETER_STATE(currentFrame,
+					          currentPc, 
+					          currentSp);
+		},
+                {
+                    // No reconstruction needed since Java code
+		    // will not execute in this thread
+		    // between DECACHE_... and GC.
+                }
+	    );
+        }
+        CVMexecuteNextInstructionAtOffset(skip);
+    }
+    <...>
+</pre>        
+
+In effect, the <tt><font color=#CC0000>CVMD_gcSafeCheckPoint</font>()</tt>
+operation polls a global
+variable to see if a GC is requested. If it is requested, then the
+state save operation occurs, GC is run, and the state is
+reconstructed. If no GC was requested, we go on. This is a very cheap
+way to create polling-based GC-safe points.
+
+</blockquote>
+
+<blockquote>
+<h4>Example 2:</h4> 
+
+<p>Blocking operations need to become GC-safe. Here's a tricky
+example: a two-part <tt>monitorenter</tt> operation. The first one
+gets access to the object, and checks to see if blocking is needed. If
+no blocking needed, there is no need to become GC-safe. If blocking is
+needed, we save our state, become GC-safe and block.
+
+<p><pre>
+    ....
+    case opc_monitorenter: {
+        CVMObject* lockedObject;
+	vmResult   result;
+
+        lockedObject = STACK_OBJECT(-1);
+	CHECK_NULL(lockedObject);
+	result = CVMobjectTryLock(lockedObject); // Try to lock
+	if (result == VM_LOCKED_WITHOUT_BLOCKING) {
+	    //
+	    // The uncontended case
+	    // We have already succeeded locking
+	    //
+        } else {
+	    //
+	    // May now block.
+	    // Save interpreter state, stash away locked object
+	    // as a GC-root, and use monitorEnterMayblock() with
+	    // the ICell version.
+	    //
+	    <font color=#CC0000>CVM_DECACHE_INTERPRETER_STATE(currentFrame,
+					  currentPc, 
+					  currentSpCached);
+            CVMD_gcSafeExec</font>(
+	        ee,<font color=#CC0000><s>
+	        {
+                    CVM_DECACHE_INTERPRETER_STATE(currentFrame,
+		                                  currentPc, 
+					          currentSpCached);
+	        },</s></font>
+		{
+		    // Pass in the stack slot as the ICell*
+		    CVMmonitorEnterMayblock(&STACK_OBJECT(-1));
+		}<font color=#CC0000><s>,
+                {
+                    // No reconstruction needed since Java code
+		    // will not execute in this thread
+		    // between CVM_DECACHE_... and GC.
+                }</s></font>
+            )
+        }
+        if (CVMcheckForException() == VM_NO_POSTED_EXCEPTION) {
+	    UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);
+        } else {
+	    CVMhandleException();
+        }
+    }
+</pre>        
+</blockquote>
+
+<blockquote>
+<h4>Example 3:</h4> 
+
+VM becomes GC-safe before making a call that might allocate from the C
+heap. This routine may end up taking a long time execute, or even
+worse, block on an OS lock. Therefore the VM needs to become GC-safe
+before making the call, in a way that allows blocking.
+
+<p>Here's an excerpt from the stack expansion code that becomes
+GC-safe before attempting to allocate from the C heap.
+
+<pre>
+    CVMStackVal32*
+    CVMexpandStack(CVMStack* obj, CVMUint32 capacity)
+    {
+        ....
+	 * Must allocate new chunk. Take excess capacity into account.
+	 */
+	size = sizeof(CVMStackChunk) + 
+	    sizeof(CVMStackVal32) * (capacity - CVM_MIN_STACKCHUNK_SIZE);
+
+	newStackSize = s->stackSize + capacity;
+	if (newStackSize > CVM_MAX_STACK_SIZE) {
+	   ... throw exception ...
+	}
+	<font color=#CC0000>CVMD_gcSafeExec</font>(<font color=#CC0000>ee</font>,
+			<font color=#CC0000><s>{}, /* save */</s></font>
+			{next = (CVMStackChunk*)CVMCmalloc(size);}<font color=#CC0000><s>,
+			{}</s></font>);<font color=#CC0000><s> /* restore */</s></font>
+	....
+    }
+</pre>
+
+</blockquote>
+
+<!--
+Note that a similar set of operations may be needed for allocation. If
+an object allocation doesn't potentially block (say by acquiring a
+lock), it might not need to cause an interpreter state save
+operation. If a GC is requested, however, we have to save our
+state. This requires a tryAllocationNoGC() set of functions,
+and a tryAllocationAfterGC() set of functions. The first one
+requires no state change; the second one does.
+-->
+
+</blockquote>

@@ -1,0 +1,20 @@
+// TEMPLATE FOR THE JAVADOC: USE <code></code> for code in comments
+// YOU CAN USE HTML TAGS IN THE COMMENTS
+   
+/**
+ *   1 LINE w/ A (.) AT THE END: BRIEF EXPLANATION (of the class, method, etc.)
+ *
+ *   MULTIPLE LINES: IN-DEPTH EXPLANATION
+ *   
+ *  @param  Param1Name      (methods and constructors only)
+ *                          explain parameter 1
+ *  @param  Param2Name      (methods and constructors only)
+ *                          explain parameter 2
+ *  @return                 (methods-only when it actually returns something)
+ *                           what do we return? 
+ *  @exception ExceptionName   what exception does it throw?
+ *  @see       Function1Name
+ *  @see       Function2Name
+ */
+
+//END OF TEMPLATE

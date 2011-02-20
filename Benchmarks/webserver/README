@@ -1,0 +1,63 @@
+
+- What is this?
+
+This is a modular web server based on code from the apache jserv project.
+The intent is to provide a server with many features of a commercial java
+web server for purposes of testing with the compiler. Some of the features
+of this server are:
+ * modular structure (dynamically loaded classes)
+ * servlet 2.0 support
+ * somewhat robust protocol layer
+ * somewhat robust logging layer
+ * somewhat robust thread pool management
+
+- What this isn't
+
+A commercial grade server. The primary focus of this project was to get
+many of the features into code for testing against the compiler. As such,
+the module structure is not the greatest for programming, but if you are
+careful you can get many different kinds of servers all running from one
+instance.
+
+- Directories
+
+\conf                configuration files for the server and modules
+\javax               JSDK 2.0 for servlet support
+\modules             the basic modules like the webserver itself
+\servlets            some sample servlets
+\org\apache\java     stuff from the apache project
+\org\apache\jserv    the modular server code
+
+- Modules
+
+The modules are just servlets. This isn't the greatest idea anybody ever
+had, but it does have some advantages. First, it was much easier to 
+get everything working  with fewer changes to well tested code jserv
+code. Second, any servlet can be converted to a module in a few minutes.
+So, with a little searching on the web, you can probably get the kind
+of server you want up and running in a few hours.
+
+The biggest disadvantage of this is that the modules can't really return
+error information back to the main server process. So, you have to be a 
+little bit careful when stringing a bunch of modules together. However,
+once the configuration is working, the servlet error mechanism can return
+errors to the client very easily.
+
+- Roadmap to code
+
+Most of the changes to the original JServ Code take place in the
+JServServletManager.java and JServConnection.java files. The 
+Ajpv* code has all been removed and replaced with an HTTP protocol.
+Also, the servlet loader/runner can handle strings of servlets
+based on keys on the zone configuration files. Each zone either
+servers modules or servlets.
+
+To start a new module, just implement the Servlet 2.0 interfaces
+and put the module into the module.list string in the zone in which
+you would like it to run. Be carefule not to close streams or re-write
+headers that may have been written by modules earlier in the list unless
+this is what you actually want.
+
+- More Help / It doesn't work.
+
+write me a note : govereau@mit.edu

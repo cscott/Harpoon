@@ -1,0 +1,68 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: phd-outline.tex,v 1.1 2003-02-04 19:26:04 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[twoside]{article}
+%\usepackage{pdffonts}
+\usepackage{beton}\usepackage{euler}
+\usepackage{comdef}
+
+\title{Optimization Techniques for Java on Embedded Systems}
+\author{C. Scott Ananian}
+\date{February 2003\\\vspace{5pt}}
+
+\begin{document}
+%\bibliographystyle{abbrv}
+\tableofcontents\cleardoublepage
+
+\section{Introduction}
+\subsection{Java on embedded systems}
+\subsection{Importance of pointer analysis}
+\subsection{Optimization goals}
+\subsection{Contributions}
+\section{Java pointer analysis with companion objects}
+\subsection{Motivating example}
+\subsection{Abstract memory representation}
+\subsection{Program representation}
+\subsection{Analysis domain}
+\subsection{Intraprocedural analysis}
+\subsection{Interprocedural analysis}
+\subsection{Extensions and speed-up}
+\section{Size optimizations}
+\subsection{Goal}
+\subsection{Techniques}
+\subsubsection{Class pointer compression}
+\subsubsection{Field reduction}
+\subsubsection{Static specialization}
+\subsubsection{Field externalization}
+\subsubsection{Hash/lock externalization}
+\subsection{Application of points-to information}
+\subsubsection{Array optimizations}
+\subsubsection{Static object identification}
+\subsubsection{Field internalization}
+\section{Static data structures in Java}
+\subsection{Limitations of Java}
+\subsection{Example}
+\subsection{Using partial evaluation}
+\subsection{Applying points-to information}
+\section{Timing Analysis}
+\subsection{Problem statement}
+\subsection{Modulo-N analysis}
+\subsection{Applicationo f points-to information}
+\section{Synchronization of real-time systems}
+\subsection{Example}
+\subsection{Technique}
+\subsection{Application of points-to information}
+\section{Experimental results}
+\subsection{Evaluation of pointer analysis}
+\subsubsection{Benchmark set}
+\subsubsection{Measurements of precision}
+\subsubsection{Comparison}
+\subsection{Uses of pointer analysis}
+\subsubsection{Size optimization}
+\subsubsection{Static data structures}
+\subsubsection{Timing analysis}
+\subsubsection{Synchronization removal}
+\section{Related work}
+\section{Conclusions}
+
+\end{document}

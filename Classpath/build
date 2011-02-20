@@ -1,0 +1,3 @@
+aclocal; autoheader; autoconf; automake
+./configure --enable-static --enable-portable-native-sync --enable-jni --with-jikes --enable-gtk-peer --prefix=`pwd`/install --exec-prefix=`pwd`/install
+make clean; make; make install

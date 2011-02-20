@@ -1,0 +1,7 @@
+Some test cases for the Harpoon Realtime Java implementation.
+
+The automated testing driver is Tester.java.
+
+See ~/Harpoon/Realtime/BUILDING for details on building with RTJ support.
+
+- Wes

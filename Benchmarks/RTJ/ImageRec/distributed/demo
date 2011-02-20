@@ -1,0 +1,16 @@
+killall -9 java
+ns ~/.jacorb &
+sleep 2
+./ir DisplayImage foo
+sleep 2
+./ir Pruning foo2 foo
+sleep 2
+./ir Thinning foo3 foo2
+sleep 2
+./ir Hysteresis foo4 foo3
+sleep 2
+./ir SearchThreshold foo5 foo4
+sleep 2
+./ir RobertsCross foo6 foo5
+sleep 2
+./ir LoadImage foo6 movie/mov3.gz 140

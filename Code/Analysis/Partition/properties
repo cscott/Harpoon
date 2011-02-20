@@ -1,0 +1,5 @@
+nodes=64
+mean=1
+variance=0
+maxweight=100
+viewerstyle=ONE_CIRCLE

@@ -1,0 +1,40 @@
+//====================================================================
+/**
+ *  @file    imagerec.idl
+ *
+ *  @author  Wes Beebee <wbeebee@mit.edu>
+ */
+//====================================================================
+
+#ifndef IMAGEREC_IDL
+#define IMAGEREC_IDL
+
+/**
+ * @namespace imagerec
+ * @brief  Interfaces for sending data through MIT's ATR.
+ *
+ */
+module imagerec
+{
+  struct ImageData {
+    sequence<long> rvals;
+    sequence<long> gvals;
+    sequence<long> bvals;
+    long width;
+    long height;
+  };
+
+  /**
+   * @interface ClientServerInt
+   * @brief  Control client/server.
+   */ 
+
+  interface ClientServerInt
+    {
+	void newServer(in string name);
+	void newClient(in string name);
+	void process(in ImageData id);
+    };
+};
+
+#endif

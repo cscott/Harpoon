@@ -1,0 +1,99 @@
+
+		    RTSJ TECHNOLOGY COMPATIBILITY KIT
+
+WHAT ARE THESE TESTS?
+---------------------
+
+There is one test for each non-abstract class in the RTSJ.  Methods
+provided by abstract classes are tested in at least one of its
+subclasses.
+
+Each test has a number of subtests depending on the number of
+constructors and methods defined for it.  The intention of the
+subtests are listed at the top of each file.
+
+The "main" routine that calls every test can be found in
+AllTests.java.  In addition, each test has its own "main" routine so
+that each test can be run individually.
+
+Each test is contained in a file named for the class that it is
+testing (e.g.  RelativeTimeTest.java, RealtimeThreadTest.java).
+
+
+HOW DO YOU RUN THESE TESTS?
+---------------------------
+
+From a linux box with the J2SE v1.3 installed, you can compile and execute
+the tests as follows.  You must be logged in as root.   From within the
+directory containing the tests:
+
+1)  Edit the Makefile, defining the two variables near the top as follows:
+
+	TESTSRCDIR=/path/to/test/source/files
+	TESTJTIMEDIR=/path/to/jtime/install/directory
+
+There should be a file called AbsoluteTimeTest.java in "TESTSRCIDIR".
+There should be subdirectories called bin, doc, lib, and a file called
+LICENSE in the TESTJTIMEDIR.
+
+The make file presumes that the command to invoke the Java compiler,
+"javac", is on the path.
+
+2)  To compile all of the tests, execute the command
+
+	make
+
+to compile all of the test java files.  (To compile an individual file,
+use "make FILE=filename.java").
+
+3)  To run all of the tests, execute the command
+
+	make run > tests.log 2>&1 &
+
+This command will execute the test class "AllTests", sending both
+stdout and stderr output to "tests.log", as a background process.
+
+You can run a single test with the command:
+
+	make run TEST=AbsoluteTimeTest
+
+where "AbsoluteTimeTest" represents any of the test class names, which
+are the file names minus the ".java" extension.  (By default, the make
+file runs "AllTests".)
+
+For the RTSJ Reference Implementation, all of the tests pass
+successfully but some subthreads may not terminate.  After a few
+seconds, you may kill any pending threads with "kill <jobspec>", i.e.,
+"kill %1".  On an AMD Athlon 700, the tests complete in under 10
+seconds.
+
+
+The following information may be helpful if for some reason the
+Makefile does not work properly on your system.
+
+You can also compile tests from the command line yourself.  The command
+looks like this:
+
+	javac -classpath .:/home/user/rtsj/lib/foundation.jar TimerTest.java
+
+and to run the test (from the directory containing the Java Virtual Machine)
+
+	./tjvm -Djava.class.path=/home/user/rtsj_tck AllTests.java
+
+
+WHERE ARE THE RESULTS OF THESE TESTS?
+-------------------------------------
+
+A report is generated in /tmp/CallTestReport.  It lists each test,
+which subtests failed, the number of subtests that ran and the number
+of those subtests that failed.  The end of the report shows the total
+of all the tests that ran.  Also listed is the number of threads that
+reported failures.  In some cases, test cases must spawn separate threads.
+Since the tests can not control where the output of those tests fall
+in the report file, the threads instead write "THREAD FAILURE" to both
+stdout and the report file when a failure is detected.  This will fall
+relatively close to the variation which spawned the thread.
+
+IBM Corporation
+October 25, 2001
+

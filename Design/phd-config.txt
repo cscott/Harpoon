@@ -1,0 +1,164 @@
+Four variants of the spec benchmarks were compiled, labeled T, TNOA,
+NT, and TUNIQ.
+
+T: Basic transaction transformation
+$ SPECSUFFIX=T \
+  CLASSPATH_HOME=.../classpath-0.08-install \
+  bin/build-spec-precisec -T 1 10
+
+TNOA: "No array" transformation
+$ SPECSUFFIX=TNOA \
+  CLASSPATH_HOME=.../classpath-0.08-install \
+  bin/build-spec-precisec -Dharpoon.synctrans.noarraymods=true -T 1 10
+
+NT: Strip all transactions so we can discover non-transactional overhead.
+$ SPECSUFFIX=NT \
+  CLASSPATH_HOME=.../classpath-0.08-install \
+  bin/build-spec-precisec -Dharpoon.synctrans.removetrans=true -T 1 10
+
+TUNIQ: Count methods called within a transaction and unique objects
+       touched during a transaction.
+$ FLEXSTACK=64m OPT_FLEX_SUPPORT_FILES=Support/jutil.jar \
+  SPECSUFFIX=TUNIQ \
+  CLASSPATH_HOME=.../classpath-0.08-install \
+  bin/build-spec-precisec -Dharpoon.synctrans.uniquerwcounters=true \
+     -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_array=true \
+     -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_array_size=true \
+     -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_object=true \
+     -Dharpoon.counters.enabled.synctrans.virgin_{read,write}_object_size=true\
+     -Dharpoon.counters.enabled.synctrans.{read,write}_t_{array,object}=true \
+     -Dharpoon.counters.enabled.synctrans.{read,write}_nt_{array,object}=true \
+     -Dharpoon.counters.enabled.synctrans.trans_call=true \
+     -T 6 7
+
+
+These source files were then built and linked against a number of
+different configurations of the runtime.  The following script was used.
+
+-----------------------------------------------------------------------
+#!/bin/bash
+BENCHMARKS="200CHECK 201COMPRESS 202JESS 205RAYTRACE 209DB 213JAVAC"
+BENCHMARKS="$BENCHMARKS 222MPEGAUDIO 227MTRT 228JACK"
+
+function buildone() {
+pushd $RT
+( ./configure "${CONFIG[@]}" && make clean && make ) || return
+popd
+mkdir -p $DST || return
+tar -C src -xzf src/$SRC.tgz || return
+for f in $BENCHMARKS ; do
+  make -C src/$SRC/as${f}sa$SUF -j2 CC="$CFLAGS" && \
+  mv src/$SRC/as${f}sa$SUF/Java.a ${RT}/${f}sa${SUF}-Java.a && \
+  make -C src/$SRC/as${f}sa$SUF clean && \
+  make -C ${RT} run${f}sa$SUF && \
+  mv ${RT}/${f}sa${SUF}-Java.a ${RT}/run${f}sa$SUF $DST && \
+  gzip -9 -f $DST/run${f}sa$SUF
+done
+/bin/rm -rf src/$SRC/
+}
+
+# non-transactional runtime
+RT=/home/cananian/Harpoon/Runtime
+CFLAGS="gcc-3.4 -I${RT}/include -g -O9"
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install)
+
+# 0-NO is nontransactional
+SRC=NO
+DST=0-NO
+SUF=
+buildone
+
+# transactional runtime
+RT=/home/cananian/Harpoon/TRANS/Runtime
+CFLAGS="gcc-3.4 -I${RT}/include -g -O9"
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=8)
+
+# 1-T is pure transactional
+SRC=T
+DST=1-T
+SUF=T
+buildone
+
+# 2-NOA only transforms non-array references
+SRC=TNOA
+DST=2-NOA
+SUF=TNOA
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=8 \
+        --with-extra-cflags=-DTRANS_NO_ARRAY)
+buildone
+
+# 8-NT strips all the transactions, so we can see non-transactional overhead
+SRC=NT
+DST=8-NT
+SUF=NT
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=8 \
+        --with-extra-cflags=-DTRANS_NT)
+buildone
+
+# 9-NONT strips all the transactions, so we can see non-transactional overhead
+# also substitutes plain reads & writes.
+SRC=NT
+DST=9-NONT
+SUF=NT
+CFLAGS="gcc-3.4 -I${RT}/include -g -O9 -DDONT_REALLY_DO_TRANSACTIONS"
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=8 \
+        --with-extra-cflags="-DDONT_REALLY_DO_TRANSACTIONS -DTRANS_NT")
+buildone
+
+# B-NONTSC is similar, but it replaces the stores with LL/SC to see how large
+# that effect is.
+DST=B-NONTSC
+CFLAGS="gcc-3.4 -I${RT}/include -g -O9 -DDONT_REALLY_DO_TRANSACTIONS "
+CFLAGS="$CFLAGS -DSTUB_LLSC"
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=8 \
+   --with-extra-cflags="-DDONT_REALLY_DO_TRANSACTIONS -DTRANS_NT -DSTUB_LLSC")
+buildone
+
+
+
+
+# 6-NOT is transactional code, but with plain reads & writes substituted
+SRC=T
+DST=6-NOT
+SUF=T
+CFLAGS="gcc-3.4 -I${RT}/include -g -O9 -DDONT_REALLY_DO_TRANSACTIONS"
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=8 \
+        --with-extra-cflags=-DDONT_REALLY_DO_TRANSACTIONS)
+buildone
+
+# E-TUNIQ has code to count unique objects
+SRC=TUNIQ
+DST=E-TUNIQ
+SUF=TUNIQ
+CFLAGS="gcc-3.4 -I${RT}/include -g -DDONT_REALLY_DO_TRANSACTIONS"
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=16 \
+        --with-extra-cflags=-DDONT_REALLY_DO_TRANSACTIONS)
+buildone
+
+# 7-TS is the transactional code w/ some statistics gathering stuff
+RT=/home/cananian/Harpoon/TRANS/Runtime
+CFLAGS="gcc-3.4 -I${RT}/include -g -O9"
+CONFIG=(--with-precise-c --with-gc=conservative --with-thread-model=heavy \
+        --with-classpath=/home/cananian/Harpoon/classpath-0.08-install \
+        --with-transactions --with-object-padding=8 --with-statistics)
+SRC=T
+DST=7-TS
+SUF=T
+buildone
+
+# done!

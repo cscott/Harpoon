@@ -1,0 +1,76 @@
+
+     _________________________________________________________________
+
+  Copyright and Licensing Information for ZEN
+
+   [1]ZEN and is copyrighted by [2]Douglas C. Schmidt, Raymond Klefstad,
+   and their [3]research group at [4]University of California at Irvine,
+   Copyright (c) 2000-2001, all rights reserved. Since ZEN is
+   [5]open-source, [6]free software, you are free to use, modify, and
+   distribute the ZEN source code and object code produced from the
+   source, as long as you include this copyright statement along with
+   code built using ZEN.
+
+   In particular, you can use ZEN in proprietary software and are
+   under no obligation to redistribute any of your source code that is
+   built using ZEN.  Note, however, that you may not do anything to
+   the ZEN code, such as copyrighting it yourself or claiming
+   authorship of the ZEN code, that will prevent ZEN from being
+   distributed freely using an open-source development model.
+
+   ZEN is provided as is with no warranties of any kind, including the
+   warranties of design, merchantability and fitness for a particular
+   purpose, noninfringement, or arising from a course of dealing,
+   usage or trade practice. Moreover, ZEN is provided with no support
+   and without any obligation on the part of the University of
+   California at Irvine, its employees, or students to assist in its
+   use, correction, modification, or enhancement.
+
+   The University of California at Irvine, its employees, and students
+   shall have no liability with respect to the infringement of
+   copyrights, trade secrets or any patents by ZEN or any part
+   thereof. Moreover, in no event will the University of California at
+   Irvine, its employees, or students be liable for any lost revenue
+   or profits or other special, indirect and consequential damages.
+
+   The [1]ZEN web site is maintained by the [3]Distributed Object
+   Computing Laboratory of the University of California at Irvine for
+   the development of open-source software as part of the
+   [5]open-source software community. By submitting comments,
+   suggestions, code, code snippets, techniques (including that of
+   usage), and algorithms, submitters acknowledge that they have the
+   right to do so, that any such submissions are given freely and
+   unreservedly, and that they waive any claims to copyright or
+   ownership. In addition, submitters acknowledge that any such
+   submission might become part of the copyright maintained on the
+   overall body of code, which comprises the [1]ZEN software. By
+   making a submission, submitter agree to these terms. Furthermore,
+   submitters acknowledge that the incorporation or modification of
+   such submissions is entirely at the discretion of the moderators of
+   the open-source ZEN projects or their designees.
+
+   The name ZEN, and University of California at Irvine may not be
+   used to endorse or promote products or services derived from this
+   source without express written permission from the University or
+   California at Irvine. Further, products or services derived from
+   this source may not be called ZEN, nor may the name University of
+   California at Irvine appear in their names, without express written
+   permission from the University of California at Irvine.
+
+   If you have any suggestions, additions, comments, or questions, please
+   let [7]me know.
+
+   [2]Douglas C. Schmidt
+     _________________________________________________________________
+
+References
+
+   1. http://www.zen.uci.edu/
+   2. http://www.ece.uci.edu/~schmidt/
+   3. http://doc.ece.uci.edu/
+   4. http://www.uci.edu/
+   5. http://www.opensource.org/
+   6. http://www.gnu.org/
+   7. mailto:schmidt@uci.edu
+   8. mailto:klefstad@uci.edu
+

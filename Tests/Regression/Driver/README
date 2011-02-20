@@ -1,0 +1,333 @@
+Updated: 08/13/2002.
+
+----------------------------------------------------------------
+1. HOW TO MAKE EVERYTHING WORK
+2. FILES' FORMATS
+3. SERVER OPTIONS
+4. "INSIDE" THE SERVER (IN CASE YOU DECIDE TO HACK THE SCRIPTS)
+5. A COUPLE OF TIPS
+----------------------------------------------------------------
+
+
+===============================
+1. HOW TO MAKE EVERYTHING WORK
+===============================
+
+1.1. Make sure you checked out all files in this directory and did not accidently delete any of them.
+1.2. Make sure your ssh client supports ssh1 and ssh2 protocols. If you are not sure what protocols your ssh client supports, or you don't know how to check, just go to http://rpmfind.net/, search for the latest version of OpenSSH for your platform, download and install it.
+1.3. Make your ssh-agent work; you MUST be able to login automatically to all client-machines (see SSH-INSTALL for more details).
+1.4. Read Section 2 -- FILES' FORMATS and Section 3 -- SERVER OPTIONS. Optionally, instead of reading Section 3 -- SERVER OPTIONS, you can run ./start-server --help, but in Section 3 -- SERVER OPTIONS everything is described in more details.
+1.5. After you read Section 2 -- FILES' FORMATS, edit the files you're gonna use.
+1.6. If you want to run the scripts manually, run ./start-server <options>, where <options> are the options described in Section 3 -- SERVER OPTIONS. If you want to schedule them for a certain time, use crontab ("man 5 crontab" for more information).
+
+
+==================
+2. FILES' FORMATS
+==================
+
+---------------
+REQUIRED FILES
+---------------
+
+machines-all/machines-selected (or any other file that contains the names of the client-machines):
+--------------------------------------------------------------------------------------------------
+
+	Each line of the file must have the following format: <user>@<machine>
+	Note: if the account you are using on the remote machine is not the account you are using on the server, make sure that you copied the necessary ssh-agent files to the right directories.
+
+	<user>    - the user who will run the tasks on the remote machine. The default value is the username you use for runnnig ./start-server
+	<machine> - the hostname or the ip of the remote (or local) machine.
+
+	EXAMPLES:
+		machines-all/machines-selected:
+			nw1.lcs.mit.edu
+			nw2.lcs.mit.edu
+			mike@nw3.lcs.mit.edu
+			jhon@18.111.0.242
+
+tasks-all/tasks-selected (or any other file that contains the names of the tasks to be run):
+--------------------------------------------------------------------------------------------
+
+	Each line of the file must have the following format: <task>,<compile_line>,<command-line parameters>
+	Note: DO NOT OMMIT COMMAS, even if you want to use the default values for <configure_line> and/or <command-line parameters>
+
+	<task>         - the name of the task to be run. You can run either a .java file, or a script. If you want to run a script, change <task> to the script's name; if you want to run a .java file, change <task> to the name of the file WITHOUT the .java extension. For more information on how the task is run, see ../Client/README.
+
+	<compile_line> - specifies the command-line to use for compiling <task>. If you are satisfied with the default value of this parameter ("bin/build-precisec -m -t ALL_RTJ_PERF_THREADS"), leave it blank. For more information, read FLEX documentation.
+	<command-line parameters> - the command-line parameters to be passed to the executable. If you do not want to pass any command-line parameters, leave this parameter black.
+
+	EXAMPLES:
+		tasks-all/tasks-selected:
+			Test1,bin/build-precisec -t SIMPLE_THREADS,1 2 3
+			Test2,,4 5 6
+			Test3,bin/build-precisec -t ALL_THREADS,
+			Test4,,
+			Test5,,,   (the last comma will be interpreted as a command-line parameter)
+			Script1,,
+			Script2,,A B C
+
+	INVALID EXAMPLES:
+			,bin/build-precisec -t SIMPLE_THREADS, 1 2 3   (the task name is not specified)
+			Test6,1 2 3   (1 2 3 will be interpreted as <compile_line>; remember: you cannot ommit commas)
+
+mailto-all/mailto-selected (or any other file that contains the list of people to which the results should be mailed):
+----------------------------------------------------------------------------------------------------------------------
+
+	Each line of the file must contain an email address.
+
+	EXAMPLES:
+		mailto-all/mailto-selected:
+			jhon@hotmail.com
+			mike   (the email will be sent to the user "mike" on the same machine where ./start-server is run)
+			abc@mit.edu
+
+correct-results/*:
+------------------
+
+	Each file contains the correct output for the task that has the same name as the name of the file.
+
+	EXAMPLES:
+		HelloWorld:
+			Hello, World!
+
+		Sum1To10:
+			The sum of the numbers from 1 to 10 is 55.
+
+temp/:
+------
+
+	This is a directory for storing temporary files. In general, this directory should always be empty when the server is not running.However, if the server finished because of an error, some "trash" might still remain either in temp or even in ./. If you notice any "trash" files, simply run ./clean.
+
+
+----------------
+GENERATED FILES
+----------------
+
+archive/errors.tgz:
+----------------------
+	This is an archive file that stores all "more-detailed" logs for all sessions for which the -error parameter was set to "yes" (see Section 3 -- SERVER OPTIONS). All files in this archive are named errors_<date>, where <date> represents the date on which the session was run. <date> has the mm-dd-yyyy format.
+
+archive/errors_short.tgz:
+----------------------------
+	This is an archive file that stores all short logs for all sessions (even if the -error parameter was set to "no"). All files in this archive are named errors_short_<date>, where <date> represents the date on which the session was run. <date> is in mm-dd-yyyy format. If you ran the server on date <a_specific_date> with -mail-results=yes (see Section 3 -- SERVER OPTIONS), then the email that is mailed no date <a_specific_date> is exactly the file errors_short_<a_specific_date>.
+
+archive/diffs.tgz:
+---------------------
+	This is an archive file that stores sources diffs for all sessions that were run with -diffs=yes option (see Section 3 -- SERVER OPTIONS). All files in this archive are named diffs_<date>, where <date> represents the date on which the session was run. <date> has the mm-dd-yyyy format. Every file diffs_<date> contains the result of diff-ing the sources used for this session with the sources used in the last session.
+
+archive/executables.tgz:
+---------------------------
+	This is an archive file that stores the executables generated in all sessions. This archive is composed of directories with names <date>, where <date> represents the date on which the session was run. <date> has the mm-dd-yyyy format. In each directory, executables generated for the tasks run in that session are stored.
+
+archive/sources.tgz:
+-----------------------
+	This is an archive file that stores the sources of tasks run in all sessions. This archive is composed of directories with names <date>, where <date> represents the date on which the session was run (<date> has the mm-dd-yyyy format), and a special directory called "last", which keeps the most recent source for all tasks that were ever run.
+
+archive/compile_results.tgz:
+-------------------------------
+	This is an archive file that stores the compiling-time outputs for all tasks for all sessions that were run with -compile-stats=yes option (see Section 3 -- SERVER OPTIONS). Depending on the value of the -long-compile-stats variable (see Section 3 -- SERVER OPTIONS), the ouputs can be either long or short.
+
+archive/run_results.tgz:
+---------------------------
+	This is an archive file that stores the runtime outputs for all tasks for all sessions that were run with -run-stats=yes option (see Section 3 -- SERVER OPTIONS). Depending on the value of the -long-run-stats variable (see Section 3 -- SERVER OPTIONS), the outputs can be either long or short.
+
+archive/journal:
+----------------
+	Unlike all other files, this is not a .tgz archive; this file is a regular text file. It stores information about the last running of all tasks that were ever run. Each line of the file has the following format:
+
+		<task_name>:<last_date>:<compile_status>:<run_status>:<diff>
+
+	<task_name>      - The name of the task that was run; identical to the first field of each line in "tasks-all"/"tasks-selected" (see above)
+	<last_date>      - The last date on which this task was run, in mm-dd-yyyy format.
+	<compile_status> - The compiling status of this task. Can be equal only to:
+		"compile-success" - the compilation was successful
+		"compile-error"   - the compilation finished with an error
+		"compile-nothing" - the task was not compiled at all -- happens only when the server was given the -compile=no option (see Section 3 -- SERVER OPTIONS)
+	<run_status>     - The runing status of this task. Can be equal only to:
+		"run-success" - the runing was successful
+		"run-error"   - the runing threw an error
+		"run-nothing" - the task did not run at all -- happens only when server was given the -run=no option, or when the server was given the -run-only-if-compiled option and the compilation of this task threw an error (see Section 3 -- SERVER OPTIONS)
+	<diff>           - compares the runtime output for this task in the last session with the runtime output for the same task in the previous session. Can be equal only to:
+		"correct (N/A)"          - the output matches the supposedly correct output from "correct-results", but it cannot be diffed with the output from the last session, because most probably it is the first runtime output for this task
+		"correct (no changes)"   - the output matches the supposedly correct output from "correct-results", and it matches the runtime output of the same task from the previous session this task was run
+		"correct (changed)"      - the output matches the supposedly correct output from "correct-results", but it is different from the last runtime output of the same task from the previous session this task was run
+		"incorrect (N/A)"        - the output does not match the supposedly correct output from "correct-results", and diffing with the output from the last session is not possible, because most probably it is the first runtime output for this task
+		"incorrect (no changes)" - the output does not match the supposedly correct output from "correct-results", but it matches the runtime output of the same task from the previous session this task was run
+		"incorrect (changed)"    - the output does not match the supposedly correct output from "correct-results", but it is different from the runtime output of the same task from the previous session this task was run
+		"N/A"                    - missing the correct output from "correct-results"
+
+	EXAMPLES: journal
+
+		Test1:08-08-2002:compile-success:run-error:incorrect (no changes)
+		Test2:08-08-2002:compile-error:run-error:N/A
+		Test3:08-09-2002:compile-success:run-success:correct (no changes)
+		Test4:08-09-2002:compile-error:run-error:incorrect (no changes)
+		Test5:08-12-2002:compile-success:run-success:incorrect (changed)
+
+
+==================
+3. SERVER OPTIONS
+==================
+
+Note: An alternative to reading this section is reading the output of ./start-server --help, but it is not as detailed as this section.
+
+In order to use an option, you should pass it to the ./start-server script as <option>=yes or <option>=no. If you don't specify "=yes" or "=no", then the option will not be taken into account.
+
+List of options with their description:
+	-all-tasks -- Tells the server where the tasks list is located. If this parameter is equal to "yes", the server reads the file "tasks-all"; if equal to "no", the server reads the file "tasks-selected". If you want to list the tasks in another file, use -tasks-file parameter. Default value is "yes".
+	-tasks-file -- Tells the server the name of the file that contains the list of the tasks to be run. If you want to use the file "tasks-all" or "tasks-selected", you can use -all-tasks parameter instead of -tasks-file. However, if you want to use other file names, you have to use this parameter. Default value is "tasks-all".
+	-all-machines -- Tells the server where the machines list is located. If this parameter is equal to "yes", the server reads the file "machines-all"; if equal to "no", the server reads the file "machines-selected". If you want to list the machines in another file, use -machines-file parameter. Defautl value is "yes".
+	-machines-file -- Tells the server the name of the file that contains the list of machines on which the tasks will be run. If you want to use the file "machines-all" or "machines-selected", you can use all-machines parameter insted of -machines-file. However, if you want to use other file names, you have to use this parameter. Default value is "machines-all".
+	-update -- Tells the server whether to update the remote machines or not. If set to "yes", than all remote machines that will be used in this session have their FLEX stuff updated. If we have less tasks than machines, not all machines will be used, but all of them will be updated. If set to "no", no machine is updated. You cannot specify a list of machines that must be updated and a list of machines that must not be updated -- either all or none are updated. Default value is "yes".
+	-update-clean -- Tells the server how to update the remote machines. If this parameter is equal to "yes", then the server will cvs update the FLEX stuff on all machines, and before remaking everything in FLEX, it will perform the "hardest" possible clean (for example, performs ./setup, ./configure and "make clean" in FLEX's Runtime directory, before doing "make"). If this parameter is set to "no", the server uses the "softest" possible remake. If -update is set to "no", this parameter has no effect. Default value is "yes".
+	-conf-each-test -- For every task you can configure FLEX differently (for more information see ../Client/README -> Section 2 - FILES' FORMATS -> tasks-configure). If this parameter is set to "yes", then each machine will reconfigure itself before running a task. If that task does not have a specific configuration then the machine will use the default configuration. Default value is "no".
+	-compile -- Tells the server whether to compile the tasks or not. If set to "yes" all tasks will be compiled, if set to "no" no task will be compiled. You cannot tell the server to compile only some tasks and not compile the rest. If you want to do this, then you can make two different tasks-files (and maybe two different machines-files) and run two instances of ./start-server with -compile=yes for one of them and -compile=no for the second one. Default value is "yes".
+	-compile-stats -- Tells the server whether or not to generate some reports in case compiling throws an error. If set to "yes", a report will be generated, if set to "no", no report is generated. This parameter is effective for all tasks; you cannot set it to "yes" for some tasks and set it to "no" for other tasks in the same tasks-list. If you really need to do this, make two different tasks-files. Default value is "yes".
+	-long-compile-stats -- Tells the server what kind of reports to generate when compiling throws an error. If set to "yes", the report will be long (at this moment a long report includes THE ENTIRE compiling-time output); if set to "no", the report will be short (at this moment a short report includes only the last 10 lines of the compiling-time output). You cannot set this parameter to "yes" for some tasks in the task-list and set it to "no" for the rest of tasks in the same tasks-list. If you really need to do this, make a different tasks-file and run another instance of ./start-server. This parameter has no effect if -compile-stats is set to "no". Default value is "no".
+	-run -- Tells the server whether to run the tasks or not. If set to "yes" all tasks will be run; if set to "no", no tasks will be run. You cannot tell the server to run only some tasks and not run the others. If you want to do this, make two different tasks-files and run another instance of ./start-server with different parameters. Default value is "yes".
+	-run-stats -- Tells the server whether or not to generate some reports in case an error was thrown at the runtime. If set to "yes", a report is generated; if set to "no", no report is generated. This parametter is effective for all tasks; you cannot set it to "yes" for some tasks and set it to "no" for other tasks in the same tasks-list. If you really need to do this, make two different tasks-files. Default value is "yes".
+	-long-runtime-stats -- Tells the server what kind of reports to generate when an error is thrown at the runtime. If set to "yes", the report will be long (at this moment a long report includes THE ENTIRE runtime output); if set to "no", the report will be short (at this moment a short report includes only the last 10 lines of the runtime output). You cannot set this parameter to 'yes" for some tasks in the task-list and set it to "no" for the rest of tasks in the same tasks-list. If you really need to do this, make a different tasks-file and run another instance of ./start-server. This parameter has no effect if -run-stats is set to "no". Default value is "no".
+	-run-only-if-compiled -- This parameter tells the server when to run the tasks. If set to "yes", a task will be run only if it was previously compiled; if set to "no", the server attempts to run the task even if it was not compiled. As you can see, the combination -compile=no -run-only-if-compiled=yes will make the server not do anything (maybe only to update the remote machines). If you want to run some scripts, this option must be set to "no"; however, if you want to make sure that only the last versions of some "compilable" files are run, then you should set this option to "yes". Default value is "no".
+	-errors  -- Tells the server whether to collect the errors that might appear or not. If set to "yes", a more detailed log file will be created and stored in archive/errors.tgz (for more information see Section 2 -- FILES' FORMATS --> archive/errors.tgz). If set to "no", then no information will be logged, except the one sent by email. Default value is "yes".
+	-diffs -- Tells the server whether or not to diff the sources of the tasks with the sources of the same tasks from the last session. If set to "yes", the current sources and sources from the last session are diffed and the diffs are stored in archives/diffs.tgz (for more information see Section 2 -- FILES' FORMATS --> archive/diffs.tgz). If set to "no", then no diffs are generated. Default value is "yes".
+	-mail-results -- Tells the server whether to mail the results or no. If this option is set to "yes", then a short report will be sent to the list of users specified by -mail-to-all or -mailto-file parameters. If set to "no", then nobody is mailed anything. Default value is "yes".
+	-mail-to-all -- Tells the server where the mailing list is located. If this parameter is equal to "yes", the server reads the file "mailto-all"; if equal to "no", the server reads the file "mailto-selected". If you want to mail the results to a list located in a different file, use -mailto-file parameter. Default value is "yes".
+	-mailto-file -- Tells the server the name of the file that contains the list of the people to be mailed. If you want to use the file "mailto-all" or "mailto-selected", you can use -mail-to-all parameter instead of -mailto-file. However, if you want to use other file names, you have to use this parameter. Default value is "mailto-all".
+	-ssh-key-file -- Tells the server the name of the file that contains the private key which can be used in order to be able to login to all remote machines that will be used in this session, without introducing any passphrase. The passphrase of this private key has to be blank. Default value is $HOME/.ssh/id_dsa.
+
+	-debug -- This is a special option -- it does not require "=yes" or "=no". This option is something like -v/-V (verbose) option for most of UNIX commands/programs. Generally, you should not give ./start-server this option, unless you modified something in ./run-tasks and you want to make sure that everything is working. For more details about debugging information see Section 4 -- "INSIDE" THE SERVER -> VARIABLES -> $DEBUG.
+
+
+=======================
+4. "INSIDE" THE SERVER
+=======================
+
+VARIABLES
+---------
+
+	$GOT_ERRORS -- this variable is a marker that tells whether or not an error occured. If its value is 0, than no error occured up to now. If its value is 1, then an error occured.
+
+	$DATE -- Keeps today's date in mm-dd-yyyy format. Whenever the scripts require to label something with a date, the $DATE variable will be used.
+
+	$MACHINES_LIST -- the list of machines in "machines-all" or "machines-selected" or any other file that contains the list of machines that should be used as clients for this session.
+
+    	$WORKING_MACHINES_LIST -- the list of machines from $MACHINES_LIST that were updated successfully. If the -update=no option is given to ./start-server, or if all machines updated successfully, then $WORKING_MACHINES_LIST is identical to $MACHINES_LIST.
+
+    	$USED_MACHINES_LIST -- the list of machines that were actually used in this session, i.e. did anything but updating themselves. Generally, you will probably have much more tasks than machines; thus, $USED_MACHINES_LIST will be equal to $WORKING_MACHINES_LIST. However, if the number of tasks is less than the number of machines, $USED_MACHINES_LIST will be only a subset of $WORKING_MACHINES_LIST.
+
+	$TASKS_LIST -- the list of tasks in "tasks-all" or "tasks-selected" or any other file that contains the list of tasks to be run in this session. The existance of tasks is not checked by the server. If a task does not exist, an error message will be written in $ERROR_FILE.
+
+	$MAILING_LIST -- the list of people in "mailto-all" or "mailto-selected" or any other file that contains the list of people to whom the results of this session have to be mailed.
+
+    	$TASKS_CHANGED -- a string representation of the list of tasks that changed their runtime output (comparing to their last known output). If such tasks exists, $TASKS_CHANGED will be equal to "Tasks changed: <task_1_name> <task_2_name> ... <task_n_name>", where <task_i_name> are the names of the tasks. Since the only way in which this variable is used in scripts is writing it to $ERROR_FILE_SHORT, when no tasks changed their output, this variable is simply ignored, and "No tasks changed." is written instead to $ERROR_FILE_SHORT.
+
+	$ERROR_FILE -- the name of the file that stores all error messages for this session. Actually, it is more a log file than an error file, since it stores not only error messages, but also messages for finishing successfully something. If you need a detailed information about this session, this is the right file to look at. This file and -debug option are the only debugging tools (which should be enough for most debugging purposes). Ultimately, this file is added to the $ARCHIVE_ERRORS_FILE archive and is deleted.
+
+    	$ERROR_FILE_SHORT -- the name of the "short" errors file. This is the file that in the end will be mailed to $MAILING_LIST. It contains short information ONLY about the compiling and running of tasks in this session. It's format is very similar to the journal file (see Section 2 -- FILES' FORMATS); the difference is that $ERROR_FILE_SHORT contains 2 lines per task -- the first line is taken from the journal (if it exists there; if not, replaces by "   was: N/A"), and the second line contains the same kind of information for this session. Ultimately, this file is added to the $ARCHIVE_ERRORS_SHORT_FILE archive and is deleted.
+
+    	$DIFFS_SOURCES_FILE -- the name of the file that stores the sources diffs of tasks run in this session with the last known sources for the same tasks. Ultimately, this file is added to the $ARCHIVE_DIFFS_SOURCES_FILE archive and is deleted.
+    
+    	$TEMP_DIR -- the name of the directory where all temporary files will be stored. ./start-server calls ./clean at the end, which should take care of removing everything in $TEMP_DIR. Therefore, you can expect $TEMP_DIR to be clean everytime when the server finishes running all tasks.
+
+    	$DIFFS_DIR -- the main diffing directory. It should be a temporary directory, since at the end the only important diffs file is $DIFFS_SOURCES_FILE, and therefore, should be make somewhere in $TEMP_DIR.
+
+    	$DIFFS_YESTERDAY_DIR -- a temporary directory that exists only when diffing the tasks sources. It keeps the last used sources for all tasks that were run before this session. Since it is a temprorary directory, and it is a directory related to diffing, probably it should be created somewhere inside $DIFFS_DIR.
+	$DIFFS_TODAY_DIR -- a temporary directory that exists only when diffing the tasks sources. It keeps the sources of the tasks used in this session. Since it is a temporary directory, and it is a directory related to diffing, probably it should be created somewhere inside $DIFFS_DIR.
+
+	$CORRECT_RESULTS_DIR -- the directory where the correct outputs of tasks are stored. When a task finished running, if the -diffs=yes option was chosen (see Section 3 -- SERVER OPTIONS), the output is diffed with the corresponding files in $CORRECT_RESULTS_DIR (if the corresponding file exist). A "corresponding" file for a task in $CORRECT_RESULTS_DIR is a file whose name is the name of the task and contains the correct output of that task.
+
+    	$ARCHIVE_DIR -- the directory where all archive files are stored.
+
+    	$ARCHIVE_SOURCES_FILE -- the name of the file where all sources for all tasks for all sessions are stored. Since the file is a .tgz archive, probably it's better to give it a .tgz extension (See Section 2 -- FILES' FORMATS).
+
+    	$ARCHIVE_EXECUTABLES_FILE -- the name of the file where all executables for all tasks for all sessions are stored. Since the file is a .tgz archive, probably it's better to give it a .tgz extension (See Section 2 -- FILES' FORMATS).
+
+    	$ARCHIVE_ERRORS_FILE -- the name of the file where $ERROR_FILE files for all sessions are stored. Since the $ARCHIVE_ERRORS_FILE is a .tgz archive, probably it's better to give it a .tgz extension (See Section 2 -- FILES' FORMATS).
+
+    	$ARCHIVE_ERRORS_SHORT_FILE -- the name of the file where $ERROR_FILE_SHORT files for all sessions are stored. Since the $ARCHIVE_ERRORS_SHORT_FILE is a .tgz archive, probably it's better to give it a .tgz extension (See Section 2 -- FILES' FORMATS).
+
+    	$ARCHIVE_DIFFS_SOURCES_FILE -- the name of the file where $DIFFS_SOURCES_FILES files for all sessions are stored. Since the $ARCHIVE_DIFFS_SOURCES_FILE is a .tgz archive, probably it's better to give it a .tgz extension (See Section 2 -- FILES' FORMATS).
+
+    	$ARCHIVE_COMPILE_RESULTS_FILE -- the name of the file where all compiling time outputs for all tasks for all sessions are stored. Since it is a .tgz archive, probably it's better to give it a .tgz extension (See Section 2 -- FILES' FORMATS).
+
+    	$ARCHIVE_RUN_RESULTS_FILE -- the name of the file where all runtime outputs for all tasks for all sessions are stored. Since it is a .tgz archive, probably it's better to give it a .tgz extension (See Section 2 -- FILES' FORMATS).
+
+    	$JOURNAL_FILE -- the file that keeps a short record for the last running of every task that was ever run (See Section 2 -- FILES' FORMATS).
+
+	$TASKS_FILE -- the name of the file where the tasks list is kept (See Section 3 -- SERVER OPTIONS).
+	
+	$MACHINES_FILE -- the name of the file where the machines list is kept (See Section 3 -- SERVER OPTIONS).
+
+	$UPDATE -- a parameter that determines either to update or no each remote machine, before running the tasks (See Section 3 -- SERVER OPTIONS).
+
+	$UPDATE_CLEAN -- a parameter that determines whether or not to make a "clean" update. A "clean" update includes a "harder" clean, before remaking everything. For example, if $UPDATE_CLEAN is equal to "no", then when updating, the scripts will do only "make" in Runtime. However, if $UPDATE_CLEAN is equal to "yes", scripts will do ./setup, ./configure, make clean and make in Runtime (See Section 3 -- SERVER OPTIONS).
+
+    	$CONF_EACH_TEST -- a parameter that determines whether or not to reconfigure the machines using the task specific parameter, before running the task (See Section 3 -- SERVER OPTIONS).
+
+    	$COMPILE -- a parameter that determines if the tasks should be compiled or not, before running them (See Section 3 -- SERVER OPTIONS).
+
+    	$COMPILE_STATS -- a parameter that determines whether or not to generate a report in case compiling a task throws an error (See Section 3 -- SERVER OPTIONS).
+
+    	$LONG_COMPILE_STATS -- a parameter that determines what kind of reports to generate if compiling a task throws an error (See Section 3 -- SERVER OPTIONS).
+
+    	$COLLECT_COMPILE_RESULTS -- a parameter that determines whether or not to collect on server all compiling time outputs for all tasks (See Section 3 -- SERVER OPTIONS).
+
+    	$RUN -- a parameter that determines if the tasks should be compiled or not (See Section 3 -- SERVER OPTIONS).
+
+    	$RUN_STATS -- a parameter that determines whether or not to generate a report in case a runtime error occurs for a task (See Section 3 -- SERVER OPTIONS).
+
+    	$LONG_RUN_STATS -- a paramter that determines what kind of reports to generate if running a task throws an error (See Section 3 -- SERVER OPTIONS).
+
+    	$COLLECT_RUN_RESULTS -- a parameter that determines whether or not to collect on server all runtime outputs for all tasks (See Section 3 -- SERVER OPTIONS).
+
+    	$RUN_ONLY_IF_COMPILED -- a parameter that determines if the tasks should be previously successfully compiled, in order to run them (See Section 3 -- SERVER OPTIONS).
+
+    	$ERRORS -- a parameter that determines whether or not to generate errors (log) files (See Section 3 -- SERVER OPTIONS).
+
+    	$DIFFS -- a parameter that determines whether or not to do the diffing (See Section 3 -- SERVER OPTIONS).
+
+    	$MAIL_RESULTS -- a parameter that determines whether or not to send emails to people (See Section 3 -- SERVER OPTIONS).
+
+    	$MAILING_FILE -- the name of the file containing the list of people to whom the results of this session should be run (See Section 3 -- SERVER OPTIONS).
+
+	$SSH_KEY_FILE -- the name of the file containing the private key which can be used for logging in to all remote machines without typing anything. In order to be able to do this, the key has to have a blank passphrase (See Section 3 -- SERVER OPTIONS).
+
+HOW IT WORKS
+----------------
+
+./start-server
+--------------
+
+1. Tries to start an ssh-agent and add to it a key, that will allow the server to login into all remote machine without asking the user to introduce any passphrase.
+2. cvs updates the file ./run-tasks
+3. Runs the file ./run-tasks
+4. Kills the ssh-agent started at the beginning.
+
+./run-tasks
+-----------
+
+1. The server gets the list of tasks to be run, the list of machines to be used for running the tasks and the list of people to be mailed.
+2. The server tries to ssh into all machines from the list. If a machine is not reachable that machine is removed.
+3. The remaining machines are updated (if the user did not choose -update=no). The server can make a simple or a "clean" update, depending on the value of the -update-clean parameter.
+4. The server tries to distribute all tasks among machines. It takes the first machine and make it run the first task. The second task goes to the second machine and so on. When all machines are running something, the server waits for 30 seconds, and then checks again the status of all machines. If the server finds a machine that is not running anything, then it assigns the next task to this machine and so on, until the last task is assigned to a machine.
+5. After the last task is assigned, the server checks periodically (once in 30 seconds) the status of all machines, until ALL machines are not running anything.
+6. When all tasks are finished (not assigned, but finished running), the server starts gathering different information from the machines, depending on the command-line parameters given to the server. If the default options are used, the server copies the sources for all benchmarks, the executables (if task compiling did not throw an error), the errors files, the compiling time outputs and the runtime outputs.
+7. While copying the necessary files from remote machines, the server creates different reports and add these files to their archives.
+8. When everything is done, the server emails a short report to all people who are supposed to be mailed.
+9. At the end, the script "cleans" itself an makes a clean on all remote machines. This is done by simply removing temporary files, that are not needed anymore.
+
+
+====================
+5. A COUPLE OF TIPS
+====================
+
+0. DON'T RUN SIMULTANEOUSLY 2 SERVERS THAT MAY USE THE SAME MACHINE AS A CLIENT. YOU MIGHT RUN INTO TROUBLE...
+1. If you dont need to update your FLEX stuff, run the server with -update=no option. This might save you a considerable amount of time, especially if you run this server manually (not over night) and you are waiting for the results.
+2. Don't use the -conf-each-test=yes option, unless you really need different configurations for different tasks. Reconfiguring FLEX is again a much-time-consuming process.
+3. It is advisable, in general, to divide the task-set in smaller groups, according to the time it takes to run them, and for each group of tasks to allocate a different group of machines. This way, you will be able to reuse the machines that were running the shorter tasks before the whole task-set is run. Moreover, you will get emails with information for the shorter tasks before the whole task-set is finished running.
+
+
+--------------------------------------------------------------------------------------------
+For more information, email me: dum_dani@mit.edu
+But please: READ THIS FILE FIRST.
+--------------------------------------------------------------------------------------------

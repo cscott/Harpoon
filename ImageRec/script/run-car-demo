@@ -1,0 +1,25 @@
+#return to ImageRec directory
+cd ..
+
+#Start the Name Server:
+xterm -title "Name Service" -e java -jar ns.jar /home/benster/ImageRec/.jacorb &
+
+sleep 2
+
+#Start the Alert Server:
+xterm -title "Alert Server" -e java -jar carDemoTrackerStub.jar 1 "ATR Alert" -ORBInitRef &
+
+sleep 2
+
+#Start the ReceiverClient:
+xterm -title "Image Sender" -e java -jar carDemoReceiverStub.jar nocamera GUI.jar tank.gz 533 1 "LMCO ATR" "ATR Feedback" -ORBInitRef &
+
+sleep 2
+
+#Start the Embedded ATR:
+xterm -title "Embedded ATR" -e java -jar carDemoEmbeddedATR.jar 1 nocompress "LMCO ATR" "embedToGround" "groundToEmbed" "ATR Alert" "ATR Feedback" -ORBInitRef &
+
+sleep 2
+
+#Start the Ground ATR:
+xterm -title "Ground ATR" -e java -jar carDemoGroundATR.jar 1 nocompress "embedToGround" "groundToEmbed" -ORBInitRef &

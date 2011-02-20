@@ -1,0 +1,139 @@
+1db 1 iterations 
+1Reading database input/db4 ... OK
+1Building database ...Done.
+1a - add record
+1b - show beginning record
+1d - delete record
+1e - show end record
+1f - find record
+1m - modify record
+1n - next entry
+1p - previous record
+1q - quit
+1w - write database
+1s - sort
+1. - current record number
+1x - Total records
+1num - goto record number 'num'
+1Record 1 of 50
+1---- Record number 1 ----
+1Full name
+1   Last: Richards
+1  First: Gena
+1     MI: E
+1Address
+1    Addr: P.O. Box 6055
+1    City: Hill City
+1   State: Wisconsin
+1     ZIP: 20959
+1 Phone #: (217) 541-3354
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Pearce
+1  First: Bobby
+1     MI: U
+1Address
+1    Addr: 8379 North Bull Run Crossing
+1    City: Galveston
+1   State: North Carolina
+1     ZIP: 31564
+1 Phone #: (193) 302-8320
+1
+1---- Record number 3 ----
+1Full name
+1   Last: Wilkins
+1  First: Bonnie
+1     MI: O
+1Address
+1    Addr: P.O. Box 1420
+1    City: Marion
+1   State: North Dakota
+1     ZIP: 14912
+1 Phone #: (621) 569-9499
+1
+1---- Record number 50 ----
+1Full name
+1   Last: Lopez
+1  First: Sara
+1     MI: S
+1Address
+1    Addr: P.O. Box 8255
+1    City: Bandera
+1   State: Vermont
+1     ZIP: 15229
+1 Phone #: (216) 860-0459
+1
+1---- Record number 49 ----
+1Full name
+1   Last: Stevensen
+1  First: Terrence
+1     MI: M
+1Address
+1    Addr: 1060 East Wagon Wheel Street
+1    City: Bellaire
+1   State: North Carolina
+1     ZIP: 60054-9647
+1 Phone #: (437) 342-6493
+1
+1---- Record number 48 ----
+1Full name
+1   Last: Kennedy
+1  First: Melanie
+1     MI: P
+1Address
+1    Addr: 6579 North Luna 
+1    City: Lawrenceburg
+1   State: Louisiana
+1     ZIP: 53974
+1 Phone #: (442) 126-1627
+1
+1---- Record number 10 ----
+1Full name
+1   Last: Carpenter
+1  First: Zane
+1     MI: P
+1Address
+1    Addr: P.O. Box 596
+1    City: Hartford
+1   State: Minnesota
+1     ZIP: 21544
+1 Phone #: (253) 143-4102
+1
+1---- Record number 1 ----
+1Full name
+1   Last: Adams
+1  First: Melanie
+1     MI: A
+1Address
+1    Addr: P.O. Box 9404
+1    City: Baldwin
+1   State: South Dakota
+1     ZIP: 32234
+1 Phone #: (785) 442-4853
+1
+1---- Record number 2 ----
+1Full name
+1   Last: Alvarado
+1  First: Marry
+1     MI: B
+1Address
+1    Addr: 514 South Bowser Av
+1    City: Hartford
+1   State: North Dakota
+1     ZIP: 29693
+1 Phone #: (116) 196-6806
+1
+1---- Record number 3 ----
+1Full name
+1   Last: Bailey
+1  First: Pat
+1     MI: E
+1Address
+1    Addr: 2354 North Greenwood 
+1    City: Benton
+1   State: Massachusetts
+1     ZIP: 09605
+1 Phone #: (937) 167-7049
+1
+1Save database (y or n)? File output byte count = 0 checksum = 0

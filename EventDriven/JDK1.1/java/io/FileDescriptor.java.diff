@@ -1,0 +1,38 @@
+--- /j/io/FileDescriptor.java	Mon Mar  6 23:14:03 2000
++++ FileDescriptor.java	Mon Mar  6 23:08:47 2000
+@@ -13,6 +13,7 @@
+  */
+ 
+ package java.io;
++import harpoon.Analysis.ContBuilder.*;
+ 
+ /**
+  * Instances of the file descriptor class serve as an opaque handle
+@@ -32,9 +33,12 @@
+  * @see     java.net.SocketOutputStream
+  * @since   JDK1.0
+  */
++
++
++
+ public final class FileDescriptor {
+ 
+-    private int fd;
++    public int fd;
+ 
+     /**
+      * Constructs an (invalid) FileDescriptor
+@@ -113,7 +117,12 @@
+      *	      buffers have been synchronized with physical media.
+      * @since     JDK1.1
+      */
+-    public native void sync() throws SyncFailedException;
++    public native void sync() throws java.io.SyncFailedException;
++    
++    public VoidContinuation syncAsync() throws java.io.SyncFailedException
++    {
++    		return null;
++    }
+ 
+     /* This routine initializes JNI field offsets for the class */
+     private static native void initIDs();

@@ -1,0 +1,2 @@
+The harpoon.Backend.Pentium package contains machine-dependent classes
+for the x86 backend. (Frame/CodeGen)

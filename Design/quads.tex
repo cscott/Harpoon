@@ -1,0 +1,428 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: quads.tex,v 1.18 1999-07-14 11:28:59 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,notitlepage,twocolumn,twoside]{article}
+\usepackage{pdffonts} % PDF-friendly fonts.
+\usepackage{comdef}
+
+% What's the name of this project this week?
+\newcommand{\Harpoon}{Harpoon}%{ActiveWorld}
+\newcommand{\harpoon}{harpoon}%{activeWorld}
+
+\author{C.~Scott~Ananian}
+\title{\Harpoon{} Project Compiler Intermediate Representation}
+\date{\today \\ $ $Revision: 1.18 $ $}
+
+\begin{document}
+\bibliographystyle{alpha}
+\maketitle
+
+\section{Conceptual Overview}
+
+The \Harpoon{} project compiler front-end translates Java bytecode files
+into a class-oriented intermediate representation which is intended to
+be easier to analyze and manipulate than bytecode assembly language.
+The intermediate representation is control-flow-graph structured, with
+all control flow explicit.  It is also maximally factored and in
+static single assignment (SSA) form.  Internally the intermediate
+representation is known as ``QuadSSA,'' referring
+to its derivation from quadruple-style IRs and its SSA form.
+
+\subsection{Quadruples}
+Unlike expression-tree structured intermediate representations, where
+every operand can optionally be the root of an expression, quadruple
+representations are flat.  The ``typical'' statement is of the form
+$a \leftarrow b \oplus c$; the name \textit{quadruple} comes from the fact
+that there are four components ($a$, $b$, $c$, $\oplus$)
+\cite{appel:modern}.\footnote{We use $\oplus$ to stand for an arbitrary
+binary operator.}  Obviously an IR expressive enough to represent the
+entire Java language needs more than a four component operation
+statement, but we have attempted to retain the atomic simplicity
+of the quadruple form.
+
+\subsection{Static Single-Assignment Form}
+
+Quoting from Appel in \cite{appel:modern}:
+\begin{quote}
+Many dataflow analyses need to find the use-sites of each defined
+variable, or the definition-sites of each variable used in an
+expression.  The \textit{def-use chain} is a data structure that makes
+this efficient: for each statement in the flow graph, the compiler can
+keep a list of pointers to all the \textit{use} sites of variables
+defined there, and a list of pointers to all \textit{definition} sites
+of the variables used there\ldots .
+
+An improvement on the idea of def-use chains is \textit{static
+single-assignment form}, or \textit{SSA form}, an intermediate
+representation in which each variable has only one definition in the
+program text.  The one (static) definition-site may be in a loop that
+is executed many (dynamic) times, thus the name \textit{static}
+single-assignment form.
+\end{quote}
+
+An example of the use of SSA form is shown in figure \ref{fig:ssa1}.
+Simple variable renaming suffices to transform straight-line code into
+SSA form.  Subscripts are used to emphasize the relationship of the
+renamed variables to the original variables.  A benefit of SSA form
+which is obvious from the example is that unrelated uses of the same variable
+in the source program ($\tt i_1$, $\tt i_2$) become different
+variables in the SSA form, eliminating false dependencies.
+
+\begin{figure}[t]
+\begin{tabular}{lll}
+Conventional    && Static Single Assignment \\ \hline
+$\tt \ldots$    && $\tt \ldots$ \\
+$\tt i=0$       && $\tt i_0 = 0$ \\
+$\tt i=i+1$     && $\tt i_1 = i_0 + 1$ \\
+$\tt j=func(i)$ && $\tt j_0 = func(i_1)$ \\
+$\tt i=2$       && $\tt i_2 = 2$ \\
+$\tt \ldots$    && $\tt \ldots$ \\
+\\
+\end{tabular}
+\caption{SSA transformation of straight-line code.}
+\label{fig:ssa1}
+\end{figure}
+
+SSA form becomes more complex when we
+introduce branches and loops.  Figure \ref{fig:ssa2} shows the
+necessary transformation.  You will notice the introduction of
+\textit{phi functions} at locations where control flow merges.  The
+\phifunction{} ``magically'' chooses a value from among its arguments
+based on the control flow path used to reach it.  Note that, although
+\phifunction{s} are impossible to implement directly in an instruction set
+(due to their magical properties), they can be replaced by \texttt{move}
+instructions along each control flow edge leading to the
+\phifunction{}.  Doing so violates the static single assignment
+constraints, but leads to code executable by real processors.
+
+Unless you are implementing code generator backends, it is unlikely
+you will need to so replace \phifunction{s} or view them as anything
+but magical $n$-ary operators.  However, it is important to observe and 
+maintain the ordering relationship between control-flow edges and 
+\phifunction{} arguments during transformation and analysis.
+
+\begin{figure}[t]
+\begin{tabular}{lll}
+Conventional    && Static Single Assignment \\ \hline
+$\tt \ldots$    && $\tt \ldots$ \\
+$\tt i=0$       && $\tt i_0 = 0$ \\
+$\tt if$ $x$ $\tt then$ && $\tt if$ $x$ $\tt then$ \\
+~~$\tt i=1$     && ~~$\tt i_1 = 1$ \\
+                && $\tt i_2 = \phi(i_0, i_1)$ \\
+$\tt j=func(i)$ && $\tt j_0 = func(i_2)$ \\
+$\tt \ldots$    && $\tt \ldots$ \\
+\end{tabular}
+\caption{SSA transformation of branching code.}
+\label{fig:ssa2}
+\end{figure}
+
+Analysis, transformation, and optimization of the
+IR is simplified by its SSA form.
+In addition, the QuadSSA form is \textit{maximally factored}.
+Constants are not allowed as quadruple operands (except for a special
+\texttt{const} operation); which creates a unique mapping from
+variable names to values in the computation.  This simplifies value
+analysis.
+
+Appel describes several other benefits of the SSA form in \cite{appel:modern}:
+
+\begin{quote}
+%\begin{enumerate}
+---%\item 
+If a variable has $N$ uses and $M$ definitions (which occupy
+about $N+M$ instructions in a program), it takes space (and time)
+proportional to $N\cdot M$ to represent def-use chains---a quadratic
+blowup.  For almost all realistic programs, the size of the SSA form
+is linear in the size of the original program.
+
+---%\item 
+Uses and defs of variables in SSA form relate in a useful way to
+the dominator structure of the control flow graph, which simplifies
+algorithms such as interference-graph construction.
+%\end{enumerate}
+\end{quote}
+
+\subsection{Exception handling}
+Exception handling in the Java language complicates control-flow.
+Operations (such as division, possibly by zero) may implicitly throw
+exceptions that radically redirect the flow of control.  To facilitate
+analysis, exception handling and its associated control-flow is made
+explicit in the intermediate representation.  For example, null
+pointer and array bounds checks are inserted before object and array
+references, and division by zero is explicitly checked before every
+division operation.  These explicit and comprehensive checks are
+intended to be targeted by aggressive optimizations designed to
+removed those cases with are redundant, impossible, or otherwise
+unnecessary.  The design goal of the IR is that \textit{no}
+statement should throw an implicit exception under any 
+circumstance.
+Pursuing that goal involves changing the semantics of method
+invocation slightly: so that the \texttt{call} statement not throw an
+implicit exception, the IR \texttt{call} has been defined to return
+\textit{two} values.  In addition to the conventional (and optional)
+method return value, an ``exception return value'' is defined to hold
+the exception thrown by a method, or \texttt{null} if the method
+completed without throwing an exception.  Explicit tests of the
+exception return value can then be added after the \texttt{call}
+statement, and control-flow made explicit as with the other IR
+operations.  The \texttt{throw} statement in the IR is thus stripped
+of its special meaning and becomes simply an alternate \texttt{return}
+statement for the exception return value.\footnote{Try, catch, and
+finally blocks are, of course, taken into consideration when a
+bytecode \texttt{athrow} is translated to an IR \texttt{THROW}.}
+
+\section{Implementation Details}
+
+The IR described in these notes is defined in the Java package
+\texttt{harpoon.IR.QuadSSA}.  Source code and binaries are available
+at {\tt\small http://\bp www.magic.lcs.mit.edu/\bp Harpoon}.
+
+The
+QuadSSA statements are called \texttt{Quad}s and are subclasses of
+\texttt{harpoon.IR.QuadSSA.Quad}; they are graph-structured and
+doubly-linked to enable both forward and reverse traversal of the
+control-flow graph.  Edges are represented by Objects to facilitate
+associating analysis data with these control-flow graph edges.
+The parent class \texttt{Quad} contains the
+graph-oriented methods of the objects.  Its superinterface
+\texttt{harpoon.ClassFile.HCodeElement} defines standard methods to
+get object ID numbers and source file information which
+are valid for elements of any intermediate representation.
+
+An enumeration of
+\texttt{Quad} types and their uses is provided in figure
+\ref{fig:classes}.  It may be observed that the representation uses both
+header and footer nodes, in the \texttt{HEADER} and \texttt{FOOTER}
+classes.  \texttt{HEADER} nodes contain a special link to the
+\texttt{FOOTER} to allow this node to be easily identified, and a
+special subclass of \texttt{HEADER}, \texttt{METHODHEADER}, provides
+information on the assignment of method arguments to compiler
+temporary variables at the start of method code.
+
+With the exception of \texttt{CJMP}, \texttt{SWITCH}, \texttt{PHI},
+\texttt{HEADER}, \texttt{METHODHEADER}, and \texttt{FOOTER}, all
+\texttt{Quad}s have exactly one predecessor and one successor in the
+control flow graph.
+
+\subsection{Quads}
+Here are more details on each Quad statement.  First the header and
+footer nodes:
+\begin{description}
+%
+\item[HEADER($f$)] Start node in the control flow graph with end node $f$.
+Performs no operation.  Zero predecessors, one successor.
+%
+\item[METHODHEADER($f$, $p$)] Start node in the control flow graph for
+a method with parameters $p$ and end node $f$.  A subclass of \texttt{HEADER}.
+The method arguments are loaded into $p_0 \ldots p_n$ before execution starts.
+Zero predecessors, one successor.
+%
+\item[FOOTER( )] Final node in control-flow graph.  Performs no operation.
+All \texttt{RETURN} and \texttt{THROW} statements must have the graph's
+\texttt{FOOTER} as their only successor.  \texttt{FOOTER} nodes may
+have any positive number of predecessors.  They have no successors.
+\end{description}
+%
+The following \texttt{Quad}s modify the control-flow:
+\begin{description}
+%
+\item[PHI($t$, $l$)] Control flow merges at \texttt{PHI} nodes.
+A phi node represents a list of \phifunction{s} of the form
+\[ t_i = \phi(l_{i0}, l_{i1} \ldots l_{ij}) \]
+where $j$ is the \textit{arity} of the \phifunction; that is, 
+the number of predecessors to the node.  Any non-negative number of
+predecessors, one successor.
+%
+\item[CJMP($t$)] Conditional jump based on the boolean $t$.  If $t$ is
+false (0), control flows to the first successor (\texttt{next[0]}).
+If $t$ is true (1), control flows to the second successor
+(\texttt{next[1]}).  One predecessor, two successors.
+%
+\item[SWITCH($t$, $k$)] Indexed jump.  Depending on the value of index
+variable $t$ and a key list $k$, control is transferred to 
+${target}_n$ where $t = k_n$.  If $t$ does not match any key in $k$,
+control is transferred to the default ${target}_{n+1}$ where $k_n$ is
+the last key in the key list.  One predecessor, multiple successors.
+%
+\item[RETURN($t$)] Return an optional value $t$ from this method.
+One predecessor, one successor.  The single successor should be a
+\texttt{FOOTER} node.
+%
+\item[THROW($t$)] Throws an exception $t$ as the result of this method.
+One predecessor, one successor.  The single successor should be a
+\texttt{FOOTER} node.
+\end{description}
+%
+The remaining \texttt{Quad}s have no effect on control flow, and have
+exactly one predecessor and one successor.  No exceptions are thrown.
+\begin{description}
+\item[AGET($t_1$, $t_2$, $t_3$)] Fetches the element at index $t_3$
+from array $t_2$ and stores the value in $t_1$.
+%
+\item[ALENGTH($t_1$, $t_2$)] Puts the length of array $t_2$ into
+variable $t_1$.
+%
+\item[ANEW($t_1$, $c$, $l$)] Creates a new uninitialized array with
+type $c$ and dimensions $l_0 \ldots l_n$, storing a reference in
+$t_1$.  The number of dimensions
+supplied in list $l$ may be smaller than the number of dimensions of
+array class type $c$, in which case only the $n$ dimensions specified
+in $l$ will be created.
+%
+\item[ASET($t_1$, $t_2$, $t_3$)] Sets the element at index $t_2$ of
+array $t_1$ to the value in $t_3$.
+%
+\item[CALL($m$, $t$, $p$, $r$, $e$)] Calls method $m$ of optional class
+reference $t$ with parameter list $p_0 \ldots p_n$, 
+putting the return value in $r$
+if no exception is thrown, or setting $e$ to the thrown exception.
+Either $r$ or $e$ will be \texttt{null} on completion of the
+\texttt{CALL}.  Exception $e$ is not automatically thrown from the
+method containing the \texttt{CALL}: $e$ must be explicitly tested and
+its exception rethrown if that behavior is desired. $t$ is not needed
+for static methods.
+%
+\item[COMPONENTOF($t_1$, $t_2$, $t_3$)] Puts the boolean value
+\texttt{true} (1) in $t_1$ if object $t_3$ is an instance of the component
+type of array $t_2$, or \texttt{false} (0) otherwise.
+%
+\item[CONST($t$, $c$, $y$)] Assigns numeric or string constant $c$ of 
+type $y$ to variable $t$.
+%
+\item[GET($t_1$, $f$, $t_2$)] Puts the value of field $f$ of optional
+object $t_2$ in variable $t_1$. $t_2$ is not necessary for static fields.
+%
+\item[INSTANCEOF($t_1$, $t_2$, $c$)] Puts the boolean value
+\texttt{true} (1) in $t_1$ if object $t_2$ is an instance of class
+$c$, or \texttt{false} (0) otherwise.
+%
+\item[MOVE($t_1$, $t_2$)] Copies the value in $t_2$ into $t_1$.
+%
+\item[NEW($t$, $c$)] Create a new uninitialized instance of class $c$,
+storing a reference in $t$.  A class constructor must be invoked using
+\texttt{CALL} in order to initialize the instance.
+%
+\item[NOP( )] Performs no operation.
+%
+\item[OPER($o$, $t$, $l$)] Performs operation $o$ on the variables in
+list $l$, storing the result in $t$.  The operation is represented as
+a string; figure \ref{fig:classes} lists all valid operation strings.
+The operations performed by the strings are identical to the
+operations performed by the Java bytecode operation of the same name,
+except that no exceptions are ever thrown.  See \cite{jvm} for
+details.
+%
+\item[SET($f$, $t_1$, $t_2$)] Sets field $f$ of optional object $t_1$ to the
+value of $t_2$.  $t_1$ is not necessary for static fields.
+\end{description}
+%
+The \texttt{harpoon.IR.QuadSSA.Code}
+class provides a means to access the QuadSSA form of a given method;
+see the definition of superclass \texttt{harpoon.ClassFile.HCode} and
+the example code in \texttt{harpoon.Main.Main} for details.  
+
+\newcommand{\cls}[1]{{\normalfont\bf #1}}
+\newcommand{\expn}[1]{{\normalfont\it #1}}
+\begin{figure*}
+\texttt{\small%
+\begin{description}
+\setlength{\parskip}{0em}
+\setlength{\itemsep}{0em}
+\setlength{\labelsep}{0em}
+\item[] package harpoon.IR.QuadSSA;
+%\item[] import harpoon.ClassFile.*;
+\item[]
+\item[] \expn{Quadruple statements}
+\item[] abstract class Quad implements HCodeElement
+\item[\cls{AGET}](HCodeElement source, Temp dst, Temp objectref, Temp index)
+\item[\cls{ALENGTH}](HCodeElement source, Temp dst, Temp objectref)
+\item[\cls{ANEW}](HCodeElement source, Temp dst, HClass hclass, Temp dims[])
+\item[\cls{ASET}](HCodeElement source, Temp objectref, Temp index, Temp src)
+\item[\cls{CALL}](HCodeElement source, HMethod method, Temp objectref, 
+                  Temp params[], \\ Temp retval, Temp retex) 
+                  \expn{// objectref, retval may be null}
+\item[\cls{CJMP}](HCodeElement source, Temp test)
+\item[\cls{COMPONENTOF}](HCodeElement source, Temp dst, Temp arrayref,
+                         Temp objectref)
+\item[\cls{CONST}](HCodeElement source, Temp dst, Object value, HClass type)
+\item[\cls{FOOTER}](HCodeElement source)
+\item[\cls{GET}](HCodeElement source, Temp dst, HField field, \\ 
+	         Temp objectref)  \expn{// objectref may be null}
+\item[\cls{HEADER}](HCodeElement source, FOOTER footer)
+\item[\cls{INSTANCEOF}](HCodeElement source, Temp dst, Temp src, HClass hclass)
+\item[\cls{METHODHEADER}](HCodeElement source, FOOTER footer, Temp params[])
+\item[\cls{MOVE}](HCodeElement source, Temp dst, Temp src)
+\item[\cls{NEW}](HCodeElement source, Temp dst, HClass hclass)
+\item[\cls{NOP}](HCodeElement source)
+\item[\cls{OPER}](HCodeElement source, String opcode, Temp dst, 
+                  Temp operands[])
+\item[\cls{PHI}](HCodeElement source, Temp dst[], int arity)
+\item[\cls{PHI}](HCodeElement source, Temp dst[], Temp src[][], int arity)
+\item[\cls{RETURN}](HCodeElement source, Temp retval) 
+                   \expn{// retval may be null}
+\item[\cls{SET}](HCodeElement source, HField field, Temp objectref, \\ 
+                 Temp src) \expn{// objectref may be null}
+\item[\cls{SWITCH}](HCodeElement source, Temp index, int keys[])
+\item[\cls{THROW}](HCodeElement source, Temp throwable)
+\item[]
+\item[] \expn{String constants for} opcode \expn{field of} \cls{OPER}
+\item[] \{  "acmpeq", "d2f", "d2i", "d2l", "dadd", "dcmpg",
+"dcmpl", "ddiv", "dmul", "dneg", "drem", "dsub", "f2d", "f2i", "f2l",
+"fadd", "fcmpg", "fcmpl", "fdiv", "fmul", "fneg", "frem", "fsub",
+"i2b", "i2c", "i2d", "i2f", "i2l", "i2s", "iadd", "iand", "icmpeq",
+"icmpge", "icmpgt", "idiv", "imul", "ineg", "ior", "irem", "ishl",
+"ishr", "isub", "iushr", "ixor", "l2d", "l2f", "l2i", "ladd", "land",
+"lcmpeq", "lcmpge", "lcmpgt", "ldiv", "lmul", "lneg", "lor", "lrem",
+"lshl", "lshr", "lsub", "lushr", "lxor"
+\item[] \};
+\end{description}
+}
+
+\caption{Classes comprising the QuadSSA intermediate representation.
+Only the constructors are shown; the object field variables correspond
+exactly to the names of the constructor arguments.}
+\label{fig:classes}
+\end{figure*}
+
+\bibliography{harpoon}
+
+\onecolumn\appendix\section{Quick reference}
+%\begin{figure*}[!p]
+\label{sec:quads}
+\begin{tabular}{p{1.25in}p{4.5in}} 
+\small\bf Class Name & \small\bf Description \\ \hline
+\tt HEADER & Start node for control-flow graph.  Performs no operation.\\
+\tt METHODHEADER & Subclass of \texttt{HEADER} with additional 
+                   method-argument information.\\
+\tt FOOTER & End node for control-flow graph.  Performs no operation.\\ \hline
+\tt AGET & Fetch from an indexed array element.\\
+\tt ALENGTH & Access the length of an array. \\
+\tt ANEW & Create a new array object (uninitialized). \\
+\tt ASET & Assign a value to an indexed array element. \\
+\tt CALL & Invoke an object method. \\
+\tt CJMP & Conditional jump based on a boolean value. \\
+\tt COMPONENTOF & Determine whether an object reference is an instance
+          of the component type of an array reference; result is a boolean
+          value. \\
+\tt CONST & Assign numeric or string constants to 
+            compiler temporary variables. \\
+\tt GET & Fetch the value of an object field. \\
+\tt INSTANCEOF & Determine whether an object reference is an instance of a
+                 given class; result is a boolean value. \\
+%MONITOR 
+\tt MOVE & Assign one compiler temporary to another. \\
+\tt NEW  & Create a new uninitialized class object. \\
+\tt NOP  & Do nothing. \\
+\tt OPER & Perform a $n$-ary operation on set of compiler temporaries.\\
+\tt PHI  & \phifunction{} representation.\\
+\tt RETURN & Return a value for this method invocation.\\
+\tt SET  & Assign a value to an object field. \\
+\tt SWITCH & Jump to one of multiple targets, depending on a key value. \\
+\tt THROW & Return an exception for this method invocation. \\
+\hline
+\end{tabular}
+%\caption{Class names of QuadSSA statement types.
+%\small (Public classes in \texttt{harpoon.IR.QuadSSA})}
+%\end{figure*}
+
+\end{document}

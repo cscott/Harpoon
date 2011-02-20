@@ -1,0 +1,180 @@
+2003-09-25:
+fix version look up: need to fall through to older version in certain
+   cases, add a 'transparent' flag for each field in the version
+   structure.  if value in version==FLAG *and* transparent=1, then
+   look up. (transparent bit can steal a key bit in hashtable)
+Keep use counter in each version which is incremented *before* new field
+   is added (or made non-transparent) and decremented *after* field is
+   copied-back; this allows us to safely gc old versions.
+   (note that over-allocation in the non-free case will mean nothing
+   is ever on the free list for the allocator and make us very slow)
+Review thread-safety in light of: parallel modifications to a version
+   not allowed!  parallelism must happen in child trans and both must
+   be committed before execution in parent can continue.  This is the
+   'stack' model and should limit interactions.
+Blow up sub-word fields which are touched during synchronization.
+   this should eliminate our non-atomicity.
+Fix version hash clustering problem: since addresses are most likely
+   to be multiples of the word size, we will have a lot of unused
+   space in the hash table.  fix with something like:
+    index = (address>>4)+(address&3)
+   look up efficient % (2^n - 1)
+"Don't allow writes to a committed version" -> make this work for
+   false transactions, too.  tricky: how to handle false trans.
+   one answer: false trans are just transparent all the way down.
+   so creating a new 'all transparent' committed version is always
+   fine.  We 'un-false' this by writing to original object, *not*
+   to committed version.
+Test LL/SC on AIX
+Fix array aliasing to allow complete copyback.
+Write test case: increment integer field from just below flag value to
+   just above it.  Now do the same w/in sync block.  Now do the same
+   with just the increment in the sync block.
+----------------------------------------------------------------------
+implement:
+X EXACT_setWriteFlags
+X EXACT_setArrayWriteFlags
+X EXACT_ensureReader
+X EXACT_ensureWriter
+X EXACT_setReadFlags
+X EXACT_setArrayReadFlags
+X getVersion_readT
+X version object creation
+/ resizeVersion, add calls to setWriteFlags/setArrayWriteFlags
+X lookup read version; add calls to setReadFlags/setArrayReadFlags
+X  uniform mechanism to split array/non-array versions (like T())
+make subtransactions lookup missing entries in their parents.
+ (use wnext from the struct vinfo containing the hashtable)
+ potential problem is that this leaves us w/o any way to indicate
+ that a FLAG-valued entry really *is* valid.  Partial solution: copy the
+ direct_fields (easy enough) and use an extra bit in the hash table
+ key to indicate whether entry is valid (or use extra bit to
+ indicate 'ignore the value, the entry is FLAG').  Runs into
+ problems with doing a safe SC on the version, which is needed
+ for copyback.  No way to do a single atomic action to set a
+ field to FLAG/reset a field from FLAG.
+ [must have field=FLAG *and* bit set to indicate transparency.
+  now we can safely set the bit, then atomically set field=FLAG.
+  This gets tricky if/when field is already transparent, field
+  is non-transparent but FLAG, etc.  But do-able?]
+X copy back on arrays must deal with fact that read flag corresponds
+X  to a number of different array elements (every 32, in fact).
+X  can't clear read bit until *all* of these have been copied back. =(
+X ensureWriter needs to use type reflection to determine the proper
+X  createVersion type, as the static type may be inaccurate (reports
+X  Object for boolean[], for example)
+----
+double-check that copyback works properly even when old committed
+   version stays linked
+   xxx we do a copy back, and the the value is set to FLAG again,
+   causing an incorrect fallback to the previous value.  need to
+   reset versioned values to FLAG after a successful copy-back.
+   really need to do an atomic swap of the two values.
+what about copyback when the "real" value is FLAG?
+
+Setting canonical value to flag.
+ 1) from scratch
+ 2) copy-back of a FLAG committed value.
+  -- have to ensure that all versions have FLAG as well.
+  -- different from regular copy back.
+
+Setting a canonical FLAG value to non-flag.
+  -- recognizing when copy-back is sucessful.
+
+----------- known bugs --------------
+1) Must compile like so:
+bin/build-precisec -Dharpoon.synctrans.nofieldoracle=true -Dharpoon.synctrans.nocheckoracle=true -T Hello HICT00
+  because created WriteVersion created by the object check
+  may get wiped out by the object check for a read version on the same
+   object; the read version check sets the version to NULL.
+  need some way of sensibly combining the two, so that the
+   initialization to NULL occurs *only* if the version is otherwise
+   undefined (maybe hoist all read initializations to top; not sure
+   how well the register allocator will handle that)
+  XXX note that 'read version' is *PER FIELD*  ... fix readNT
+  Also need to invalidate read version for subtran commit.
+2) resizing is foobarred; need to resize can happen in weird places
+   because of how subtransaction-versioning works.
+
+-------------------------------------
+
+--- later ---
+snip 'next' fields of version lists when committed
+ careful -- someone may race and read 'next', not knowing version
+ has been committed while it wasn't looking.  handle this case
+ w/ a retry
+"quick" versions of methods suitable for inlining which handle
+ the common case and then call the regular version otherwise?
+move versions and readers list into object (out of infl_object)
+figure out the 'readers' list in the vinfo structure.
+ readers list per trans, as opposed to global readers list.
+[actually, probably not *too* hard to change _Array versions of
+   read/write to allow 1 bit field for every element of the array at
+   the start of the array: we just offset element_start to give us
+   room.  ANEW's allocation would have to be tweaked, as well.]
+
+Figure out exactly what sorts of outstanding transactions we allow.
+We'd *like* single-writer, multiple-reader, but is this really
+what we have?
+
+Transaction list contains at most ONE outstanding or aborted transaction
+(and its outstanding, committed, or aborted subtransactions on anext edges)
+followed (on the wnext edge) by a COMMITTED transaction (and its
+committed subtransactions on wnext edges).  Alternatively, the
+transactions list may be completely empty.  (But if there
+*are* transactions on the list, a COMMITTED transaction *must*
+anchor the chain).
+  to-do: re-read code and make sure this is consistent.
+   in particular, does CopyBackAndKill recognize that
+   it may leave a version attached?
+
+handle aborts correctly: i.e. don't try to add yourself as a reader
+or make a new writer version if you're dead! (this includes your
+parents).  however, no harm done if you keep writing to your own
+version even after it's dead.  but you shouldn't start killing
+other people, certainly.
+
+gcc -I../../include -c test.c
+
+
+GUARANTEES:
+a. to set FLAG field to non-FLAG: (can't race with b)
+   a) read bits are set (prevents races from writeNT)
+   b) put your unique nonce on the head of the versions chain.
+   c) check that field is still FLAG
+   d) conditional on your nonce still being at head of the chain,
+      set the field to the new value.
+      (prevents races from others trying to set FLAG to non-FLAG)
+
+b. to set non-FLAG field to FLAG: (can't race with a)
+   0) versions list must be non-null?
+   b) look at header
+   a)  set read flag. (now writes to the field must first clear read flag)
+   c)  field must be non-FLAG at this point.
+   c)  copy canonical value across to all versions, cond. on header same.
+   d) conditional on header still being the same, store the FLAG.
+
+c. to set field to any value (even FLAG?), read flags must be cleared.
+   (writeNT)
+
+d. to clear read flag:
+   a) set the head of the versions chain to a unique nonce, unless it
+      is NULL
+   b) check that the reader list is NULL
+   c) clear the flag conditional on the head of the versions chain.
+      -e- this means we might overwrite a flag set by a call to
+          setReadFlags() -- but the transaction involved was on the
+          readers list and is now aborted, so no matter.
+      -d- not a big deal if flag gets inadvertently reset by this race
+      -c- n/a
+      -a-/-b- protected by the head of the version chain
+
+e. to add a reader to the reader list
+   a) if head of reader list is NULL, must add nonce to versions chain.
+
+f. can always set a read flag:
+   a) transaction involved in the readers list
+   b) field must be non-FLAG [may change before step (c) ]
+   c) atomically update read flag.
+
+xxx: should never alter a value in a committed transaction?

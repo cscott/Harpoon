@@ -1,0 +1,65 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:34:19 wbeebee Exp $ -->
+
+<!--+
+    |
+    | This is the mail ANT file for RTJPerf. Please before building
+    | RTJPerf make sure that you've read the README files,  so that
+    | you have had a change to select all the component that you
+    | want/need to build.
+    |
+    | File: build.xml
+    | Author: Angelo Corsaro <corsaro@doc.ece.uci.edu>
+    | $Revision: 1.1 $
+    |
+    +-->
+
+<project name="RTJPerf" default="all" basedir=".">
+
+   
+   <!-- Targets Definition  -->
+   
+   <!--+
+       |  NOTE: Once the ZEN structure will have been completely
+       |  restructured, the the only target that will appear in
+       |  here will be init and src
+       +-->
+   <target name="all" depends="init, src"/>
+
+
+   <target name="init">
+      <ant antfile="configure.xml"/>
+      <property file="rtjperf-build-bootstrap.properties"/>
+      <property file="rtjperf-build.properties"/>
+   </target>
+
+   <target name="src">
+      <ant antfile="${rtjperf.srcdir}/build.xml"/>
+   </target>
+
+   <target name="demos">
+      <ant antfile="${rtjperf.demodir}/build.xml"/>
+   </target>
+
+
+   <target name="api">
+      <property file="rtjperf-build-bootstrap.properties"/>
+      <property file="rtjperf-build.properties"/>
+      <mkdir dir="${rtjperf.basedir}/docs/api"/>
+      <ant antfile="${rtjperf.srcdir}/build.xml"
+           target="api"/>
+   </target>
+
+
+   <target name="clean">
+      <property file="rtjperf-build-bootstrap.properties"/>
+      <property file="rtjperf-build.properties"/>
+      <delete dir="docs/api"/>
+      <ant antfile="${rtjperf.srcdir}/build.xml" target="clean"/>
+
+      <delete dir="classes"/>
+      <delete dir="lib"/>
+      <delete file="rtjperf-build-bootstrap.properties"/>
+   </target>
+
+
+</project>

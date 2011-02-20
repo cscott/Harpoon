@@ -1,0 +1,37 @@
+//====================================================================
+/**
+ *  @file    ClientServer.idl
+ *
+ *  @author  Wes Beebee <wbeebee@mit.edu>
+ *
+ *  Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
+ *  Licensed under the terms of the GNU GPL; see COPYING for details.
+ */
+//====================================================================
+
+#ifndef CLIENTSERVER_IDL
+#define CLIENTSERVER_IDL
+
+#include "../graph/ImageData.idl"
+
+/**
+ * @namespace imagerec.corba
+ * @brief  Interfaces for sending data through MIT's ATR.
+ *
+ */
+module imagerec
+{
+  module corba {
+    /**
+     * @interface ClientServer
+     * @brief  Control client/server.
+     */ 
+    
+    interface ClientServer
+      {
+	void process(in imagerec::graph::ImageData id);
+      };
+  };
+};
+  
+#endif

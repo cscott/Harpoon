@@ -1,0 +1,88 @@
+From cananian@lesser-magoo.lcs.mit.edu Wed Sep 27 18:12:56 2000
+Date: Wed, 27 Sep 2000 18:12:22 -0400 (EDT)
+From: C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
+To: java-dev@lesser-magoo.lcs.mit.edu
+Subject: Building the Runtime.
+
+For reference (and so it goes in the archives), here are the hoops you
+need to jump through in order to build the Runtime.
+
+First, check it out.
+
+% cd ~/Harpoon
+% cvs -d :pserver:cvsguest@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT \
+    checkout Runtime
+
+[Ed note 23-Jan-01, if you want write access to the Runtime repository
+ and have an account on lesser-magoo, you should use
+   -d :ext:<username>@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT
+ instead.  Make sure CVS_RSH=ssh ]
+
+Note that there's no -r flag, as there is when you check out the Code
+module.  This is because we haven't had to branch the Runtime yet.
+Hopefully never will.  Hopefully the Code branch will eventually merge,
+too.  But I digress.
+
+Now, CVS is broken.  When you check out the Runtime like this, the garbage
+collector doesn't get checked out properly.  Something is wrong with how
+CVS handles vendor tags.  The following work-around (which you only have
+to do when checking out the Runtime from scratch) fixes the problem.
+
+% cd Contrib/gc
+% cvs update -r BOEHM_DIST
+% cvs update -A
+
+Ta-da.
+
+Now, the Runtime has fairly insane requirements.  Read
+Harpoon/Runtime/REQUIRED now to find out what they are.
+Use the --version option to the program names mentioned in that file to
+ensure that the versions on your machine are up-to-date.
+ftp.gnu.org (or go to freshmeat.net, perhaps?) if they're not.
+
+You're up to date, now.  Doesn't that feel good?  Run
+
+% ./setup
+
+to work some autoconf magic.
+
+Now let's configure the runtime.  ./configure --help lists all the
+options; there are a lot of them, and they can be fairly overwhelming.
+Let's start with the work-around: you'll usually need to specify
+--disable-shared on the command line to work-around a libtool bug building
+executables from shared libraries --- however, I just checked the
+configuration I've been using on lesser-magoo and found that I forgot to
+specify this option there, and my executables have been building fine.
+But it takes twice as long (because libtool builds both static and shared
+object files for everything) so go ahead and specify --disable-shared
+anyway.
+
+For a runtime configured to work with the precise-c backend, good options
+are:
+
+% ./configure --with-precise-c --with-gc=conservative \
+              --with-thread-model=heavy --disable-shared
+
+Isn't this fun?
+
+Now the Code/bin/build-precisec script will leave a (working?) executable
+in the Runtime directory when it's done whirring and clicking, like magic!
+
+Here's a typical invocation, for 'Hello, World' in Hello.java:
+
+% cd ~/Harpoon/Code
+% bin/build-precisec Hello HI
+
+This will create a directory of source files in Code/asHI, a library of
+assembled source in Runtime/HI-Java.a, and an executable in
+Runtime/runHI.
+
+Fun, huh?
+  --s
+
+agent Philadelphia Ortega Honduras India pending interception Secretary 
+Uzi Treasury hack Yeltsin kibo Sabana Seca Waco, Texas COBRA JUDY 
+              ( http://lesser-magoo.lcs.mit.edu/~cananian )
+
+
+## $Id: BUILDING,v 1.3 2005-11-21 19:33:09 salcianu Exp $

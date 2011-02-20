@@ -1,0 +1,4 @@
+export IMMORTAL_SIZE=6000000
+
+/home/angelo/Tools/RTJava/bin/tjvm -Xverify:none -Xbootclasspath:/home/angelo/Tools/RTJava/lib/classes -Djava.library.path=/home/angelo/Devel/jTools/lib -Djava.class.path=/home/angelo/Devel/RTSJBench/RTJPerf/classes:/home/angelo/Devel/jTools/classes -Dproperties.load.path=$RTJP_HOME/bin edu.uci.ece.doc.rtjperf.$*
+

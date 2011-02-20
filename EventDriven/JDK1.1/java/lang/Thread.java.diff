@@ -1,0 +1,83 @@
+--- /j/lang/Thread.java	Mon Mar  6 23:14:03 2000
++++ Thread.java	Mon Mar  6 23:08:47 2000
+@@ -17,6 +17,12 @@
+ import java.security.AccessController;
+ import java.security.AccessControlContext;
+ 
++import harpoon.Analysis.ContBuilder.VoidContinuation;
++import harpoon.Analysis.ContBuilder.VoidDoneContinuation;
++import harpoon.Analysis.ContBuilder.VoidResultContinuation;
++import harpoon.Analysis.ContBuilder.Scheduler;
++
++
+ /**
+  * A <i>thread</i> is a thread of execution in a program. The Java 
+  * Virtual Machine allows an application to have multiple threads of 
+@@ -460,6 +466,11 @@
+      */
+     public synchronized native void start();
+ 
++    public synchronized void start_Async() {
++	dead=false;
++	Scheduler.newThread(this);
++    }
++
+     /**
+      * If this thread was constructed using a separate 
+      * <code>Runnable</code> run object, then that 
+@@ -480,6 +491,10 @@
+ 	}
+     }
+ 
++    public VoidContinuation run_Async() {
++	return null;
++    }
++
+     /**
+      * This method is called by the system to give a Thread
+      * a chance to clean up before it actually exits.
+@@ -1139,4 +1154,44 @@
+     private native void resume0();
+     private native void interrupt0();
+ 
++    // *** Added by ovy
++
++    /* new Thread stuff */
++
++    // Scheduler interaction stuff
++
++    public Thread link= null;
++    
++    public VoidResultContinuation cc= null;   // Current continuation. Null means current thread running
++
++    // join stuff
++    private Thread waitingToJoin= null;
++
++    private boolean dead= true;
++
++    // pesimistic;  can be easily changed to optimistic
++    public VoidContinuation join_Async()
++    {
++	VoidDoneContinuation c= new VoidDoneContinuation(false);
++	if (dead) { Scheduler.addReady(c); return c; }
++	Scheduler.currentThread.link= waitingToJoin;
++	waitingToJoin= Scheduler.currentThread;
++	Scheduler.blocked(c);
++	return c;
++    }
++	
++    public void die()
++    {
++	if (!dead) {
++	    // Dump waitingToJoin to ready
++	    if ( waitingToJoin != null ) {
++		Scheduler.addReadyThreadList(waitingToJoin);
++		waitingToJoin= null;
++	    }
++
++	    dead= true;
++	}
++    }
++
+ }
++

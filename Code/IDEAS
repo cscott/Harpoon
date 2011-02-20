@@ -1,0 +1,33 @@
+Research ideas:
+ - live variable analysis?  only add phi/sigma if variable is live in/out.
+ - automatic partitioning for dsps... Given DSP algorithm, DSP core,
+      take part of the algorithm and make a hardware coprocessor
+      out of it, integrating with the semi-custom DSP.
+ - java car... use single unified language for uC programming and
+               simple fpga hdl for vision processing or somesuch.
+               [get names & details from martin]
+ - write once, run anywhere on hardware?
+ - interesting hardware backends:
+    -- synchronous:
+       fpgas
+       standard cell
+    -- asynchronous:
+       four-phase, two-phase, one-phase
+       superconducting logic, based on josephson junctions.
+    -- RAW??
+    REFERENCES!
+ - type analysis interesting in itself?
+ - bitwidth analysis to construct specialized dsp/processor cores?
+   (low energy/power, code density, etc)
+   see mail from Martin, 29-jul-98:
+   >   Hi Scott. I've got a great random idea for you. Do bitwidth
+   >   analysis on programs to compile them for a, say, 4-bit machine. 
+   >   Do more instructions (or have special instructions) to 
+   >   synthesize larger bitwidths. Also, sort instructions to get
+   >   minimum bit changes in the instruction stream (like sort
+   >   all the add instructions together, for example). Use this
+   >   to get a smaller processor with less power consumption.
+ - handle exceptions as java-to-java translation.
+
+------------------------------
+TODO: fill in details!

@@ -1,0 +1,77 @@
+	int t2  t5  t6  t7  t9  t11 t12 t15 t17 t19 
+	int t22 t23 t24 t25 t27 t30 t32 t38 t39 t40 t43 t45
+	mov(t2,r0)
+	mov(t2,t2)
+	def(t6)
+	jump(L2a)
+L1a:
+
+L2a:
+	def(t7) use(t6)
+	mov(t5,t7)
+	use(t5) jump(L0,L1)
+L0:
+	def(t11)
+	mov(r0,t11)
+	def(r0,r1,r2,r3) use(r0)
+	mov(t9,r0)
+	mov(t12,t9)
+	def(t15) use(t12)
+	use(t15,t12)
+	def(t17)
+	jump(L2b)
+L1b:
+
+L2b:
+	use(t17,t12)
+	mov(t19,t12)
+	def(t22) use(t19)
+	def(t23)
+	def(t24)
+	mov(r2,t24)
+	mov(r1,t23)
+	mov(r0,t22)
+	def(r0,r1,r2,r3) use(r0,r1,r2)
+	mov(t25,t19)
+	mov(r0,t25)
+	def(r0,r1,r2,r3) use(r0) jump(L12,L13)
+L13:
+	mov(t27,r0)
+	jump(L2)
+L12:
+	
+L3:
+	mov(t30,t25)
+L4:
+	mov(t32,t30)
+L5:
+	mov(r0,t32)
+	def(r1,r2,r3)
+	jump(exit)
+L2:
+	mov(t30,t27)
+	jump(L4)
+L1:
+	def(t38) use(t5)
+	def(t39) use(t38)
+	def(t43)
+	jump(L2c)
+L1c:
+
+L2c:
+	mov(r1,t43)
+	mov(r0,t5)
+	def(r0,r1,r2,r3) use(r0,r1) jump(L16,L17)
+L17:
+	mov(t40,r0)
+	jump(L6)
+L16:
+	jump(L7)
+L6:
+	mov(t32,t40)
+	jump(L5)
+L7:
+	def(t45)
+	mov(r0,t45)
+	jump(exit)
+exit:

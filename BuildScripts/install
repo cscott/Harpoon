@@ -1,0 +1,417 @@
+echo Welcome to the FLEX installer.
+echo 
+echo Please E-mail Wes Beebee \<wbeebee@mit.edu\> if you have
+echo any questions.
+
+echo Checking system requirements...
+echo
+
+export FLEX_ROOT=`pwd`/..
+
+if [ ! -d /usr/java/j2* ]; then 
+   echo Please install the Sun JDK 1.4 before installing FLEX.; 
+   echo;
+   echo Visit http://java.sun.com/;
+   exit 1;
+fi;
+
+PATH=$PATH:`echo /usr/java/j2*/bin | awk '{ print gensub(/\ /, ":", "g") }'` java -version >& foo
+export TEST=`fgrep -c '1.4' foo`
+rm -f foo
+if test $TEST == 0; then 
+   echo Please upgrade your version of the Sun JDK to Sun JDK 1.4 before installing FLEX.;
+   echo;
+   echo Visit http://java.sun.com/;
+   exit 1;
+fi
+
+if [ -d $FLEX_ROOT/Code ]; then
+   echo A previous install of FLEX exists.;
+   export prmpt=;
+   while [ x$prmpt = x ]; do
+     read -p "Do you want to (O)verwrite or (Q)uit (O/Q)? " prmpt leftover;
+     case $prmpt in
+        O* | o*) rm -rf ../Code ../Classpath ../Runtime ../Realtime ../ImageRec ../Benchmarks ../Tests;;
+        Q* | q*) exit 1;;
+        *) export prmpt=;;
+     esac;
+   done;
+fi;
+
+echo 1\) Standard FLEX Java compiler install
+echo 2\) Custom FLEX install
+
+export inst=
+while [ x$inst = x ]; do
+  read -p "Choose an install: " inst leftover;
+  case $inst in
+     1) export arm=N;
+	export GUI=N;
+	export version='-A';
+	export RTJ=N;
+	export BENCHMARKS=;
+	export IMAGEREC=;
+        export dep=;;
+     2) export arm=;
+	export GUI=;
+	export version=;
+	export RTJ=;
+	export BENCHMARKS=none;
+	export IMAGEREC=none;
+        export dep=;;
+     *) export inst=;;
+  esac;
+done
+
+while [ x$arm = x ]; do
+  read -p "Do you want support for cross-compiling to StrongARM (Y/N)? " arm leftover;
+  case $arm in
+     y* | Y*) export arm=Y;;
+     n* | N*) export arm=N;;
+     *) export arm=;;
+  esac;
+done
+
+while [ x$dep = x ]; do
+  read -p "Do you want to download and install package dependencies (Y/N)? " dep leftover;
+  case $dep in
+     y* | Y*) export dep=Y;;
+     n* | N*) export dep=N;;
+     *) export dep=;;
+  esac;
+done
+
+if [ x$dep = xY ]; then
+  echo Downloading dependencies...
+fi;
+
+if [ -f /etc/redhat-release ]; then 
+   if [ x$dep = xY ]; then 
+      export WEB_ROOT=http://flex-cvs.csail.mit.edu/ImageRec/RPMS; 
+      mkdir RPMS;
+      cd RPMS;
+   fi;
+   if fgrep -q -c '7.2' /etc/redhat-release; then 
+      echo RedHat 7.2 detected.;
+      export GUI=N;
+      if [ x$dep = xY ]; then 
+         if [ x$arm = xY ]; then
+	    wget -q $WEB_ROOT/noGUI/arm-linux-binutils-2.10-1.i386.rpm; 
+            wget -q $WEB_ROOT/noGUI/arm-linux-classpath-libs-0.05-1.i386.rpm; 
+            wget -q $WEB_ROOT/noGUI/arm-linux-gcc-2.95.2-2.i386.rpm; 
+            wget -q $WEB_ROOT/noGUI/arm-linux-glibc-2.1.3-2.i386.rpm;
+         fi;
+         wget -q $WEB_ROOT/noGUI/autoconf-2.53-8.noarch.rpm; 
+         wget -q $WEB_ROOT/noGUI/automake-1.6.3-1.noarch.rpm; 
+         wget -q $WEB_ROOT/noGUI/db3x-3.2.9-4.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/jikes-1.18-2mdk.i586.rpm; 
+         wget -q $WEB_ROOT/noGUI/perl-Test-Harness-2.26-2.noarch.rpm; 
+         wget -q $WEB_ROOT/noGUI/perl-modules-5.6.1-66.i386.rpm; 
+      fi;
+   fi;
+   if fgrep -q -c '7.3' /etc/redhat-release; then 
+      echo RedHat 7.3 detected.;
+      export GUI=N;
+      if [ x$dep = xY ]; then
+         if [ x$arm = xY ]; then
+	    wget -q $WEB_ROOT/noGUI/arm-linux-binutils-2.10-1.i386.rpm; 
+            wget -q $WEB_ROOT/noGUI/arm-linux-classpath-libs-0.05-1.i386.rpm; 
+            wget -q $WEB_ROOT/noGUI/arm-linux-gcc-2.95.2-2.i386.rpm; 
+            wget -q $WEB_ROOT/noGUI/arm-linux-glibc-2.1.3-2.i386.rpm; 
+         fi;
+         wget -q $WEB_ROOT/noGUI/autoconf-2.53-8.noarch.rpm; 
+         wget -q $WEB_ROOT/noGUI/automake-1.6.3-1.noarch.rpm; 
+         wget -q $WEB_ROOT/noGUI/db3x-3.2.9-4.i386.rpm; 
+         wget -q $WEB_ROOT/noGUI/jikes-1.18-2mdk.i586.rpm; 
+         wget -q $WEB_ROOT/noGUI/perl-Test-Harness-2.26-2.noarch.rpm; 
+         wget -q $WEB_ROOT/noGUI/perl-modules-5.6.1-66.i386.rpm; 
+      fi;
+   fi;
+   if fgrep -q -c '8.0' /etc/redhat-release; then 
+      echo RedHat 8.0 detected.;
+      while [ x$GUI = x ]; do
+        read -p "Do you want GUI support (experimental) (Y/N)? " GUI leftover;
+        case $GUI in
+          y* | Y*) export GUI=Y;;
+          n* | N*) export GUI=N;;
+          *) export GUI=;;
+        esac;
+      done
+
+      if [ x$dep = xY ]; then
+         if [ x$arm = xY ]; then
+            wget -q $WEB_ROOT/arm-linux-binutils-2.10-1.i386.rpm;
+            wget -q $WEB_ROOT/arm-linux-classpath-libs-0.05-1.i386.rpm;
+            wget -q $WEB_ROOT/arm-linux-gcc-2.95.2-2.i386.rpm;
+            wget -q $WEB_ROOT/arm-linux-glibc-2.1.3-2.i386.rpm;
+         fi;
+         wget -q $WEB_ROOT/autoconf-2.53-8.noarch.rpm;
+         wget -q $WEB_ROOT/automake-1.6.3-1.noarch.rpm;
+         wget -q $WEB_ROOT/db3x-3.2.9-4.i386.rpm;
+         wget -q $WEB_ROOT/jikes-1.18-2mdk.i586.rpm;
+         wget -q $WEB_ROOT/perl-Test-Harness-2.26-2.noarch.rpm;
+         wget -q $WEB_ROOT/perl-modules-5.6.1-66.i386.rpm;
+         if [ x$GUI = xY ]; then
+            wget -q $WEB_ROOT/ORBit-devel-0.5.13-5.i386.rpm;
+            wget -q $WEB_ROOT/Xft-2.0-1.i386.rpm;
+            wget -q $WEB_ROOT/Xft-devel-2.0-1.i386.rpm;
+            wget -q $WEB_ROOT/atk-1.0.3-1.i386.rpm;
+            wget -q $WEB_ROOT/atk-devel-1.0.3-1.i386.rpm;
+            wget -q $WEB_ROOT/audiofile-devel-0.2.3-3.i386.rpm;
+            wget -q $WEB_ROOT/esound-0.2.28-1.i386.rpm;
+            wget -q $WEB_ROOT/esound-devel-0.2.28-1.i386.rpm;
+            wget -q $WEB_ROOT/fontconfig-2.0-3.i386.rpm;
+            wget -q $WEB_ROOT/fontconfig-devel-2.0-3.i386.rpm;
+            wget -q $WEB_ROOT/freetype-2.1.2-7.i386.rpm;
+            wget -q $WEB_ROOT/freetype-devel-2.1.2-7.i386.rpm;
+            wget -q $WEB_ROOT/glib2-2.0.6-2.i386.rpm;
+            wget -q $WEB_ROOT/glib2-devel-2.0.6-2.i386.rpm;
+            wget -q $WEB_ROOT/glibc-2.3.2-4.80.i386.rpm;
+            wget -q $WEB_ROOT/glibc-common-2.3.2-4.80.i386.rpm;
+            wget -q $WEB_ROOT/gnome-libs-1.4.1.2.90-22.i386.rpm;
+            wget -q $WEB_ROOT/gnome-libs-devel-1.4.1.2.90-22.i386.rpm;
+            wget -q $WEB_ROOT/gtk2-2.0.6-8.i386.rpm;
+            wget -q $WEB_ROOT/gtk2-devel-2.0.6-8.i386.rpm;
+            wget -q $WEB_ROOT/gtk2-engines-1.9.0-4.i386.rpm;
+            wget -q $WEB_ROOT/htmlview-2.0.0-6.noarch.rpm;
+            wget -q $WEB_ROOT/libart_lgpl-2.3.10-1.i386.rpm;
+            wget -q $WEB_ROOT/libart_lgpl-devel-2.3.10-1.i386.rpm;
+            wget -q $WEB_ROOT/libpng-1.2.2-8.i386.rpm;
+            wget -q $WEB_ROOT/libpng-devel-1.2.2-8.i386.rpm;
+            wget -q $WEB_ROOT/libpng10-1.0.13-6.i386.rpm;
+            wget -q $WEB_ROOT/libpng10-devel-1.0.13-6.i386.rpm;
+            wget -q $WEB_ROOT/libstdc++-3.2-7.i386.rpm;
+            wget -q $WEB_ROOT/pango-1.1.1-1.i386.rpm;
+            wget -q $WEB_ROOT/pango-devel-1.1.1-1.i386.rpm;
+            wget -q $WEB_ROOT/redhat-menus-0.26-1.noarch.rpm; 
+         fi;
+      fi;
+   fi;
+   if [ x$dep = xY ]; then
+     export prmpt=
+     while [ x$prmpt = x ]; do
+        read -p "Are you a (S)udoer or do you have the (R)oot password (S/R)? " prmpt leftover;
+	case $prmpt in
+	    s* | S*)
+		echo Installing packages, you may have to enter your password:;
+		sudo rpm -i --force --nodeps *.rpm;;
+	    r* | R*)
+	     	echo Installing packages, please enter root password:;
+      		su -c 'rpm -i --force --nodeps *.rpm';;
+            *)
+		export prmpt=;;
+	esac;
+     done;
+     cd ..;
+     rm -rf RPMS;
+   fi;
+fi
+
+if [ -f /etc/debian_version ]; then 
+   if fgrep -q -c '3.0' /etc/debian_version; then 
+      echo Debian 3.0 detected; 
+   fi;
+fi
+
+cd $FLEX_ROOT
+export CVS_RSH=ssh
+export CVSEDITOR=emacs
+
+while [ x$version = x ]; do
+  echo FLEX Versions: 1.3 2.0 3.0 3.1 3.2 latest;
+  read -p "What version of FLEX do you want? " version leftover;
+  case $version in
+	1.3) export version='-r magic-1-3';;
+	2.0) export version='-r magic-2-0';;
+	3.0) export version='-r magic-3-0';;
+	3.1) export version='-r magic-3-1';;
+	3.2) export version='-r magic-3-2';;
+	latest) export version='-A';;
+	*) export version=;;
+  esac;
+done
+
+export REALTIME=;
+while [ x$RTJ = x ]; do
+  read -p "Do you want to use Real-Time Java (Y/N)? " RTJ leftover;
+  case $RTJ in
+     y* | Y*) export RTJ=Y; export REALTIME=Realtime;;
+     n* | N*) export RTJ=N; export REALTIME=;;
+     *) export RTJ=;;
+  esac;
+done
+
+export imagerec_version=;
+while [ x$IMAGEREC = xnone ]; do
+  read -p "Do you want a copy of the Image Recognition application (Y/N)? " IMAGEREC leftover;
+  case $IMAGEREC in
+     y* | Y*) while [ x$imagerec_version = x ]; do
+                export IMAGEREC=;
+                echo ImageRec Versions: 0.1 0.2 1.0 1.1 1.11 1.2 1.21 1.3 1.31 1.32 latest;
+                read -p "What version of ImageRec do you want? " imagerec_version leftover;
+                export install_me=n;
+                case $imagerec_version in 
+                  0.1) export install_me=y;;
+                  0.2) export install_me=y;;
+                  1.0) export install_me=y;;
+                  1.1) export install_me=y;;
+                  1.11) export install_me=y;;
+                  1.2) export install_me=y;;
+                  1.21) export install_me=y;;
+                  1.3) export install_me=y;;
+                  1.31) export install_me=y;;
+                  1.32) export install_me=y;;
+                  latest) export IMAGEREC=ImageRec;;
+                  *) export imagerec_version=;;
+                esac;
+              done;
+              if [ x$install_me = xy ]; then
+                mkdir $FLEX_ROOT/ImageRec;
+                cd $FLEX_ROOT/ImageRec;
+                wget -q -O ImageRec.tgz http://flex-cvs.csail.mit.edu/ImageRec/ImageRec-$imagerec_version.tgz;
+                tar zxpf ImageRec.tgz;
+                rm -f ImageRec.tgz;
+                cd -;
+              fi;;
+     n* | N*) export IMAGEREC=;;
+     *) export IMAGEREC=none;;
+  esac;
+done
+
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc;
+  export LINE1=`fgrep -c 'CVS_RSH' ~/.bashrc`;
+  export LINE2=`fgrep -c 'CVSEDITOR' ~/.bashrc`;
+  export LINE3=`which java`;
+  export LINE3=`fgrep -c -v 'no java' $LINE3`;
+else
+  export LINE1=0;
+  export LINE2=0;
+  export LINE3=0;
+fi
+
+if test $LINE1 == 0 -o $LINE2 == 0 -o $LINE3 == 0; then
+  echo;
+  echo Do you want to add the following lines to your ~/.bashrc\?;
+  if test $LINE1 == 0; then echo    export CVS_RSH=ssh; fi;
+  if test $LINE2 == 0; then echo    export CVSEDITOR=emacs; fi;
+  if test $LINE3 == 0; then echo    export PATH=`echo /usr/java/j2*/bin | awk '{ print gensub(/\ /, ":", "g") }'`:\$PATH; fi;
+  export prmpt=;
+  while [ x$prmpt = x ]; do
+    read -p "Add lines (Y/N)? " prmpt leftover;
+    case $prmpt in
+        y* | Y*)
+	   if test $LINE1 == 0; then echo export CVS_RSH=ssh >> ~/.bashrc; fi;
+	   if test $LINE2 == 0; then echo export CVSEDITOR=emacs >> ~/.bashrc; fi;
+	   if test $LINE3 == 0; then echo export PATH=`echo /usr/java/j2*/bin | awk '{ print gensub(/\ /, ":", "g") }'`:\$PATH >> ~/.bashrc; fi;;
+	n* | N*) export prmpt=N;;
+	*) export prmpt=;;
+    esac;
+  done;
+  source ~/.bashrc;
+fi
+
+export prmpt=
+while [ x$prmpt = x ]; do
+   read -p "Do you have read/write access to the FLEX repository (Y/N)? " prmpt leftover;
+   case $prmpt in
+        y* | Y*)
+           while [ x$BENCHMARKS = xnone ]; do
+             read -p "Do you want a copy of the Benchmarks and Tests (Y/N)? " BENCHMARKS leftover;
+             case $BENCHMARKS in
+               y* | Y*) export BENCHMARKS='Tests Benchmarks';;
+               n* | N*) export BENCHMARKS=;;
+               *) export BENCHMARKS=none;;
+             esac;
+           done;
+	   read -p "What's your username on the FLEX CVS server? " pass leftover;
+	   echo Please type your password to the FLEX repository:;
+           cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime $BENCHMARKS;
+	   cd Runtime/Contrib/gc;
+           echo Please type your password to the FLEX repository \(again\):;
+	   cvs update -r BOEHM_DIST;
+	   echo Please type your password to the FLEX repository \(one last time\):;
+	   cvs update -A;
+	   cd -;;
+	n* | N*)
+           export BENCHMARKS=;
+	   echo Please type 'cvsguest' as the password.;
+	   export CVSROOT=:pserver:cvsguest@flex-cvs.csail.mit.edu:/data/cvs;
+	   cvs login;
+	   cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime $BENCHMARKS;
+	   cd Runtime/Contrib/gc;
+	   cvs update -r BOEHM_DIST;
+	   cvs update -A;
+	   cd -;;
+	*) export prmpt=;;
+   esac;
+done
+
+if [ x$install_me == xy ]; then
+  export IMAGEREC=ImageRec;
+fi
+
+cd Classpath
+echo Building Classpath...
+
+./build-noGUI
+./build-noGUI-debug
+
+if [ x$GUI = xY ]; then
+   ./build;
+fi;
+
+if [ x$arm = xY ]; then
+   ./build-arm;
+fi;
+	    
+cd $FLEX_ROOT/BuildScripts
+echo Writing configuration file...
+echo export arm=$arm > config.status
+echo export GUI=$GUI >> config.status
+echo export version=$version >> config.status
+echo export RTJ=$RTJ >> config.status
+echo export BENCHMARKS=$BENCHMARKS >> config.status
+echo export IMAGEREC=$IMAGEREC >> config.status
+echo export dep=$dep >> config.status
+echo export prmpt=$prmpt >> config.status
+echo export inst=$inst >> config.status
+echo export dep=$dep >> config.status
+echo export version=$version >> config.status
+echo export REALTIME=$REALTIME >> config.status
+chmod a+rx config.status
+source ./sourceme
+
+echo Building Runtime...
+cd $FLEX_ROOT/Runtime
+./setup
+cd ..
+cp -r Runtime Runtime-debug
+mv Runtime Runtime-normal
+cd Runtime-normal
+# This line should get its own script - that synchronizes configuration between Code and Runtime
+./configure --disable-shared --with-gc=conservative --with-precise-c --with-thread-model=heavy --with-classpath=$FLEX_ROOT/Classpath/install-noGUI/lib/classpath --with-javac=auto CC="gcc -O9 -DNDEBUG"
+make clean; make; make
+cd ..
+cd Runtime-debug
+./configure --disable-shared --with-gc=conservative --with-precise-c --with-thread-model=heavy --with-classpath=$FLEX_ROOT/Classpath/install-noGUI-debug/lib/classpath --with-javac=auto CC="gcc -g"
+make clean; make; make
+
+cd ../Code
+make
+
+if [ x$REALTIME == xRealtime ]; then
+  cd ../Realtime;
+  make;
+fi;
+
+if [ x$IMAGEREC == xImageRec ]; then
+  cd ../ImageRec;
+  make jars;
+fi;
+
+echo 1\) Type \"cd Harpoon\/BuildScripts" to enter the building directory.
+echo 2\) Type \"javac Hello.java\" to compile the \"Hello, world\!\" application to Java bytecode.
+echo 3\) Type \"java -cp .:\$CLASSPATH Hello\" to test the \"Hello, world\!\" application using SunJVM.
+echo 4\) Type \"./build Hello HI\" to compile the \"Hello, world\!\" application using FLEX.
+echo 5\) Type \"./runHI\" to run the compiled \"Hello, world\!\" application.

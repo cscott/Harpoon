@@ -1,0 +1,44 @@
+Model Definition Language
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+rules ::= rules rule | rule
+
+rule ::= ruletype OPENBRACKET quantifiers CLOSEBRACKET COMMA guard IMPLIES inclusions SEMICOLON
+
+ruletype ::= STATIC | DELAY | /*nothing*/
+
+quantifiers ::= quantifiers COMMA quantifier | quantifier | /* nothing */
+
+quantifier ::= FORALL ID:var IN ID:set 
+	     | FORALL LT ID:r1 COMMA ID:r2 GT IN ID:relation
+	     | FOR ID:var EQUALS expr:lower TO expr:upper
+
+guard ::= guard AND guard
+        | guard OR guard
+        | NOT guard
+        | expr EQUALS expr
+        | expr LT expr
+        | TRUE
+        | OPENPAREN guard CLOSEPAREN
+        | expr IN ID:set
+        | LT expr:r1 COMMA expr:r2 GT IN ID:relation
+        | ISVALID OPENPAREN expr CLOSEPAREN
+        | ISVALID OPENPAREN expr COMMA ID:var CLOSEPAREN
+
+inclusion ::= expr IN ID:set
+	    | LT expr:r1 COMMA expr:r2 GT IN ID:relation
+
+
+
+expr ::= ID:var 
+       | OPENPAREN expr CLOSEPAREN 
+       | LITERAL OPENPAREN literal CLOSEPAREN
+       | expr operator expr
+       | expr DOT ID:field
+       | expr DOT ID:field OPENBRACKET expr:index CLOSEBRACKET
+       | CAST OPENPAREN ID:type COMMA expr CLOSEPAREN 
+
+operator ::= ADD | SUB | MULT | DIV
+
+literal ::= TRUE | DECIMAL | STRING | CHAR | ID
+

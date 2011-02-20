@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# This script updated the entire FLEX.
+
+# Beginning of script
+
+CWD=`pwd`   # keep the directory where we are now
+
+cd $FLEX_DIR/..
+for dir in `\ls -A`; do   # looping through all directories
+    if [ -d $dir ]; then
+	cd $dir
+	echo -e "\nUpdating $dir...\n"
+	cvs update -AP   # Updating each directory
+	cd ..
+    fi
+done
+
+cd $CWD   # return to the directory where the script was started from
+
+# End of script

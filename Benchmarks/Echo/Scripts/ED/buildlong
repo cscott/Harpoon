@@ -1,0 +1,9 @@
+#!/bin/bash
+CC='gcc -O2'
+
+target=$1
+
+homepath=`pwd`
+
+cd $homepath/Echo/ClientLong
+$CC mark2.c -o $target

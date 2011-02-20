@@ -1,0 +1,2 @@
+gcc -g -c bs-tree.c -o bs-tree.o
+g++ -g bs-tree.o libchecker.a -o bs-tree

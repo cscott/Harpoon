@@ -1,0 +1,5 @@
+set HEAD(Node);
+set ELEMS(Node);
+set TAIL(Node);
+NEXT: ELEMS -> ELEMS;
+PREV: ELEMS -> ELEMS;

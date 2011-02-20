@@ -1,0 +1,55 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:52:58 wbeebee Exp $ -->
+
+<project name="RTJPerf Tests Build" default="all" basedir="../../../../../..">
+
+   <property file="rtjperf-build-bootstrap.properties"/>
+   <property file="rtjperf-build.properties"/>
+
+   <target name="all" depends="sys, util, sched, mem, synch, time, timer, thread, asynch, loading"/>
+
+   <target name="sched" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/sched/build.xml"/>
+   </target>
+
+   <target name="util" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/util/build.xml"/>
+   </target>
+
+   <target name="mem" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/mem/build.xml"/>
+   </target>
+
+   <target name="synch" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/synch/build.xml"/>
+   </target>
+
+   <target name="time" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/time/build.xml"/>
+   </target>
+
+   <target name="timer" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/timer/build.xml"/>
+   </target>
+
+   <target name="thread" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/thread/build.xml"/>
+   </target>
+
+   <target name="asynch" depends="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/asynch/build.xml"/>
+   </target>
+
+   <target name="sys">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/sys/build.xml"/>
+   </target>
+
+   <target name="loading">
+      <ant antfile="${rtjperf.srcdir}/edu/uci/ece/doc/rtjperf/loading/build.xml"/>
+   </target>
+
+
+   <target name="clean">
+      <delete dir="${rtjperf.classdir}"/>
+   </target>
+
+</project>

@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# Usage: build-precisec <class_name> <directory>
+
+# set RUNTIME_DIR
+. `dirname $0`/find-flex-dir
+
+# grab flex options from the command line.
+javaopts=""
+while [ -n "$3" ]; do
+    case "$1" in
+    --alex) # short cut for all the flags needed for alex's passes
+	javaopts="$javaopts -Dharpoon.alloc.strategy=niftystats"
+	javaopts="$javaopts -Ddebug.pa=true"
+	opts="$opts --pa:timing --stack-alloc 1 2 --sync-removal"
+	opts="$opts --show-ap --pa:d"
+# you should compile your runtime --with-clustered-heaps, too.
+	;;
+    -D*) javaopts="$javaopts $1" ;;
+    *)   opts="$opts $1" ;;
+    esac
+    shift
+done
+
+# at this point, there are only two items left on the command line.
+cls=$1
+name=`basename $2`
+dir=`dirname $2`/as$name
+
+echo "Building $cls in $dir; result will be ${name}-Java.a" 1>&2
+if [ -d $dir ]; then
+    /bin/rm -rf $dir
+fi
+if [ ! -d $dir ]; then
+    mkdir $dir
+fi
+
+# if PRECISEC_CFLAGS is unset, we'll use '-g -O9'.  Otherwise we'll use
+# whatever you've set PRECISEC_CFLAGS to.  But we'll complain if it's odd.
+export PRECISEC_CFLAGS=${PRECISEC_CFLAGS:="-g -O9"}
+if [ -z "$(echo "${PRECISEC_CFLAGS}" | grep '[-]O9' )" ]; then
+  echo " "
+  echo "****************************************************************"
+  echo "WARNING: the precisec emits highly inferior binaries if the"
+  echo "         -O9 flag is not passed to gcc.  [we don't do register"
+  echo "         allocation or move coalescing on the emitted code, and"
+  echo "         gcc won't do it either unless you use -O9.  -O8 won't"
+  echo "         do, surprisingly; compile with -S to see for yourself.]"
+  echo "THE BINARIES YOU ARE BUILDING WITHOUT -O9 SHOULD NEVER BE USED"
+  echo "FOR BENCHMARKING OF ANY KIND.            Thank you."
+  echo "****************************************************************"
+  echo " "
+fi
+
+. `dirname $0`/run-java ${flexc_options:="-Dsample=value"}  $javaopts  harpoon.Main.SAMain $opts -b precisec -c $cls -o $dir && \
+if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
+    grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
+    make $MAKEOPT -C $dir CC="${HOST_PREFIX:=}gcc -I${RUNTIME_DIR}/include ${PRECISEC_CFLAGS}" HOST_PREFIX=${HOST_PREFIX:=}\
+    && \
+    mv -f $dir/Java.a ${RUNTIME_DIR}/${name}-Java.a && \
+    make $MAKEOPT -C ${RUNTIME_DIR} run${name} && \
+    if [ -z "$KEEP_ARCHIVE" ]; then \
+	rm -f ${RUNTIME_DIR}/${name}-Java.a ; \
+    fi && \
+    echo "EXECUTABLE left in ${RUNTIME_DIR}/run${name}." 1>&2
+else
+    echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build." 1>&2
+fi
+exit $?

@@ -1,0 +1,2 @@
+# FLEX needs locale support to build itself.
+include Support/locale-root-set

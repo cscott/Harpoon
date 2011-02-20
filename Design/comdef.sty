@@ -1,0 +1,181 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: comdef.sty,v 1.36 2003-11-09 20:22:23 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Common definitions for Harpoon design documents. %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{comdef}[1999/05/07 v1.0 (C. Scott Ananian)]
+\RequirePackage{latexsym}
+\RequirePackage{amstext}
+\RequirePackage{ifthen}
+\RequirePackage{xspace}
+\RequirePackage[noend]{algorithmic}
+
+% A breaking non-space for URLs
+\newcommand{\bp}{\hspace{0pt}}
+
+% put horizontal rules at bottom of table environment.
+\newenvironment{mytable}[1][tbp]
+	{\begin{table}[#1]\linespread{1}}% no line at top.
+	{\vspace{8pt}\hrule\end{table}}
+\newenvironment{mytable*}[1][tbp]
+	{\begin{table*}[#1]\linespread{1}}% no line at top.
+	{\vspace{8pt}\hrule\end{table*}}
+% put horizontal rules at top and bottom of figure environment
+\newenvironment{myfigure}[1][tbp]
+	{\begin{figure}[#1]\linespread{1}\hrule\vspace{8pt}}
+	{\vspace{8pt}\hrule\end{figure}}
+\newenvironment{myfigure*}[1][tbp]
+	{\begin{figure*}[#1]\linespread{1}\hrule\vspace{8pt}}
+	{\vspace{8pt}\hrule\end{figure*}}
+% put horizontal rules at top and bottom of algorithm environment
+\newenvironment{myalgorithm}[1][tbp]
+	{\begin{algorithm}[#1]\linespread{1}\hrule\vspace{8pt}}
+	{\vspace{8pt}\hrule\end{algorithm}}
+
+% vertical centering
+\newlength{\vclength}\newsavebox{\vcbox}
+\newcommand{\vertcenter}[1]{%
+  \savebox{\vcbox}{#1}\settowidth{\vclength}{\usebox{\vcbox}}%
+  \parbox[c]{\vclength}{\usebox{\vcbox}}}
+% top-alignment
+\newlength{\vtlength}\newsavebox{\vtbox}
+\newcommand{\topalign}[1]{%
+  \savebox{\vtbox}{#1}\settowidth{\vtlength}{\usebox{\vtbox}}%
+  \parbox[t]{\vtlength}{\rule{0pt}{0pt}\\\usebox{\vtbox}}}
+
+% environment for code examples
+\ifthenelse{\boolean{@compatibility}}{}{% don't define this in 2.09 mode.
+\newenvironment{samplecode}[1][1]%
+  {\setlength{\tabcolsep}{2\tabcolsep}%
+\renewcommand{\>}{~~~~}%
+\newcommand{\@comment@}[1]{\rmfamily\itshape // ##1}%
+\@ifundefined{comment}{\newcommand{\comment}[1]{\@comment@{##1}}}{}%
+\newcommand{\com}[1]{\@comment@{##1}}%
+\newcommand{\ells}[1]{\ifcase#1\or l\or l|l\or l|l|l\or l|l|l|l\or
+l|l|l|l|l\or l|l|l|l|l|l\fi}%
+\begin{center}\ttfamily\begin{tabular}{\ells{#1}}}
+  {\end{tabular}\end{center}}
+}
+% math abbreviations
+\newcommand{\Rho}{P}
+\newcommand{\set}[1]{\ensuremath{\left\{#1\right\}}}
+\newenvironment{transitions}{
+ \newcommand{\isdef}[1]{\ensuremath{##1\:\mbox{defined}}}
+ \newcommand{\notdef}[1]{\ensuremath{##1\:\mbox{undefined}}}
+% \newcommand{\isdef}[1]{\ensuremath{##1\succ\bot}}
+% \newcommand{\notdef}[1]{\ensuremath{##1=\bot}}
+ \newcommand{\trule}[2]{\ensuremath{\displaystyle\frac{##1}{##2}}}
+ \renewcommand{\arraystretch}{2.5}
+ \newcommand{\myarray}[2]{\renewcommand{\arraystretch}{1}\begin{array}{##1}##2\end{array}\renewcommand{\arraystretch}{2.5}}
+ \begin{center}\begin{math}\begin{array}{lc}}
+{\end{array}\end{math}\end{center}\renewcommand{\arraystretch}{1}}
+
+% Theorem-like environments
+\@ifundefined{observation}{\newtheorem{observation}{Observation}[section]}{}%
+\@ifundefined{definition}{\newtheorem{definition}{Definition}[section]}{}%
+\@ifundefined{property}{\newtheorem{property}{Property}[section]}{}%
+\@ifundefined{lemma}{\newtheorem{lemma}{Lemma}[section]}{}%
+\@ifundefined{corollary}{\newtheorem{corollary}{Corollary}[section]}{}%
+\@ifundefined{theorem}{\newtheorem{theorem}{Theorem}[section]}{}%
+%\newtheorem{definition}{Definition}[section]
+%\newtheorem{property}{Property}[section]
+%\newtheorem{lemma}{Lemma}[section]
+%\newtheorem{corollary}{Corollary}[section]
+%\newtheorem{theorem}{Theorem}[section]
+
+% enumerated environment with no indent
+\newcounter{enumnoind}
+\newenvironment{enumnoind}
+  {\setcounter{enumnoind}{0}
+   \begin{list}{\arabic{enumnoind}.}
+               {\usecounter{enumnoind} \setlength{\leftmargin}{.4cm}}}
+  {\end{list}}
+
+% list environments without so much space between items
+\newenvironment{tightdesc}
+  {\begin{description}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+  {\end{description}}
+\newenvironment{tightenum}
+  {\begin{enumerate}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+  {\end{enumerate}}
+
+% domain names, properly spaced
+\newcommand{\domain}[1]{{\mbox{\em #1}}}
+\newcommand{\domainsm}[1]{{\mbox{\scriptsize\em #1}}}
+
+% term names, in definition environments
+\newcommand{\newterm}[1]{\textbf{\em #1}}
+
+% uniform format for Stuff Not Yet Done
+\newcommand{\fixme}[1]{\footnote{\textbf{FIXME:} #1}}
+% uniform format for Stuff Never To Be Done
+\newcommand{\dontfixme}[1]{}
+
+% phi, sigma, and xi functions
+\newcommand{\phifunction}{$\phi$-function\xspace}
+\newcommand{\sigfunction}{$\sigma$-function\xspace}
+\newcommand{\xifunction}{$\xi$-function\xspace}
+\newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
+\newcommand{\xivec}[2]{\ensuremath{\left[\tuple{#1}\atop\tuple{#2}\right]}}
+\newcommand{\phisigfunction}[1][and]{$\phi$- #1 \sigfunction}
+\newcommand{\subvar}[2]{\ensuremath{\text{#1}_{\text{#2}}}}
+
+% Cytron's path symbol
+\@ifundefined{path}{
+\newcommand{\path}{\ensuremath{\rightarrow}}
+\newcommand{\pathstar}{\ensuremath{\stackrel{*}{\path}}}
+\newcommand{\pathplus}{\ensuremath{\stackrel{+}{\path}}}
+}{\typeout{Not defining path macros because they're already defined.}}
+
+% SSI0/+
+\newcommand{\ssizero}{SSI$_{\text{0}}$\xspace}
+\newcommand{\ssiplus}{SSI$^{\text{+}}$\xspace}
+
+% typeface for program code
+\newcommand{\code}[1]{\texttt{#1}}
+
+% redefine comments for algorithm mode
+\renewcommand{\algorithmiccomment}[1]{/* \textsl{#1} */}
+% magic
+\newenvironment{myalgorithmic}[1][1]{\begin{algorithmic}[#1]%
+ % additional statement commands.
+ \newcommand{\ASSERT}{\STATE \textbf{Assert:}\xspace}%
+ \newcommand{\FOREACH}[1]{\FOR{\textbf{each} ##1}}%
+ \newcommand{\IFNOT}[2][default]{\IF[##1]{\textbf{not} ##2}}%
+ \newcommand{\LET}{\STATE \textbf{let}\xspace}%
+ %\newcommand{\EMPTYLINE}{\vspace{0.6\baselineskip}}
+ \newcommand{\EMPTYLINE}{\STATE}%
+ \newcommand{\BREAK}{\STATE \textbf{break}\xspace}%
+ \newcommand{\CONTINUE}{\STATE \textbf{continue}\xspace}%
+ \newcommand{\GOTO}{\STATE \textbf{goto}\xspace}%
+ \newcommand{\RETURN}{\STATE \textbf{return}\xspace}%
+ % make case matching... environment
+ \newcommand{\algorithmiccase}{\textbf{case}}
+ \newcommand{\algorithmicmatching}{\textbf{matching}}
+ \newcommand{\algorithmicdefault}{\textbf{default}}
+ \newcommand{\algorithmicendmatching}{\textbf{end case}}
+ \newenvironment{ALC@case}{\begin{ALC@g}}{\end{ALC@g}}
+ \newenvironment{ALC@matching}{\begin{ALC@g}}{\end{ALC@g}}
+ \newcommand{\MATCHING}[2][default]{\ALC@it\algorithmiccase\ ##2 
+                                \algorithmicmatching\
+                                \ALC@com{##1}\begin{ALC@matching}}
+ \newcommand{\CASE}[2][default]{\STATE ##2 $\Rightarrow$
+                                \ALC@com{##1}\begin{ALC@case}}
+ \newcommand{\CASEDEFAULT}[1][default]{\CASE[##1]{\algorithmicdefault}}
+ \newcommand{\ENDCASE}{\end{ALC@case}}%\ALC@it\algorithmicendcase}
+ \newcommand{\ENDMATCHING}{\end{ALC@matching}\ALC@it\algorithmicendmatching}
+ % make starred forms of ending commands.
+ \renewcommand{\ENDLOOP}{\end{ALC@loop}\@ifstar{\ALC@it\algorithmicendloop}{\ifthenelse{\boolean{ALC@noend}}{}{\ALC@it\algorithmicendloop}}}
+ \renewcommand{\ENDIF}{\end{ALC@if}\@ifstar{\ALC@it\algorithmicendif}{\ifthenelse{\boolean{ALC@noend}}{}{\ALC@it\algorithmicendif}}}
+ % Internal magic to allow references to specific algorithm lines
+ \let\oldALCitem\item%
+ \renewcommand{\item}{\addtocounter{ALC@line}{-1}\refstepcounter{ALC@line}%
+                      \oldALCitem}%
+ \vspace*{-\topsep}%
+}{\end{algorithmic}}
+
+% hyphenation problems
+\hyphenation{con-ver-gence da-ta-flow stat-ic Stat-ic equiv-a-len-cy}

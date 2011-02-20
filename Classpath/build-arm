@@ -1,0 +1,3 @@
+aclocal; autoheader; autoconf; automake
+./configure --enable-static --enable-portable-native-sync --enable-jni --with-jikes --enable-gtk-peer --prefix=`pwd`/install-arm --exec-prefix=`pwd`/install-arm --host=arm-linux LDFLAGS="-L/usr/local/arm-linux/arm-linux/lib -L/usr/local/arm-linux/lib" CC="arm-linux-gcc -O9 -DNDEBUG"
+make clean; make; make install

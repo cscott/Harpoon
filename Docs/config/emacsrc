@@ -1,0 +1,24 @@
+
+;;----------------------------------------------------------------------
+;; Flex Settings for emacs modes and colors
+
+;; set modes (Java, C++) for emacs
+(setq load-path (cons "/home/cananian/lib/emacs/"
+		(cons "/home/cananian/lib/emacs/cc-mode-5.21/"
+		(cons "/home/cananian/lib/emacs/jde-2.0.9/" load-path))))
+(require 'cc-mode) (require 'jde)
+
+;; allow shift-select. Also makes "End"/"Home" go to the 
+;; end/beginning of line instead of end/beginning of file
+(pc-selection-mode)
+(show-paren-mode 1)
+
+;; make emacs colorful!
+(cond ((fboundp 'global-font-lock-mode)
+       ;; Turn on font-lock in all modes that support it
+       (global-font-lock-mode t)
+       ;; Maximum colors
+       (setq font-lock-maximum-decoration t)))
+
+;;----------------------------------------------------------------------
+

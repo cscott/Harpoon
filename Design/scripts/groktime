@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+use Time::Local;
+
+$\="\n";
+$,="\t";
+
+$starttime=0;
+$total1=$total2=0;
+while (<>) {
+    next if ($_ !~ "^[0-9]+/[0-9]+/[0-9]+" ); # skip comments
+
+
+    ($date,$time, $plus, $minus) = split(' ', $_);
+    $date =~ "([0-9]+)/([0-9]+)/([0-9]+)";
+    $month=$1; $day=$2; $year=$3;
+    $time =~ "([0-9]+):([0-9]+):([0-9]+)";
+    $hour=$1; $min =$2; $sec=$3;
+    
+    $mon=$month-1; # zero-based, for some strange reason.
+#    $mon= 0 if $month =~ "Jan"; # zero-based, for some strange reason.
+#    $mon= 1 if $month =~ "Feb";
+#    $mon= 2 if $month =~ "Mar";
+#    $mon= 3 if $month =~ "Apr";
+#    $mon= 4 if $month =~ "May";
+#    $mon= 5 if $month =~ "Jun";
+#    $mon= 6 if $month =~ "Jul";
+#    $mon= 7 if $month =~ "Aug";
+#    $mon= 8 if $month =~ "Sep";
+#    $mon= 9 if $month =~ "Oct";
+#    $mon=10 if $month =~ "Nov";
+#    $mon=11 if $month =~ "Dec";
+    
+    $mytime = timegm($sec,$min,$hour,$day,$mon,$year-1900)-$starttime;
+    if ($.==1) {
+	$starttime=$mytime;
+	$mytime-=$starttime;
+    }
+    $total1 += ($plus-$minus);
+    $total2 += ($plus+$minus);
+    print "# Days_since_start Lines_added Lines_subtracted Lines_net Lines_net_total Lines_changed Lines_changed_total" if $.==1;
+    print $mytime/60/60/24, $plus, $minus, $plus-$minus, $total1, $plus+$minus, $total2;
+}

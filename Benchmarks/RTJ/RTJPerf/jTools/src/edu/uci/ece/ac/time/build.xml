@@ -1,0 +1,33 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:35:35 wbeebee Exp $ -->
+
+<project name="Sys" default="all" basedir="../../../../../..">
+
+   <property file="jtools-build-bootstrap.properties"/>
+   <property file="jtools-build.properties"/>
+
+   <target name="all" depends="jcompile, makeNatives"/>
+
+   <target name="jcompile">
+      <javac srcdir="${jtools.srcdir}"
+             destdir="${jtools.classdir}"
+             classpath="${jtools.classdir}"
+             debug="${jtools.debug}"
+             optimize="${jtools.optimization}"
+             includes="edu/uci/ece/ac/time/**"/>
+   </target>
+
+   <target name="makeNatives">
+      <exec dir="${jtools.srcdir}/edu/uci/ece/ac/time"
+            executable="make" os="Linux">
+         <arg line="-k"/>
+      </exec>
+   </target>
+
+   <target name="clean">
+      <delete dir="${jtools.classdir}/edu/uci/ece/ac/time"/>
+      <exec dir="${jtools.srcdir}/edu/uci/ece/ac/time"
+            executable="make" os="Linux">
+         <arg line="-k clean"/>
+      </exec>
+   </target>
+</project>

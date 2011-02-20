@@ -1,0 +1,5 @@
+#!/bin/sh
+ORIGCOUNT=`cvs -q update -p -r1.1 $1 | wc -l | sed -e 's/ //g'`
+cvs log $1 \
+ | sed -n -f `dirname $0`/sed.stats \
+ | sed -e "s/ORIGCOUNT/${ORIGCOUNT}/"

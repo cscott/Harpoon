@@ -1,0 +1,22 @@
+Generate LVML (lean VM) backend for code --- portable! (mostly)
+assuming someone has written an LVM for that machine (using FSM JIT?)
+-
+we want LVML+enough type info to allow LVML->JVML translation.  Thus
+we can write a JIT-JIT to run on a JVM. (Todd sez hard part is
+portable calling convention).
+-
+
+trick is getting rid of SSA artifacts in the back end.
+SSI+ to tree, *ignoring* control flow graph
+ (but using implicit ordering on store/side-effects)
+-
+Special 'store' for side-effects to order them.
+-
+Loop transformations involve moving this above xi-functions
+--
+
+ZEPHYR interconnect:
+ zephyr gives you diff from optimizer.  Use to maintain information
+ maps through back-end --> proof code, type info for
+ garbage-collection.  GAIN highly-optimized back-end.  Flexible, etc.
+-----

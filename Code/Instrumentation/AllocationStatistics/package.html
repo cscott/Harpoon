@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<!-- @version $Id: package.html,v 1.1 2003-02-03 23:23:19 salcianu Exp $ -->
+<body bgcolor="white">
+
+This package contains code for instrumenting the allocation sites from
+a program in order to measure how many times each allocation site is
+executed (ie, how many objects are allocated at each allocation site).
+The main instrumentation class is <code>InstrumentAllocs</code>; it
+has additional support for instrumenting the call instructions.
+
+<p>
+Here is a typical usage scenario of this package:
+
+<ol>
+
+<li>Create an <code>AllocationNumbering</code> object that assigns to
+each allocation site a program-wide unique ID.
+
+<li>Produce an <code>HCodeFactory</code> that provides the
+instrumented version of the code (to do this, create an
+<code>InstrumentAllocs</code> object and next call its
+<code>codeFactory</code> method). In the instrumented code, each
+allocation site is wrapped in code that increments the counter for the
+corresponding unique ID.
+
+<li>Serialize the program representation (the linker, the
+<code>HCodeFactory</code> for the uninstrumented code, the set of
+roots and the initial method) and the <code>AllocationNumbering</code>
+object.
+
+<li>Compile the instrumented version of the program.
+
+<li>Execute the resulting executable; when it finishes, it dumps out a
+file that specifies for each unique allocation site ID, how many times
+the corresponding allocation site was executed.
+
+<li>Deserialize the program representation and the
+<code>AllocationNumbering</code> object.  This gives both the
+original, uninstrumented, <code>HCodeFactory</code>, and the mapping
+between allocation sites and unique IDs.
+
+<li>Finally, create an <code>AllocationStatistics</code> object by
+providing to its constructor the deserialized
+<code>AllocationNumbering</code> object and the name of the file
+produced by the instrumentation.  The resulting
+<code>AllocationStatistics</code> object provides, for each allocation
+site, the number of times it was executed.  It does this by computing
+the jointure between the <code>AllocationNumbering</code> mapping and
+the mapping obtained by parsing the file produced by the
+instrumentation.
+
+</ol>
+
+<p><b>Note:</b> This scenario is complicated because we need to
+preserve the identity of the allocation sites between two different
+runs of FLEX: before and after the instrumented version if compiled
+and executed.
+
+<p>
+The above scenario is an ideal one.  In practice, JVMs are buggy when
+it comes to (de)serialization.  Therefore, we designed an alternative
+solution that uses <i>textualization</i> (a hacked-down way of
+serializing the <code>AllocationNumbering</code> map; don't bother
+about its details).  Here are the differences from the ideal solution:
+
+<ol>
+
+<li>Follow the same steps, with the two exceptions indicated below:
+
+<li>Don't serialize anything.  Instead, textualize the
+<code>AllocationNumbering</code> object by using the
+<code>AllocationNumberingStub.writeToFile</code> method.
+
+<li>Don't deserialize anything.  Instead, recreate the uninstrumented
+program representation from scratch (in exactly the same way you
+produced the one that was later instrumented), and create an
+<code>AllocationStatistics</code> object by using the constructor that
+requires the name of the file used for textualization
+(internally, it will detextualize an
+<code>AllocationNumberingStub</code> object).  Now, you should have a
+nice, ready to use <code>AllocationStatistics</code> object.
+
+</ol>
+
+A full example can be found in <code>SAMain</code> (search for
+<code>AllocationNumbering</code>).
+
+@author Alexandru SALCIANU (salcianu@MIT.EDU)
+@author Brian Demsky (bdemsky@mit.edu)
+</body>
+</html>

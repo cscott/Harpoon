@@ -1,0 +1,44 @@
+%%%% other text which doesn't go anywhere yet
+
+\subsecput{os}{Operating systems}
+
+Perhaps the most promising single application for boundless
+transactions is providing atomicity within an operating system.
+Locking is difficult to reason about For example, we counted at the
+comments in the linux filesystem layer, and found that about 15\% of
+the comments relate to locking protocols.  Those comments often
+describe global invariants of the program which are difficult to
+verify.  And many kernel bugs involve races and deadlocks.
+
+[Dealing with nested transactions: modularity, semantics.]
+
+\subsecput{htm}{HTM versus STM}
+
+\subsecput{performance}{Performance improvements}
+
+\note{This text may very well belong in some other section.}  Herlihy
+and Moss' HTM scheme is not non-blocking.  In their proposal, a
+transactional load by a processor ends with an XABORT and an XCOMMIT
+tag on the read cache line.  Later, while that processor's transaction
+is still outstanding, a transactional store by a different processor
+to that same cache line will result in a T\_RFO cycle on the bus, to
+which the first processor's cache will result BUSY.  The second
+processor commits suicide (aborts itself) in response.
+
+[A processor which does transactional reads holds an irrevocable lock
+on those cache lines until it commits or aborts itself, and any
+other processor which attempts a write on those lines will block,
+waiting.]
+
+This means that a processor which transactionally reads many locations
+and then loops forever without committing may prevent all other
+processors from ever making progress on their transactions.  This is a
+simple protocol error: the intervening processor should be able to
+abort the first processor instead of blocking for its completion.
+Loosely, processors must be able to kill others; if a processor can
+only commit suicide, than the system may block.  When transactions are
+exposed to user code, Herlihy's system is vulnerable to this simple
+denial-of-service attack.  BTM does not suffer from this
+problem. [although starvation may still occur.]
+
+

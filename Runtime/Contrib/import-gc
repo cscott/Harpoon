@@ -1,0 +1,8 @@
+#import command for BOEHM conservative garbage collector:
+# change GC_5_0a3 to correct release tag.
+cd gc
+cvs -d ~/Harpoon/CVSROOT import -m "Import of BDW conservative gc5.0alpha3" Runtime/Contrib/gc BOEHM_DIST GC_5_0a3
+
+# then merge with the command recommended in the CVS info page (at the bottom)
+cd MERGE
+cvs -d ~/Harpoon/CVSROOT checkout -jGC_5_0a2 -jGC_5_0a3 Runtime/Contrib/gc

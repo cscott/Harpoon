@@ -1,0 +1,137 @@
+Make sure that some 1.4 compliant JDK and JVM is in your CLASSPATH.
+
+(Currently works with SunJDK 1.4 and HotSpot - 
+FLEX and GNU Classpath support should be added soon.)
+
+Type 'make jars' to build the documentation and entry points.
+
+Point your browser to doc/index.html for the main program documentation.
+
+Type 'java -jar x.jar' to run an entry point.  It will display
+more detailed usage information.
+
+ATR.jar          - The main ATR as a single component.
+embeddedATR.jar  - The embedded component of the two-stage version of the ATR
+                   (only greatest 'bang/buck' algorithms here - the goal is
+                    to reduce bandwidth requirements by sending only compressed 
+                    streams of tracked "interesting" objects across the network 
+                    and use the minimum number of cycles to do it).
+
+groundATR.jar    - The ground component of the two-stage version of the ATR.
+                   (the more sensitive, slower algorithms here - the goal is to
+                    make sure the "interesting" tracked objects are actually tanks,
+                    and then inform the embedded version of this identification
+                    so that it can stop using bandwidth to track non-tanks.)
+
+GUI.jar          - A version which pops open a display to demonstrate the image recognition
+                   pipeline circling the tank using pipelines from the single ATR.
+
+ns.jar           - An easy-to-use front-end for the JacORB CORBA NameService
+trackerStub.jar  - The ALERT server.
+receiverStub.jar - Sends images to the ATR.
+
+RTJ.jar          - The version of the single ATR which uses Real-Time Java 
+
+imagerec.jar     - The current development head for experimenting with new pipelines.
+Buffer.jar	 - An ATR with a buffer at the front of it.
+Watermark.jar	 - A test pipeline for the watermarking node.
+ATR.jar, GUI.jar, ns.jar, trackerStub.jar, receiverStub.jar, 
+embeddedATR.jar, groundATR.jar, Buffer.jar and Watermark.jar  are the
+currently working jars as of this release.
+RTJ.jar is under development.
+
+See src/Main.java for many other MUCH more sophisticated pipelines
+involving line recognition, template matching based on outlines, 
+polygon generation, matching of orientation with tracked 
+direction of movement, etc.  Also, see the program documentation in
+doc/index.html under imagerec.graph for a description of the 
+algorithms currently under development.
+
+Current publically-available pipelines:
+1) Recognize the tank by size.
+2) Recognize the tank by color.
+3) Recognize the tank by both color and size.
+
+The current publically-available pipelines in the single ATR are scheduled for introduction
+in the embedded version of the two-stage ATR.
+
+Example #1 (no CORBA):
+~~~~~~~~~~~~~~~~~~~~~
+java -jar GUI.jar pause nocorba 3 
+
+Locally, you can run this as:
+java -jar GUI.jar nopause nocorba 3
+
+
+Example #2 (with CORBA):
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Copy the .jacorb_properties file from contrib/ to your home directory
+and modify the ORBInitRef.NameService= to point to the name service.
+
+Start the JacORB NameService:
+  java -jar ns.jar /users/wbeebee/.jacorb
+
+Start the ALERT server:
+  java -jar trackerStub.jar timer "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the ATR:
+  java -jar ATR.jar timer 3 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+ 
+Send images to the ATR:
+  java -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" "placeholder" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Note: Use the CORBA names "LMCO ATR" and "ATR Alert" only for drop-in compatibility 
+with the existing Lockheed-Martin ATR.
+
+
+Example #3 (with CORBA, using multiple ATR stages):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Edit the .jacorb_properties file in your home directory to point to
+your name service.
+
+Start the JacORB NameService:
+   java -jar ns.jar /users/wbeebee/.jacorb
+
+Start the ALERT server:
+   java -jar trackerStub.jar "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the ReceiverClient:
+   java -jar receiverStub.jar GUI.jar tank.gz 533 2 "LMCO ATR" "ATR Feedback" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the Embedded ATR:
+   java -jar embeddedATR.jar notimer nopause headless 1 "LMCO ATR" "embedToGround" "groundToEmbed" "ATR Alert" "ATR Feedback" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the Ground ATR:
+  java -jar groundATR.jar notimer headless 1 "embedToGround" "groundToEmbed" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Wierdness:
+~~~~~~~~~
+Note: Use the CORBA names "LMCO ATR" and "ATR Alert" only for drop-in compatibility 
+with the existing Lockheed-Martin ATR.
+
+For complicated objects on some systems, you may need to specify the -Xss1M option to increase the 
+Java thread stack size to 1M:
+java -Xss1M ...
+
+Also, if you're using the TAO NameService instead of the JacORB NameService,
+you may have to use -DORBInitRef.NameService:
+java -DORBInitRef.NameService=...
+
+However, if you're trying to connect to the JacORB NameService, do not
+use the -DORBInitRef.NameService option, as it will cause a NullPointerException 
+in JacORB.
+
+Oddly, JacORB sometimes seems to work improperly if the .jacorb_properties NameService is different
+from the one specified at the command line.  
+
+Use -Djava.compiler=none for interpreted mode instead of the HotSpot JIT or for debugging if you
+need to.  Note that interpreted code runs slower than JIT'ed code.
+
+See the JacORB manual at http://www.jacorb.org/docs/ProgrammingGuide_1_4_1.pdf for more information.
+(Also note that that's the manual for 1.4.1, not 1.3.30.)
+
+For main development, develop in src/Main.java and use 'make' and 'make run' 
+
+For further information, please contact Wes Beebee <wbeebee@mit.edu>.

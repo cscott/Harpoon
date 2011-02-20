@@ -1,0 +1,387 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)jdbwithcvm.html	1.3 00/11/22 -->
+<HTML>
+<HEAD>
+    <TITLE>Java Debugging with JDB</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="using-gdb.html">Prev</a> | Next
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+<HR size="2" noshade>
+
+<!-- ====================== Body text begins here ====================== -->
+
+<h1>Java Debugging with JDB</h1>
+<blockquote>
+    This document describes the procedure for using JDB with the CVM
+    implementation.
+</blockquote>
+
+<h2>Contents</h2>
+<blockquote>
+<a href="#SummaryAndAssumptions">Summary & Assumptions</a><br>
+<a href="#BuildingJDWP">Building & Running the JDWP Agent</a><br>
+<a href="#RunningJDB">Running JDB</a><br>
+<a href="#JDBFeatures">What's in JDB</a><br>
+<a href="#Sources">Other Sources of Information</a><br>
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="SummaryAndAssumptions"></a>
+<h2>Summary & Assumptions</h2>
+<blockquote>
+    <p>
+    JDB is a Java Debugger for debugging Java code.  This document describes one method
+    of running JDB with CVM on Linux.  In order to run JDB with CVM, CVM must first be
+    built with the build time option <code>CVM_JVMDI=true</code>.  For the purpose of
+    simplicity, the following discussions assumes that the CVM bundle is install
+    in directory <code>/cvm</code>.
+    <p>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="BuildingJDWP"></a>
+<h2>Building & Running the JDWP Agent</h2>
+<blockquote>
+    <p>
+    JDB communicates with CVM through the JDWP agent.  The JDWP agent is dynamically
+    linked into CVM to interface with the VM through the JVMDI interface.  
+    
+    <ul>
+    <li>On Linux, it comes in the form of <code>libjdwp.so</code>.  
+    <li>On VxWorks, it comes in the form of <code>libjdwp.o</code>.
+    </ul> 
+    
+    <p>To build the agent, cd to <code>/cvm/ext/jpda/build/&lt;platform&gt;</code>, 
+    and run 'make'. this builds the needed library in <code>/cvm/jdk_build/&lt;platform&gt;/lib/&lt;arch&gt;</code>,
+    where <code>&lt;platform&gt;</code> is 'linux' or 'vxworks', and <code>&lt;arch&gt;</code> 
+    is 'i386' or 'PENTIUM'.
+    
+    <p>
+    To run the JDWP agent with CVM on Linux, cd to <code>/cvm/build/linux/bin</code>
+    and invoke
+    </p>
+<pre>
+    cvm -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=8000
+        -Dsun.boot.library.path=../../../jdk_build/linux/lib/i386
+        -Djava.class.path=<i>your_class_path</i> <i>your_main_class</i>
+</pre>
+    <p>
+
+    <ul>
+        <li><code>-Xdebug</code> tells CVM to run in debugger mode.
+        <li><code>-Xrunjdwp</code> tells CVM to load <code>libjdwp.so</code>
+            and it expects to find the JDWP agent in this shared library.
+        <li><code>:transport=dt_socket,server=y,address=8000</code> is a
+            parameter list to be passed to the JDWP agent.
+        <li><code>transport=dt_socket</code> means to connect to the JDB
+            front-end using a socket implementation.
+        <li><code>server=y</code> means that CVM will serve as a debugging
+            server.  This means that CVM will start up and wait for a debugger
+            front-end to connect to it.  In this specific case, the connection
+            will be via a socket on port 8000.
+
+        <a name=PortAddress></a>
+        <li><code>address=8000</code> means that CVM will be listening on port
+            8000 for a connection from a debugger front-end.  If you're already
+            using port 8000 for something else, feel free to pick another unused
+            port number.  Just make sure that your debugger front-end tries to
+            attach to the same port number (see <a href=#RunningJDB>Running
+            JDB</a> below).
+        <a name=SetLibPath></a>
+        <li><code>-Dsun.boot.library.path=../../../jdk_build/linux/lib/i386</code>
+            tells CVM where to find <code>libjdwp.so</code>.  If you're invoking
+            CVM from <code>/cvm/build/linux/bin</code>, this path will
+            be correct.  You won't have to change it.  If you're invoking CVM from
+            some where else, make sure that <code>-Dsun.boot.library.path=</code>
+            points to <code>/cvm/jdk_build/linux/lib/i386</code>.
+        <a name=SetClassPath></a>
+        <li><code>-Djava.class.path=<i>your_class_path</i></code> tells CVM where to
+            find your java app.  If your classpath is simply . (as in the current
+            directory), you still need to specify it.
+        <li><code><i>your_main_class</i></code> is the name of your Java app.
+    </ul>
+
+    <p>To run the JDWP agent with CVM on VxWorks, cd to <tt>/cvm/build/vxworks/bin</tt> 
+    and invoke
+    
+<pre>
+    runJavaJdp "-Djava.class.path=&lt;your_class_path your_main_class&gt;
+</pre>
+    
+    <p><code>runJavaJdb</code> sets up the -Xdebug, -Xrunjdwp, -Dsun.boot.library.path 
+    arguments for you, and appends your classpath and main class before passing it to 
+    'runJava'. The default setting for -Xrunjdwp is ':transport=dt_socket, server=y, address=8000' and the default setting for 
+    -Dsun.boot.library.path is '../../../jdk_build/vxworks/lib/PENTIUM. 
+    If you need to change either of these parameters, edit the file 
+    '/cvm/src/vxworks/biin/vxworks_java_md.c' and alter the <code>runJavaJdb()</code> 
+    function as necessary. Rebuild your cvm and VxWorks image and update your 
+    target.
+
+
+    
+    <p>
+    On either platform, CVM should come up and hang.  Don't worry.  That is proper behavior because it is
+    now waiting for the debugger front-end to connect before executing any Java byte
+    codes.
+    <p>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="RunningJDB"></a>
+<h2>Running JDB</h2>
+<blockquote>
+    <p>
+    Now that you have CVM up and running (if you don't, see <a href=#BuildingJDWP>
+    Building & Running the JDWP Agent for CVM</a>), you can start JDB and have it
+    connect to your currently running instance of CVM.  To do this:
+    <ol>
+        <li>You will need JDK1.3 installed (typically in
+            <code>/usr/local/java/jdk1.3/linux/bin</code>).  If JDK1.3 is not
+            installed, you can get it at <a href="http://java.sun.com/j2se/1.3/">
+            http://java.sun.com/j2se/1.3</a>. Of course, if your CVM is running on 
+            VxWorks, then your jdb will need to be running on a remote host 
+            that has JDK1.3 installed.
+        <li>In another terminal window (to keep the stdin/out for JDB separate from
+            that of CVM), cd to the root directory where your Java source is stored.
+            This is needed because JDB will look for the source in the directory
+            from which it is invoked.  If you don't do this, JDB will still run,
+            but you won't be able to see the source code as you step through your debug
+            cycle.
+            <br><br>
+
+            Alternatively, you may choose to specify a source path from which JDB
+            will load the source file of the classes being debugged.  See the
+            <a href=#Sourcepath><code>-sourcepath</code></a> option below for
+            information on how to do this.  If you specify a source path, you won't
+            have to cd to the root directory of your java source.  JDB will search
+            the specified source path fo the Java source files it is expecting.
+            <br><br>
+
+            NOTE: It is the debugger front-end (JDB) that needs and sets the
+            source path.  The back-end (CVM) does not need the source path.
+            However, if the back-end is running code that is not compiled from the
+            source code that the front-end is refering to, you might get an erroneous
+            correlation between code being executed in the back-end and the source
+            you're viewing in the front-end.  So make sure your source (.java file)
+            and executable (.class file) being debugged are in sync.
+            <br><br>
+        <li>Next, invoke
+<pre>
+    jdb -attach <i>your_server_machine</i>:8000 -sourcepath <i>your_sourcepath</i>
+</pre>
+            <ul>
+                <li><code>jdb</code> is the java debugger that comes in the form of
+                    a Java app packaged with the JDK.  If you have
+                    <code>/usr/local/java/jdk1.3/linux/bin</code> in your path,
+                    you should have no problem invoking it.
+                <li><code>-attach <i>your_server_machine</i>:8000</code> tells JDB to
+                    connect to port 8000 on the specified server machine.  Be sure to
+                    specify the same machine as the one where you are running the CVM
+                    back-end.  If you're running on the same machine where
+                    CVM is running, you can choose to omit the
+                    <code><i>your_server_machine</i>:</code> part.  JDB will look on
+                    the local host for the specified port by default if you don't
+                    explicitly specify the server.  If you specified a different
+                    <a href=#PortAddress>port</a> when you invoked CVM, then make sure
+                    to specify the same port number here.
+                <a name=Sourcepath></a>
+                <li><code>-sourcepath <i>your_sourcepath</i></code> tells JDB where to
+                    look for the Java source files that correspond to the java class
+                    files being debugged.  The sourcepath is analogous to the Java
+                    classpath except that it is for finding the .java files as opposed
+                    to the .class files.  The sourcepath is structured as directory
+                    paths separated by colons.
+            </ul>
+    </ol>
+    <p>
+
+    For example, the following illustrates the invocation of JDB on a host machine
+    named <code>acorn</code> to connect with a CVM instance running JDWP with the
+    HelloWorld class (from the testclasses.zip that comes with CVM) on port 8000
+    of a server machine named <code>peanut</code>:
+<pre>
+    acorn> jdb -attach peanut:8000 -sourcepath /cvm/src/share/javavm/test
+</pre>
+
+    <b>Note:</b> To find out about other JDB options, you can invoke <code>jdb -help</code> for a
+    list of the supported JDB options.  JDB will come up running (after a slight pause
+    to load the JDK VM which it runs on).  You should see the following:
+<pre>
+    Initializing jdb...
+
+    VM Started: No frames on the current call stack
+
+    main[1] main[1]
+</pre>
+<p>
+<b>Note:</b> If you get here, all is well, you have set up the debugging session correctly.
+If not, go back and double check that you have entered everything correctly.
+Some possible reasons for JDB not working are:
+</p>
+
+    <ul>
+        <li>CVM couldn't find the Java app class because you didn't specify the
+            correct classpath (see <a href=#SetClassPath>
+            <code>-Djava.class.path=...</code></a>).
+        <li>CVM couldn't find <code>libjdwp.so</code> because you didn't specify the
+            correct native lib path (see <a href=#SetLibPath>
+            <code>-Dsun.boot.library.path=...</code></a>).
+        <li>Any other thing that you thought you did right but didn't.  Go back and
+            double check.
+    </ul>
+    <p>
+
+
+    <b>Note:</b> <code>main[1]</code> is a prompt where you can start entering JDB commands.
+    Upon entering JDB for the first time, enter "list" to see a listing of the
+    method you're currently in. You'll get a message like this:
+<pre>
+    main[1] list
+    No frames on the current call stack
+    main[1]
+</pre>
+
+    This is because the VM has not entered any methods yet.  To enter the very first method,
+    type <code>step</code> and you will see a message like this:
+<pre>
+    main[1] step
+    main[1]
+    Step completed: thread="main", HelloWorld.main(), line=14, bci=0
+      14     if (args != null && args.length >= 1 && args[0].equals("-kgh")) {
+    main[1]
+</pre>
+
+    The source code line displayed is the next line of code you will execute if you
+    <code>step</code> the debugger (by typing <code>step</code> at the JDB command
+    prompt).<br>
+    Now, if you type <code>list</code> at the command prompt, you will see a partial
+    listing of the source code like this:
+<pre>
+    main[1] list
+    10
+    11         public class HelloWorld {
+    12
+    13             public static void main(String args[]) {
+    14      =>      if (args != null && args.length >= 1 ** args[0].equals("-kgh")) {
+    15                  System.out.println("Hullo from the E-spot VM!");
+    16              } else {
+    17                  System.out.println("Hello World.");
+    18              }
+    19             }
+    main[1] 
+</pre>
+
+    You are now ready to try out a few other JDB commands and/or commence with your
+    debugging activities.
+    <p>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="JDBFeatures"></a>
+<h2>What's in JDB</h2>
+<blockquote>
+    <p>
+    Now that you have JDB up and running, you can do usual debugger things with it.  For
+    example step, list the source, set breakpoints, etc.
+    For example:
+    <ul>
+        <li><code>classes</code><br>
+            Lists all classes that have been loaded.  However, note that all ROMIZED
+            classes (because they are PRE-LOADED ... keyword being LOADED) will be
+            listed whether they are in use or not.
+        <li><code>help</code><br>
+            Lists the available JDB commands.
+        <li><code>list</code><br>
+            Lists the current source code.  It also shows where in the code you are
+            currently executing.  This only works if you invoked JDB from the root of
+            your source directory of if you have specified the appropriate source path.
+        <li><code>run</code><br>
+            Runs until the next breakpoint is encountered or until the program ends.
+        <li><code>step</code><br>
+            Executes a single step.
+        <li><code>step up</code><br>
+            Executes until the VM exits the current method.
+        <li><code>quit</code><br>
+            Exits JDB.
+    </ul>
+    <p>
+
+    You can get a complete list of the available commands by typing <code>help</code>
+    at the JDB command prompt.
+    <p>
+
+</blockquote>
+
+<!-- ====================================================================== -->
+
+<hr>
+<a name="Sources"></a>
+<h2>Other Sources of Information</h2>
+<blockquote>
+    <p>
+    For more information on JDWP, and JVMDI, see the
+    <a href="http://java.sun.com/j2se/1.3/docs/guide/jpda/index.html">
+    Java<small><sup>TM</sup></small> Platform Debugger Architecture</a> specification.
+    <p>
+</blockquote>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="using-gdb.html">Prev</a> | Next
+</font>
+<HR size="2" noshade>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</html>

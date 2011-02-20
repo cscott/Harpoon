@@ -1,0 +1,67 @@
+Updated: 08/13/2002.
+
+
+This file describes how to make your ssh-agent work. The instructions given here are not expected to work with any package of ssh, but OpenSSH (which can be found at http://rpmfind.net/). These instructions may be incomplete or out of date after some time. Please update this file, if you think it should be updated. If you need a more detailed description of ssh, sshd, ssh-keygen, ssh-add, use man pages.
+
+1. Run ssh -v. If you can find something like "SSH protocols 1.5/2.0" in the output, then the version of ssh you are running is probably fine (of course, it should be an OpenSSH). If you don't find anything saying that your ssh supports ssh protocol 2.0, then most probably you'll have to download a newer version of OpenSSH. The version I'm using right now is OpenSSH_3.4p1.
+
+2. Run ssh-keygen -b <number_of_bits> -t <type>, where
+	<number_of_bits> is the number of bits for the key. Don't make a key with more than 4096 bits, since it will not work with some version of SecureSSH.
+	<type> is the type of the key (either dsa or rsa). You should make a dsa key, since rsa keys do not work will all SecureSSH implementations.
+
+3. After the key is generated, it will ask you to introduce a passphrase. CHOOSE A BLANK PASSPHRASE, NO MATTER HOW STUPID IT MAY SOUND. If you do not choose a blank passphrase, then you'll not be able to run the scripts automatically, since they will ask you to introduce the passphrase. However, if you choose a blank pasphrase, you can run ssh-add without having to introduce a passphrase, so you can run the scripts automatically (schedule them with crontab, for example).
+
+4. After the key is generated, most probably you'll be asken to choose the name of the file in which to store the key. The default name is identity for the private key, and identity.pub for the public key. If you do not plan to run ssh-agent extensively, you can use the default names (identity/identity.pub). However, if you plan to have more keys for different machines, you should choose a more "self-explanatory" names for these files.
+
+5. Here's the point where the installation for OpenSSH and SecureSSH start to differ.
+
+The remote computer is using OpenSSH
+------------------------------------
+
+6a. Copy the public key (identity.pub, or the name you chose for the private key with .pub extension) to the remote computer in the $HOME/.ssh/ directory.
+
+7a. Login to the remote machine and change directory to ~/.ssh/.
+
+8a. If the file "authorized_keys" exist, append your public key (identity.pub) to authorized_keys. If it does not exist, than you can simply copy your public key file (identity.pub) to authorized_keys.
+
+9a. Repeat steps 6a through 8a for all remote machines to which you want to be able to login without typing your password.
+
+10a. That's it! Now you have to know how to run the agent. For running ssh-agent, read 12.
+
+
+The remote computer is using SecureSSH
+--------------------------------------
+
+6b. First of all, you need to convert your public key. For this do the following:
+
+	cd ~/.ssh
+	ssh-keygen -e -f <public_key> > <public_key_converted>, where <public_key> is your normal public key (identity.pub), and <public_key_converted> is the name of the file where the converted public key will be stored.
+
+7b. Login to the remote machine and make th ~/.ssh2 directory.
+
+8b. Copy the converted public key file that you just created to the remote machine on the ~/.ssh2 directory.
+
+9b. Login again to the remote machine and change directory to ~/.ssh2.
+
+10b. Create the file "authorization". It should contain the following line:
+
+	Key <public_key_converted>, where <public_key_converted> is the name of the file that stores the converted public key.
+
+11b. That's it! Now you have to know how to run the agent. For running ssh-agent, read 12.
+
+
+For both versions of SSH
+------------------------
+
+12. Each time when you login to your computer open a terminal and type this:
+
+	eval `ssh-agent`
+	ssh-add ~/.ssh/<public_key_file>, where <public_key_file> is the name of the file containing your private key.
+
+13. After doing this you will be asked to introduce your passphrase (the one chosen by you in 3a). Introduce your password.
+
+14. Congratulations! You can login now to other computer without typing your password (well... at least you should be able to do this... :))
+
+15. When you're done with the ssh-agent (usually it does not happen before you want to log out :)), you should kill the agent. Otherwise, if you do not reboot your computer often, you'll end up having hundreds of ssh-agent running on your machine. To kill the agent, use the following command:
+
+	eval `ssh-agent -k`

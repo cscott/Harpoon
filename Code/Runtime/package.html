@@ -1,0 +1,20 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<!-- $Id: package.html,v 1.2 2002-02-25 21:06:26 cananian Exp $ -->
+<body bgcolor="white">
+This package contains runtime-support classes for any FLEX
+optimizations/transformations which need them.
+<i>Single-class</i> support code should go in this package;
+if your support code comprises several classes, it should
+get its own package under this one, ideally named after the
+analysis/transformation which requires it: see for example,
+<code>harpoon.Analysis.LowQuad.Transactions</code> and
+<code>harpoon.Runtime.Transactions</code>.
+<p>
+For large amounts of support code with specific dependencies that do
+not mesh well with the FLEX build infrastructure, considering adding
+a <code>JAR</code> file to <code>Support/</code> with the pre-built
+support code, and creating a separate CVS module for the actual
+sources.
+</body>
+</html>

@@ -1,0 +1,73 @@
+#!/bin/sh
+CC=${CC:-gcc}
+TMPDIR=${TMPDIR:-/tmp}
+tmpoutfile=$TMPDIR/gen-link-script-test
+tmpinfile=${tmpoutfile}.c
+
+tmpscript=$TMPDIR/gen-link-script-output
+tmpsed=$TMPDIR/gen-link-script-sed
+
+# output default link script.  has lots of other garbage, too =(
+echo "int main() { return 0; }" > $tmpinfile
+${CC} -Wl,--verbose -o $tmpoutfile $tmpinfile 2>$tmpscript 1>&2 || exit $?
+rm -f $tmpinfile $tmpoutfile
+
+# filter out other garbage from output of CC.
+cat > $tmpsed <<-__EOF__
+	/^==================================================/{
+	:L
+	n
+	/^==================================================/q
+	p
+	b L
+	}
+__EOF__
+sed -nf $tmpsed < $tmpscript > ${tmpscript}2
+rm -f $tmpscript $tmpsed
+
+# now add FLEX-specific bits to the link script.
+cat > $tmpsed <<-__EOF__
+	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text\( [ ]*[.][a-z.*]*\)*)$/{
+	  i\\
+	    PROVIDE(text_start = .);
+	  n
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text[.][*]\( [ ]*[.][a-z.*]*\)*)$/p
+	  i\\
+	    PROVIDE(text_end = .);
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text[.][*]\( [ ]*[.][a-z.*]*\)*)$/!p
+	  c\\
+	    /* BEGIN FLEX ADDITIONS */\\
+	    PROVIDE(code_start = .); *(.flex.code .flex.code.rw) PROVIDE(code_end = .);\\
+	    . = ALIGN(8) ; PROVIDE(fixup_start = .); *(.flex.fixup) PROVIDE(fixup_end = .);\\
+	    /* END FLEX ADDITIONS */
+	}
+	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]data\( [ ]*[.][a-z.*]*\)*)$/{
+	  n
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]data[.][*]\( [ ]*[.][a-z.*]*\)*)$/n
+	  i\\
+	    /* BEGIN FLEX ADDITIONS */\\
+	    /* unmarked segments */\\
+	    . = ALIGN(4) ; *(.flex.init_data)\\
+	    . = ALIGN(4) ; *(.flex.static_primitives)\\
+	    . = ALIGN(4) ; *(.flex.string_data)\\
+	    . = ALIGN(4) ; *(.flex.reflection_objects)\\
+	    . = ALIGN(4) ; *(.flex.reflection_data)\\
+	    /* marked segments */\\
+	    . = ALIGN(4) ; PROVIDE(claz_start = .); *(.flex.class) PROVIDE(claz_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(gc_index_start = .); *(.flex.gc_index) PROVIDE(gc_index_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(gc_start = .); *(.flex.gc) PROVIDE(gc_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(static_objects_start = .); *(.flex.static_objects) PROVIDE(static_objects_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(string_constants_start = .); *(.flex.string_constants) PROVIDE(string_constants_end = .);\\
+	    /* END FLEX ADDITIONS */
+	}
+	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]bss\( [ ]*[.][a-z.*]*\)*)$/{
+	  n
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]bss[.][*]\( [ ]*[.][a-z.*]*\)*)$/n
+	  i\\
+	    /* BEGIN FLEX ADDITIONS */\\
+	    . = ALIGN(4) ; *(.flex.zero)\\
+	    /* END FLEX ADDITIONS */
+	}
+__EOF__
+sed -f $tmpsed < ${tmpscript}2
+rm -f $tmpsed ${tmpscript}2

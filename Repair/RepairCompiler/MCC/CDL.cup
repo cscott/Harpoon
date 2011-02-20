@@ -1,0 +1,677 @@
+package MCC;
+import MCC.IR.ParseNode;
+import MCC.IR.ParseNodeVector;
+import java.util.*;
+
+action code {:
+
+	public static boolean errors;
+	public static boolean debug;
+
+	// debugMessage: writes debug production message only if debug = true
+
+	void debugMessage (String production) {
+		if (debug) {
+			System.out.println("Applying production: " + production);
+		}
+	}
+
+	String unescape (String str) {
+	    StringBuffer sb = new StringBuffer();
+	    int i;
+	    // Note that we skip the first and last characters (they're "'s)
+	    for (i = 1; i < str.length() - 1; i++) {
+		if (str.charAt(i) == '\\') {
+		    i++;
+		    switch (str.charAt(i)) {
+		    case '\"':
+			sb.append('\"');
+			break;
+		    case '\'':
+			sb.append('\'');
+			break;
+		    case '\\':
+			sb.append('\\');
+			break;
+		    case 't':
+			sb.append('\t');
+			break;
+		    case 'n':
+			sb.append('\n');
+			break;
+		    default:
+			System.err.print("Error in string literal: ");
+			System.err.println(str.charAt(i));
+			System.err.println("Aborting...");
+			break;
+		    }
+		} else {
+		    sb.append(str.charAt(i));
+		}
+	    }
+	    return sb.toString();
+	}
+:}
+
+init with {: :}
+
+parser code {:
+
+	public String filename;
+       
+	public void syntax_error (java_cup.runtime.Symbol current) {
+
+		CUP$CDLParser$actions.errors = true;
+		Symbol symbol = (Symbol) current;
+
+		boolean isInteger = true;
+		try{ 
+                   Integer.parseInt(current.value.toString());
+ 		} catch(NumberFormatException e) { isInteger = false;}
+
+                report_error(filename+":"+(symbol.line+1)+": Syntax error at column " 
+                + (LineCount.getColumn(symbol.left)+1) +": " + current.value, current);
+
+		/*
+		if (current.value.equals("true") || isInteger)
+		   System.out.println("Did you mean literal("+current.value+")?");
+		*/
+
+		System.out.println();
+		System.exit(0);
+	}
+
+	public void report_fatal_error (String message, Object info) {
+		
+		 done_parsing();
+		 report_error(message, info);
+		 CUP$CDLParser$actions.errors = true;
+	}
+
+	public int curPos () {
+		return cur_token.left;
+	}
+
+	public int curLine (int back) {
+		Stack st = new Stack();
+		int i;
+
+		for (i = 0; i < back; i++) {
+			st.push(stack.pop());
+		}
+
+		java_cup.runtime.Symbol s;
+		s = (java_cup.runtime.Symbol) st.peek();
+
+		for (i = 0; i < back; i++) {
+			stack.push(st.pop());
+		}
+
+		return LineCount.getLine(s.left);
+	}
+	
+:}
+
+// TERMINALS /////////////////////////////////////////////////////////////
+
+    terminal BAD;
+
+    terminal String ID;
+    terminal String DECIMAL;
+    terminal String CHAR;
+    terminal String STRING;
+
+    terminal OPENBRACE;
+    terminal CLOSEBRACE;
+    terminal OPENPAREN;
+    terminal CLOSEPAREN; 
+    terminal OPENBRACKET;
+    terminal CLOSEBRACKET;
+
+    terminal ADD; 
+    terminal SUB; 
+    terminal MULT; 
+    terminal DIV;
+    terminal SUM;
+
+    terminal NOT;
+    terminal LT;
+    terminal GT;
+    terminal LE;
+    terminal GE;
+    terminal EQ;
+    terminal NE;
+
+    terminal FORALL;
+    terminal IN;
+    terminal INTEST;
+
+    terminal COMMA;
+    terminal SIZEOF;
+
+    terminal DOT;
+    terminal DOTINV;
+
+    terminal AND;
+    terminal OR;
+
+    terminal LITERAL;
+
+    terminal IMPLIES;
+    terminal TRUE;
+    terminal FALSE;
+    terminal ISVALID;
+    terminal FOR;
+    terminal TO;
+    terminal CAST;
+
+    terminal PARAM;
+    terminal STRUCTURE;
+    terminal RESERVED;
+    terminal BIT;
+    terminal BYTE;
+    terminal SHORT;
+      
+    terminal LABEL;
+    terminal INT;
+    terminal SUBTYPE;
+    terminal SUBCLASS;
+    terminal OF;
+
+    terminal SEMICOLON;
+    terminal COLON;
+
+    terminal SET;
+    terminal ARROW;
+    terminal MANY;
+    terminal BAR;
+
+    terminal PARTITION;
+    terminal ELEMENT;
+    terminal DELAY;
+    terminal STATIC;
+
+    terminal NULL;
+    terminal CRASH;
+
+// NON-TERMINALS /////////////////////////////////////////////////////////
+
+/*
+		TYPE			NAME
+------------------------------------------------------------------------*/
+nonterminal	ParseNode		constraints;
+nonterminal	ParseNode		constraint;
+nonterminal	ParseNode		optcrash;
+nonterminal	ParseNode		quantifiers;
+nonterminal	ParseNode		quantifier;
+nonterminal	ParseNode		set;
+nonterminal	ParseNode		listofliterals;
+nonterminal	ParseNode		literal;
+nonterminal	ParseNode		body;
+nonterminal	ParseNode		predicate;
+nonterminal	ParseNode		setexpr;
+
+nonterminal	ParseNode		compare;
+nonterminal	ParseNode		expr;
+nonterminal	ParseNode		addsuboperator;
+nonterminal	ParseNode		multdivoperator;
+
+
+
+precedence left OR;
+precedence left AND;
+precedence left EQ, NE; 
+precedence left LT, LE, GE, GT;
+
+precedence left ADD, SUB;
+precedence left MULT, DIV;
+
+precedence left NOT;
+
+precedence left DOT, DOTINV;
+
+// PRODUCTION RULES  /////////////////////////////////////////////////////
+
+constraints ::=
+	    
+	constraints:constraints constraint:constraint
+	{:
+	debugMessage(PRODSTRING);
+	constraints.addChild(constraint);
+	RESULT = constraints;
+	:}
+	
+	| constraint:constraint
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode constraints = new ParseNode("constraints", parser.curLine(1));
+	constraints.addChild(constraint);
+	RESULT = constraints;
+	:}
+	;
+
+constraint ::=
+	    
+	optcrash:crash OPENBRACKET quantifiers:quantifiers CLOSEBRACKET COMMA body:body SEMICOLON
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode constraint = new ParseNode("constraint", parser.curLine(7));
+	if (crash != null) {
+		constraint.addChild(crash);
+	}
+	if (quantifiers != null) {
+		constraint.addChild(quantifiers);
+	}
+	constraint.addChild(body);
+	RESULT = constraint;
+	:}
+	;
+
+optcrash ::=
+
+	 CRASH
+	 {:
+	 debugMessage(PRODSTRING);
+	 RESULT = new ParseNode("crash", parser.curLine(1));
+	 :}
+
+	 | /* nothing */
+	 {:
+	 debugMessage(PRODSTRING);
+	 RESULT = null;
+	 :}
+	 ;
+
+quantifiers ::=
+	    
+	quantifiers:quantifiers COMMA quantifier:quantifier
+	{:
+	debugMessage(PRODSTRING);
+	quantifiers.addChild(quantifier);
+	RESULT = quantifiers;
+	:}
+	    
+	| quantifier:quantifier
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode quantifiers = new ParseNode("quantifiers", parser.curLine(1));
+	quantifiers.addChild(quantifier);
+	RESULT = quantifiers;
+	:}
+	    
+	| 
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = null;
+	:}
+	;	
+
+quantifier ::= 
+	   
+	FORALL ID:var IN set:set
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode q = new ParseNode("quantifier", parser.curLine(4));
+	q.addChild("forall", parser.curLine(4));
+	q.addChild("var", parser.curLine(3)).addChild(var);
+	q.addChild(set);
+	RESULT = q;
+	:}
+	| FORALL LT ID:r1 COMMA ID:r2 GT IN ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode q = new ParseNode("quantifier", parser.curLine(7));
+	q.addChild("relation", parser.curLine(1)).addChild(relation);
+	q.addChild("left", parser.curLine(5)).addChild(r1);
+	q.addChild("right", parser.curLine(3)).addChild(r2);
+	RESULT = q;
+	:}
+	;
+
+set ::=
+    
+	ID:setname
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("set", parser.curLine(1));
+	set.addChild("name").addChild(setname);
+	RESULT = set;
+	:}
+
+	| OPENBRACE listofliterals:list CLOSEBRACE
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("set", parser.curLine(3));
+	set.addChild(list);
+	RESULT = set;
+	:}
+	;
+    
+listofliterals ::=
+	       
+	listofliterals:list COMMA literal:literal
+	{:
+	debugMessage(PRODSTRING);
+	list.addChild(literal);
+	RESULT = list;
+	:}
+	       
+	| literal:literal
+	{: 
+	debugMessage(PRODSTRING);
+	ParseNode list = new ParseNode("listofliterals", parser.curLine(1));
+	list.addChild(literal);
+	RESULT = list;
+	:}
+	;
+
+body ::=
+
+     	body:body1 AND body:body2
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode body = new ParseNode("body", parser.curLine(3));
+	body.addChild("and").addChild("left", parser.curLine(3)).addChild(body1);
+	body.getChild("and").addChild("right", parser.curLine(1)).addChild(body2);
+	RESULT = body;
+	:}
+     
+	| body:body1 OR body:body2
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode body = new ParseNode("body", parser.curLine(3));
+	body.addChild("or").addChild("left", parser.curLine(3)).addChild(body1);
+	body.getChild("or").addChild("right", parser.curLine(1)).addChild(body2);
+	RESULT = body;
+	:}
+     
+	| NOT body:body1
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode body = new ParseNode("body", parser.curLine(2));
+	body.addChild("not").addChild(body1);
+	RESULT = body;
+	:}
+     
+	| OPENPAREN body:body CLOSEPAREN
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = body;
+	:}
+     
+	| predicate:predicate
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode body = new ParseNode("body", parser.curLine(1));
+	body.addChild(predicate);
+	RESULT = body;
+	:}
+     	;
+
+predicate ::=
+
+	expr:expr IN setexpr:setexpr
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode inclusion = (new ParseNode("predicate", parser.curLine(3))).addChild("inclusion");
+	inclusion.addChild(expr);
+	inclusion.addChild(setexpr);
+	RESULT = inclusion.getRoot();
+	:}
+     
+	| expr:lexpr compare:compare expr:rexpr
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode comparison = (new ParseNode("predicate", parser.curLine(3))).addChild("expr").addChild("operator");
+	comparison.addChild("op").addChild(compare);
+	comparison.addChild("left", parser.curLine(2)).addChild(lexpr);
+	comparison.addChild("right", parser.curLine(2)).addChild(rexpr);
+	RESULT = comparison.getRoot();
+	:}
+
+	;
+
+setexpr ::=
+	
+	ID:setname
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("setexpr", parser.curLine(1));
+	set.addChild("set").addChild(setname);
+	RESULT = set;
+	:}
+
+	| ID:var DOT ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("setexpr", parser.curLine(3));
+	set.addChild("dot").addChild("quantifiervar", parser.curLine(3)).addChild(var);
+	set.getChild("dot").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = set;
+	:}
+
+	| ID:var DOTINV ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("setexpr", parser.curLine(3));
+	set.addChild("dotinv").addChild("quantifiervar", parser.curLine(3)).addChild(var);
+	set.getChild("dotinv").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = set;
+	:}
+
+	| setexpr:setexpr DOT ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("setexpr", parser.curLine(3));
+	set.addChild("dotset").addChild(setexpr);
+	set.getChild("dotset").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = set;
+	:}
+
+	| setexpr:setexpr DOTINV ID:relation
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode set = new ParseNode("setexpr", parser.curLine(3));
+	set.addChild("dotinvset").addChild(setexpr);
+	set.getChild("dotinvset").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = set;
+	:}
+	;
+	
+expr ::=
+
+	SUM OPENPAREN ID:set DOT ID:relation CLOSEPAREN
+	{:
+	debugMessage(PRODSTRING);
+     	ParseNode expr = new ParseNode("expr", parser.curLine(1));	
+	expr.addChild("sumexpr", parser.curLine(3));
+	expr.getChild("sumexpr").addChild("dot").addChild("set", parser.curLine(3)).addChild(set);
+	expr.getChild("sumexpr").getChild("dot").addChild("relation", parser.curLine(1)).addChild(relation);
+	RESULT = expr;
+	:}
+
+	| ID:var
+	{:
+	debugMessage(PRODSTRING);
+     	ParseNode expr = new ParseNode("expr", parser.curLine(1));	
+     	expr.addChild("var").addChild(var);
+     	RESULT = expr;
+     	:}
+	
+     	| OPENPAREN expr:expr CLOSEPAREN 
+     	{:
+     	debugMessage(PRODSTRING);
+     	RESULT = expr;
+     	:}     
+	
+     	| literal:literal
+     	{:
+     	debugMessage(PRODSTRING);
+     	ParseNode expr = new ParseNode("expr", parser.curLine(4));
+     	expr.addChild(literal);
+     	RESULT = expr;
+     	:}
+	
+     	| expr:expr DOT ID:relname
+     	{:
+     	debugMessage(PRODSTRING);
+     	ParseNode relation = (new ParseNode("expr", parser.curLine(3))).addChild("relation");
+     	relation.addChild(expr);
+     	relation.addChild("name").addChild(relname);
+     	RESULT = relation.getRoot();
+     	:}
+	
+     	| expr:expr DOTINV ID:relname
+     	{:
+     	debugMessage(PRODSTRING);
+     	ParseNode relation = (new ParseNode("expr", parser.curLine(3))).addChild("relation");
+     	relation.addChild(expr);
+     	relation.addChild("name").addChild(relname);
+     	relation.addChild("inv");
+     	RESULT = relation.getRoot();
+     	:}
+	     
+	| expr:expr1 addsuboperator:operator expr:expr2
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode op = (new ParseNode("expr", parser.curLine(3))).addChild("operator");
+	op.addChild("op").addChild(operator);
+	op.addChild("left", parser.curLine(3)).addChild(expr1);
+	op.addChild("right", parser.curLine(1)).addChild(expr2);
+	RESULT = op.getRoot();
+	:}
+	%prec ADD
+	| expr:expr1 multdivoperator:operator expr:expr2
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode op = (new ParseNode("expr", parser.curLine(3))).addChild("operator");
+	op.addChild("op").addChild(operator);
+	op.addChild("left", parser.curLine(3)).addChild(expr1);
+	op.addChild("right", parser.curLine(1)).addChild(expr2);
+	RESULT = op.getRoot();
+	:}
+	%prec MULT
+	| SIZEOF OPENPAREN setexpr:setexpr CLOSEPAREN
+	{:
+	ParseNode sizeof = (new ParseNode("expr", parser.curLine(4))).addChild("sizeof");
+	sizeof.addChild(setexpr);
+	RESULT = sizeof.getRoot();
+	:}
+	;
+
+addsuboperator ::=
+	  
+	ADD 
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("add", parser.curLine(1));
+	:}
+	  
+	| SUB
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("sub", parser.curLine(1));
+	:}
+	;
+multdivoperator ::=
+	MULT
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("mult", parser.curLine(1));
+	:}
+	| DIV
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("div", parser.curLine(1));
+	:}
+	;
+
+compare ::= 
+
+	LT
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("lt", parser.curLine(1));
+	:}
+
+	| GT
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("gt", parser.curLine(1));
+	:}
+
+	| LE
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("le", parser.curLine(1));
+	:}
+
+	| GE
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("ge", parser.curLine(1));
+	:}
+
+	| EQ
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("eq", parser.curLine(1));
+	:}
+
+	| NE
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = new ParseNode("ne", parser.curLine(1));
+	:}
+	;
+	
+literal ::=
+	 
+	TRUE
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("boolean").addChild("true").getRoot();
+	:}
+	 
+	| FALSE
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("boolean").addChild("false").getRoot();
+	:}
+
+	| NULL
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("decimal").addChild("0").getRoot();
+	:}
+	 
+	| DECIMAL:dec
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("decimal").addChild(dec).getRoot();
+	:}
+
+	| SUB DECIMAL:dec
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("decimal").addChild("-"+dec).getRoot();
+	:}
+	 
+	| STRING:str
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("string").addChild(str).getRoot();
+	:}
+	 
+	| CHAR:chr
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("char").addChild(chr).getRoot();
+	:}
+	 
+	| LITERAL OPENPAREN ID:literal CLOSEPAREN
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("token").addChild(literal).getRoot();
+	:}
+	;

@@ -1,0 +1,85 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi99-intro.tex,v 1.6 1999-11-13 05:56:07 rinard Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+Static Single Assignment (SSA) form transforms the
+program so that exactly one definition of each 
+variable reaches each use. Traditional dataflow
+analyses, which propagate information from variable
+definitions to uses, therefore become much simpler
+to express. Instead of generating an analysis 
+result for each variable at each point in the
+program, SSA allows the analysis to generate a 
+result for each variable. This sparse
+representation improves both the simplicity
+and the efficiency of the analysis. 
+
+But definitions are not the only place where
+an analysis can extract information about the
+values of variables. Conditional branches also
+provide information about the values of variables.
+Consider what happens when one attempts to incorporate
+this information into an SSA-based analysis. The
+original problem that SSA eliminated (the need to
+extract information for each variable at each
+program point) returns. Variable names do not
+change at the conditional branch, even though
+the compiler has different information along the
+two control-flow paths.
+
+The resulting mismatch between variable names
+and dataflow information also produces an efficiency
+problem. Instead of propagating information
+directly from definitions to uses, the analysis
+must propagate the information through all 
+program points, whether the program point uses 
+the information or not. 
+
+Inspired by this observation, we have developed
+a new program representation, 
+Static Single Information (SSI) form,  that recaptures
+the advantages of SSA form for predicated analyses,
+or analyses which use the predicates in conditional
+branches to extract analysis information.
+The insight behind this representation is the use
+of \sigfunction{}s, which produce new names
+for variables at splits in the control flow.
+The analysis can then associate information
+with variable names, and propagate
+the information efficiently and directly from 
+information definition points to uses. 
+
+In addition to these practical properties, 
+SSI form has several appealing 
+theoretical properties. It is always possible 
+to place \sigfunction{}s so that the
+number of \sigfunction{}s is linear in the size
+of the original input program. Furthermore, our
+placement algorithm also runs in linear time. 
+Finally, and perhaps most importantly, SSI form
+allows us to recast compound dataflow analyses as
+a flat, unified system of constraints. This
+formulation allows us to generalize the standard
+fixed-point solution
+mechanism for dataflow equations to include 
+constraint resolution rules. The result is 
+a more uniform and powerful analysis framework.
+
+We have implemented a compiler infrastructure for Java,
+the MIT Flex system, that uses SSI form \cite{flexweb}.
+We have used this compiler infrastructure to implement several 
+predicate-based analyses, including an analysis that
+detects redundant array bounds and null reference checks, an
+analysis that determines the number of bits
+required to represent values in different variables,
+and a conditional constant propagation analysis.
+
+Our experimental results show that our analyses
+execute efficiently and extract information that can
+be used to significantly optimize the program.
+Furthermore, we believe that SSI form significantly
+simplified the implementation of these analyses.
+Our experiences have led us to use SSI form 
+as the primary program representation in the Flex
+compiler system.

@@ -1,0 +1,1890 @@
+% -*-bibtex-*- This is a BibTeX document.
+% $Id: harpoon.bib,v 1.84 2005-10-27 15:43:39 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Various journal and conference string definitions:
+@string{CACM = {Communications of the ACM}}
+@string{ACM =  {ACM}}
+@string{IEEE = {IEEE}}
+@string {ECOOP99 = "Proceedings of the 13th European Conference on Object-Oriented Programming"} 
+@string {ECOOP02 = "Proceedings of the 16th European Conference on Object-Oriented Programming"} 
+@string{ICCAD  = "Proceedings of the {IEEE}/{ACM} International Conference on
+                  Computer Aided Design ({ICCAD})"}
+@string{ICS98  = "ICS '98.  Conference proceedings of the 1998
+                  international conference on Supercomputing"}
+@string{LCTES03 = "Proceedings of the 2003 {ACM} {SIGPLAN} Conference on
+                   Language, Compiler, and Tool Support for Embedded Systems
+                   (LCTES)"}
+@string {OOPSLA96 = "Proceedings of the 11th Annual Conference on
+                     Object-Oriented Programming Systems, Languages and
+                     Applications"}
+@string {OOPSLA99 = "Proceedings of the 14th Annual Conference on
+                     Object-Oriented Programming Systems, Languages and
+                     Applications"}
+@string{PLDI90 = "Proceedings of the {ACM} {SIGPLAN} '90 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI91 = "Proceedings of the {ACM} {SIGPLAN} '91 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI92 = "Proceedings of the {ACM} {SIGPLAN} '92 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI93 = "Proceedings of the {ACM} {SIGPLAN} '93 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI94 = "Proceedings of the {ACM} {SIGPLAN} '94 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI95 = "Proceedings of the {ACM} {SIGPLAN} '95 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI96 = "Proceedings of the {ACM} {SIGPLAN} '96 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI97 = "Proceedings of the {ACM} {SIGPLAN} '97 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI98 = "Proceedings of the {ACM} {SIGPLAN} '98 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI99 = "Proceedings of the {ACM} {SIGPLAN} '99 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI00 = "Proceedings of the {ACM} {SIGPLAN} '00 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{PLDI01 = "Proceedings of the {ACM} {SIGPLAN} '01 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
+@string{POPL88 = "Proceedings of the 15th {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL89 = "Proceedings of the 16th {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL90 = "Proceedings of the 17th {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL91 = "Proceedings of the 18th {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL94 = "Proceedings of the 21st {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL95 = "Proceedings of the 22nd {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL96 = "Proceedings of the 23rd {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL97 = "Proceedings of the 24th {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{POPL98 = "Proceedings of the 25th {ACM} Symposium on Principles
+                  of Programming Languages ({POPL})"}
+@string{PPOPP99 = "Proceedings of the 7th {ACM} {SIGPLAN} symposium on
+                   Principles and practice of parallel programming ({PPoPP})"}
+@string{PPOPP01 = "Proceedings of the 8th {ACM} {SIGPLAN} symposium on
+                   Principles and Practice of Parallel Programming ({PPoPP})"}
+@string{SAS99 =   "Proceedings of the 6th International Static Analysis
+                   Symposium"}
+@string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems"}
+@string{CC96 = "Proceedings of the Sixth International Conference on
+                  Compiler Construction"}
+@string{CC98 = "Proceedings of the Seventh International Conference on
+                  Compiler Construction"}
+@string{ASIAN97 = "Advances in Computing Science --- {ASIAN} '97.  Third
+                  Asian Computing Conference.  Proceedings"}
+@string{TACAS97 = "Tools and Algorithms for the Construction and
+                  Analysis of Systems.  Third International Workshop,
+                  {TACAS} '97.  Proceedings"}
+@string{CRYPTO97 = "Proc.\ {CRYPTO} 97"}
+@string{EUROCRYPT97 = "Proc.\ {EUROCRYPT} 97"}
+@string{MICRO30 = "{MICRO} 30. Proceedings of the thirtieth annual {IEEE/ACM}
+                   international symposium on Microarchitecture"}
+@string{IR95 = "Papers of the First {ACM} {SIGPLAN} workshop on
+                Intermediate Representations"}
+@string {Denver = "Denver, Colorado"}
+@string {Munich = "Munich, Germany"}
+@string {SanDiego = "San Diego, California"}
+@string {Snowbird = "Snowbird, Utah"}
+@string {Vancouver = "Vancouver, Canada"}
+
+% papers read.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% companion object ptr analysis refs
+@inproceedings{267921,
+ author = {Rastislav Bod{\'\i}k and Rajiv Gupta and Mary Lou Soffa},
+ title= {Refining data flow information using infeasible paths},
+ booktitle = {ACM SIGSOFT Fifth Symposium on the Foundations of Software
+              Engineering}, 
+ acmbooktitle = {Proceedings of the 6th European conference held jointly with the 5th ACM SIGSOFT symposium on Software Engineering},
+ year = {1997},
+ isbn = {3-540-63531-9},
+ pages = {361--377},
+ location = {Zurich, Switzerland},
+ doi = {http://doi.acm.org/10.1145/267895.267921},
+ publisher = {Springer-Verlag New York, Inc.},
+ annote = { These techniques might help detect more mutually-singular
+            field assignments. }
+ }
+
+@inproceedings{199466,
+ author = {Rita Z. Altucher and William Landi},
+ title= {An extended form of must alias analysis for dynamic allocation},
+ booktitle = POPL95,
+ year = {1995},
+ isbn = {0-89791-692-1},
+ pages = {74--84},
+ location = {San Francisco, California, United States},
+ doi = {http://doi.acm.org/10.1145/199448.199466},
+ publisher = {ACM Press},
+ annote = { Related work: renames allocation sites to properly handle
+            factory methods.  Also generates must-alias info from
+            may-alias info. }
+ }
+
+@article{174635,
+ author = {Istv{\'a}n Forg{\'a}cs},
+ title= {Double iterative framework for flow-sensitive interprocedural data flow analysis},
+ journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
+ volume = {3},
+ number = {1},
+ year = {1994},
+ issn = {1049-331X},
+ pages = {29--55},
+ doi = {http://doi.acm.org/10.1145/174634.174635},
+ publisher = {ACM Press},
+ annote = { ``We also introduce the double iterative framework, where one procedure is processed at a time. The results of the intraprocedural analysis of procedures then propagates along the edges of the call multi-graph. In this way the intra and interprocedural analyses are executed alternately until there is no change in any result set. This method can be applied to any known interprocedural data flow problem.'' }
+ }
+
+@inproceedings{268962,
+ author = {Christian Collberg and Clark Thomborson and Douglas Low},
+ title= {Manufacturing cheap, resilient, and stealthy opaque constructs},
+ booktitle = POPL98,
+ year = {1998},
+ isbn = {0-89791-979-3},
+ pages = {184--196},
+ location = {San Diego, California, United States},
+ doi = {http://doi.acm.org/10.1145/268946.268962},
+ publisher = {ACM Press},
+ annote = { Uses ``intractability of alias analysis'' as one of its bases for ``hard'' predicates; our analysis should be able to crack these. }
+ }
+
+@inproceedings{379676,
+ author = {Donglin Liang and Maikel Pennings and Mary Jean Harrold},
+ title = {Extending and evaluating flow-insenstitive and context-insensitive points-to analyses for Java},
+ booktitle = {ACM SIGPLAN -- SIGSOFT workshop on on Program analysis for software tools and engineering},
+ year = {2001},
+ isbn = {1-58113-413-4},
+ pages = {73--79},
+ location = Snowbird,
+ doi = {http://doi.acm.org/10.1145/379605.379676},
+ publisher = {ACM Press},
+ annote = { Uses ``user models'' to analyze maps and collections.  Disingenuously claims that maps and collections ``may be implemented in native code.'' }
+ }
+
+@Misc{humper02,
+  author =	 {Greg Humphreys},
+  title =	 {Personal communication},
+  year =	 2002
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%% Predicates and Sigmas.
+
+@InProceedings{moon98:pred,
+  author = 	 {Sungdo Moon and Mary W. Hall and Brian R. Murphy},
+  title = 	 {Predicated Array Data-Flow Analysis for Run-Time
+                  Parallelization},
+  booktitle = 	 ICS98,
+  pages =	 {204-211},
+  year =	 1998,
+  address =	 {Melbourne, Australia},
+  month =	 jul,
+  annote =	 {Predication in an array analysis context.}
+}
+
+
+@InProceedings{webber97:binrel,
+  author = 	 {Adam Brooks Webber},
+  title = 	 {Program Analysis Using Binary Relations},
+  booktitle = 	 PLDI97,
+  pages =	 {249-259},
+  year =	 1997,
+  address =	 {Las Vegas, Nevada},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/articles/proceedings/pldi/258915/p249-webber/},
+  annote =       {Very powerful analysis/optimization technique.
+                  Originally presented for LISP basic blocks only.
+                  With phi and sigma functions we can extend the
+                  analysis to the whole program and incorporate
+                  elements of reachability analysis.  Analysis
+                  extracts relations between pairs of variables, and
+                  is very type-flexible.  Fairly complicated
+                  implementation, however.}
+}
+
+%%%% Language issues.
+
+%%%%%%% Esterel.
+
+@InProceedings{gagne97:nonstandard,
+  author = 	 {Jean-Raymond Gagn{\'e} and John Plaice},
+  title = 	 {The Non-standard Semantics of {Esterel}},
+  booktitle = 	 ASIAN97,
+  year = 	 1997,
+  address = 	 {Kathmandu, Nepal},
+  pages =	 {381-382},
+  annote =	 {Presents rationale for using a (time+delta) timeline
+                  instead of Esterel's integer-valued instantaneous
+                  time model.  Claims that Esterel really uses the
+                  (time+delta) timeline without realizing it.}
+}
+
+@InCollection{berry92:hardware_esterel,
+  author = 	 {G{\'e}rard Berry},
+  title = 	 {{Esterel} on hardware},
+  booktitle = 	 {Mechanized Reasoning and Hardware Design},
+  pages =	 {87-103},
+  publisher =	 {Prentice Hall},
+  year =	 1992,
+  editorIGNORE =	 {C.A.R. Hoare and M.J.C. Gordon},
+  annote =	 {a simple hardware implementation of a subset of
+                  esterel, using 4 type of fundamental logic blocks.
+                  Optimizers based on BDDs.  Very useful bibliography.}
+}
+
+@Unpublished{berry:esterel_primer,
+  author = 	 {G{\'e}rard Berry},
+  title = 	 {The {Esterel} v5 Language Primer},
+  note = 	 {Available from 
+                 \texttt{http://\hspace{0pt}www.inria.fr/\hspace{0pt}meije/\hspace{0pt}esterel/\hspace{0pt}esterel-eng.html}},
+  month = 	 mar,
+  year = 	 1998,
+  url = 	 {ftp://ftp-sop.inria.fr/meije/esterel/papers/primer.ps.gz},
+  annote = 	 {Lots of dry technical detail on the language, but
+                  also some enlightening discussion of the rationale
+                  behind the design.  See especially sections on
+                  `Transformational, Interactive, and Reactive
+                  Systems,' `Write Things Once,' and preemption.}
+}
+
+@InProceedings{berry97:synth_opt_ver_esterel,
+  author = 	 {G{\'e}rard Berry},
+  title = 	 {Hardware and Software Synthesis, Optimization, and
+                  Verification from {Esterel} Programs},
+  booktitle = 	 TACAS97,
+  year = 	 1997,
+  address = 	 {Enschede, The Netherlands},
+  pages =	 {1-3},
+  month =	 apr,
+  annote =	 {Two-page overview of the Esterel system.  At least
+                  it has a decent bibliography.}
+}
+@InProceedings{mitra97:async_esterel,
+  author = 	 {Raj S. Mitra and Bishnupriya Bhattacharya and
+                  Luciano Lavagno},
+  title = 	 {Asynchronous Implementation of Synchronous {Esterel}
+                  Specifications},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {348-353},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {In which we learn that Esterel is inherently a
+                  synchronous language (surprise!).  Semantics have to
+                  change to support asynchronous implementation; this
+                  paper shows how.  Not useful to us.}
+}
+
+%%%%%%% Other synchronous languages
+
+@InProceedings{amagbegnon95:signal,
+  author = 	 {Pascalin Amagb{\'e}gnon and Lo{\"\i}c Besnard and
+                  Paul Le Guernic},
+  title = 	 {Implementation of the Data-flow Synchronous Language
+                  {SIGNAL}},
+  booktitle = 	 PLDI95,
+  year =	 1995,
+  address =	 {La Jolla, California},
+  month =	 Jun,
+  pages =	 {163-173},
+  url = 	 {http://doi.acm.org/10.1145/207110.207134},
+  annote =	 {Not terribly useful.  Intriguing use of the word
+                  `arborescent' for `tree-structured'.}
+}
+
+@Article{chung95:language_constructs,
+  author = 	 {Tai M. Chung and Hank G. Dietz},
+  title = 	 {Language Constructs and Transformation for Hard
+                  Real-time Systems},
+  journal = 	 {{ACM} {SIGPLAN} Notices},
+  year = 	 1995,
+  volume =	 30,
+  number =	 11,
+  pages =	 {41-49},
+  month =	 nov,
+  url = 	 {http://doi.acm.org/10.1145/216636.216654},
+  annote =	 {Presents a simple set of language-independent
+                  extensions to specify real-time constraints.  Also
+                  contains the interesting claim that the real-time 
+                  compilation problem has been solved, and references 
+                  an unpublished paper to prove it.}
+}
+
+%%%%%%% Other language issues.
+
+
+%%%%%%% Compiler issues
+
+@InProceedings{weise94:vdg,
+  author = 	 {Daniel Weise and Roger F. Crew and Michael Ernst and
+                  Bjarne Steensgaard},
+  title = 	 {Value Dependence Graphs: Representation without Taxation},
+  booktitle = 	 POPL94,
+  year =	 1994,
+  address =	 {Portland, Oregon},
+  month =	 Jan,
+  pages =	 {297-310},
+  annote =	 {Dataflow representation useful; also recursive/loop
+                  structure useful},
+  url = 	{ftp://research.microsoft.com/pub/papers/vdg.ps}
+}
+
+@InProceedings{hong93:realtime,
+  author = 	 {Seongsoo Hong and Richard Gerber},
+  title = 	 {Compiling Real-Time Programs into Schedulable Code},
+  booktitle = 	 PLDI93,
+  year =	 1993,
+  address =	 {Albuquerque, New Mexico},
+  month =	 jun,
+  pages =	 {166-176},
+  url = 	 {http://doi.acm.org/10.1145/155090.155106},
+  annote =	 {Code motion for timing optimization.  Are all
+                  real-time schedulers iterative?}
+}
+
+@InProceedings{duesterwald93:arrayflow,
+  author = 	 {Evelyn Duesterwald and Rajiv Gupta and Mary Lou Soffa},
+  title = 	 {A Practical Data Flow Framework for Array Reference
+                  Analysis and its Use in Optimizations},
+  booktitle = 	 PLDI93,
+  year =	 1993,
+  address =	 {Albuquerque, New Mexico},
+  month =	 jun,
+  pages =	 {68-77},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/155090/p68-duesterwald/},
+  annote =	 {Not terribly useful.  REREAD LATER.}
+}
+
+@InProceedings{click95:IR,
+  author =       {Cliff Click and Michael Paleczny},
+  title =        "A Simple Graph-Based Intermediate Representation",
+  booktitle =    IR95,
+  pages =        {35-49},
+  address =      {San Francisco, California},
+  month =        jan,
+  year =         "1995",
+  url =          {http://www.cs.rice.edu/~mpal/IR95.ps},
+  annote =	 {Interesting examples of C++ code, but light on
+                  optimization results.  We really want to peek at
+                  Cliff Click's PhD thesis. [Ed note: I found it!]}
+}
+
+@InProceedings{sreedhar95:lintime,
+  author = 	 {Vugranam C. Sreedhar and Guang R. Gao},
+  title = 	 {A Linear Time Algorithm for Placing $\phi$-Nodes},
+  booktitle = 	 POPL95,
+  pages =	 {62-73},
+  year =	 1995,
+  address =	 {San Francisco, California},
+  month =	 jan,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/199448/p62-sreedhar/},
+  annote =	 {Just what the title says.  I need to implement this eventually.}
+}
+
+@InProceedings{sreedhar96:dj,
+  author = 	 {Vugranam C. Sreedhar and Guang R. Gao and {Yong-fong} Lee},
+  title = 	 {A New Framework for Exhaustive and Incremental Data
+                  Flow Analysis Using {DJ} Graphs},
+  booktitle = 	 PLDI96,
+  year =	 1996,
+  address =	 {Philadelphia, Pennsylvania},
+  month =	 may,
+  pages =	 {278-290},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/231379/p278-sreedhar/},
+  annote =	 {Emphasis on Incremental.  If we decide to use DJ
+                  graphs, this paper could be useful for its examples.
+                  Not much new, though, compared to the N other DJ
+                  graph papers these authors have cranked out.}
+}
+
+@Article{sreedhar97:domtree,
+  author = 	 {Vugranam C. Sreedhar and Guang R. Gao and
+                  {Yong-fong} Lee},
+  title = 	 {Incremental Computation of Dominator Trees},
+  journal = 	 TOPLAS,
+  year = 	 1997,
+  volume =	 19,
+  number =	 2,
+  month =	 mar,
+  pages =	 {239-252},
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1997-19-2/p239-sreedhar/},
+  annote =	 {Seems to work well, but I don't think we need
+                  incremental updates for Harpoon.  Maybe I'm wrong.
+                  Very similar to their other papers on this
+                  topic. <wry grin>}
+}
+
+@InProceedings{granlund94:divopt,
+  author = 	 {Torbj{\"o}rn Granlund and Peter L. Montgomery},
+  title = 	 {Division by Invariant Integers using Multiplication},
+  booktitle = 	 PLDI94,
+  year =	 1994,
+  address =	 {Orlando, Florida},
+  month =	 jun,
+  pages =	 {61-72},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/178243/p61-granlund/},
+  annote =	 {*Very* useful for eliminating logic complexity. Also
+                  includes lots of references for deconstructing
+                  multiplies. In conjunction with induction variable
+                  analysis, some very powerful optimizations are
+                  possible. The optimization of the radix conversion
+                  code is nothing short of brilliant.}
+}
+
+@InProceedings{defouw98:classanal,
+  author = 	 {Greg DeFouw and David Grove and Craig Chambers},
+  title = 	 {Fast Interprocedural Class Analysis},
+  booktitle = 	 POPL98,
+  year =	 1998,
+  address =	 {San Diego, California},
+  month =	 jan,
+  pages =	 {222-246},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/268946/p222-defouw/},
+  annote =	 {This basically tells us that class/type analysis
+                  will be very slow.  We can make it faster, but we
+                  lose much precision.  In hardware compilation we
+                  don't care so much about speed, perhaps, so maybe we
+                  just suck up and deal.  Return to this paper before
+                  implementing our type inference engine. [theory
+                  practice conflict: the idea I've got in my head
+                  doesn't seem as slow as the fastest algorithm
+                  presented here.  Reconcile this.] [Further thought:
+                  these algorithms look like they should be integrated with
+                  an (SSA?) constant-propagation/dead-code analysis to come
+                  up with the most precise class information possible.  Will
+                  be slow, but worth it.  This paper's optimizations result
+                  in less class/type precision, which is unacceptable to us.]}
+}
+
+@InProceedings{click95:gcm_gvn,
+  author = 	 {Cliff Click},
+  title = 	 {Global Code Motion / Global Value Numbering},
+  booktitle = 	 PLDI95,
+  year =	 1995,
+  address =	 {La Jolla, California},
+  month =	 jun,
+  pages =	 {246-257},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/207110/p246-click/},
+  annote =	 {Simple and works, but relies on heuristic to place,
+                  and seems overly wedded to basic blocks (which we
+                  want to eliminate).  I like SSAPRE better, even
+                  though it is *much* more complicated.  Reassessment:
+                  Maybe basic blocks aren't so bad.}
+}
+
+@InProceedings{chow97:ssapre,
+  author = 	 {Fred Chow and Sun Chan and Robert Kennedy and
+                  {Shin-Ming} Liu and Raymond Lo and Peng Tu},
+  title = 	 {A New Algorithm for Partial Redundancy Elimination
+                  based on {SSA} Form},
+  booktitle = 	 PLDI97,
+  year =	 1997,
+  address =	 {Las Vegas, Nevada},
+  month =	 may,
+  pages =	 {273-286},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/258915/p273-chow/},
+  annote =	 {Powerful but very, very complicated. Probably worth
+                  implementing if we stay in SSA form, although
+                  dataflow-based methods (see Click's IR) may be
+                  simpler.  Also non-linear complexity for simple
+                  implementations.}
+}
+
+@Article{click95:combin,
+  author = 	 {Cliff Click and Keith D. Cooper},
+  title = 	 {Combining Analyses, Combining Optimizations},
+  journal = 	 TOPLAS,
+  volume =	 17,
+  number =	 2,
+  year =	 1995,
+  month =	 mar,
+  pages =	 {181-196},
+  url =          {http://www.acm.org/pubs/toc/Abstracts/0164-0925/201061.html},
+  annote =	 {Very theoretical==not terribly useful.}
+}
+
+@PhdThesis{click95:thesis,
+  author = 	 {Cliff Click},
+  title = 	 {Combining Analyses, Combining Optimizations},
+  school = 	 {Rice University},
+  year = 	 1995,
+  month =	 feb,
+  annote =	 {Lots of very useful optimization information, plus a
+                  very powerful optimistic analysis algorithm, which I
+                  plan to extend into our `extended type analysis' pass.}
+}
+
+@Article{beck91:ctrlflow,
+  author = 	 {Micah Beck and Richard Johnson and Keshav Pingali},
+  title = 	 {From Control Flow to Dataflow},
+  journal = 	 {Journal of Parallel and Distributed Computing},
+  year = 	 1991,
+  volume =	 12,
+  number =	 2,
+  month =	 jun,
+  pages =	 {118-129},
+  annote =	 {The paper that started it all.  Uses an
+                  over-restrictive control model, though, and funky
+                  store stuff.}
+}
+
+@InProceedings{johnson93:dfg,
+  author = 	 {Richard Johnson and Keshav Pingali},
+  title = 	 {Dependence-based program analysis},
+  booktitle = 	 PLDI93,
+  pages =	 {78-89},
+  year =	 1993,
+  address =	 {Albuquerque, New Mexico},
+  month =	 jun,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/155090/p78-johnson/},
+  annote =	 {An $O(EV)$ algorithm for merge and switch placement}
+}
+
+@InProceedings{johnson94:pst,
+  author = 	 {Richard Johnson and David Pearson and Keshav Pingali},
+  title = 	 {The Program Structure Tree: 
+                  Computing Control Regions in Linear Time},
+  booktitle = 	 PLDI94,
+  pages =	 {171-185},
+  year =	 1994,
+  address =	 {Orlando, Florida},
+  month =	 jun,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/178243/p171-johnson/},
+  annote =	 {An $O(EV)$ algorithm for computing SESE regions}
+}
+
+@TechReport{johnson93:sese,
+  author = 	 {Richard Johnson and David Pearson and Keshav Pingali},
+  title = 	 {Finding Regions Fast: Single Entry Single Exit and Control
+                  Regions in Linear Time},
+  institution =  {Cornell University},
+  year = 	 1993,
+  number =	 {TR 93-1365},
+  address =	 {Ithaca, NY 14853-7501},
+  month =	 jul,
+  annote =	 {SESE regions through cycle equivalence.  Most complete 
+                  algorithm description},
+  url =		 {http://cs-tr.cs.cornell.edu:80/Dienst/UI/1.0/Display/ncstrl.cornell/TR93-1365}
+}
+
+@TechReport{pingali90:dfg,
+  author = 	 {Keshav Pingali and Micah Beck and Richard C. Johnson and Mayan Moudgill and Paul Stodghill},
+  title = 	 {Dependence Flow Graphs: An Algebraic Approach to Program Dependencies},
+  institution =  {Cornell University},
+  year = 	 1990,
+  number =	 {TR 90-1152},
+  address =	 {Ithaca, NY 14853-7501},
+  month =	 sep,
+  annote =	 {interesting variation on `dependence-based program analysis';
+                  defines a formal executable semantics for a DFG-like program
+                  representation, with special loop constructs},
+  url = 	 {http://cs-tr.cs.cornell.edu:80/Dienst/UI/1.0/Display/ncstrl.cornell/TR90-1152}
+}
+
+@Article{rinard97:commute,
+  author = 	 {Martin C. Rinard and Pedro C. Diniz},
+  title = 	 {Commutivity Analysis: A New Analysis Technique for
+                  Parallelizing Compilers},
+  journal = 	 TOPLAS,
+  year = 	 1997,
+  volume =	 19,
+  number =	 6,
+  month =	 nov,
+  pages =	 {942-991},
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1997-19-6/p942-rinard/},
+  annote =	 {Not terribly relevant to the current project, but
+                  interesting nonetheless.  Perhaps we can perform
+                  some commutivity analysis in Harpoon to free up parallelism?}
+}
+
+@Article{janssen97:cns,
+  author = 	 {Johan Janssen and Henk Corporaal},
+  title = 	 {Making Graphs Reducible with Controlled Node Splitting},
+  journal = 	 TOPLAS,
+  year = 	 1997,
+  volume =	 19,
+  number =	 6,
+  month =	 nov,
+  pages =	 {1031-1052},
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1997-19-6/p1031-janssen/},
+  annote =	 {How to make any control flow graph reducible using a
+                  minimum number of splits/duplicates.  VERY USEFUL if
+                  we need reducible graphs.  (I suspect that the
+                  properties of Java give us this for free.) Good results.}
+}
+
+@Article{gerlek95:inductssa,
+  author = 	 {Michael P. Gerlek and Eric Stoltz and Michael Wolfe},
+  title = 	 {Beyond Induction Variables: Detecting and
+                  Classifying Sequences Using a Demand-Driven {SSA} Form},
+  journal = 	 TOPLAS,
+  year = 	 1995,
+  volume =	 17,
+  number =	 1,
+  month =	 jan,
+  pages =	 {85-122},
+  url =		 {http://doi.acm.org/10.1145/200994.201003},
+  annote =	 {Very powerful technique for induction variable
+                  analysis using a variant of the SSA form.  Requires
+                  a symbolic math package for full power, but can
+                  accomplish classification easily.  mu and nu nodes
+                  are used in addition to phi nodes; they might be
+                  worthwhile subclasses.  Min/max bounds can often be
+                  computed.  Useful useful stuff.  Reference to paper
+                  on `loop distribution' and `loop interchanging' that
+                  might be worthwhile to track down.  Implementable
+                  algorithms.}
+}
+
+% Statecharts.
+
+@InProceedings{mueller95:condbran,
+  author = 	 {Frank Mueller and David B. Whalley},
+  title = 	 {Avoiding Conditional Branches by Code Replication},
+  booktitle = 	 PLDI95,
+  year =	 1995,
+  address =	 {La Jolla, California},
+  month =	 jun,
+  pages =	 {56--66},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/207110/p56-mueller/},
+  annote =	 {Just what the title says.  Probably not useful for a
+                  hardware compiler.  Only mildly useful in its
+                  original domain, for that matter.}
+}
+
+@Article{harel92:overlap,
+  author = 	 {David Harel and {Chaim-arie} Kahana},
+  title = 	 {On Statecharts with Overlapping},
+  journal = 	 {{ACM} Transactions on Software Engineering and Methodology},
+  year = 	 1992,
+  volume =	 1,
+  number =	 4,
+  month =	 oct,
+  pages =	 {399-421},
+  url =		 {http://www.acm.org/pubs/citations/journals/tosem/1992-1-4/p399-harel/},
+  annote =	 {Here we basically learn that overlapping statecharts
+                  are a Bad Thing.  Do not attempt.}
+}
+
+@Article{drusinsky89:hwsynth,
+  author = 	 {Doron Drusinsky and David Harel},
+  title = 	 {Using Statecharts for Hardware Description and Synthesis},
+  journal = 	 {{IEEE} Transactions on Computer-Aided Design},
+  year = 	 1989,
+  volume =	 8,
+  number =	 7,
+  month =	 jul,
+  pages =	 {798-807},
+  annote =	 {A good description of what statecharts are, and a
+                  variety of implementation methodologies using
+                  various types of PLAs and FSMs.  The infamous
+                  traffic light example.  Basic idea: implement
+                  statecharts as multi-level Mealy/Moore machines.
+                  [See Esterel `latch optimization' paper for how to
+                  best create hardware from state machines.]}
+}
+
+@Article{harel97:execobj,
+  author = 	 {David Harel and Eran Gery},
+  title = 	 {Executable Object Modeling with Statecharts},
+  journal = 	 {Computer},
+  year = 	 1997,
+  volume =	 30,
+  number =	 7,
+  month =	 jul,
+  pages =	 {31-42},
+  url =		 {http://www.computer.org/computer/co1997/r7031abs.htm},
+  annote =	 {Not useful at all.  A waste of time.  Although some
+                  of the ideas of mapping methods to events are
+                  similar to our approach.}
+}
+
+% HARDWARE SECTION
+
+@InProceedings{aggarwal97:netpart,
+  author = 	 {Rajat Aggarwal and Rajeev Murgai and Masahiro Fujita},
+  title = 	 {Speeding Up Technology-Independent Timing
+                  Optimization by Network Partitioning},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {83-90},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p83-aggarwal/},
+  annote =	 {Useful, but presupposes a basic optimizer.  Some
+                  good references to basic optimizers, which may prove
+                  useful.  Presents a timing-driven partitioning technique.}
+}
+
+@InProceedings{bertacco97:disjunct,
+  author = 	 {Valeria Bertacco and Maurizio Damiani},
+  title = 	 {The Disjunctive Decomposition of Logic Functions},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {78-82},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p78-bertacco/},
+  annote =	 {Computationally very expensive. Enables creation of
+                  a compact, canonical multi-level circuit directly
+                  from a BDD representation, which is a Good
+                  Thing. "We found the final netlist to be often close
+                  to the output of more complex dedicated optimization
+                  tools."  Probably worth implementing, or at least
+                  researching further. BIG DRAWBACK: "For the largest
+                  benchmarks, the limited set of BDD
+                  transformations... do not compensate for the
+                  exceptional growth of the BDD representation with
+                  respect to the original representation."  I wish I
+                  knew what the "original representation" was.}
+}
+
+@InProceedings{kukimoto97:xbd0,
+  author = 	 {Yuji Kukimoto and Wilsin Gosti and Alexander
+                  Saldanha and Robert K. Brayton},
+  title = 	 {Approximate Timing Analysis of Combinational
+                  Circuits under the {XBD0} Model},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {176-181},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p176-kukimoto/},
+  annote =	 {Good overview of timing analysis. Uses a SAT solver
+                  to compute approximate timing. May be useful.}
+}
+
+@InProceedings{sarrafzadeh97:nrg,
+  author = 	 {Majid Sarrafzadeh and Maogang Wang},
+  title = 	 {{NRG}: Global and Detailed Placement},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {532-537},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p532-sarrafzadeh/},
+  annote =	 {Not enough detail given to be useful.}
+}
+
+@InProceedings{arikati97:signature,
+  author = 	 {Srinivasa R. Arikati and Ravi Varadarajan},
+  title = 	 {A Signature Based Approach to Regularity Extraction},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {542-545},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p542-arikati/},
+  annote =	 {The signature idea is a good one.  Not enough info
+                  for an implementation, though.  And our regularity
+                  information should come from a much higher
+                  level. Might be worthwhile referencing to prove that
+                  logic synthesis folk spend a lot of effort
+                  reconstructing the high-level patterns thrown away
+                  by the compiler. Not otherwise useful.}
+}
+
+@InProceedings{enos97:reppart,
+  author = 	 {Morgan Enos and Scott Hauck and Majid Sarrafzadeh},
+  title = 	 {Replication for Logic Bipartitioning},
+  booktitle = 	 ICCAD,
+  year =	 1997,
+  address =	 {San Jose, California},
+  month =	 nov,
+  pages =	 {342-349},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/dac/266388/p342-enos/},
+  annote =	 {We can create a better logic partition if we are
+                  allowed to duplicate some logic.  Good idea and good
+                  overview of partitioning methods.  VERY USEFUL if we
+                  need to partition.  We want to use the Strawman
+                  algorithm, apparently; we need to look up papers on it.}
+}
+
+
+@InProceedings{leiserson83:retiming,
+  author = 	 {Charles E. Leiserson and Flavio M. Rose and James B. Saxe},
+  title = 	 {Optimizing Synchronous Circuitry by Retiming},
+  booktitle = 	 {Third Caltech Conference on Very Large Scale Integration},
+  editor =	 {R. Bryant},
+  year =	 1983,
+  address =	 {Pasadena, California},
+  month =	 mar,
+  pages =	 {87-116},
+  annote =	 {Three good references on other optimization types.
+                  This paper describes how to optimize register
+                  placement to obtain the smallest possible clock
+                  cycle time. *DON'T HAVE COMPLETE PAPER*.
+                  Useful. Includes algorithms to compute the clock
+                  period of a circuit, among other things.}
+}
+
+@Article{malik91:retiming,
+  author = 	 {Sharad Malik and Ellen M. Sentovich and Robert
+                  K. Brayton and Alberto Sangiovanni-Vincentelli},
+  title = 	 {Retiming and Resynthesis: Optimizing Sequential
+                  Networks with Combinational Techniques},
+  journal = 	 {{IEEE} Transactions on Computer-Aided Design},
+  year = 	 1991,
+  volume =	 10,
+  number =	 1,
+  month =	 jan,
+  pages =	 {74--84},
+  annote =	 {Useful extension of Leiserson's Retiming paper.
+                  Perhaps more information can be found in malik93?
+                  Basic idea is that we can push registers to the
+                  periphery and disconnect cycles, optimize the
+                  resulting circuit, and then push all the registers
+                  back in and reconnect the feedback loops.  Makes
+                  sense.  We still have to find a valid combinational
+                  optimization technique to plug in the middle, though.}
+}
+@InProceedings{shi97:macro,
+  author = 	 {Jianzhong Shi and Akash Randhar and Dinesh Bhatia},
+  title = 	 {Macro Block Based {FPGA} Floorplanning},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {21-26},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Interesting paper when we get to floorplanning our
+                  hardware.  Authors note that it is difficult to find
+                  hierarchically-structured designs/testcases;
+                  hopefully our compiler will change this somewhat.}
+}
+
+
+@InProceedings{chikodikar97:techmap,
+  author = 	 {Madhav Y. Chikodikar and Shridhar Laddha and Ashish Sirasao},
+  title = 	 {A Technology Mapper for {Xilinx} {FPGAs}},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {57-61},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {"This paper presents a method for area optimal
+                  technology mapping for Xilinx FPGAs."  Maps logic
+                  onto CLBs; 10\% better than the Xilinx method.  If we
+                  ever need to do this, this is the method to
+                  use. [Hopefully we can use their code!]}
+}
+
+@InProceedings{ravikumar97:regfile,
+  author = 	 {C.P. Ravikumar and R. Aggarwal},
+  title = 	 {A Graph-Theoretic Approach for Register File based
+                  Synthesis},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {118-123},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {In-house know-how!  Interesting paper; replace
+                  registers with register *files*... complete
+                  algorithms.  Meant for datapath
+                  synthesis. "[A]ssumes as input a scheduled data flow
+                  graph."}
+}
+
+%%%% Asynchronous design
+
+@InProceedings{emerson97:async_design,
+  author = 	 {Kimberly D. Emerson},
+  title = 	 {Asynchronous Design---an Interesting Alternative},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {318-320},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Good overview of asynch. design and the rationale
+                  behind it.  Briefly: clock skew, power consumption,
+                  handling of metastability, and elimination of
+                  critical path delay.  Circuits run in `average
+                  case' time instead of `worst case' time.}
+}
+
+@InProceedings{cheng97:diclasp,
+  author = 	 {Fu-Chiung Cheng and Stephen H. Unger and Michael
+                  Theobald and Wen-Chung Cho},
+  title = 	 {Delay-Insensitive Carry-Lookahead Adders},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {322-328},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Pretty typical example of async design, using
+                  dual-rail signalling.  Proposes DICLASP adder,
+                  compares to DIRCA adder.  O(n) logic complexity,
+                  O(log log n) average case time complexity.  About
+                  twice as transistor-expensive as the standard O(n) * O(n)
+                  synchronous ripple-carry adder.}
+}
+@InProceedings{nanda97:universal,
+  author = 	 {K. Nanda and S. K. Desai and S. K. Roy},
+  title = 	 {A New Methodology for the Design of Asynchronous
+                  Digital Circuits},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {342-347},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Proposes a way-out revamp of logic design for async
+                  systems.  Replaces the conventional dual-rail system
+                  with a "non-return-to-zero event driven" scheme, and
+                  invents a "universal gate" which acts as and/or/not
+                  for this system.  Completely delay-insensitive;
+                  *however* very area expensive.  Might be useful for
+                  automated async design, though.}
+}
+
+@TechReport{hauck93:async_design,
+  author = 	 {Scott Hauck},
+  title = 	 {Asynchronous Design Methodologies: An Overview},
+  institution =  {University of Washington},
+  year = 	 1993,
+  number =	 {TR-93-05-07},
+  month =	 may,
+  annote =	 {Very good overview of state of the art in
+                  asynchronous design.  As of 1993, there were
+                  significant problems with each async design
+                  methodology presented.  Is there recent work
+                  overcoming some of these difficulties?}
+}
+
+%%%%%% DECISION DIAGRAMS
+
+@InProceedings{becker97:decision_diagrams,
+  author = 	 {Bernd Becker and Rolf Drechsler},
+  title = 	 {Decision Diagrams in Synthesis: Algorithms,
+                  Applications, and Extensions},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {46-50},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {Excellent overview of BDDs and its related cousins.
+                  Lengthy bibliography.  Also overview the extensions
+                  to BDDs to handle (for example) multipliers.}
+}
+@InProceedings{drechsler97:psdkro,
+  author = 	 {Rolf Drechsler},
+  title = 	 {Pseudo Kronecker Expressions for Symmetric Functions},
+  booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
+  pages =	 {511-513},
+  year =	 1997,
+  address =	 {Hyderabad, India},
+  month =	 jan,
+  annote =	 {An optimizer based of PSDKROs for symmetric
+                  functions is described; seems to work pretty well on
+                  non-symmetric functions, too.  Tenth-of-a-second
+                  execution times; 1000x faster than comparable
+                  methods.  Go Go Go!}
+}
+
+@InProceedings{kol98:kin,
+  author = 	 {Rakefet Kol and Ran Ginosar},
+  title = 	 {Kin: A High Performance Asynchronous Processor Architecture},
+  booktitle = 	 ICS98,
+  pages =	 {433-440},
+  year =	 1998,
+  address =	 {Melbourne, Australia},
+  month =	 jul,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/supercomputing/277830/p433-kol/},
+  annote =	 {Why asynchronous design will take over the world.}
+}
+
+%% newer stuff
+
+@InProceedings{august97:pred,
+  author = 	 {David I. August and Wen-mei W. Hwu and Scott A. Mahlke},
+  title = 	 {A Framework for Balancing Control Flow and Predication},
+  booktitle = 	 MICRO30,
+  pages =	 {92-103},
+  year =	 1997,
+  address =	 {Research Triangle Park, North Carolina},
+  month =	 dec,
+  annote =	 {Interesting IR with predication bits},
+  url =          {http://www.acm.org/pubs/citations/proceedings/micro/266800/p92-august/}
+}
+
+@InProceedings{lee99:parssa,
+  author = 	 {Jaejin Lee and David A. Padua and Samuel P. Midkiff},
+  title = 	 {Basic Compiler Algorithms for Parallel Programs},
+  booktitle = 	 PPOPP99,
+  pages =	 {1-12},
+  year =	 1999,
+  address =	 {Atlanta, Georgia},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/ppopp/301104/p1-lee/},
+  annote =	 {SSA form for explicitly parallel programs.}
+}
+
+
+@InProceedings{liao99:issa,
+  author = 	 {Shih-Wei Liao and Amer Diwan and Robert P. Bosch
+                  Jr. and Anwar Ghuloum and Monica S. Lam},
+  title = 	 {{SUIF} Explorer: An Interactive and Interprocedural
+                  Parallelizer},
+  booktitle = 	 PPOPP99,
+  pages =	 {37-48},
+  year =	 1999,
+  address =	 {Atlanta, Georgia},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/ppopp/301104/p37-liao/},
+  annote =	 {Interprocedural SSA form.}
+}
+
+@PhdThesis{havlak94:isa,
+  author = 	 {Paul Havlak},
+  title = 	 {Interprocedural Symbolic Analysis},
+  school = 	 {Rice University},
+  year = 	 1994,
+  address =	 {Houston, Texas},
+  month =	 may,
+  annote =	 {TGSSA form.}
+}
+
+@InProceedings{ferrante91:pruned,
+  author = 	 {Jong-Deok Choi and Ron Cytron and Jeanne Ferrante},
+  title = 	 {Automatic construction of sparse data flow evaluation graphs},
+  booktitle = 	 POPL91,
+  pages =	 {55-66},
+  year =	 1991,
+  address =	 {Orlando, Florida},
+  month =	 jan,
+  annote =	 {Definition and algorithm for ``pruned'' SSA form.
+                  Incorrectly referenced by \cite{cytron91:ssa}.},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/99583/p55-ferrante/}
+}
+
+@InProceedings{dhamdhere92:large,
+  author = 	 {Dhananjay M. Dhamdhere and Barry K. Rosen and
+                  F. Kenneth Zadeck},
+  title = 	 {How to analyze large programs efficiently and informatively},
+  booktitle = 	 PLDI92,
+  pages =	 {212-223},
+  year =	 1992,
+  address =	 {San Francisco, California},
+  month =	 jun,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/143095/p212-dhamdhere/},
+  annote =	 {``When an analytic mistake inherited from
+                  \cite{cytron89:ssa} is corrected
+                  \cite{cytron91:ssa}, the worst-case complexity for
+                  constructing each sparse graph is $O(n^3)$.''}
+}
+
+@Article{pingali97:apt,
+  author = 	 {Keshav Pingali and Gianfranco Bilardi},
+  title = 	 {Optimal Control Dependence Computation and the Roman
+                  Chariots Problem},
+  journal = 	 TOPLAS,
+  year = 	 1997,
+  volume =	 19,
+  number =	 3,
+  pages =	 {462-491},
+  month =	 may,
+  annote =	 {Construction of the Augmented Postdominator Tree
+                  (APT) in linear time, and enumeration of control
+                  dependence sets in time proportional to their size.}
+}
+
+@TechReport{traub86:ttda,
+  author = 	 {Kenneth R. Traub},
+  title = 	 {A Compiler for the {MIT} Tagged-Token Dataflow Architecture},
+  institution =  {Massachusetts Institute of Technology},
+  year = 	 1986,
+  number =	 {MIT/LCS/TR-370},
+  address =	 {Cambridge, MA 02139},
+  month =	 aug,
+  url =		 {http://ncstrl.mit.edu/Dienst/UI/2.0/Query/?boolean=and&author=Traub&title=dataflow&abstract=&authority=ncstrl.mit_lcs&name=TR-370},
+  annote =	 {Describes a data-flow-oriented compiler; the
+                  description of how loops and the store are handled
+                  is very interesting.  The I-Store concept is a
+                  quasi-functional store; also a really nice idea.
+		  Intraloop, not interloop, parallelism.}
+}
+
+@InProceedings{muthukrishnan96:ch,
+  author = 	 {S. Muthukrishnan and Martin M{\"u}ller},
+  title = 	 {Time and Space Efficient Method-Lookup for
+                  Object-Oriented Programs (Extended Abstract)},
+  booktitle = 	 {Proceedings of the Seventh Annual ACM-SIAM Symposium
+                  on Discrete Algorithms},
+  pages =	 {42-51},
+  year =	 1996,
+  address =	 {Atlanta, Georgia},
+  month =	 jan,
+  annote =	 {Class hierarchy statistics for large libraries in
+                  various languages.}
+}
+
+@Article{tanaka89:harp,
+  author = 	 {T. Tanaka and T. Kobayashi and O. Karatsu},
+  title = 	 {{HARP}: {FORTRAN} to silicon},
+  journal = 	 {{IEEE} Transactions on Computer-Aided Design of
+                  Integrated Circuits and Systems},
+  year = 	 1989,
+  volume =	 8,
+  number =	 6,
+  pages =	 {649-660},
+  month =	 jun,
+  annote =	 {An advanced silicon compilation system called HARP
+                  is described that creates a register-transfer
+                  language (RTL) description from a FORTRAN
+                  program. HARP contains three main processing parts:
+                  a data path synthesizer; a sequence controller
+                  synthesizer; and an RTL translator. \ldots HARP
+                  produces acceptable LSI ICs which exactly execute
+                  the input FORTRAN program.}
+}
+
+%%%%%%%%%%%%%%%%% DERIVED WORKS %%%%%%%%%%%%%%%%%%%%%%%
+% (Referenced in some source paper)
+
+@Article{lengauer79,
+  author = 	 {T. Lengauer and R. E. Tarjan},
+  title = 	 {A fast algorithm for finding dominators in a flowgraph},
+  journal = 	 TOPLAS,
+  year = 	 1979,
+  volume =	 1,
+  number =	 1,
+  pages =	 {121-141},
+  annote =	 {Standard dominance-tree algorithm.}
+}
+
+@InProceedings{harel85,
+  author = 	 {D. Harel},
+  title = 	 {A linear time algorithm for finding dominators in
+                  flow graphs and related problems},
+  booktitle = 	 {Proceedings of the 17th Annual {ACM} Symposium on
+                  Theory of Computing},
+  pages =	 {185-194},
+  year =	 1985,
+  month =	 may,
+  annote =	 {Faster dominance-tree construction algorithm.}
+}
+
+@Article{benveniste91:synchrony,
+  author = 	 {A. Benveniste and G. Berry},
+  title = 	 {The synchronous approach to reactive and real-time systems},
+  journal = 	 {Proceedings of the IEEE: Another look at real time
+                  programming},
+  year = 	 1991,
+  volume =	 79,
+  number =	 9,
+  pages =	 {1270-1282},
+  month =	 sep,
+  annote =	 {Referenced by \cite{berry92:hardware_esterel} as
+                  source of the \textit{perfect synchrony hypothesis}.}
+}
+
+@Article{gagne96:nonstandard,
+  author = 	 {Jean-Raymond Gagn{\'e} and John Plaice},
+  title = 	 {A non-standard temporal deductive database system},
+  journal = 	 {Journal of Symbolic Computation},
+  year = 	 1996,
+  volume =	 22,
+  number =	 {5-6},
+  pages =	 {649-664},
+  month =	 nov # "--" # dec,
+  annote =	 {Referenced by \cite{gagne97:nonstandard} to support
+                  the idea of ``non-standard numbers'' in ennumerating
+                  time.}
+}
+
+@InProceedings{galloway95:transmogrifier,
+  author = 	 {David Galloway},
+  title = 	 {The {Transmogrifier} {C} Hardware Description
+                  Language and compiler for {FPGA}s},
+  booktitle = 	 {IEEE Symposium on FPGAs for Custom Computing
+                  Machines.  Proceedings},
+  pages =	 {136-144},
+  year =	 1995,
+  month =	 apr
+}
+
+@Article{wegman91:scc,
+  author = 	 {Mark N. Wegman and F. Kenneth Zadeck},
+  title = 	 {Constant propagation with conditional branches},
+  journal = 	 {ACM Transactions on Programming Languages and Systems},
+  year = 	 1991,
+  volume =	 13,
+  number =	 2,
+  pages =	 {181-210},
+  month =	 apr
+}
+
+@InProceedings{shirazi95:float,
+  author = 	 {Nabeel Shirazi and Al Walters and Peter Athanas},
+  title = 	 {Quantitative Analysis of Floating Point Arithmetic
+                  on {FPGA} based {C}ustom {C}omputing {M}achines},
+  booktitle = 	 {IEEE Symposium on {FPGAs} for {C}ustom {C}omputing
+                  {M}achines.  Proceedings},
+  pages =	 {155-162},
+  year =	 1995,
+  address =	 {Napa Valley, California},
+  month =	 apr
+}
+
+
+@Book{appel:modern,
+  author = 	 {Andrew W. Appel},
+  title = 	 {Modern Compiler Implementation in Java},
+  publisher = 	 {Cambridge University Press},
+  year = 	 {1998},
+  annote =	 {The standard practical compilers text.}
+}
+
+@Book{jvm,
+  author =	 {Tim Lindholm and Frank Yellin},
+  title = 	 {The Java Virtual Machine Specification},
+  publisher = 	 {Addison-Wesley},
+  year = 	 1996,
+  month =	 sep,
+  note =	 {On-line at 
+                  \texttt{http://\hspace{0pt}www.javasoft.com/\hspace{0pt}docs/\hspace{0pt}books/\hspace{0pt}vmspec}}
+}
+
+@Article{cytron91:ssa,
+  author = 	 {Ron Cytron and Jeanne Ferrante and Barry K. Rosen
+                  and Mark N. Wegman and F. Kenneth Zadeck},
+  title = 	 {Efficiently computing static single assignment form
+                  and the control dependence graph},
+  journal = 	 TOPLAS,
+  year = 	 1991,
+  volume =	 13,
+  number =	 4,
+  pages =	 {451-490},
+  month =	 oct,
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1991-13-4/p451-cytron/},
+  annote =	 {One of the canonical SSA form papers.}
+}
+
+@InProceedings{cytron89:ssa,
+  author = 	 {Ron Cytron and Jeanne Ferrante and Barry K. Rosen and
+                  Mark N. Wegman and F. Kenneth Zadeck},
+  title = 	 {An efficient method of computing static single
+                  assignment form},
+  booktitle = 	 POPL89,
+  pages =	 {25-35},
+  year =	 1989,
+  address =	 {Austin, Texas},
+  month =	 jan,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/75277/p25-cytron/},
+  annote =	 {The other canonical SSA form paper.}
+}
+
+@Article{cytron95:ssa,
+  author = 	 {Ron K. Cytron and Jeanne Ferrante},
+  title = 	 {Efficiently computing $\phi$-nodes on-the-fly},
+  journal = 	 TOPLAS,
+  year = 	 1995,
+  volume =	 17,
+  number =	 3,
+  pages =	 {487-506},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1995-17-3/p487-cytron/},
+  annote =	 {Contains: ``Since one reason for introducing
+                  $\phi$-functions is to eliminate potentially
+                  quadratic behavior when solving actual data flow
+                  problems, such worst-case behavior during SEG or SSA 
+                  construction could be problematic.  Clearly,
+                  avoiding such behavior necessitates placing
+                  $\phi$-functions without computing or using
+                  dominance frontiers.''}
+}
+
+@InProceedings{alpern88:ssa,
+  author = 	 {B. Alpern and Mark N. Wegman and F. Kenneth Zadeck},
+  title = 	 {Detecting equality of variables in programs},
+  booktitle = 	 POPL88,
+  pages =	 {1-11},
+  year =	 1988,
+  address =	 {San Diego, California},
+  month =	 jan,
+  annote =	 {Earliest SSA reference?},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/73560/p1-alpern/}
+}
+
+@InProceedings{rosen88:gvn,
+  author = 	 {Barry K. Rosen and Mark N. Wegman and F. Kenneth Zadeck},
+  title = 	 {Global value numbers and redundant computations},
+  booktitle = 	 POPL88,
+  pages =	 {12-27},
+  year =	 1988,
+  address =	 {San Diego, California},
+  month =	 jan,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/73560/p12-rosen/}
+}
+
+@TechReport{plotkin81:opsem,
+  author = 	 {Gordon D. Plotkin},
+  title = 	 {A structural approach to operational semantics},
+  institution =  {Aarhus University},
+  year = 	 1981,
+  number =	 {DAIMI FN-19},
+  annote =	 {Referenced in \cite{pingali90:dfg}}
+}
+
+@TechReport{shapiro70:ssa,
+  author = 	 {Robert M. Shapiro and H. Saint},
+  title = 	 {The representation of algorithms},
+  institution =  {Massachusetts Computer Associates},
+  year = 	 1970,
+  number =	 {CA-7002-1432},
+  month =	 feb,
+  annote =	 {Referenced in \cite{johnson93:dfg} as the original SSA form
+                  paper}
+}
+
+@InProceedings{chow96:hssa,
+  author = 	 {Fred Chow and Sun Chan and {Shin-Ming} Liu and 
+                  Raymond Lo and Mark Streich},
+  title = 	 {Effective representation of aliases and indirect
+                  memory operations in {SSA} form},
+  booktitle = 	 CC96,
+  pages =	 {253-267},
+  year =	 1996,
+  month =	 apr,
+  annote =	 {Referenced in \cite{chow97:ssapre} for HSSA form;
+                  also documentation of SGI's use of SSA-variant in
+                  their production MIPSpro compiler (release 7.2).}
+}
+
+@InProceedings{ballance90:pdw,
+  author = 	 {Robert A. Ballance and Arthur B. Maccabe and Karl
+                  J. Ottenstein},
+  title = 	 {The {P}rogram {D}ependence {W}eb: A representation
+                  supporting control-, data-, and demand-driven
+                  interpretation of imperative languages},
+  booktitle = 	 PLDI90,
+  pages =	 {257-271},
+  year =	 1990,
+  address =	 {White Plains, New York},
+  month =	 jun,
+  annote =	 {PDW canonical reference.},
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/93542/p257-ottenstein/}
+}
+
+@InProceedings{tu95:gssa,
+  author = 	 {Peng Tu and David Padua},
+  title = 	 {Efficient building and placing of gating functions},
+  booktitle = 	 PLDI95,
+  pages =	 {47-55},
+  year =	 1995,
+  address =	 {La Jolla, California},
+  month =	 jun,
+  annote =	 {Efficiently constructing GSSA form.},
+  url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/207110/p47-tu/}
+}
+
+@Article{reif81:sym,
+  author = 	 {J. H. Reif and R. E. Tarjan},
+  title = 	 {Symbolic program analysis in almost-linear time},
+  journal = 	 {{SIAM} Journal on Computing},
+  year = 	 1981,
+  volume =	 11,
+  number =	 1,
+  pages =	 {81-93},
+  month =	 feb,
+  annote =	 {Introduction of ``birthpoints,'' which Havlek
+                  \cite{havlak94:isa} claims was the direct ancestor
+                  of SSA form.}
+}
+
+@InProceedings{lo98:ssu,
+  author = 	 {Raymond Lo and Fred Chow and Robert Kennedy and
+                  Shin-Ming Liu and Peng Tu},
+  title = 	 {Register promotion by sparse partial redundancy
+                  elimination of loads and stores},
+  booktitle = 	 PLDI98,
+  pages =	 {26-37},
+  year =	 1998,
+  address =	 {Montreal, Canada},
+  month =	 jun,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/277650/p26-lo/},
+  annote =	 {Lambda functions and SSU form.  Load/store duality.}
+}
+
+@InProceedings{kennedy98:strength,
+  author = 	 {Robert Kennedy and Fred Chow and Peter Dahl and
+                  Shin-Ming Liu and Raymond Lo and Mark Streich},
+  title = 	 {Strength Reduction via {SSAPRE}},
+  booktitle = 	 CC98,
+  pages =	 {144-158},
+  year =	 1998,
+  address =	 {Lisbon, Portugal},
+  month =	 apr,
+  annote =	 {Use of SSAPRE to do loop-invariant removal, etc.}
+}
+
+@InProceedings{diwan92:gc,
+  author = 	 {Amer Diwan and Eliot Moss and Richard Hudson},
+  title = 	 {Compiler support for garbage collection in a
+                  statically typed language},
+  booktitle = 	 PLDI92,
+  pages =	 {273-282},
+  year =	 1992,
+  address =	 {San Francisco, CA},
+  month =	 jun,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/143095/p273-diwan/},
+  annote =	 {Basis of our backend design.}
+}
+
+@InProceedings{stichnoth99:gc,
+  author = 	 {James M. Stichnoth and Guei-Yuan Lueh and Michal Cierniak},
+  title = 	 {Support for garbage collection at every instruction
+                  in a Java compiler},
+  booktitle = 	 PLDI99,
+  pages =	 {118-127},
+  year =	 1999,
+  address =	 {Atlanta, GA},
+  month =	 may,
+  url =          {http://www.acm.org/pubs/citations/proceedings/pldi/301618/p118-stichnoth/}
+}
+
+@Article{strong58,
+  author = 	 {J. Strong and J. Wegstein and A. Tritter and
+                  J. Olsztyn and O. Mock and T. Steel},
+  title = 	 {The problem of programming communication with
+                  changing machines: a proposed solution},
+  journal = 	 {Communications of the {ACM}},
+  year = 	 1958,
+  volume =	 1,
+  number =	 8,
+  pages =	 {12-18},
+  month =	 aug,
+  note =	 {Part 2: 1(9):9-15.
+                  Report of the Share Ad-Hoc committee on Universal
+                  Languages}, 
+  annote =	 {First suggestion on the utility of a compiler IR.
+                  Reference from \cite{aho88:dragon}.}
+}
+
+@Book{aho88:dragon,
+  author =	 {Alfred V. Aho and Ravi Sethi and Jeffrey D. Ullman},
+  title = 	 {Compilers: Principles, Techniques, and Tools},
+  publisher = 	 {Addison-Wesley},
+  year = 	 1988,
+  note =	 {The ``Dragon Book''}
+}
+
+@InProceedings{gosling95:bytecode,
+  author = 	 {James Gosling},
+  title = 	 {Java intermediate bytecodes},
+  booktitle = 	 IR95,
+  pages =	 {111-118},
+  year =	 1995,
+  address =	 {San Francisco, California},
+  month =	 jan,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/202529/p111-gosling/},
+  annote =	 {Description of the design of the Java bytecode IR.}
+}
+
+@Unpublished{offner95,
+  author = 	 {Carl D. Offner},
+  title = 	 {Notes on Graph Algorithms Used in Optimizing Compilers},
+  year =	 1995,
+  note = 	 {Available from \texttt{http://\hspace{0pt}www.cs.umb.edu/\hspace{0pt}\~{}offner/\hspace{0pt}files/\hspace{0pt}flow\_graph.ps}}
+}
+
+@Article{knuth74:fortran,
+  author = 	 {Donald Knuth},
+  title = 	 {An empirical study of {FORTRAN} programs},
+  journal = 	 {Software Practice and Experience},
+  year = 	 1974,
+  volume =	 1,
+  number =	 12,
+  pages =	 {105-134},
+  annote =	 {"Famous" empirical study showing that the loop
+                  connectedness number (and hence iteration limit for
+                  iterated distributive data flow problems) is $\leq
+                  3$ for all intents and purposes.
+                  Cited in \cite{offner95}.}
+}
+
+@Article{kam76:dataflow,
+  author = 	 {John B. Kam and Jeffrey D. Ullman},
+  title = 	 {Global data flow analysis and iterative algorithms},
+  journal = 	 {Journal of the {ACM}},
+  year = 	 1976,
+  volume =	 21,
+  number =	 3,
+  pages =	 {158-171},
+  month =	 jan,
+  annote =	 {Proved iteration bound on distributive data flow frameworks}
+}
+
+@Article{peleg97:mmx,
+  author = 	 {Alex Peleg and Sam Wilkie and Uri Weiser},
+  title = 	 {Intel {MMX} for Multimedia {PC}s},
+  journal = 	 {Communications of the {ACM}},
+  year = 	 1997,
+  volume =	 40,
+  number =	 1,
+  pages =	 {25-38},
+  month =	 jan,
+  annote =	 {Datatypes for MMX.}
+}
+
+%%%% New stuff.
+
+@InProceedings{scales96:shasta,
+  author = 	 {Daniel J. Scales and Kourosh Gharachorloo and
+                  Chandramohan A. Thekkath},
+  title = 	 {Shasta: A Low Overhead, Software-Only Approach for
+                  Supporting Fine-Grain Shared Memory},
+  booktitle = 	 {Proceedings of the seventh international conference
+                  on architectural support for programming languages
+                  and operating systems},
+  pages =	 {174-185},
+  year =	 1996,
+  address =	 {Cambridge},
+  month =	 oct
+}
+
+%%%% Misc.
+
+@Unpublished{rugina99:divide,
+  author = 	 {Radu Rugin\u{a} and Martin Rinard},
+  title = 	 {Automatic Parallelization of Divide and Conquer Algorithms},
+  note = 	 {Slides for talk given at PPoPP '99; available from 
+                  \texttt{http://\hspace{0pt}www.cag.lcs.mit.edu/%
+                  \hspace{0pt}\~{}rinard/\hspace{0pt}divide\_and\_conquer/%
+                  \hspace{0pt}ppopp99.slides.ps}},
+  month =	 may,
+  year =	 1999,
+  annote =	 {Integer linear programming for array bounds.}
+}
+
+@MastersThesis{ananian99:ssi,
+  author = 	 {C. Scott Ananian},
+  title = 	 {The Static Single Information Form},
+  school = 	 {Massachusetts Institute of Technology},
+  year = 	 1999,
+  address =	 {Cambridge, MA},
+  month =	 sep
+}
+
+@Unpublished{ananian:siliconc,
+  author = 	 {C. Scott Ananian},
+  title = 	 {Silicon {C}: A Hardware Backend for {SUIF}},
+  note = 	 {Available from
+                  \texttt{http://\hspace{0pt}flexc.lcs.mit.edu/%
+                  \hspace{0pt}SiliconC/\hspace{0pt}paper.pdf}},
+  month =        may,
+  year =         1998
+}
+
+@Misc{flexweb,
+  key =		 {flexweb},
+  title =	 {The {FLEX} compiler project},
+  howpublished = {\texttt{http://\hspace{0pt}flex-compiler.lcs.mit.edu/}},
+}
+
+@Misc{marinov99,
+  author =	 {Darko Marinov and Radu Rugin\u{a}},
+  title =	 {Personal communication},
+  year =	 1999
+}
+
+@InProceedings{RR00:PLDI00,
+  author    =    {Radu Rugin\u{a} and Martin Rinard},
+  title     =    {Symbolic bounds analysis of pointers, array
+                  indices, and accessed memory regions},
+  booktitle =    PLDI00,
+  pages =        {182-195},
+  year =         2000,
+  address =	 Vancouver,
+  month =	 jun
+}
+
+@InProceedings{bacon98,
+  author = 	 {David F. Bacon and Ravi Konuru and Chet Murthy and
+                  Mauricio Serrano},
+  title = 	 {Thin Locks: Featherweight Synchronization for {J}ava},
+  booktitle =	 PLDI98,
+  pages =	 {258-268},
+  year =	 1998,
+  address =	 {Montreal, Canada}
+}
+
+@InProceedings{whaley99,
+  author = 	 {John Whaley and Martin Rinard},
+  title = 	 {Compositional pointer and escape analysis for {J}ava programs},
+  booktitle =	 OOPSLA99,
+  pages =	 {187--206},
+  year =	 1999,
+  address =	 Denver,
+  month =	 nov
+}
+
+@InProceedings{bacon96,
+  author = 	 {David F. Bacon and Peter F. Sweeney},
+  title = 	 {Fast Static Analysis of {C++} Virtual Function Calls},
+  booktitle =	 OOPSLA96,
+  pages =	 {324-341},
+  year =	 1996,
+  address =	 {California}
+}
+
+@InProceedings{vivien01,
+  author = 	 {Fr{\'e}d{\'e}ric Vivien and Martin Rinard},
+  title = 	 {Incrementalized pointer and escape analysis},
+  booktitle =	 PLDI01,
+  pages =	 {35-46},
+  year =	 2001,
+  address =	 Snowbird,
+  month =	 jun
+}
+
+@InProceedings{stephenson00,
+  author = 	 {Mark Stephenson and Jonathan Babb and Saman Amarasinghe},
+  title = 	 {Bitwidth analysis with application to silicon compilation},
+  booktitle =	 PLDI00,
+  isbn =         {1-58113-199-2},
+  pages =        {108--120},
+  doi =          {http://doi.acm.org/10.1145/349299.349317},
+  year =	 2000,
+  address =	 Vancouver,
+  month =	 jun
+}
+
+@TechReport{ananian99:tech,
+  author = 	 {C. Scott Ananian},
+  title = 	 {The Static Single Information Form},
+  institution =  {Massachusetts Institute of Technology},
+  year = 	 1999,
+  number =	 {MIT-LCS-TR-801},
+  note = 	 {Available from \texttt{http://\hspace{0pt}www.lcs.mit.edu/\hspace{0pt}publications/\hspace{0pt}pubs/\hspace{0pt}pdf/\hspace{0pt}MIT-LCS-TR-801.pdf}}
+}
+% also http://www.lcs.mit.edu/publications/specpub.php?id=1340
+
+@InProceedings{salcianu01,
+  author = 	 {Alexandru S\u{a}lcianu and Martin Rinard},
+  title = 	 {Pointer and escape analysis for multithreaded programs},
+  booktitle =	 PPOPP01,
+  isbn =         {1-58113-346-4},
+  pages =	 {12--23},
+  doi =          {http://doi.acm.org/10.1145/379539.379553},
+  year =	 2001,
+  address =	 Snowbird,
+  month =	 jun
+}
+
+@InProceedings{ananian03:sizeopt,
+  author = 	 {C. Scott Ananian and Martin Rinard},
+  title = 	 {Data Size Optimizations for {J}ava Programs},
+  booktitle = 	 LCTES03,
+  pages =	 {59--68},
+  year =	 2003,
+  isbn =	 {1-58113-647-1},
+  doi =		 {http://doi.acm.org/10.1145/780732.780741},
+  address =	 SanDiego,
+  month =	 jun,
+  publisher =	 {ACM Press}
+}
+
+@InProceedings{heintze01,
+  author = 	 {Nevin Heintze and Olivier Tardieu},
+  title = 	 {Ultra-fast Aliasing Analysis using {CLA}: A Million
+                  Lines of {C} code in a Second},
+  booktitle =	 PLDI01,
+  pages =	 {254-263},
+  year =	 2001,
+  address =	 Snowbird,
+  month =	 jun
+}
+
+@InProceedings{SweeneyTip98DeadDataMembers,
+  author =       {Peter F. Sweeney and Frank Tip},
+  title =        {A Study of Dead Data Members in {C}++ Applications},
+  booktitle =    PLDI98,
+  isbn =         {0-89791-987-4},
+  pages =        {324--332},
+  doi =          {http://doi.acm.org/10.1145/277650.277750},
+  address =      {Montreal, Canada},
+  year =         1998
+}
+
+@InProceedings{aggarwal01,
+  author = 	 {Aneesh Aggarwal and Keith H. Randall},
+  title = 	 {Related Field Analysis},
+  booktitle = 	 PLDI01,
+  pages =	 {214-220},
+  year =	 2001,
+  address =	 Snowbird,
+  month =	 jun
+}
+
+@inproceedings{sreedhar00,
+ author = {Vugranam C. Sreedhar and Michael Burke and Jong-Deok Choi},
+ title= {A framework for interprocedural optimization in the presence of dynamic class loading},
+ booktitle = {Proceedings of the ACM SIGPLAN '00 conference on Programming language design and implementation},
+ year = 2000,
+ isbn = {1-58113-199-2},
+ pages = {196--207},
+ location = Vancouver,
+ doi = {http://doi.acm.org/10.1145/349299.349326},
+ publisher = {ACM Press},
+ }
+
+@Unpublished{marinov03,
+  author = 	 {Darko Marinov and Robert O'Callahan},
+  title = 	 {Object Equality Profiling},
+  note = 	 {Submitted to OOPSLA '03},
+  year = 	 2003
+}
+
+@InProceedings{bacon02:efficient,
+  author = 	 {David F. Bacon and Stephen J. Fink and David Grove},
+  title = 	 {Space- and Time-Efficient Implementation of the
+                  {J}ava Object Model},
+  booktitle =	 ECOOP02,
+  pages =	 {111--132},
+  year =	 2002,
+  editor =	 {B. Magnusson},
+  volume =	 2374,
+  series =	 {Lecture Notes in Computer Science},
+  address =	 {M\'alaga, Spain},
+  month =	 jun,
+  doi =          {http://doi.acm.org/10.1145/277650.277734}
+}
+
+@InProceedings{zhang02,
+  author = 	 {Youtao Zhang and Rajiv Gupta},
+  title = 	 {Data Compression Transformations for Dynamically Allocated Data Structures},
+  booktitle =	 {International Conference on Compiler Construction},
+  pages =	 {14-28},
+  year =	 2002,
+  volume =	 2304,
+  series =	 {Lecture Notes in Computer Science},
+  address =	 {Grenoble, France},
+  month =	 apr,
+  publisher =	 {Springer Verlag},
+  url = 	 {http://www.cs.arizona.edu/people/gupta/research/Publications/Comp/compress.ps}
+}
+
+@Article{bacon02:kava,
+  author = 	 {David F. Bacon},
+  title = 	 {Kava: A Java Dialect with a Uniform Object Model for
+                  Lightweight Classes},
+  journal = 	 {Concurrency---Practice and Experience},
+  year = 	 2002,
+  volume =	 14
+}
+
+%%%%%%%%%%%%% From Martin's p.bib
+
+@string {EUROPAR2000 = "Proceedings of the EuroPar 2000 European Conference on Parallel Computing"} 
+
+
+@InProceedings{OK99, 
+        author = {Tamiya Onodera and Kiyokuni Kawachiya},
+        Title = {A Study of Locking Objects With Bimodal Fields}, 
+        Booktitle = OOPSLA99,
+        isbn = {1-58113-238-7},
+        pages = {223--237},
+        doi = {http://doi.acm.org/10.1145/320384.320405},
+        Address= Denver,
+        Month = Nov,
+        Year = 1999}
+
+@InProceedings{ADGKRW99, 
+        Author = {O. Agesen and D. Detlefs and A. Garthwaite and R. Knippel
+                  and Y. Ramakrishna and D. White}, 
+        Title = {An Efficient Meta-Lock for Implementing Ubiquitous Synchronization},
+        Booktitle = OOPSLA99,
+        pages = {207--222},
+        Address= Denver,
+        Month = Nov,
+        Year = 1999}
+
+@InProceedings{ACSE99,
+        Author = {J. Aldrich and C. Chambers and E. Sirer and S. Eggers}, 
+        Title = {Static Analyses for Eliminating Unnecessary Synchronization
+                 from {J}ava Programs}, 
+        Booktitle = SAS99,
+        pages = {19--38},
+        Location = Venice,
+        Month = Sep,
+        Year = 1999}
+
+@InProceedings{BH99,
+        author = {Jeff Bogda and Urs H\"olzle},
+        Title = {Removing Unnecessary Synchronization in {J}ava}, 
+        Booktitle = OOPSLA99,
+        isbn = {1-58113-238-7},
+        pages = {35--46},
+        doi = {http://doi.acm.org/10.1145/320384.320388},
+        Address= Denver,
+        Month = Nov,
+        Year = 1999}
+
+% acm: 320386
+@inproceedings{CGSSM99,
+        author = {Jong-Deok Choi and Manish Gupta and Mauricio Serrano and Vugranam C. Sreedhar and Sam Midkiff},
+        title = {Escape analysis for {J}ava},
+        booktitle = OOPSLA99,
+        Address   = Denver,
+        Month     = Nov,
+        year = {1999},
+        isbn = {1-58113-238-7},
+        pages = {1--19},
+        doi = {http://doi.acm.org/10.1145/320384.320386},
+}
+
+@InProceedings{Ruf00:PLDI00, 
+        author = {Erik Ruf},
+        Title     = {Effective Synchronization Removal for {J}ava},
+        Booktitle = PLDI00,
+        isbn = {1-58113-199-2},
+        pages = {208--218},
+        doi = {http://doi.acm.org/10.1145/349299.349327},
+        Address   = Vancouver,
+        Month     = Jun,
+        Year      = 2000,
+}
+
+@InProceedings{BGSW00,
+  author =	 {Mihai Budiu and Majd Sakr and Kip Walker and Seth
+                  Copen Goldstein},
+  title =	 {{BitValue} Inference: Detecting and Exploiting Narrow
+                  Bitwidth Computations},
+  booktitle =	 {Proceedings of the 2000 Europar Conference},
+  Address = Munich,
+  Month = Aug,
+  year =	 2000,
+  volume =	 1900,
+  series =	 {Lecture Notes in Computer Science},
+  publisher =	 {Springer Verlag},
+  url =          {http://www.cs.cmu.edu/~mihaib/research/bitvalue.ps.gz},
+}
+
+@InProceedings{DH99, 
+  Title = {A study of the allocation behavior of the {SPECjvm98} {J}ava Benchmarks},
+  Author={ Sylvia Dieckmann and Urs H\"olzle},
+  Booktitle= ECOOP99, 
+  Location=Lisbon,
+  Month= Aug,
+  Year= 1999
+}
+
+%%%%%%%%%%%%%%%% other stuff %%%%%%%%%%
+@Article{Steele99,
+  author = 	 {Steele, Jr, Guy L.},
+  title = 	 {Growing a Language},
+  journal = 	 {Higher-Order and Symbolic Computation},
+  year = 	 1999,
+  volume =	 12,
+  number =	 3,
+  pages =	 {221--236},
+  month =	 oct,
+  url=           {http://www.brics.dk/~hosc/local/HOSC-12-3-pp221-236.pdf}
+}
+

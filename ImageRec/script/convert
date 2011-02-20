@@ -1,0 +1,10 @@
+qtdechunk $1 movie-
+export count=0
+for x in `ls movie-*`; do 
+  echo $count
+  jpegtopnm $x 2> /dev/null | gzip -9 > $2.gz.$count
+  export count=$(($count+1))
+done
+rm -rf movie-*
+jar cvf $2.jar $2.gz.* >& /dev/null
+rm -rf $2.gz.*

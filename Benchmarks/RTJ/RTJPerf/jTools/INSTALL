@@ -1,0 +1,34 @@
+In order to build jTools you will need the following software packages:
+
+   - ANT
+   - GCC
+   - GCJ
+   - Any Java 2 compatible Java JDK.
+   - Python
+
+Note: Currently the only platform supported is Linux, Windows support
+      will be coming soon.
+
+Once you have properly installed the software packages listed above,
+to build jTools you have simply to do the following:
+
+$ tar xzvf jTools.tar.gz
+$ cd jTools
+$ ant
+
+To make the demos do the following:
+
+$ ant demo
+
+Once you have compiled jTools, you will have to set the following
+environment variables, assuming that JTOOLS_HOME represent the path
+from where you invoked ANT in the building phase outlined above, then
+add the following lines into your .bashrc (or equivalent):
+
+export LD_LIBRARY_PATH=$JTOOLS_HOME/lib:$LD_LIBRARY_PATH
+export CLASSPATH=$JTOOLS_HOME/lib/jtools.jar
+
+
+If you have problem, send email to Angelo Corsaro <corsaro@ece.uci.edu>
+
+   

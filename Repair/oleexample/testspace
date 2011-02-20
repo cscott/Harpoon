@@ -1,0 +1,8 @@
+set blocks(int): partition freeblocks | usedblocks | fatblocks
+set usedblocks(int): chainblocks
+set chainblocks(int):
+set fatblocks(int):
+set freeblocks(int):
+set fatblockindex(int):
+nextblock: usedblocks -> usedblocks (1->1)
+fatblockslist: fatblockindex -> fatblocks (1->1)

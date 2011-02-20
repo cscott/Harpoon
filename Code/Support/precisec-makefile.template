@@ -1,0 +1,34 @@
+# fill in the host-prefix with the appropriate prefix for your architecture.
+# for example, the StrongARM tools hosted on lesser-magoo have:
+#    HOST_PREFIX=arm-unknown-linuxelf-
+# so that, for example, the cross-compiling gcc is arm-unknown-linuxelf-gcc.
+# this is probably best set on the command-line, as:
+#   make HOST_PREFIX=arm-unknown-linuxelf-
+# instead of editing this (pretty generic and general-purpose, yay) file.
+HOST_PREFIX=
+CC:=$(HOST_PREFIX)$(CC)
+LD:=$(HOST_PREFIX)$(LD)
+AR:=$(HOST_PREFIX)$(AR)
+# use the -fno-zero-initialized-in-bss option to CC if it is supported.
+# this is *vitally important* to ensure that all the data structure
+# pieces end up in the right place.
+CFLAGS=$(patsubst %,-fno-%,$(findstring zero-initialized-in-bss,$(shell $(CC) -v --help 2>&1)))
+
+SRCS=$(wildcard _Primitive_*.c _Class_*.c)
+OBJS=$(patsubst %.c,%.o,$(SRCS))
+# this is the name of the archive which will hold the native code for your
+# java proggie.  needs to be linked with a runtime implementation to make
+# a full executable.
+TARGET=Java.a
+TARGETOBJ=$(patsubst %.a,%.o,$(TARGET))
+
+all: $(TARGET)
+$(TARGET): $(TARGETOBJ)
+	$(AR) r $@ $?
+$(TARGETOBJ): $(OBJS)
+	$(LD) -r -o $@ $^
+clean:
+	$(RM) $(OBJS) $(TARGETOBJ)
+wipe: clean
+	$(RM) $(TARGET)
+.INTERMEDIATE: $(TARGETOBJ)

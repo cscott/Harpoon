@@ -1,0 +1,76 @@
+#!/bin/sh
+
+# Usage: run-java <class_name> <args>
+#
+# note that you can set JAVA=jdb to invoke the debugger with an identical
+# environment.
+
+# set FLEX_DIR
+. `dirname $0`/find-flex-dir
+
+# grab more java opts from the command line.
+while [ -n "$1" ]; do
+    case "$1" in
+    -D*) javaopts="$javaopts $1" ;;
+    *)   break ;;
+    esac
+    shift
+done
+
+# check java version
+optprefix=X
+if java -version 2>&1 | grep -q 'version "1.1'; then
+  echo "WARNING: YOU ARE USING JAVA 1.1. (JDK1.2 or above is preferred)" 1>&2
+  optprefix=""
+fi
+# ok.
+
+# you can set OPT_FLEX_SUPPORT_FILES to add additional support files: .jar/.zip
+if [ -n "$USE_SUN_JDK" ]; then
+    # use sun jdk in SupportNP.
+    javaopts="-Dharpoon.runtime1.sunjdk=true $javaopts"
+    FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/cpmath.jar ${FLEX_DIR}/Support/cpzip.jar ${FLEX_DIR}/Support/reflect-thunk.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip"
+else
+    # use GNU classpath.  First look for the CLASSPATH_HOME variable, which
+    # should specify a classpath CVS pull.
+    if [ -n "$CLASSPATH_HOME" -a -f "$CLASSPATH_HOME/lib/glibj.zip" ]; then
+	FLEX_SUPPORT_FILES="$CLASSPATH_HOME/lib/glibj.zip"
+    # Otherwise look for the classpath-config script on your path.
+    elif [ -n "$(which classpath-config)" ]; then
+	FLEX_SUPPORT_FILES="$(classpath-config --classpath)"
+    # okay, assume this is the debian 'classpath' package, then.
+    else
+	FLEX_SUPPORT_FILES="/usr/share/classpath/glibj.zip"
+    fi
+    for f in src/classpath/cpvm.jar src/java.lang.reflect/reflect-thunk.jar; do
+	if [ -f ${RUNTIME_DIR}/$f ]; then
+	    FLEX_SUPPORT_FILES="$RUNTIME_DIR/$f $FLEX_SUPPORT_FILES"
+	else
+	    FLEX_SUPPORT_FILES="$FLEX_DIR/Support/$(basename $f) $FLEX_SUPPORT_FILES"
+	fi
+    done
+    FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_SUPPORT_FILES}"
+fi
+
+# special case for realtime.jar: grab this from the Realtime directory.
+if [ -n "$REALTIME_DIR" -a -f ${REALTIME_DIR}/realtime.jar ]; then
+    FLEX_SUPPORT_FILES="$FLEX_SUPPORT_FILES ${REALTIME_DIR}/realtime.jar"
+fi
+
+for supp_file in ${FLEX_SUPPORT_FILES}; do
+    if [ ! -f $supp_file ]; then
+	echo Support file ${supp_file} missing!;
+	exit -1;
+    else
+	SUPP_FILES_PATH="${SUPP_FILES_PATH}:${supp_file}";
+    fi;
+done
+
+# you can set FLEXPATH to assign additional components to the harpoon classpath
+harpoonpath=${FLEXPATH}${FLEXPATH:+:}.${SUPP_FILES_PATH}
+
+if type -t cygpath > /dev/null ; then
+    harpoonpath=`cygpath -wp "$harpoonpath"`
+fi
+
+${JAVA:=java -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath "$@"

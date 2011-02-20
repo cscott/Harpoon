@@ -1,0 +1,165 @@
+--- /j/io/FileOutputStream.java	Mon Mar  6 23:14:03 2000
++++ FileOutputStream.java	Mon Mar  6 23:08:47 2000
+@@ -14,7 +14,7 @@
+ 
+ package java.io;
+ 
+-
++import harpoon.Analysis.ContBuilder.*;
+ /**
+  * A file output stream is an output stream for writing data to a 
+  * <code>File</code> or to a <code>FileDescriptor</code>. What files 
+@@ -103,6 +103,12 @@
+ 	}
+     }
+ 
++    public void makeAsync()
++    {
++    	NativeIO.makeNonBlockJNI(fd.fd);
++    }
++
++
+     /**
+      * Creates a file output stream to write to the file represented by 
+      * the specified <code>File</code> object. A new 
+@@ -178,6 +184,50 @@
+      * @exception  IOException  if an I/O error occurs.
+      */
+     public native void write(int b) throws IOException;
++    
++    public VoidContinuation writeAsync(int b) throws IOException
++    {
++    		int r= NativeIO.putCharJNI(fd.fd, b);
++    		switch(r)
++    		{
++    			case NativeIO.ERROR: throw new IOException();
++    			case NativeIO.TRYAGAIN: return new WriteAsyncC(b);
++    			default: return null;
++    		}
++    }
++
++	class WriteAsyncC extends VoidContinuation implements IOContinuation
++	{
++    public void exception(Throwable t) {}
++
++    private Continuation link;
++
++    public void setLink(Continuation newLink) { 
++	link= newLink;
++    }
++
++    public Continuation getLink() { 
++	return link;
++    }
++		int b;
++		
++		public WriteAsyncC(int b) { this.b= b; Scheduler.addWrite(this); }
++		public void resume()
++		{
++   			int r= NativeIO.putCharJNI(fd.fd, b);
++    			switch(r)
++    			{
++    				case NativeIO.ERROR: next.exception( new IOException() ); return;
++    				case NativeIO.TRYAGAIN:  Scheduler.addWrite(this); return;
++    				default: next.resume();
++    			} 
++			
++		}
++		
++		public FileDescriptor getFD() { return fd; }
++		
++	}
++    	
+ 
+     /**
+      * Writes a sub array as a sequence of bytes.
+@@ -198,6 +248,10 @@
+     public void write(byte b[]) throws IOException {
+ 	writeBytes(b, 0, b.length);
+     }
++    
++    public VoidContinuation writeAsync(byte b[]) throws IOException {
++    	return writeAsync(b, 0, b.length);
++    }
+ 
+     /**
+      * Writes <code>len</code> bytes from the specified byte array 
+@@ -211,6 +265,66 @@
+     public void write(byte b[], int off, int len) throws IOException {
+ 	writeBytes(b, off, len);
+     }
++    
++    public VoidContinuation writeAsync(byte b[], int off, int len) throws IOException
++    {
++		if (b == null) {
++	    		throw new NullPointerException();
++		} else if ((off < 0) || (off > b.length) || (len < 0) ||
++		   		((off + len) > b.length) || ((off + len) < 0)) {
++	    				throw new IndexOutOfBoundsException();
++		} else if (len == 0) return null;
++
++	    	int r= NativeIO.writeJNI(fd.fd, b, off, len);
++    	
++		if (r<0) throw new IOException();
++		if (r<len)
++		{
++			return new WriteAsync2C(b, off+r, len-r);
++		}
++		return null;
++    }
++    
++    class WriteAsync2C extends VoidContinuation implements IOContinuation {
++    public void exception(Throwable t) {}
++
++    private Continuation link;
++
++    public void setLink(Continuation newLink) { 
++	link= newLink;
++    }
++
++    public Continuation getLink() { 
++	return link;
++    }
++
++    		byte b[];
++    		int off, len;
++    		
++    		public WriteAsync2C(byte b[], int off, int len)
++    		{
++    			this.b= b;
++    			this.off= off;
++    			this.len= len;
++    			Scheduler.addWrite(this);
++    		}
++    		
++    		public void resume()
++    		{
++    			int r= NativeIO.writeJNI(fd.fd, b, off, len);
++    			
++    			if (r<0) next.exception(new IOException());
++    			if (r<len)
++    			{
++    				off+= r;
++    				len-= r;
++    				Scheduler.addWrite(this);
++    			} else next.resume();
++    		}
++    			
++		public FileDescriptor getFD() { return fd; }
++		
++    }
+ 
+     /**
+      * Closes this file output stream and releases any system resources 
+@@ -261,3 +375,11 @@
+     }
+ 
+ }
++
++
++
++
++
++
++
++

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+SCR_DIR=`dirname $0`
+
+source ${SCR_DIR}/check-HARPOON
+
+# the name of the application
+name=$1
+
+# the directory where all the .c files are
+dir=$2
+
+
+rm -f $dir/Java.a ${HARPOON_DIR}/Runtime/${name}-Java.a && \
+make -C $dir CC="gcc -I${HARPOON_DIR}/Runtime/include -g" && \
+rm -f $dir/*.o && \
+mv -f $dir/Java.a ${HARPOON_DIR}/Runtime/${name}-Java.a && \
+make -C ${HARPOON_DIR}/Runtime run${name} && \
+rm -f ${HARPOON_DIR}/Runtime/${name}-Java.a && \
+mv -f ${HARPOON_DIR}/Runtime/run${name} $dir;

@@ -1,0 +1,33 @@
+#!/bin/sh
+
+SCR_DIR=`dirname $0`
+
+source ${SCR_DIR}/elim_common
+
+HARPOON_OPTIONS=" -mx512m -oss100m \
+    	          -Dharpoon.alloc.strategy=bdw \
+                  -Dharpoon.class.path=$stdPath:$dir"
+
+#		  -Dharpoon.runtime=2 \
+#    	          -Dharpoon.target.elf=yes \
+
+BUILD_OUT_DIR=${CALL_DIR}/none/${name}.none
+
+rm -rf ${BUILD_OUT_DIR} 
+mkdir ${BUILD_OUT_DIR}
+
+if test $cls = "java_cup.main"
+then
+    SAMAIN_OPTIONS="-r ${FLEX_DIR}/Support/locale-root-set "
+fi
+
+echo "pwd="`pwd`
+echo "HARPOON_OPTIONS="${HARPOON_OPTIONS}
+
+java \
+    ${HARPOON_OPTIONS} \
+harpoon.Main.SAMain \
+    ${SAMAIN_OPTIONS} \
+    -c $cls -bprecisec -o ${BUILD_OUT_DIR}
+
+exit $?

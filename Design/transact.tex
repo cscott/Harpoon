@@ -1,0 +1,531 @@
+% -*-latex-*- This is a LaTeX document.
+% $Id: transact.tex,v 1.24 2003-11-09 20:19:59 cananian Exp $
+\documentclass[11pt,notitlepage]{article}
+\usepackage[section,plain]{algorithm} % algorithm environment
+\usepackage{alltt} % alltt environment
+\usepackage{amstext} % the \text command for math mode
+\usepackage{comdef} % common definitions
+\usepackage{pdffonts} % PDF-friendly fonts
+\author{C.~Scott~Ananian}
+\title{Software Atomic Transactions in FLEX}
+\date{\today \\ $ $Revision: 1.24 $ $}
+
+% this is handy when talking about structure member references.
+\newcommand{\ptr}{\code{->}}
+% how big should code listings be?
+\newcommand{\codesize}{\scriptsize}
+
+\begin{document}
+\bibliographystyle{abbrv}
+\maketitle
+\section{Data Structures}
+
+Transaction support uses the same ``inflated object'' extension
+mechanism which is used for thread synchronization, clustered heaps,
+JNI data, and finalization for certain garbage collectors.
+The basic object data structure, as shown in figure \ref{fig:oobj}, is
+unchanged, although fields containing the specified
+\texttt{FLAG\_VALUE} have different semantics.  The flag value is used
+to indicate that the field value is ``not here''; that is, the code
+must consult the transaction information to find the field's current
+value.  This happens very rarely even when no transaction is
+associated with the object; Shasta \cite{scales96:shasta} has shown that the
+overhead entailed by such ``false'' transactions is expected to be
+extremely low.
+
+The ``inflated object'' data structure, shown in figure
+\ref{fig:infl}, has an ``object versions'' linked list associated with
+it.  Each entry conceptually stores information about a different,
+possibly-uncommitted, version of the object.  One of these versions is
+guaranteed to be ``most recent committed'', and it is guaranteed that
+the ``most recent committed'' version will be the first committed
+version in the list.
+
+The commit record structure is shown in figure \ref{fig:commitrec}.
+The pointer to the commit record also serves as a transaction
+identifier.  Transactions can be nested, therefore every commit record
+may contain a pointer to a ``parent'' transaction which it is
+dependent upon.  The commit record also contains a three-value
+``state'' field which indicates whether the transaction it represents
+has been committed or aborted yet.
+
+The ``object version'' structure, shown in figure
+\ref{fig:version}, is similar to the object structure shown in
+figure \ref{fig:oobj} so that field pointers can be converted easily.
+Each \texttt{vinfo} structure identifies an object version which is
+associated with a particular transaction (via \code{transid}) which
+has mutated the object.  Readers are associated with each mutated
+version using the \texttt{readers} list, which is inlined to avoid an
+extra memory dereference in the hot path through \code{ReadTrans}
+(figure \ref{fig:readtrans}).
+
+Subtransactions cause a possible race condition when traversing the
+versions list.  The parent of each subtransaction will have a separate
+``pre-subtransaction'' version entry in order to allow retrying an
+aborting subtransaction.  A non-transactional reader may examine the
+subtransaction and find that it is still waiting and move on to the
+next item in the versions list, which will be the subtransaction's
+parent.  But if both the subtransaction and then its parent are then
+committed before the non-transactional reader proceeds, it may
+erroneously fetch the ``pre-subtransaction'' version of the
+now-committed parent instead of the correct version associated with
+the newly-committed subtransaction.
+
+To prevent this race, there are two ``next'' fields for the versions
+list.  The \code{anext} field is followed if the version's transaction
+has been aborted.  This allows correct fail back to the parent
+transaction's version in this case.  However, if the version's
+transaction is in the \code{WAITING} state (review figure
+\ref{fig:commitrec}), we skip examining its parent transaction(s),
+avoiding the possible race, by following the \code{wnext} field.
+
+\begin{figure}
+\begin{alltt}\codesize
+/* the oobj structure tells you what's inside the object layout. */
+struct oobj \{
+  struct claz *claz;
+  /* if low bit is one, then this is a fair-dinkum hashcode. else, it's a
+   * pointer to a struct inflated_oobj. this pointer needs to be freed
+   * when the object is garbage collected, which is done w/ a finalizer. */
+  union \{ ptroff_t hashcode; struct inflated_oobj *inflated; \} hashunion;
+\textbf{#ifdef WITH_TRANSACTIONS
+#define FLAG_VALUE 0xCACACACA
+  /* consult transaction to determine value of any field with FLAG_VALUE */
+#endif}
+  /* fields below this point */
+  char field_start[0];
+\};
+\end{alltt}
+\caption{The object structure in the FLEX runtime.}
+\label{fig:oobj}
+\end{figure}
+\begin{figure}
+\begin{alltt}\codesize
+/* the inflated_oobj structure has various bits of information that we
+ * want to associate with *some* (not all) objects. */
+struct inflated_oobj \{
+  ptroff_t hashcode; /* the real hashcode, since we've booted it */
+  void *jni_data; /* information associated with this object by the JNI */
+  void (*jni_cleanup_func)(void *jni_data);
+\textbf{  int use_count; /* determines when we can deflate the object */
+  /* TRANSACTION SUPPORT */
+#if WITH_TRANSACTIONS
+  struct vinfo *first_version; /* linked list of object versions */
+#endif}
+  /* locking information */
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+  pthread_t tid; /* can be zero, if no one has this lock */
+  jint nesting_depth; /* recursive lock nesting depth */
+  pthread_mutex_t mutex; /* simple (not recursive) lock */
+  pthread_cond_t  cond; /* condition variable */
+  pthread_rwlock_t jni_data_lock; /*read/write lock for jni_data field, above*/
+#endif
+#ifdef WITH_CLUSTERED_HEAPS
+  struct clustered_heap * heap;
+  void (*heap_release)(struct clustered_heap *);
+#endif
+#ifdef BDW_CONSERVATIVE_GC
+  /* for cleanup via finalization */
+  GC_finalization_proc old_finalizer;
+  GC_PTR old_client_data;
+#endif
+\};
+\end{alltt}
+\caption{The ``inflated object'' structure in the FLEX runtime.
+         Fields specific to transaction support are in boldface.}
+\label{fig:infl}
+\end{figure}
+
+\begin{figure}
+\begin{alltt}\codesize
+#if WITH_TRANSACTIONS
+/* A simple linked list of transaction identifiers. */
+struct tlist \{
+  struct commitrec *transid; /* transaction id */ 
+  struct tlist *next; /* next version. */
+\};
+
+/* The vinfo structure provides values for a given version of the object. */
+struct vinfo \{
+  struct commitrec *transid; /* transaction id */ 
+  struct tlist readers; /* list of readers.  first node is inlined. */
+  struct vinfo *anext; /* next version to look at if transid is aborted. */
+  struct vinfo *wnext; /* next version to look at if transid is waiting. */
+  /* fields below this point */
+  char field_start[0];
+\};
+#endif
+\end{alltt}
+\caption{The ``version'' structure in the FLEX runtime.}
+\label{fig:version}
+\end{figure}
+
+\begin{figure}
+\begin{alltt}\codesize
+#if WITH_TRANSACTIONS
+/* The commit record for a (possibly nested) transaction */
+struct commitrec \{
+  /* The transaction that this depends upon, if any. */
+  struct commitrec *parent;
+  /* The 'state' should be initialized to W and write-once to C or A. */
+  enum \{ WAITING=0, COMMITTED, ABORTED \} state;
+\};
+#endif
+\end{alltt}
+\caption{Commit record structure.}
+\label{fig:commitrec}
+\end{figure}
+
+These data structures allow a single-writer multiple-readers
+transaction consistency scheme to be implemented.  To avoid polling
+where possible, our transactions prefer committing suicide to aborting
+another transaction when consistency only allows a single outstanding
+transaction.  At the end of every versions list we guarantee there is
+at least one committed transaction.  Other ordering is also preserved
+in the list: for every \code{vinfo} structure $v$,
+$v\ptr\code{transid}$ is a subtransaction of
+$v\ptr\code{anext}\ptr\code{transid}$ and \emph{not} a subtransaction of
+$v\ptr\code{wnext}\ptr\code{transid}$.  Every reader is a
+subtransaction of every writer; formally, for every reader $r$ in
+$v\ptr\code{readers}$, $r\ptr\code{transid}$ is a subtransaction of
+$v\ptr\code{transid}$.  Finally, to enforce consistency, there are
+never any non-aborted readers of $v$'s parent transaction which are
+subtransactions of $v$; that is, for all readers $r$ in
+$v\ptr\code{anext}\code{readers}$, $v\ptr\code{transid}$ is a
+subtransaction of $r\ptr\code{transid}$ (and not the other way
+around), unless $r\ptr\code{transid}$ has been aborted.
+
+\section{Algorithms}
+
+Blah blah blah
+
+\begin{figure}
+$\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
+\begin{myalgorithmic}
+\STATE $x \gets o\ptr \code{field}[n]$
+\IF{$x = \code{FLAG\_VALUE}$}
+
+\STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\STATE $u \gets 0$ \COMMENT{count uncommitted transactions}
+\LOOP
+  \ASSERT $v \neq \code{null}$
+  \MATCHING{$\text{StateP}''(v)$}
+   \CASE{\code{COMMITTED}}
+    \ASSERT \small$\forall n,\: o \ptr \code{field}[n]=\code{FLAG\_VALUE}
+             \Rightarrow  v \ptr \code{field}[n] \text{ is valid }$
+    \BREAK \textbf{loop}
+   \ENDCASE
+   \CASE{\code{ABORTED}}
+    \STATE $v \gets v\ptr\code{anext}$
+   \ENDCASE
+   \CASE{\code{WAITING}}
+    \STATE $u \gets u + 1$
+    \STATE $v \gets v \ptr \code{wnext}$
+   \ENDCASE
+  \ENDMATCHING
+\ENDLOOP*
+\STATE $x \gets v \ptr \code{field}[n]$
+\IF{$u=0 \wedge x \neq \code{FLAG\_VALUE}$}
+%  \STATE \COMMENT{XXX: race here}
+  \STATE $o \ptr \code{field}[n] \gets x$ \COMMENT{store must be atomic}
+  \STATE $\code{dec\_use}(o)$
+         \COMMENT{will deflate when all fields are copied back}
+\ENDIF
+\ENDIF
+\RETURN $x$
+\end{myalgorithmic}
+\caption{Algorithm for non-transactional read of a field.}
+\label{fig:readnotrans}
+\end{figure}
+
+\begin{figure}
+$\text{Write}(\code{struct oobj *} o, \code{int } n,
+              \code{<ty> } x)$ =
+\begin{myalgorithmic}
+\IF{$o\ptr\code{field}[n] = \code{FLAG\_VALUE}$}\label{line:wL1}
+  \IF[try to avoid aborting anything]{$\text{PossiblyDownGrade}(o, n)$}
+    \GOTO line \ref{line:wL1}
+  \ENDIF
+  \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+  \WHILE{$\text{AbortTransaction}(v\ptr\code{transid}) \neq \code{COMMITTED}$}
+    \STATE \COMMENT{prune list for the sake of writes w/o intervening reads}
+%    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+    \STATE $v \gets v\ptr\code{anext}$
+    \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
+            \gets v$
+  \ENDWHILE
+  \STATE \COMMENT{v is a committed transaction}
+  \STATE $v\ptr\code{anext} \gets v\ptr\code{wnext} \gets \code{null}$
+         \COMMENT{atomic stores}
+  \STATE \COMMENT{abort all readers of this committed transaction}
+  \STATE $r \gets \code{\&}(v\ptr\code{readers})$
+  \WHILE{$r \neq \code{null}$}
+    \STATE $\text{AbortTransaction}(r\ptr\code{transid})$
+    \STATE $r \gets r\ptr\code{next}$
+  \ENDWHILE
+\ELSIF{$x = \code{FLAG\_VALUE}$}
+%  \STATE \COMMENT{XXX: define CreateNewVersion (watch those races)}
+% when we define CreateNewVersion, we'll need: o\ptr\code{claz}\ptr\code{size}
+  \STATE $v \gets \text{CreateNewVersion}(o, \code{null}, o)$
+\ELSE
+  \STATE $v \gets o$
+\ENDIF
+\STATE $v\ptr\code{field}[n] \gets x$
+\end{myalgorithmic}
+\caption{Algorithm for non-transactional write of a field.}
+\label{fig:writenotrans}
+\end{figure}
+
+\begin{figure}
+$\text{ReadTrans}(\code{struct commitrec *}c, 
+                  \code{struct oobj *} o, \code{int } n)$~=
+\begin{myalgorithmic}
+\STATE $\code{InflateObject}(o)$
+\STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\IF{$v = \code{null}$}
+  \STATE $v \gets \text{CreateNewVersion}(o, \code{null}, o)$
+\ENDIF
+\STATE $r \gets \code{\&}(v\ptr\code{readers})$\label{line:rtL2}
+
+\REPEAT
+  \IF{$r\ptr\code{transid} = c$}
+    \GOTO line \ref{line:rtL1}
+  \ENDIF
+  \STATE $r \gets r\ptr\code{next}$
+\UNTIL{$r = \code{null}$}
+
+\MATCHING{$\text{StateP}''(v)$}
+  \CASE{\code{ABORTED}}
+    \STATE $v \gets v\ptr\code{anext}$
+    \GOTO line \ref{line:rtL2}
+  \ENDCASE
+  \CASE{\code{COMMITTED}}
+    \GOTO line \ref{line:rtL3}
+  \ENDCASE
+  \CASE{\code{WAITING}}
+    \STATE\COMMENT{abort unless $c$ is a non-aborted subtransaction
+                   of $v\ptr\code{transid}$}
+    \IFNOT{$\text{IsNAST}(c, v)$}
+      \IF{$\text{PossiblyDownGrade}(o, n)$}
+        \GOTO line \ref{line:rtL2} \COMMENT{last chance for life}
+      \ELSE
+        \STATE commit suicide \COMMENT{can't guarantee consistency}
+      \ENDIF
+    \ENDIF
+    \GOTO line \ref{line:rtL3}
+  \ENDCASE
+\ENDMATCHING
+\STATE add $c$ to head of readers list, atomically.\label{line:rtL3}
+
+\STATE \COMMENT{$v$ has correct version} \label{line:rtL1}
+
+\IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
+%  \STATE \COMMENT{XXX: race here, most likely}
+  \STATE copy current value somewhere (how far over?)
+  \STATE $\code{inc\_use}(o)$
+  \STATE $o\ptr\code{field}[n] \gets \code{FLAG\_VALUE}$
+%  \STATE \COMMENT{XXX: even if this transaction is aborted now, we
+%                  still register a dependency on this field.}
+\ENDIF
+\RETURN $v\ptr\code{field}[n]$
+\end{myalgorithmic}
+\caption{Algorithm for transactional read of a field.}
+\label{fig:readtrans}
+\end{figure}
+
+\begin{figure}
+$\text{WriteTrans}(\code{struct commitrec *}c, 
+                   \code{struct oobj *} o, \code{int } n,
+                   \code{<ty> } x)$~=
+\begin{myalgorithmic}
+\STATE $\code{InflateObject}(o)$
+\STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\IF{$v = \code{null}$}
+  \STATE $v \gets \text{CreateNewVersion}(o, c, o)$
+\ELSIF{$v\ptr\code{transid} \neq c$}\label{line:wtL1}
+  \MATCHING{$\text{StateP}''(v)$}
+    \CASE{\code{ABORTED}}
+      \STATE $v \gets v\ptr\code{anext}$
+      \GOTO line \ref{line:wtL1}
+    \ENDCASE
+    \CASE{\code{COMMITTED}}
+      \GOTO line \ref{line:wtL2}
+    \ENDCASE
+    \CASE{\code{WAITING}}
+      \STATE\COMMENT{abort unless $c$ is a non-aborted subtransaction
+                     of $v\ptr\code{transid}$}
+      \IFNOT{$\text{IsNAST}(c, v)$}
+        \IF{$\text{PossiblyDownGrade}(o, n)$}
+          \GOTO line \ref{line:rtL2} \COMMENT{last chance for life}
+        \ELSE
+          \STATE commit suicide \COMMENT{can't guarantee consistency}
+        \ENDIF
+      \ENDIF
+      \GOTO line \ref{line:wtL2}
+    \ENDCASE
+  \ENDMATCHING
+  \STATE kill some of the readers\label{line:wtL2}
+  \STATE $v \gets \text{CreateNewVersion}(o, c, v)$
+\ENDIF
+\STATE \COMMENT{$v$ has correct version}
+
+\IF{$o\ptr\code{field}[n] \neq \code{FLAG\_VALUE}$}
+  \STATE watch for races here
+  \STATE copy current value somewhere (how far over?)
+  \STATE $\code{inc\_use}(o)$
+  \STATE $o\ptr\code{field}[n] \gets \code{FLAG\_VALUE}$
+\ENDIF
+\STATE $v\ptr\code{field}[n] \gets x$
+\end{myalgorithmic}
+\caption{Algorithm for transactional write of a field.}
+\label{fig:writetrans}
+\end{figure}
+
+\begin{figure}
+$\text{StateP}(\code{struct commitrec *} c)$ =
+\begin{myalgorithmic}
+\LOOP
+  \IF{$c = \code{null}$}
+    \RETURN \code{COMMITTED}
+  \ENDIF
+  \STATE $s \gets c \ptr\code{state}$
+         \COMMENT{cache this read to prevent races}
+  \IF{$s \neq \code{COMMITTED}$}
+    \RETURN $s$
+  \ENDIF
+  \STATE $c \gets c \ptr \code{parent}$
+\ENDLOOP*
+\end{myalgorithmic}
+\caption{Simple algorithm for determining transaction status.}
+\label{fig:statep}
+\end{figure}
+
+\begin{figure}
+$\text{StateP}'(\code{struct commitrec **} c_p)$ =
+\begin{myalgorithmic}
+\STATE $c \gets \code{*}c_p$
+\STATE $s \gets \code{COMMITTED}$
+\STATE $l \gets \code{false}$
+\WHILE{$c \neq \code{null}$}
+  \STATE $s \gets c\ptr\code{state}$ \COMMENT{atomic}
+  \IF{$s \neq \code{COMMITTED}$}
+    \BREAK
+  \ENDIF
+  \STATE $c \gets c \ptr \code{parent}$
+  \STATE $l \gets \code{true}$
+\ENDWHILE
+\IF[$l$ indicates a change has been made]{$l$}
+  \STATE $\code{*}c_p \gets c$ \COMMENT{atomic}
+\ENDIF
+\RETURN $\tuple{s,l}$
+\end{myalgorithmic}
+\caption{Improved algorithm for determining transaction status ---
+         does pruning.}
+\label{fig:statepprime}
+\end{figure}
+
+\begin{figure}
+$\text{StateP}''(\code{struct vinfo *} v)$ =
+\begin{myalgorithmic}
+\MATCHING{$\text{StateP}'(\code{\&}(v\ptr\code{transid}))$}
+  \CASE{\tuple{\code{ABORTED}, l}}
+%    \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+    \STATE \COMMENT{the following store ought to be atomic}
+    \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
+            \gets v\ptr\code{anext}$
+    \RETURN \code{ABORTED}
+  \ENDCASE
+  \CASE{\tuple{\code{COMMITTED}, l}}
+    \STATE \COMMENT{these stores should be atomic (but no one will read them)}
+    \STATE \COMMENT{this might be better done by the gc}
+    \STATE $v\ptr\code{anext} \gets v\ptr\code{wnext} \gets \code{null}$
+    \RETURN \code{COMMITTED}
+  \ENDCASE
+  \CASE{\tuple{\code{WAITING}, l}}
+    \IF[transid was pruned; snip out parents]{$l$}
+      \WHILE{$v\ptr\code{transid} = v\ptr\code{anext}\ptr\code{transid}$}
+        \STATE $v\ptr\code{anext} \gets v\ptr\code{anext}\ptr\code{anext}$
+%               \COMMENT{XXX: race here.}
+      \ENDWHILE
+    \ENDIF
+    \RETURN \code{WAITING}
+  \ENDCASE
+\ENDMATCHING
+\end{myalgorithmic}
+\caption{Even better pruning algorithm for determining transaction status.}
+\label{fig:statepprimeprime}
+\end{figure}
+
+\begin{figure}
+$\text{AbortTransaction}(\code{struct commitrec *} c)$ =
+\begin{myalgorithmic}
+\IF{$c = \code{null}$}
+  \RETURN \code{COMMITTED}
+\ENDIF
+\LOOP
+  \STATE $s \gets c\ptr\code{state}$
+  \IF{$s \neq \code{WAITING}$}
+    \RETURN $s$
+  \ENDIF
+  \STATE $\code{compare\_and\_swap}(\&c\ptr\code{state}, s, \code{ABORTED})$
+         \label{line:abort}
+\ENDLOOP*
+\end{myalgorithmic}
+\caption{Algorithm for (possibly) aborting a transaction.
+         Change the constant \code{ABORTED} in line \ref{line:abort}
+         to \code{COMMITTED} to obtain the \code{CommitTransaction} algorithm.}
+\label{fig:aborttrans}
+\end{figure}
+
+\begin{figure}
+$\text{IsNAST}(\code{struct commitrec *}c_s,\code{struct vinfo *}v)$ =
+\begin{myalgorithmic}
+\STATE $c_p \gets v\ptr\code{transid}$
+\IF{$c_s \neq c_p$}
+  \IF{$c_p \neq \code{null} \wedge c_p\ptr\code{state} = \code{COMMITTED}$}
+     \label{line:nast0}
+    \REPEAT
+      \STATE $c_p \gets c_p\ptr\code{parent}$
+    \UNTIL{$c_p = \code{null} \vee c_p\ptr\code{state} \neq \code{COMMITTED}$}
+          \label{line:nast1}
+    \STATE $v\ptr\code{transid} \gets c_p$ \COMMENT{atomic}
+    \STATE check to see whether successor needs to be pruned.
+  \ENDIF
+  \IF[committed all the way down]{$c_p = \code{null}$}
+    \STATE $v\ptr\code{anext} \gets v\ptr\code{wnext} \gets \code{null}$
+           \COMMENT{prune}
+  \ELSIF{$c_p\ptr\code{state} = \code{ABORTED}$}\label{line:nast2}
+    \RETURN \code{false} \COMMENT{$c_s$ either not subtrans, or is aborted.}
+  \ELSE
+    \STATE\COMMENT{the possible WAITING-becomes-COMMITTED race}
+    \STATE\COMMENT{between l.\ref{line:nast0}/l.\ref{line:nast1} and l.\ref{line:nast2} is not harmful.}
+    \WHILE{$c_s \neq c_p$}
+      \IF{$c_s\ptr\code{state} = \code{ABORTED}$}
+        \RETURN \code{false} \COMMENT{aborted}
+      \ENDIF
+      \STATE $c_s \gets c_s\ptr\code{parent}$
+      \IF{$c_s = \code{null}$}
+        \RETURN \code{false} \COMMENT{not a subtransaction}
+      \ENDIF
+    \ENDWHILE
+  \ENDIF
+\ENDIF
+\RETURN $(\text{StateP}(c_s) \neq \code{ABORTED})$
+\end{myalgorithmic}
+\caption{Algorithm for determining whether $c_s$ is a non-aborted
+         subtransaction of $v\ptr\code{transid}$}
+\label{fig:isnast}
+\end{figure}
+
+%% XXX: separate transactions?  parallel subtransactions?
+%% XXX: can I have two reads outstanding on an object? (yes?)
+
+%\begin{figure}
+%\begin{alltt}\codesize
+%\end{alltt}
+%\caption{}
+%\label{fig:}
+%\end{figure}
+
+\bibliography{harpoon}
+\end{document}

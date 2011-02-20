@@ -1,0 +1,96 @@
+Opcode classification:
+
+ARRAY OPERATIONS:
+  aaload,aastore,anewarray,arraylength,baload,bastore,caload,castore,
+  daload,dastore,faload,fastore,iaload,iastore,laload,lastore,
+  multianewarray,newarray,saload,sastore,
+PUSH CONSTANT: [LET]
+  aconst_null,bipush,dconst_<d>,fconst_<f>,iconst_<i>,lconst_<l>,
+  ldc,ldc_w,ldc2_w,sipush,
+RETURN (optional value): [RETURN]
+  areturn,dreturn,freturn,ireturn,lreturn,return,
+LOAD: [LET]
+  aload,aload_<n>,dload,dload_<n>,fload,fload_<n>,iload,iload_<n>,
+  lload,lload_<n>,
+STORE: [LET]
+  astore,astore_<n>,dstore,dstore_<n>,fstore,fstore_<n>,istore,istore_<n>,
+  lstore,lstore_<n>,
+EXPANDED:
+  checkcast -- if (!(obj instanceof class)) then throw ClassCastException
+  comparisons should be made canonical.
+  iinc - expand to iload,bipush,iadd,istore
+  lookupswitch,tableswitch -- if() expressions.
+  nop - discard.
+  pop,pop2,swap - no effect other than on internal stack representation.
+UNSUPPORTED:
+  athrow,jsr,jsr_w,ret - exception-using code should be rewritten. [TRY/RETURN]
+  wide - should never show up.
+OP_CONVERT: [OPER]
+  d2f,d2i,d2l,f2d,f2i,f2l,i2b,i2c,i2d,i2f,i2l,i2s,l2d,l2f,l2i,
+OP_MATH: [OPER]
+  dadd,ddiv,dmul,dneg,drem,dsub,fadd,fdiv,fmul,fneg,frem,fsub,
+  iadd,iand,idiv,imul,ineg,ior,irem,ishl,ishr,isub,iushr,ixor,
+  ladd,land,ldiv,lmul,lneg,lor,lrem,lshl,lshr,lsub,lushr,lxor,
+OP_CMP: [OPER]
+  dcmp<op>,fcmp<op>,lcmp,
+FUNKY STACK OPS: (treat as LET,but disentangle from long variable brokenness)
+  dup,dup_x1,dup_x2,dup2,dup2_x1,dup2_x2,
+REFERENCE_COMPARISONS: [special case of OPER?]
+  if_acmp<cond>,ifnonnull,ifnull,instanceof,
+FIELD_ACCESS: [GET/SET]
+  getfield,getstatic,putfield,putstatic,
+METHOD_ACCESS: [CALL]
+  invokeinterface,invokespecial,invokestatic,invokevirtual,
+UNCONDITIONAL BRANCH: [JMP]
+  goto,goto_w,
+CONDITIONAL BRANCH: (canonicalize) [CJMP] <- zero test.
+  if_icmp<cond>,if<cond>
+MONITOR: -- make explicit for synchronized methods, too. [MONITOR]
+  monitorenter,monitorexit
+NEW: [NEW]
+  new,
+
+--- it will be useful to have mov instructions, too,
+    although they can be special case OPs.
+-----------
+Goals: flexible type system, so that all ops can be treated uniformly.
+arrays and objects are the exception.
+Arrays are problematic.  We would eventually like to unroll
+  constant-size arrays, although we may never support dynamically-sized
+  arrays.
+-----------
+Do we want to create an ir representation of throw/etc so that we can
+perform the rewrite in the IR? [probably not, but going from bytecode to
+IR to bytecode can be a useful sanity check on the basic conversion
+process.]
+----------
+Array representation:
+Would like pseudo-field length (public static final int), and
+pseudo-methods <init>, set(i, obj), get(i).
+Constructor is given N integer arguments, where 
+ 1<=N<=# of dimensions of the array class.  Each argument codes for a size.
+new [[I(10)  is equivalent to new Int[10][];
+new [[F(1,2) is equivalent to new Float[1][2];
+>> from 'The Java Language Specification' section 10.7:
+> An array thus has the same methods as the following class:
+>
+>class A implements Cloneable {
+>        public final int length = X;
+>        public Object clone() {
+>                try {
+>                        return super.clone();
+>                } catch (CloneNotSupportedException e) {
+>                        throw new InternalError(e.getMessage());
+>                }
+>        }
+>}
+
+The standard java.lang.Class interface does not show the clone() method,
+nor the length field, nor the Cloneable interface.
+We show these, PLUS two other methods:
+
+public <componentType> get(int index) 
+	throws ArrayIndexOutOfBoundsException;
+public void set(int index, <componentType> value) 
+	throws ArrayIndexOutOfBoundsException;
+-------------------------------------------------------

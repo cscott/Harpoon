@@ -1,0 +1,1702 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<!-- SCCS @(#)cstackcheck.html	1.3 00/11/27 -->
+<HTML>
+<HEAD>
+     <TITLE>The C Stack Check</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#000077" ALINK="#FF0000">
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR>
+<TD>
+&nbsp;
+<br>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="gc.html">Prev</a> | <a href="hpiref.html">Next</a>
+</font></TD>
+
+<TD align="right">
+J2ME CDC 1.0
+<br>Porting Guide
+</TD>
+</TR>
+</TABLE>
+
+<HR SIZE=2 NOSHADE>
+
+<!-- ====================== Body text begins here ====================== -->
+
+<H1>The C Stack Check</H1></FONT><FONT color=blue>
+
+<P><FONT color=blue>
+<H2>Table of Contents</H2></FONT>
+<UL>
+  <LI><A href="#introduction">Introduction</A> 
+  <LI><A href="#define">Calculate C stack redzones for C stack check in CVM</A> 
+  <LI><A href="#used">C stack redzone check in CVM</A> 
+  <LI><A href="#append1">C stack redzone values</A> 
+  <LI><A href="#append2">List the worst case of stack usage chain that affects 
+  the C stack redzone calculation</A> 
+  <UL>
+    <LI><A href="#interpreter">Interpreter Loop</A> 
+    <LI><A href="#interface">Implement Interface</A> 
+    <LI><A href="#classload">Class Lookup in Class Loader</A> 
+    <LI><A href="#classlink">Class Link</A> 
+    <LI><A href="#formatpc">Format String from PC</A> 
+    <LI><A href="#formatobject">Format String from Object</A> 
+    <LI><A href="#classverify">Class Verifier</A> 
+    <LI><A href="#signalerror">Signal Exception message</A> </LI>
+	</UL></LI>
+</UL>
+
+<hr>
+<a name=introduction></a>
+<H2>Introduction</H2></FONT>
+<P>The usage of the native stack in CVM can overrun when a function has a 
+recursive invocation such as the bytecode interpreter loop, class loading, and 
+class verifier. Running CVM on target devices that have less memory available 
+<FONT color=red>and</FONT> the underlying OS may not have MMU support needs to take into account  
+native stack management to avoid stack overflow situation. 
+
+<P>CVM cannot take the same approach as the JDK<FONT color=red> does</FONT>, in which large memory area is 
+reserved for the native stack. To ensure system robustness against C stack overflow 
+situations caused by tight C stacks, an extensive static analysis of the 
+native codes in CVM and the supporting libraries is performed. 
+A dynamic C stack 
+<FONT color=red>check is introduced</FONT> at the points where recursive function calls can happen. 
+As a result, <FONT color=red>CVM</FONT> guarantees that a C stack overflow failure is detected 
+<FONT color=red>so that </FONT>a StackOverflowError is thrown when a C stack check notifies that 
+insufficient native stack space is available <FONT color=red>and </FONT>a potential memory 
+
+corruption caused by native stack overflow is eliminated. 
+
+<P><FONT color=red>CVM native codes are statically analyzed </FONT>to identify where recursive 
+call cycles occur, <FONT color=red>sum</FONT> up stack use in any given call cycles, 
+and <FONT color=red>eliminate </FONT>call 
+cycles as much as possible. As a result, the worst case of stack usage 
+<FONT color=red>called stack redzone</FONT>
+required by the recursive function calls <FONT color=red>is used by</FONT> a redzone check in the C 
+stack check routine called <FONT color=red><TT>CVMCStackCheckSize</TT></FONT>. The C stack 
+check codes on a cycle <FONT color=red>determine</FONT> whether another invocation of the cycle 
+can continue execution with sufficient native stack size left. This redzone 
+(worst case of stack usage)  size <FONT color=red>is used</FONT> to find out the 
+available stack size for next function invocation in the cycle at execution 
+time. When the native stack is insufficient to continue execution, CVM throws a 
+<tt>StackOverflowError</tt>. 
+
+<hr>
+<A name=define><FONT color=blue>
+<H2>Calculate C stack redzones for C stack check in CVM</H2></FONT>
+
+<P><FONT color=red>The CVM stack usage is statically analyzed</FONT> to identify the recursive 
+functions and <FONT color=red>calculate</FONT> the worst case C stack redzone values for each 
+recursive function. All CVM programs written in C are first compiled into 
+platform-specific assembly codes by the GNU C compiler. All indirect function calls, 
+such as JNI function invocation through the function pointers and other function 
+invocations through function pointers in CVM programs, are resolved and mapped 
+into direct function calls to assist the <FONT color=red>static stack analysis</FONT>. 
+The mapping information can be 
+found in file <A href="http://spiro/~lchow/impllist"><I>impllist</I></A> and 
+file <A href="http://spiro/~lchow/stublist"><I>stublist</I></A>. 
+</p>
+<p><b>Note:</b> In 
+<I>stublist</I>, a function named <TT>CVM_worst_case_psuedo_method</TT> is a 
+link between <TT>CVMjniInvokeNative</TT> and all of the JNI functions in the JNI 
+vector table and the JVMDI vector table. It is also a link between 
+<TT>ansiJavaMain</TT> and all of the JNI functions defined in the JNI vector table 
+for the code outside the VM calling into JNI functions. The worse case stack 
+usage for a JNI call <FONT color=red>cycle from calling <TT>CVM_worst_case_psuedo_method</TT>
+to a JNI call</FONT> is 
+assumed to be 3K bytes<FONT color=red>, and the same is true for all call cycles that end with
+OS and C library functions.</FONT>
+
+<P>There are nine functions that have recursive invocation paths. 
+
+<PRE> (1)    CVMgcUnsafeExecuteJavaMethod
+ (2)    CVMimplementsInterface
+ (3)    classlookup:CVMclassLookupFromClassLoader
+ (4)    CVMclassLink
+ (5)    utils:CVMCstackDummy2CVMformatStringVaList
+ (6)    utils:CVMCstackDummy2CVMconsolePrintf
+ (7)    utils:CVMCstackDummy2CVMobjectGetHashSafe
+ (8)    verifycode:CVMCstackDummy2merge_fullinfo_types
+ (9)    CVMsignalErrorVaLisT
+</PRE>
+
+Three recursions occurring in the function <TT>CVMformatStringVaList</TT> from 
+file utils.c detected by the <FONT color=red>static stack analysis</FONT>
+have at most one-level deep recursion which 
+terminates itself at the second invocation of <TT>CVMformatStringVaList</TT>. To 
+obtain an accurate stack size required to invoke <TT>CVMformatStringVaList</TT> 
+another time, a dummy function is <FONT color=rec>temporarily</FONT> created for 
+each recursion and is called at 
+the place that needs to check stack overflow before going into the loop to 
+terminate itself. <FONT color=red>Once the stack requirement is obtained by the static
+stack analysis, each dummy function invocation is removed and a runtime C stack
+check is added in the place that invokes the dummy function. The three dummy functions</FONT>
+are statically defined in utils.c and are invoked in <TT>CVMformatStringVaList</TT> as below: 
+
+<PRE> (1)    utils:CVMCstackDummy2CVMformatStringVaList
+ (2)    utils:CVMCstackDummy2CVMconsolePrintf
+ (3)    utils:CVMCstackDummy2CVMobjectGetHashSafe
+</PRE>
+
+The self recursive invocation of <TT>merge_fullinfo_types</TT> in file 
+verifycode.c has at most one-level deep recursion. A dummy function called 
+<TT>CVMCstackDummy2merge_fullinfo_types</TT> is <FONT color=red>temporarily created
+and</FONT> invoked at the place that needs 
+to check stack overflow before entering the loop and <FONT color=red>terminating</FONT> itself in that 
+call path so that the stack redzone can be calculated accurately.
+<FONT color=red>Once the stack requirement is obtained by the static stack analysis, this dummy
+function invocation is removed and a runtime C stack check is added in the place that invokes
+the dummy function.</FONT> The dummy function is statically defined in file verifycode.c and is invoked in 
+<TT>merge_fullinfo_types</TT> as below: 
+
+<PRE> (1)    verifycode:CVMCstackDummy2merge_fullinfo_types
+</PRE>
+<a name=used></a>
+<FONT color=blue>
+<H2>C stack redzone checks in CVM</H2></FONT>
+<P>Once the nine recursive functions are identified by the tool, eight stack 
+redzone values are calculated based on the given function call path of each 
+recursion that consumes the most stack usage. The C stack redzone values are 
+used by the C stack check routines in CVM to detect a C stack overflow failure 
+before making a recursive function invocation. The following table shows each C 
+stack redzone macro used by the C stack check in its corresponding recursive 
+function. <PRE>CVM-Function			C-Stack-Redzone-Macro
+------------------------------------------------------------------------------------
+CVMgcUnsafeExecuteJavaMethod	CVM_REDZONE_ILOOP
+CVMimplementsInterface		CVM_REDZONE_CVMimplementsInterface
+CVMformatStringVaList		CVM_REDZONE_CVMCstackCVMpc2string
+CVMformatStringVaList		CVM_REDZONE_CVMCstackCVMID_objectGetClassAndHashSafe  
+CVMclassLookupFromClassLoader   CVM_REDZONE_CVMclassLookupFromClassLoader            
+CVMclassLink			CVM_REDZONE_CVMclassLink                            
+merge_fullinfo_to_types		CVM_REDZONE_CVMCstackmerge_fullinfo_to_types       
+</PRE><A name=append1><FONT color=blue>
+<H2>C stack redzone values</H2></FONT>
+<P>There are eight stack redzones used by the stack check routines in CVM as 
+below: <PRE>C-Stack-Redzone-Macro                                   Stack-Redzone-Value
+----------------------------------------------------------------------------
+CVM_REDZONE_ILOOP                                       11592 (11.32K bytes)
+CVM_REDZONE_CVMimplementsInterface                       4752 ( 5.14K bytes)
+CVM_REDZONE_CVMCstackCVMpc2string                        4752 ( 5.14K bytes)
+CVM_REDZONE_CVMCstackCVMID_objectGetClassAndHashSafe     5392 ( 5.27K bytes)
+CVM_REDZONE_CVMclassLookupFromClassLoader               13500 (13.18K bytes)
+CVM_REDZONE_CVMclassLink                                 7456 ( 7.28K bytes)
+CVM_REDZONE_CVMCstackmerge_fullinfo_to_types             5800 ( 5.66K bytes)
+CVM_REDZONE_CVMsignalErrorVaList             		 8400 ( 8.20K bytes)
+</PRE>
+
+<hr>
+<A name=append2><FONT color=blue>
+<H2>List the worst case of stack usage chain that affects the C stack redzone 
+calculation</H2></FONT>
+
+<P>The worst case of stack usage chains that are used to calculate the stack 
+redzones can vary greatly on different platforms. Sparc, a RISC platform, uses 
+a minimum 112 bytes of frame allocation in a frame even if no local variables 
+are declared (in some special case, code optimizer can make this 0). 
+Whereas, many CISC platforms would only use less stack space in this case. 
+Therefore, stack usage calculated based on Sparc code tend to be larger than 
+CISC platforms. 
+
+<P>The worst stack usage chain that contains the stack size of each function and 
+the accumulated stack size of the call path is not necessarily one of the 
+recursive paths. It can be a stack trace of calling a recursive function and 
+terminating at an OS or C library function, a stack trace of calling a recursive 
+function and terminating at a CVM function that ends itself, or a stack trace of 
+calling a self-recursive function. <FONT color=red>The static stack analysis checks</FONT> 
+all the call paths and <FONT color=red>comes</FONT> out the worst stack usage of each recursive 
+function call cycle. All the worst C stack usage call chains provided in this 
+documentation terminate at a library function <TT>strncpy</TT>. 
+
+<P>The <FONT color=red>static stack analysis</FONT> looks into the worst case of the stack usage chain of each recursive function 
+
+
+
+
+cycle and identifies several functions that use more stack frame space than other 
+functions occurring in the stack usage chain. The functions that consume a 
+large chunk of stack space are optimized by replacing the static allocation of 
+locals with a dynamically allocated and shared buffer to reduce the stack usage 
+of the frame allocation. <FONT color=red>Other optimizations summaried by the
+static stack analysis include removing</FONT> a recursion or a potentially infinite 
+recursion out of the recursive functions to reduce the stack space usage. 
+
+<P>A list of the worst stack usage chains that trace function call paths that 
+consume the stack most in each recursive function is displayed below. 
+
+<P>The first number is the accumulated stack usage in bytes to execute functions 
+from bottom up to the point that excludes the stack size of the current function 
+specified in the same line. The second number is the stack frame size of the 
+function following the second colon. 
+
+<hr>
+<A name=interpreter><FONT color=blue>
+<H2>The Worst C Stack Usage Chain in Interpreter Loop</H2></FONT>
+
+<P>Some worst cases of stack consumption occurring in the interpreter loop that 
+have a call path from <TT>CVMgcUnsafeExecuteJavaMethod</TT> to a C library 
+function such as <TT>strncpy</TT> are given below. <PRE>&gt; stacktrace CVMgcUnsafeExecuteJavaMethod strncpy
+ 8848   : 328   : CVMgcUnsafeExecuteJavaMethod
+ 8520   : 112   : CVMjniInvokeNative
+ 8408   : 3072  : CVM_worst_case_psuedo_method
+ 5336   : 128   : CVMjniToReflectedMethod
+ 5208   : 112   : CVMreflectMethodBlockToNewJavaMethod
+ 5096   : 224   : CVMreflectNewJavaLangReflectMethod
+ 4872   : 376   : CVMnewStringUTF
+ 4496   : 144   : CVMnewString
+ 4352   : 136   : CVMgcAllocNewInstance
+ 4216   : 128   : CVMjniCallStaticVoidMethod
+ 4088   : 184   : jni_impl:CVMjniInvoke
+ 3904   : 136   : CVMjniExceptionDescribe
+ 3768   : 112   : CVMjniGetMethodID
+ 3656   : 136   : jni_impl:CVMjniGetXMethodID
+ 3520   : 112   : CVMclassInit
+ 3408   : 128   : classinitialize:CVMprivateClassInit
+ 3280   : 128   : CVMjniCallVoidMethod
+ 3152   : 184   : jni_impl:CVMjniInvoke
+ 2968   : 136   : CVMjniExceptionDescribe
+ 2832   : 112   : CVMjniGetMethodID
+ 2720   : 136   : jni_impl:CVMjniGetXMethodID
+ 2584   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 2456   : 240   : typeid:referenceMethodSignature
+ 2216   : 144   : typeid:referenceFieldSignature
+ 2072   : 120   : typeid:referenceClassName
+ 1952   : 144   : typeid:lookupClass
+ 1808   : 120   : typeid:findFreeScalarEntry
+ 1688   : 136   : typeid:findFreeTableEntry
+ 1552   : 120   : typeid:unlockThrowOutOfMemoryError
+ 1432   : 112   : CVMsysMutexUnlock
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace CVMgcUnsafeExecuteJavaMethod .umul
+ 8744   : 328   : CVMgcUnsafeExecuteJavaMethod
+ 8416   : 112   : CVMjniInvokeNative
+ 8304   : 3072  : CVM_worst_case_psuedo_method
+ 5232   : 128   : CVMjniToReflectedMethod
+ 5104   : 112   : CVMreflectMethodBlockToNewJavaMethod
+ 4992   : 224   : CVMreflectNewJavaLangReflectMethod
+ 4768   : 376   : CVMnewStringUTF
+ 4392   : 144   : CVMnewString
+ 4248   : 136   : CVMgcAllocNewInstance
+ 4112   : 128   : CVMjniCallStaticVoidMethod
+ 3984   : 184   : jni_impl:CVMjniInvoke
+ 3800   : 136   : CVMjniExceptionDescribe
+ 3664   : 112   : CVMjniGetMethodID
+ 3552   : 136   : jni_impl:CVMjniGetXMethodID
+ 3416   : 112   : CVMclassInit
+ 3304   : 128   : classinitialize:CVMprivateClassInit
+ 3176   : 128   : CVMjniCallVoidMethod
+ 3048   : 184   : jni_impl:CVMjniInvoke
+ 2864   : 136   : CVMjniExceptionDescribe
+ 2728   : 112   : CVMjniGetMethodID
+ 2616   : 136   : jni_impl:CVMjniGetXMethodID
+ 2480   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 2352   : 240   : typeid:referenceMethodSignature
+ 2112   : 144   : typeid:referenceFieldSignature
+ 1968   : 120   : typeid:referenceClassName
+ 1848   : 144   : typeid:lookupClass
+ 1704   : 120   : typeid:findFreeScalarEntry
+ 1584   : 136   : typeid:findFreeTableEntry
+ 1448   : 120   : typeid:unlockThrowOutOfMemoryError
+ 1328   : 112   : CVMsysMutexUnlock
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace CVMgcUnsafeExecuteJavaMethod strlen
+ 8728   : 328   : CVMgcUnsafeExecuteJavaMethod
+ 8400   : 112   : CVMjniInvokeNative
+ 8288   : 3072  : CVM_worst_case_psuedo_method
+ 5216   : 128   : CVMjniToReflectedMethod
+ 5088   : 112   : CVMreflectMethodBlockToNewJavaMethod
+ 4976   : 224   : CVMreflectNewJavaLangReflectMethod
+ 4752   : 376   : CVMnewStringUTF
+ 4376   : 144   : CVMnewString
+ 4232   : 136   : CVMgcAllocNewInstance
+ 4096   : 128   : CVMjniCallStaticVoidMethod
+ 3968   : 184   : jni_impl:CVMjniInvoke
+ 3784   : 136   : CVMjniExceptionDescribe
+ 3648   : 112   : CVMjniGetMethodID
+ 3536   : 136   : jni_impl:CVMjniGetXMethodID
+ 3400   : 112   : CVMclassInit
+ 3288   : 128   : classinitialize:CVMprivateClassInit
+ 3160   : 128   : CVMjniCallVoidMethod
+ 3032   : 184   : jni_impl:CVMjniInvoke
+ 2848   : 136   : CVMjniExceptionDescribe
+ 2712   : 112   : CVMjniGetMethodID
+ 2600   : 136   : jni_impl:CVMjniGetXMethodID
+ 2464   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 2336   : 240   : typeid:referenceMethodSignature
+ 2096   : 144   : typeid:referenceFieldSignature
+ 1952   : 120   : typeid:referenceClassName
+ 1832   : 144   : typeid:lookupClass
+ 1688   : 120   : typeid:findFreeScalarEntry
+ 1568   : 136   : typeid:findFreeTableEntry
+ 1432   : 120   : typeid:unlockThrowOutOfMemoryError
+ 1312   : 112   : CVMsysMutexUnlock
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace CVMgcUnsafeExecuteJavaMethod free
+ 8320   : 328   : CVMgcUnsafeExecuteJavaMethod
+ 7992   : 112   : CVMjniInvokeNative
+ 7880   : 3072  : CVM_worst_case_psuedo_method
+ 4808   : 128   : CVMjniToReflectedMethod
+ 4680   : 112   : CVMreflectMethodBlockToNewJavaMethod
+ 4568   : 224   : CVMreflectNewJavaLangReflectMethod
+ 4344   : 376   : CVMnewStringUTF
+ 3968   : 144   : CVMnewString
+ 3824   : 136   : CVMgcAllocNewInstance
+ 3688   : 128   : CVMjniCallStaticVoidMethod
+ 3560   : 184   : jni_impl:CVMjniInvoke
+ 3376   : 136   : CVMjniExceptionDescribe
+ 3240   : 112   : CVMjniGetMethodID
+ 3128   : 136   : jni_impl:CVMjniGetXMethodID
+ 2992   : 112   : CVMclassInit
+ 2880   : 128   : classinitialize:CVMprivateClassInit
+ 2752   : 128   : CVMjniCallVoidMethod
+ 2624   : 184   : jni_impl:CVMjniInvoke
+ 2440   : 136   : CVMjniExceptionDescribe
+ 2304   : 112   : CVMjniGetMethodID
+ 2192   : 136   : jni_impl:CVMjniGetXMethodID
+ 2056   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 1928   : 240   : typeid:referenceMethodSignature
+ 1688   : 144   : typeid:referenceFieldSignature
+ 1544   : 120   : typeid:referenceClassName
+ 1424   : 144   : typeid:lookupClass
+ 1280   : 120   : typeid:findFreeScalarEntry
+ 1160   : 136   : typeid:findFreeTableEntry
+ 1024   : 120   : typeid:unlockThrowOutOfMemoryError
+ 904    : 112   : CVMsysMutexUnlock
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace CVMgcUnsafeExecuteJavaMethod sprintf
+ 8208   : 328   : CVMgcUnsafeExecuteJavaMethod
+ 7880   : 112   : CVMjniInvokeNative
+ 7768   : 3072  : CVM_worst_case_psuedo_method
+ 4696   : 128   : CVMjniToReflectedMethod
+ 4568   : 112   : CVMreflectMethodBlockToNewJavaMethod
+ 4456   : 224   : CVMreflectNewJavaLangReflectMethod
+ 4232   : 376   : CVMnewStringUTF
+ 3856   : 144   : CVMnewString
+ 3712   : 136   : CVMgcAllocNewInstance
+ 3576   : 128   : CVMjniCallStaticVoidMethod
+ 3448   : 184   : jni_impl:CVMjniInvoke
+ 3264   : 136   : CVMjniExceptionDescribe
+ 3128   : 112   : CVMjniGetMethodID
+ 3016   : 136   : jni_impl:CVMjniGetXMethodID
+ 2880   : 112   : CVMclassInit
+ 2768   : 128   : classinitialize:CVMprivateClassInit
+ 2640   : 128   : CVMjniCallVoidMethod
+ 2512   : 184   : jni_impl:CVMjniInvoke
+ 2328   : 136   : CVMjniExceptionDescribe
+ 2192   : 112   : CVMjniGetMethodID
+ 2080   : 136   : jni_impl:CVMjniGetXMethodID
+ 1944   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 1816   : 240   : typeid:referenceMethodSignature
+ 1576   : 144   : typeid:referenceFieldSignature
+ 1432   : 120   : typeid:referenceClassName
+ 1312   : 144   : typeid:lookupClass
+ 1168   : 120   : typeid:findFreeScalarEntry
+ 1048   : 136   : typeid:findFreeTableEntry
+ 912    : 120   : typeid:unlockThrowOutOfMemoryError
+ 792    : 112   : CVMsysMutexUnlock
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+
+</PRE><PRE>&gt; stacktrace CVMgcUnsafeExecuteJavaMethod fflush
+ 7904   : 328   : CVMgcUnsafeExecuteJavaMethod
+ 7576   : 112   : CVMjniInvokeNative
+ 7464   : 3072  : CVM_worst_case_psuedo_method
+ 4392   : 128   : CVMjniToReflectedMethod
+ 4264   : 112   : CVMreflectMethodBlockToNewJavaMethod
+ 4152   : 224   : CVMreflectNewJavaLangReflectMethod
+ 3928   : 376   : CVMnewStringUTF
+ 3552   : 144   : CVMnewString
+ 3408   : 136   : CVMgcAllocNewInstance
+ 3272   : 128   : CVMjniCallStaticVoidMethod
+ 3144   : 184   : jni_impl:CVMjniInvoke
+ 2960   : 136   : CVMjniExceptionDescribe
+ 2824   : 112   : CVMjniGetMethodID
+ 2712   : 136   : jni_impl:CVMjniGetXMethodID
+ 2576   : 112   : CVMclassInit
+ 2464   : 128   : classinitialize:CVMprivateClassInit
+ 2336   : 128   : CVMjniCallVoidMethod
+ 2208   : 184   : jni_impl:CVMjniInvoke
+ 2024   : 136   : CVMjniExceptionDescribe
+ 1888   : 112   : CVMjniGetMethodID
+ 1776   : 136   : jni_impl:CVMjniGetXMethodID
+ 1640   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 1512   : 240   : typeid:referenceMethodSignature
+ 1272   : 144   : typeid:referenceFieldSignature
+ 1128   : 120   : typeid:referenceClassName
+ 1008   : 144   : typeid:lookupClass
+ 864    : 120   : typeid:findFreeScalarEntry
+ 744    : 136   : typeid:findFreeTableEntry
+ 608    : 120   : typeid:unlockThrowOutOfMemoryError
+ 488    : 112   : CVMsysMutexUnlock
+ 376    : 376   : CVMconsolePrintf
+ 0      : ?(0)  : fflush
+
+</PRE><PRE>&gt; stacktrace CVMgcUnsafeExecuteJavaMethod .rem
+ 7424   : 328   : CVMgcUnsafeExecuteJavaMethod
+ 7096   : 112   : CVMjniInvokeNative
+ 6984   : 3072  : CVM_worst_case_psuedo_method
+ 3912   : 128   : CVMjniToReflectedMethod
+ 3784   : 112   : CVMreflectMethodBlockToNewJavaMethod
+ 3672   : 224   : CVMreflectNewJavaLangReflectMethod
+ 3448   : 376   : CVMnewStringUTF
+ 3072   : 144   : CVMnewString
+ 2928   : 136   : CVMgcAllocNewInstance
+ 2792   : 128   : CVMjniCallStaticVoidMethod
+ 2664   : 184   : jni_impl:CVMjniInvoke
+ 2480   : 136   : CVMjniExceptionDescribe
+ 2344   : 112   : CVMjniGetMethodID
+ 2232   : 136   : jni_impl:CVMjniGetXMethodID
+ 2096   : 112   : CVMclassInit
+ 1984   : 128   : classinitialize:CVMprivateClassInit
+ 1856   : 128   : CVMjniCallVoidMethod
+ 1728   : 184   : jni_impl:CVMjniInvoke
+ 1544   : 136   : CVMjniExceptionDescribe
+ 1408   : 128   : CVMjniGetObjectClass
+ 1280   : 120   : CVMjniNewLocalRef
+ 1160   : 144   : CVMjniCreateLocalRef
+ 1016   : 112   : CVMjniFatalError
+ 904    : 120   : CVMdumpStack
+ 784    : 128   : stacks:CVMdumpFrames
+ 656    : 392   : CVMdumpFrame
+ 264    : 128   : CVMpc2string
+ 136    : 136   : interpreter:CVMadddec
+ 0      : ?(0)  : .rem
+</PRE><A name=interface><FONT color=blue>
+<H2>The Worst C Stack Usage Chain in CVMimplementsInterface Routine</H2></FONT>
+<P>Some worst cases of stack consumption occurring in the routine that compares 
+each subclass class block in the class hierarchy to the interface class block 
+have a call path from <TT>CVMimplementsInterface</TT> to a C library function 
+such as <TT>strncpy</TT>. <PRE>&gt; stacktrace CVMimplementsInterface strncpy
+ 1800   : 120   : CVMimplementsInterface
+ 1680   : 112   : CVMCstackCheckSize
+ 1568   : 136   : CVMcsRendezvous
+ 1432   : 112   : CVMsysMutexLock
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace CVMimplementsInterface .umul
+ 1696   : 120   : CVMimplementsInterface
+ 1576   : 112   : CVMCstackCheckSize
+ 1464   : 136   : CVMcsRendezvous
+ 1328   : 112   : CVMsysMutexLock
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace CVMimplementsInterface strlen
+ 1680   : 120   : CVMimplementsInterface
+ 1560   : 112   : CVMCstackCheckSize
+ 1448   : 136   : CVMcsRendezvous
+ 1312   : 112   : CVMsysMutexLock
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace CVMimplementsInterface free
+ 1272   : 120   : CVMimplementsInterface
+ 1152   : 112   : CVMCstackCheckSize
+ 1040   : 136   : CVMcsRendezvous
+ 904    : 112   : CVMsysMutexLock
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace CVMimplementsInterface sprintf
+ 1160   : 120   : CVMimplementsInterface
+ 1040   : 112   : CVMCstackCheckSize
+ 928    : 136   : CVMcsRendezvous
+ 792    : 112   : CVMsysMutexLock
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+
+</PRE><PRE>&gt; stacktrace CVMimplementsInterface pthread_cond_wait
+ 936    : 120   : CVMimplementsInterface
+ 816    : 112   : CVMCstackCheckSize
+ 704    : 136   : CVMcsRendezvous
+ 568    : 128   : CVMsysMutexWait
+ 440    : 128   : CVMreentrantMutexWait
+ 312    : 144   : CVMcondvarWait
+ 168    : 168   : POSIXcondvarWait
+ 0      : ?(0)  : pthread_cond_wait
+</PRE><A name=classload><FONT color=blue>
+<H2>The Worst C Stack Usage Chain in Class Loader at Class Lookup</H2></FONT>
+<P>Some worst cases of stack consumption occurs in class loader that have a call 
+path from <TT>CVMclassLookupFromClassLoader</TT> to a C library function such as 
+<TT>strncpy</TT> are given below. <PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader strncpy
+ 5968   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5816   : 136   : CVMclassLoadClass
+ 5680   : 136   : classload:CVMclassLoadSystemClass
+ 5544   : 144   : classload:CVMclassLoadFromFile
+ 5400   : 672   : CVMclassCreateInternalClass
+ 4728   : 168   : classcreate:CVMreadConstantPool
+ 4560   : 376   : CVMinternUTF
+ 4184   : 136   : CVMgcAllocNewInstance
+ 4048   : 136   : CVMgcimplAllocObject
+ 3912   : 120   : CVMgcStopTheWorldAndGC
+ 3792   : 128   : gc_common:CVMgcStopTheWorldAndGCSafe
+ 3664   : 144   : CVMgcimplDoGC
+ 3520   : 112   : gen_semispace:CVMgenSemispaceCollect
+ 3408   : 144   : gen_semispace:CVMgenSemispaceCollectFull
+ 3264   : 112   : CVMgcProcessSpecialWithLivenessInfo
+ 3152   : 136   : CVMweakrefProcessNonStrong
+ 3016   : 128   : weakrefs:CVMweakrefHandlePendingQueue
+ 2888   : 120   : weakrefs:CVMweakrefIterateQueue
+ 2768   : 136   : weakrefs:CVMweakrefDiscoveredQueueCallback
+ 2632   : 128   : gen_semispace:CVMgenSemispaceScanTransitively
+ 2504   : 112   : gen_semispace:CVMgenSemispaceFollowRootsFull
+ 2392   : 136   : gen_semispace:CVMgenSemispaceFollowRootsWithBlackener
+ 2256   : 120   : gen_semispace:CVMgenSemispaceScanPromotedPointers
+ 2136   : 168   : gen_semispace:scanObjectsInRangeFull
+ 1968   : 152   : gen_semispace:CVMgenSemispaceBlackenObjectFull
+ 1816   : 112   : gen_semispace:CVMgenSemispaceFilteredGrayObject
+ 1704   : 120   : gen_semispace:CVMgenSemispaceGrayObject
+ 1584   : 136   : gen_semispace:CVMgenSemispaceForwardOrPromoteObject
+ 1448   : 128   : gen_semispace:CVMgenSemispacePromoteInto
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader .umul
+ 5864   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5712   : 136   : CVMclassLoadClass
+ 5576   : 136   : classload:CVMclassLoadSystemClass
+ 5440   : 144   : classload:CVMclassLoadFromFile
+ 5296   : 672   : CVMclassCreateInternalClass
+ 4624   : 168   : classcreate:CVMreadConstantPool
+ 4456   : 376   : CVMinternUTF
+ 4080   : 136   : CVMgcAllocNewInstance
+ 3944   : 136   : CVMgcimplAllocObject
+ 3808   : 120   : CVMgcStopTheWorldAndGC
+ 3688   : 128   : gc_common:CVMgcStopTheWorldAndGCSafe
+ 3560   : 144   : CVMgcimplDoGC
+ 3416   : 112   : gen_semispace:CVMgenSemispaceCollect
+ 3304   : 144   : gen_semispace:CVMgenSemispaceCollectFull
+ 3160   : 112   : CVMgcProcessSpecialWithLivenessInfo
+ 3048   : 136   : CVMweakrefProcessNonStrong
+ 2912   : 128   : weakrefs:CVMweakrefHandlePendingQueue
+ 2784   : 120   : weakrefs:CVMweakrefIterateQueue
+ 2664   : 136   : weakrefs:CVMweakrefDiscoveredQueueCallback
+ 2528   : 128   : gen_semispace:CVMgenSemispaceScanTransitively
+ 2400   : 112   : gen_semispace:CVMgenSemispaceFollowRootsFull
+ 2288   : 136   : gen_semispace:CVMgenSemispaceFollowRootsWithBlackener
+ 2152   : 120   : gen_semispace:CVMgenSemispaceScanPromotedPointers
+ 2032   : 168   : gen_semispace:scanObjectsInRangeFull
+ 1864   : 152   : gen_semispace:CVMgenSemispaceBlackenObjectFull
+ 1712   : 112   : gen_semispace:CVMgenSemispaceFilteredGrayObject
+ 1600   : 120   : gen_semispace:CVMgenSemispaceGrayObject
+ 1480   : 136   : gen_semispace:CVMgenSemispaceForwardOrPromoteObject
+ 1344   : 128   : gen_semispace:CVMgenSemispacePromoteInto
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader strlen
+ 5848   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5696   : 136   : CVMclassLoadClass
+ 5560   : 136   : classload:CVMclassLoadSystemClass
+ 5424   : 144   : classload:CVMclassLoadFromFile
+ 5280   : 672   : CVMclassCreateInternalClass
+ 4608   : 168   : classcreate:CVMreadConstantPool
+ 4440   : 376   : CVMinternUTF
+ 4064   : 136   : CVMgcAllocNewInstance
+ 3928   : 136   : CVMgcimplAllocObject
+ 3792   : 120   : CVMgcStopTheWorldAndGC
+ 3672   : 128   : gc_common:CVMgcStopTheWorldAndGCSafe
+ 3544   : 144   : CVMgcimplDoGC
+ 3400   : 112   : gen_semispace:CVMgenSemispaceCollect
+ 3288   : 144   : gen_semispace:CVMgenSemispaceCollectFull
+ 3144   : 112   : CVMgcProcessSpecialWithLivenessInfo
+ 3032   : 136   : CVMweakrefProcessNonStrong
+ 2896   : 128   : weakrefs:CVMweakrefHandlePendingQueue
+ 2768   : 120   : weakrefs:CVMweakrefIterateQueue
+ 2648   : 136   : weakrefs:CVMweakrefDiscoveredQueueCallback
+ 2512   : 128   : gen_semispace:CVMgenSemispaceScanTransitively
+ 2384   : 112   : gen_semispace:CVMgenSemispaceFollowRootsFull
+ 2272   : 136   : gen_semispace:CVMgenSemispaceFollowRootsWithBlackener
+ 2136   : 120   : gen_semispace:CVMgenSemispaceScanPromotedPointers
+ 2016   : 168   : gen_semispace:scanObjectsInRangeFull
+ 1848   : 152   : gen_semispace:CVMgenSemispaceBlackenObjectFull
+ 1696   : 112   : gen_semispace:CVMgenSemispaceFilteredGrayObject
+ 1584   : 120   : gen_semispace:CVMgenSemispaceGrayObject
+ 1464   : 136   : gen_semispace:CVMgenSemispaceForwardOrPromoteObject
+ 1328   : 128   : gen_semispace:CVMgenSemispacePromoteInto
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader adler32
+ 5568   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5416   : 136   : CVMclassLoadClass
+ 5280   : 136   : classload:CVMclassLoadSystemClass
+ 5144   : 136   : classload:CVMclassLoadFromZipFile
+ 5008   : 128   : CVMziputilReadEntry
+ 4880   : 4280  : CVMzutilInflateFully
+ 600    : 120   : CVMzlibInflate
+ 480    : 192   : CVMzlibInflate_blocks
+ 288    : 160   : CVMzlibInflate_codes
+ 128    : 128   : CVMzlibInflate_flush
+ 0      : ?(0)  : adler32
+
+</PRE><PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader  pthread_getspecific
+ 5560   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5408   : 136   : CVMclassLoadClass
+ 5272   : 136   : classload:CVMclassLoadSystemClass
+ 5136   : 144   : classload:CVMclassLoadFromFile
+ 4992   : 672   : CVMclassCreateInternalClass
+ 4320   : 168   : classcreate:CVMreadConstantPool
+ 4152   : 376   : CVMinternUTF
+ 3776   : 136   : CVMgcAllocNewInstance
+ 3640   : 136   : CVMgcimplAllocObject
+ 3504   : 120   : CVMgcStopTheWorldAndGC
+ 3384   : 128   : gc_common:CVMgcStopTheWorldAndGCSafe
+ 3256   : 144   : CVMgcimplDoGC
+ 3112   : 112   : gen_semispace:CVMgenSemispaceCollect
+ 3000   : 144   : gen_semispace:CVMgenSemispaceCollectFull
+ 2856   : 112   : CVMgcProcessSpecialWithLivenessInfo
+ 2744   : 136   : CVMweakrefProcessNonStrong
+ 2608   : 128   : weakrefs:CVMweakrefHandlePendingQueue
+ 2480   : 120   : weakrefs:CVMweakrefIterateQueue
+ 2360   : 136   : weakrefs:CVMweakrefDiscoveredQueueCallback
+ 2224   : 128   : gen_semispace:CVMgenSemispaceScanTransitively
+ 2096   : 112   : gen_semispace:CVMgenSemispaceFollowRootsFull
+ 1984   : 136   : gen_semispace:CVMgenSemispaceFollowRootsWithBlackener
+ 1848   : 120   : gen_semispace:CVMgenSemispaceScanPromotedPointers
+ 1728   : 168   : gen_semispace:scanObjectsInRangeFull
+ 1560   : 152   : gen_semispace:CVMgenSemispaceBlackenObjectFull
+ 1408   : 112   : gen_semispace:CVMgenSemispaceFilteredGrayObject
+ 1296   : 120   : gen_semispace:CVMgenSemispaceGrayObject
+ 1176   : 136   : gen_semispace:CVMgenSemispaceForwardOrPromoteObject
+ 1040   : 128   : gen_semispace:CVMgenSemispacePromoteInto
+ 912    : 376   : CVMconsolePrintf
+ 536    : 304   : CVMformatStringVaList
+ 232    : 120   : CVMgetEE
+ 112    : 112   : POSIXthreadGetSelf
+ 0      : ?(0)  : pthread_getspecific
+
+</PRE><PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader zcfree
+ 5528   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5376   : 136   : CVMclassLoadClass
+ 5240   : 136   : classload:CVMclassLoadSystemClass
+ 5104   : 136   : classload:CVMclassLoadFromZipFile
+ 4968   : 128   : CVMziputilReadEntry
+ 4840   : 4280  : CVMzutilInflateFully
+ 560    : 112   : CVMzlibInflateInit2_
+ 448    : 112   : CVMzlibInflateEnd
+ 336    : 112   : CVMzlibInflate_blocks_free
+ 224    : 112   : CVMzlibInflate_blocks_reset
+ 112    : 112   : CVMzlibInflate_codes_free
+ 0      : ?(0)  : zcfree
+
+</PRE><PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader free
+ 5440   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5288   : 136   : CVMclassLoadClass
+ 5152   : 136   : classload:CVMclassLoadSystemClass
+ 5016   : 144   : classload:CVMclassLoadFromFile
+ 4872   : 672   : CVMclassCreateInternalClass
+ 4200   : 168   : classcreate:CVMreadConstantPool
+ 4032   : 376   : CVMinternUTF
+ 3656   : 136   : CVMgcAllocNewInstance
+ 3520   : 136   : CVMgcimplAllocObject
+ 3384   : 120   : CVMgcStopTheWorldAndGC
+ 3264   : 128   : gc_common:CVMgcStopTheWorldAndGCSafe
+ 3136   : 144   : CVMgcimplDoGC
+ 2992   : 112   : gen_semispace:CVMgenSemispaceCollect
+ 2880   : 144   : gen_semispace:CVMgenSemispaceCollectFull
+ 2736   : 112   : CVMgcProcessSpecialWithLivenessInfo
+ 2624   : 136   : CVMweakrefProcessNonStrong
+ 2488   : 128   : weakrefs:CVMweakrefHandlePendingQueue
+ 2360   : 120   : weakrefs:CVMweakrefIterateQueue
+ 2240   : 136   : weakrefs:CVMweakrefDiscoveredQueueCallback
+ 2104   : 128   : gen_semispace:CVMgenSemispaceScanTransitively
+ 1976   : 112   : gen_semispace:CVMgenSemispaceFollowRootsFull
+ 1864   : 136   : gen_semispace:CVMgenSemispaceFollowRootsWithBlackener
+ 1728   : 120   : gen_semispace:CVMgenSemispaceScanPromotedPointers
+ 1608   : 168   : gen_semispace:scanObjectsInRangeFull
+ 1440   : 152   : gen_semispace:CVMgenSemispaceBlackenObjectFull
+ 1288   : 112   : gen_semispace:CVMgenSemispaceFilteredGrayObject
+ 1176   : 120   : gen_semispace:CVMgenSemispaceGrayObject
+ 1056   : 136   : gen_semispace:CVMgenSemispaceForwardOrPromoteObject
+ 920    : 128   : gen_semispace:CVMgenSemispacePromoteInto
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace classlookup:CVMclassLookupFromClassLoader strchr
+ 5440   : 152   : classlookup:CVMclassLookupFromClassLoader
+ 5288   : 136   : CVMclassLoadClass
+ 5152   : 136   : classload:CVMclassLoadSystemClass
+ 5016   : 144   : classload:CVMclassLoadFromFile
+ 4872   : 672   : CVMclassCreateInternalClass
+ 4200   : 168   : classcreate:CVMreadConstantPool
+ 4032   : 376   : CVMinternUTF
+ 3656   : 136   : CVMgcAllocNewInstance
+ 3520   : 136   : CVMgcimplAllocObject
+ 3384   : 120   : CVMgcStopTheWorldAndGC
+ 3264   : 128   : gc_common:CVMgcStopTheWorldAndGCSafe
+ 3136   : 144   : CVMgcimplDoGC
+ 2992   : 112   : gen_semispace:CVMgenSemispaceCollect
+ 2880   : 144   : gen_semispace:CVMgenSemispaceCollectFull
+ 2736   : 112   : CVMgcProcessSpecialWithLivenessInfo
+ 2624   : 136   : CVMweakrefProcessNonStrong
+ 2488   : 128   : weakrefs:CVMweakrefHandlePendingQueue
+ 2360   : 120   : weakrefs:CVMweakrefIterateQueue
+ 2240   : 136   : weakrefs:CVMweakrefDiscoveredQueueCallback
+ 2104   : 128   : gen_semispace:CVMgenSemispaceScanTransitively
+ 1976   : 112   : gen_semispace:CVMgenSemispaceFollowRootsFull
+ 1864   : 136   : gen_semispace:CVMgenSemispaceFollowRootsWithBlackener
+ 1728   : 120   : gen_semispace:CVMgenSemispaceScanPromotedPointers
+ 1608   : 168   : gen_semispace:scanObjectsInRangeFull
+ 1440   : 152   : gen_semispace:CVMgenSemispaceBlackenObjectFull
+ 1288   : 112   : gen_semispace:CVMgenSemispaceFilteredGrayObject
+ 1176   : 120   : gen_semispace:CVMgenSemispaceGrayObject
+ 1056   : 136   : gen_semispace:CVMgenSemispaceForwardOrPromoteObject
+ 920    : 128   : gen_semispace:CVMgenSemispacePromoteInto
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCstrchrStub
+ 0      : ?(0)  : strchr
+</PRE><A name=classlink><FONT color=blue>
+<H2>The Worst C Stack Usage Chain in Class Link</H2></FONT>
+<P>Some worst cases of stack consumption occurring in class linking that have a 
+call path from <TT>CVMclassLink</TT> to a C library function such as 
+<TT>strncpy</TT> are given below. <PRE>&gt; stacktrace CVMclassLink strncpy
+ 4512   : 128   : CVMclassLink
+ 4384   : 376   : CVMclassVerify
+ 4008   : 144   : VerifyClass
+ 3864   : 160   : verifycode:verify_method
+ 3704   : 184   : verifycode:run_dataflow
+ 3520   : 200   : verifycode:merge_into_successors
+ 3320   : 264   : verifycode:merge_into_one_successor
+ 3056   : 216   : verifycode:merge_registers
+ 2840   : 112   : verifycode:isAssignableTo
+ 2728   : 144   : verifycode:merge_fullinfo_types
+ 2584   : 128   : CVMjniGetSuperclass
+ 2456   : 120   : CVMjniNewLocalRef
+ 2336   : 144   : CVMjniCreateLocalRef
+ 2192   : 112   : CVMjniFatalError
+ 2080   : 120   : CVMdumpStack
+ 1960   : 128   : stacks:CVMdumpFrames
+ 1832   : 392   : CVMdumpFrame
+ 1440   : 120   : stacks:CVMdumpData
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace CVMclassLink .umul
+ 4408   : 128   : CVMclassLink
+ 4280   : 376   : CVMclassVerify
+ 3904   : 144   : VerifyClass
+ 3760   : 160   : verifycode:verify_method
+ 3600   : 184   : verifycode:run_dataflow
+ 3416   : 200   : verifycode:merge_into_successors
+ 3216   : 264   : verifycode:merge_into_one_successor
+ 2952   : 216   : verifycode:merge_registers
+ 2736   : 112   : verifycode:isAssignableTo
+ 2624   : 144   : verifycode:merge_fullinfo_types
+ 2480   : 128   : CVMjniGetSuperclass
+ 2352   : 120   : CVMjniNewLocalRef
+ 2232   : 144   : CVMjniCreateLocalRef
+ 2088   : 112   : CVMjniFatalError
+ 1976   : 120   : CVMdumpStack
+ 1856   : 128   : stacks:CVMdumpFrames
+ 1728   : 392   : CVMdumpFrame
+ 1336   : 120   : stacks:CVMdumpData
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace CVMclassLink strlen
+ 4392   : 128   : CVMclassLink
+ 4264   : 376   : CVMclassVerify
+ 3888   : 144   : VerifyClass
+ 3744   : 160   : verifycode:verify_method
+ 3584   : 184   : verifycode:run_dataflow
+ 3400   : 200   : verifycode:merge_into_successors
+ 3200   : 264   : verifycode:merge_into_one_successor
+ 2936   : 216   : verifycode:merge_registers
+ 2720   : 112   : verifycode:isAssignableTo
+ 2608   : 144   : verifycode:merge_fullinfo_types
+ 2464   : 128   : CVMjniGetSuperclass
+ 2336   : 120   : CVMjniNewLocalRef
+ 2216   : 144   : CVMjniCreateLocalRef
+ 2072   : 112   : CVMjniFatalError
+ 1960   : 120   : CVMdumpStack
+ 1840   : 128   : stacks:CVMdumpFrames
+ 1712   : 392   : CVMdumpFrame
+ 1320   : 120   : stacks:CVMdumpData
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace CVMclassLink free
+ 3984   : 128   : CVMclassLink
+ 3856   : 376   : CVMclassVerify
+ 3480   : 144   : VerifyClass
+ 3336   : 160   : verifycode:verify_method
+ 3176   : 184   : verifycode:run_dataflow
+ 2992   : 200   : verifycode:merge_into_successors
+ 2792   : 264   : verifycode:merge_into_one_successor
+ 2528   : 216   : verifycode:merge_registers
+ 2312   : 112   : verifycode:isAssignableTo
+ 2200   : 144   : verifycode:merge_fullinfo_types
+ 2056   : 128   : CVMjniGetSuperclass
+ 1928   : 120   : CVMjniNewLocalRef
+ 1808   : 144   : CVMjniCreateLocalRef
+ 1664   : 112   : CVMjniFatalError
+ 1552   : 120   : CVMdumpStack
+ 1432   : 128   : stacks:CVMdumpFrames
+ 1304   : 392   : CVMdumpFrame
+ 912    : 120   : stacks:CVMdumpData
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace CVMclassLink  sprintf
+ 3872   : 128   : CVMclassLink
+ 3744   : 376   : CVMclassVerify
+ 3368   : 144   : VerifyClass
+ 3224   : 160   : verifycode:verify_method
+ 3064   : 184   : verifycode:run_dataflow
+ 2880   : 200   : verifycode:merge_into_successors
+ 2680   : 264   : verifycode:merge_into_one_successor
+ 2416   : 216   : verifycode:merge_registers
+ 2200   : 112   : verifycode:isAssignableTo
+ 2088   : 144   : verifycode:merge_fullinfo_types
+ 1944   : 128   : CVMjniGetSuperclass
+ 1816   : 120   : CVMjniNewLocalRef
+ 1696   : 144   : CVMjniCreateLocalRef
+ 1552   : 112   : CVMjniFatalError
+ 1440   : 120   : CVMdumpStack
+ 1320   : 128   : stacks:CVMdumpFrames
+ 1192   : 392   : CVMdumpFrame
+ 800    : 120   : stacks:CVMdumpData
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+
+</PRE><PRE>&gt; stacktrace CVMclassLink fflush
+ 3568   : 128   : CVMclassLink
+ 3440   : 376   : CVMclassVerify
+ 3064   : 144   : VerifyClass
+ 2920   : 160   : verifycode:verify_method
+ 2760   : 184   : verifycode:run_dataflow
+ 2576   : 200   : verifycode:merge_into_successors
+ 2376   : 264   : verifycode:merge_into_one_successor
+ 2112   : 216   : verifycode:merge_registers
+ 1896   : 112   : verifycode:isAssignableTo
+ 1784   : 144   : verifycode:merge_fullinfo_types
+ 1640   : 128   : CVMjniGetSuperclass
+ 1512   : 120   : CVMjniNewLocalRef
+ 1392   : 144   : CVMjniCreateLocalRef
+ 1248   : 112   : CVMjniFatalError
+ 1136   : 120   : CVMdumpStack
+ 1016   : 128   : stacks:CVMdumpFrames
+ 888    : 392   : CVMdumpFrame
+ 496    : 120   : stacks:CVMdumpData
+ 376    : 376   : CVMconsolePrintf
+ 0      : ?(0)  : fflush
+
+</PRE><PRE>&gt; stacktrace CVMclassLink pthread_cond_wait
+ 3504   : 128   : CVMclassLink
+ 3376   : 376   : CVMclassVerify
+ 3000   : 144   : VerifyClass
+ 2856   : 160   : verifycode:verify_method
+ 2696   : 184   : verifycode:run_dataflow
+ 2512   : 200   : verifycode:merge_into_successors
+ 2312   : 264   : verifycode:merge_into_one_successor
+ 2048   : 216   : verifycode:merge_registers
+ 1832   : 112   : verifycode:isAssignableTo
+ 1720   : 144   : verifycode:merge_fullinfo_types
+ 1576   : 112   : verifycode:CVMCstackDummy2object_fullinfo_to_classclass
+ 1464   : 136   : verifycode:object_fullinfo_to_classclass
+ 1328   : 120   : CVMjniNewGlobalRef
+ 1208   : 112   : CVMID_getGlobalRoot
+ 1096   : 120   : globalroots:CVMIDprivate_getGlobalRoot
+ 976    : 136   : globalroots:CVMIDprivate_getGlobalRootNoLock
+ 840    : 136   : CVMexpandStack
+ 704    : 136   : CVMcsRendezvous
+ 568    : 128   : CVMsysMutexWait
+ 440    : 128   : CVMreentrantMutexWait
+ 312    : 144   : CVMcondvarWait
+ 168    : 168   : POSIXcondvarWait
+ 0      : ?(0)  : pthread_cond_wait
+
+</PRE><PRE>&gt; stacktrace CVMclassLink pthread_mutex_unlock
+ 3448   : 128   : CVMclassLink
+ 3320   : 376   : CVMclassVerify
+ 2944   : 144   : VerifyClass
+ 2800   : 160   : verifycode:verify_method
+ 2640   : 184   : verifycode:run_dataflow
+ 2456   : 200   : verifycode:merge_into_successors
+ 2256   : 264   : verifycode:merge_into_one_successor
+ 1992   : 216   : verifycode:merge_registers
+ 1776   : 112   : verifycode:isAssignableTo
+ 1664   : 144   : verifycode:merge_fullinfo_types
+ 1520   : 112   : verifycode:CVMCstackDummy2object_fullinfo_to_classclass
+ 1408   : 136   : verifycode:object_fullinfo_to_classclass
+ 1272   : 120   : CVMjniNewGlobalRef
+ 1152   : 112   : CVMID_getGlobalRoot
+ 1040   : 120   : globalroots:CVMIDprivate_getGlobalRoot
+ 920    : 136   : globalroots:CVMIDprivate_getGlobalRootNoLock
+ 784    : 136   : CVMexpandStack
+ 648    : 136   : CVMcsRendezvous
+ 512    : 128   : CVMsysMutexWait
+ 384    : 128   : CVMreentrantMutexWait
+ 256    : 144   : CVMcondvarWait
+ 112    : 112   : POSIXmutexUnlock
+ 0      : ?(0)  : pthread_mutex_unlock
+</PRE><A name=formatpc><FONT color=blue>
+<H2>The Worst C Stack Usage Chain in Formatting a String from the PC for a 
+Console Print Out</H2></FONT>
+<P>Some worst cases of stack consumption occurring in the console print out 
+routine that have a call path from <TT>CVMCstackDummy2CVMformatStringVaList</TT> 
+to a C library function such as <TT>strncpy</TT> are given below. <PRE>&gt; stacktrace utils:CVMCstackDummy2CVMformatStringVaList strncpy
+ 1792   : 112   : utils:CVMCstackDummy2CVMformatStringVaList
+ 1680   : 112   : CVMCstackCheckSize
+ 1568   : 136   : CVMcsRendezvous
+ 1432   : 112   : CVMsysMutexLock
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMformatStringVaList .umul
+ 1688   : 112   : utils:CVMCstackDummy2CVMformatStringVaList
+ 1576   : 112   : CVMCstackCheckSize
+ 1464   : 136   : CVMcsRendezvous
+ 1328   : 112   : CVMsysMutexLock
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMformatStringVaList strlen
+ 1672   : 112   : utils:CVMCstackDummy2CVMformatStringVaList
+ 1560   : 112   : CVMCstackCheckSize
+ 1448   : 136   : CVMcsRendezvous
+ 1312   : 112   : CVMsysMutexLock
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMformatStringVaList pthread_getspecific
+ 1384   : 112   : utils:CVMCstackDummy2CVMformatStringVaList
+ 1272   : 112   : CVMCstackCheckSize
+ 1160   : 136   : CVMcsRendezvous
+ 1024   : 112   : CVMsysMutexLock
+ 912    : 376   : CVMconsolePrintf
+ 536    : 304   : CVMformatStringVaList
+ 232    : 120   : CVMgetEE
+ 112    : 112   : POSIXthreadGetSelf
+ 0      : ?(0)  : pthread_getspecific
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMformatStringVaList free
+ 1264   : 112   : utils:CVMCstackDummy2CVMformatStringVaList
+ 1152   : 112   : CVMCstackCheckSize
+ 1040   : 136   : CVMcsRendezvous
+ 904    : 112   : CVMsysMutexLock
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMformatStringVaList sprintf
+ 1152   : 112   : utils:CVMCstackDummy2CVMformatStringVaList
+ 1040   : 112   : CVMCstackCheckSize
+ 928    : 136   : CVMcsRendezvous
+ 792    : 112   : CVMsysMutexLock
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+</PRE><A name=formatobject><FONT color=blue>
+<H2>The Worst C stack Usage Chain in Formatting a String of Object from a Class 
+and Hash value</H2></FONT>
+<P>Some worst cases of stack consumption occurring in the console print out 
+routine which displays a string of object from its class block or a hashed value 
+have a call path from <I>CVMCstackDummy2CVMconsolePrintf</I> to a C library 
+function such as <TT>strncpy</TT>. <PRE>&gt; stacktrace utils:CVMCstackDummy2CVMconsolePrintf strncpy
+ 1800   : 120   : utils:CVMCstackDummy2CVMconsolePrintf
+ 1680   : 112   : CVMCstackCheckSize
+ 1568   : 136   : CVMcsRendezvous
+ 1432   : 112   : CVMsysMutexLock
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMconsolePrintf .umul
+ 1696   : 120   : utils:CVMCstackDummy2CVMconsolePrintf
+ 1576   : 112   : CVMCstackCheckSize
+ 1464   : 136   : CVMcsRendezvous
+ 1328   : 112   : CVMsysMutexLock
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMconsolePrintf strlen
+ 1680   : 120   : utils:CVMCstackDummy2CVMconsolePrintf
+ 1560   : 112   : CVMCstackCheckSize
+ 1448   : 136   : CVMcsRendezvous
+ 1312   : 112   : CVMsysMutexLock
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMconsolePrintf  pthread_getspecific
+ 1392   : 120   : utils:CVMCstackDummy2CVMconsolePrintf
+ 1272   : 112   : CVMCstackCheckSize
+ 1160   : 136   : CVMcsRendezvous
+ 1024   : 112   : CVMsysMutexLock
+ 912    : 376   : CVMconsolePrintf
+ 536    : 304   : CVMformatStringVaList
+ 232    : 120   : CVMgetEE
+ 112    : 112   : POSIXthreadGetSelf
+ 0      : ?(0)  : pthread_getspecific
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMconsolePrintf free
+ 1272   : 120   : utils:CVMCstackDummy2CVMconsolePrintf
+ 1152   : 112   : CVMCstackCheckSize
+ 1040   : 136   : CVMcsRendezvous
+ 904    : 112   : CVMsysMutexLock
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMconsolePrintf sprintf
+ 1160   : 120   : utils:CVMCstackDummy2CVMconsolePrintf
+ 1040   : 112   : CVMCstackCheckSize
+ 928    : 136   : CVMcsRendezvous
+ 792    : 112   : CVMsysMutexLock
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMconsolePrintf  pthread_cond_wait
+ 936    : 120   : utils:CVMCstackDummy2CVMconsolePrintf
+ 816    : 112   : CVMCstackCheckSize
+ 704    : 136   : CVMcsRendezvous
+ 568    : 128   : CVMsysMutexWait
+ 440    : 128   : CVMreentrantMutexWait
+ 312    : 144   : CVMcondvarWait
+ 168    : 168   : POSIXcondvarWait
+ 0      : ?(0)  : pthread_cond_wait
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMobjectGetHashSafe strncpy
+ 2056   : 112   : utils:CVMCstackDummy2CVMobjectGetHashSafe
+ 1944   : 120   : CVMobjectGetHashSafe
+ 1824   : 120   : objsync:CVMobjectComputeHash
+ 1704   : 136   : objsync:CVMobjectSetHashCode
+ 1568   : 136   : CVMcsRendezvous
+ 1432   : 112   : CVMsysMutexLock
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMobjectGetHashSafe .umul
+ 1952   : 112   : utils:CVMCstackDummy2CVMobjectGetHashSafe
+ 1840   : 120   : CVMobjectGetHashSafe
+ 1720   : 120   : objsync:CVMobjectComputeHash
+ 1600   : 136   : objsync:CVMobjectSetHashCode
+ 1464   : 136   : CVMcsRendezvous
+ 1328   : 112   : CVMsysMutexLock
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMobjectGetHashSafe strlen
+ 1936   : 112   : utils:CVMCstackDummy2CVMobjectGetHashSafe
+ 1824   : 120   : CVMobjectGetHashSafe
+ 1704   : 120   : objsync:CVMobjectComputeHash
+ 1584   : 136   : objsync:CVMobjectSetHashCode
+ 1448   : 136   : CVMcsRendezvous
+ 1312   : 112   : CVMsysMutexLock
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMobjectGetHashSafe pthread_getspecific
+ 1648   : 112   : utils:CVMCstackDummy2CVMobjectGetHashSafe
+ 1536   : 120   : CVMobjectGetHashSafe
+ 1416   : 120   : objsync:CVMobjectComputeHash
+ 1296   : 136   : objsync:CVMobjectSetHashCode
+ 1160   : 136   : CVMcsRendezvous
+ 1024   : 112   : CVMsysMutexLock
+ 912    : 376   : CVMconsolePrintf
+ 536    : 304   : CVMformatStringVaList
+ 232    : 120   : CVMgetEE
+ 112    : 112   : POSIXthreadGetSelf
+ 0      : ?(0)  : pthread_getspecific
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMobjectGetHashSafe free
+ 1528   : 112   : utils:CVMCstackDummy2CVMobjectGetHashSafe
+ 1416   : 120   : CVMobjectGetHashSafe
+ 1296   : 120   : objsync:CVMobjectComputeHash
+ 1176   : 136   : objsync:CVMobjectSetHashCode
+ 1040   : 136   : CVMcsRendezvous
+ 904    : 112   : CVMsysMutexLock
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMobjectGetHashSafe sprintf
+ 1416   : 112   : utils:CVMCstackDummy2CVMobjectGetHashSafe
+ 1304   : 120   : CVMobjectGetHashSafe
+ 1184   : 120   : objsync:CVMobjectComputeHash
+ 1064   : 136   : objsync:CVMobjectSetHashCode
+ 928    : 136   : CVMcsRendezvous
+ 792    : 112   : CVMsysMutexLock
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+
+</PRE><PRE>&gt; stacktrace utils:CVMCstackDummy2CVMobjectGetHashSafe pthread_cond_wait
+ 1192   : 112   : utils:CVMCstackDummy2CVMobjectGetHashSafe
+ 1080   : 120   : CVMobjectGetHashSafe
+ 960    : 120   : objsync:CVMobjectComputeHash
+ 840    : 136   : objsync:CVMobjectSetHashCode
+ 704    : 136   : CVMcsRendezvous
+ 568    : 128   : CVMsysMutexWait
+ 440    : 128   : CVMreentrantMutexWait
+ 312    : 144   : CVMcondvarWait
+ 168    : 168   : POSIXcondvarWait
+ 0      : ?(0)  : pthread_cond_wait
+</PRE><A name=classverify><FONT color=blue>
+<H2>The Worst C Stack Usage Chain in Class Verifier</H2></FONT>
+<P>Some worst cases of stack consumption occurring in class verifier that merges 
+types of two array objects have a call path from 
+<TT>CVMCstackDummy2merge_fullinfo_types</TT> to a C library function such as 
+<TT>strncpy</TT>. <PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types strncpy
+ 2848   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 2728   : 144   : verifycode:merge_fullinfo_types
+ 2584   : 128   : CVMjniGetSuperclass
+ 2456   : 120   : CVMjniNewLocalRef
+ 2336   : 144   : CVMjniCreateLocalRef
+ 2192   : 112   : CVMjniFatalError
+ 2080   : 120   : CVMdumpStack
+ 1960   : 128   : stacks:CVMdumpFrames
+ 1832   : 392   : CVMdumpFrame
+ 1440   : 120   : stacks:CVMdumpData
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types .umul
+ 2744   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 2624   : 144   : verifycode:merge_fullinfo_types
+ 2480   : 128   : CVMjniGetSuperclass
+ 2352   : 120   : CVMjniNewLocalRef
+ 2232   : 144   : CVMjniCreateLocalRef
+ 2088   : 112   : CVMjniFatalError
+ 1976   : 120   : CVMdumpStack
+ 1856   : 128   : stacks:CVMdumpFrames
+ 1728   : 392   : CVMdumpFrame
+ 1336   : 120   : stacks:CVMdumpData
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types strlen
+ 2728   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 2608   : 144   : verifycode:merge_fullinfo_types
+ 2464   : 128   : CVMjniGetSuperclass
+ 2336   : 120   : CVMjniNewLocalRef
+ 2216   : 144   : CVMjniCreateLocalRef
+ 2072   : 112   : CVMjniFatalError
+ 1960   : 120   : CVMdumpStack
+ 1840   : 128   : stacks:CVMdumpFrames
+ 1712   : 392   : CVMdumpFrame
+ 1320   : 120   : stacks:CVMdumpData
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types pthread_getspecific
+ 2440   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 2320   : 144   : verifycode:merge_fullinfo_types
+ 2176   : 128   : CVMjniGetSuperclass
+ 2048   : 120   : CVMjniNewLocalRef
+ 1928   : 144   : CVMjniCreateLocalRef
+ 1784   : 112   : CVMjniFatalError
+ 1672   : 120   : CVMdumpStack
+ 1552   : 128   : stacks:CVMdumpFrames
+ 1424   : 392   : CVMdumpFrame
+ 1032   : 120   : stacks:CVMdumpData
+ 912    : 376   : CVMconsolePrintf
+ 536    : 304   : CVMformatStringVaList
+ 232    : 120   : CVMgetEE
+ 112    : 112   : POSIXthreadGetSelf
+ 0      : ?(0)  : pthread_getspecific
+
+</PRE><PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types  free
+ 2320   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 2200   : 144   : verifycode:merge_fullinfo_types
+ 2056   : 128   : CVMjniGetSuperclass
+ 1928   : 120   : CVMjniNewLocalRef
+ 1808   : 144   : CVMjniCreateLocalRef
+ 1664   : 112   : CVMjniFatalError
+ 1552   : 120   : CVMdumpStack
+ 1432   : 128   : stacks:CVMdumpFrames
+ 1304   : 392   : CVMdumpFrame
+ 912    : 120   : stacks:CVMdumpData
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types sprintf
+ 2208   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 2088   : 144   : verifycode:merge_fullinfo_types
+ 1944   : 128   : CVMjniGetSuperclass
+ 1816   : 120   : CVMjniNewLocalRef
+ 1696   : 144   : CVMjniCreateLocalRef
+ 1552   : 112   : CVMjniFatalError
+ 1440   : 120   : CVMdumpStack
+ 1320   : 128   : stacks:CVMdumpFrames
+ 1192   : 392   : CVMdumpFrame
+ 800    : 120   : stacks:CVMdumpData
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+
+</PRE><PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types  fflush
+ 1904   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 1784   : 144   : verifycode:merge_fullinfo_types
+ 1640   : 128   : CVMjniGetSuperclass
+ 1512   : 120   : CVMjniNewLocalRef
+ 1392   : 144   : CVMjniCreateLocalRef
+ 1248   : 112   : CVMjniFatalError
+ 1136   : 120   : CVMdumpStack
+ 1016   : 128   : stacks:CVMdumpFrames
+ 888    : 392   : CVMdumpFrame
+ 496    : 120   : stacks:CVMdumpData
+ 376    : 376   : CVMconsolePrintf
+ 0      : ?(0)  : fflush
+
+</PRE><PRE>&gt; stacktrace verifycode:CVMCstackDummy2merge_fullinfo_types pthread_cond_
+wait
+ 1840   : 120   : verifycode:CVMCstackDummy2merge_fullinfo_types
+ 1720   : 144   : verifycode:merge_fullinfo_types
+ 1576   : 112   : verifycode:CVMCstackDummy2object_fullinfo_to_classclass
+ 1464   : 136   : verifycode:object_fullinfo_to_classclass
+ 1328   : 120   : CVMjniNewGlobalRef
+ 1208   : 112   : CVMID_getGlobalRoot
+ 1096   : 120   : globalroots:CVMIDprivate_getGlobalRoot
+ 976    : 136   : globalroots:CVMIDprivate_getGlobalRootNoLock
+ 840    : 136   : CVMexpandStack
+ 704    : 136   : CVMcsRendezvous
+ 568    : 128   : CVMsysMutexWait
+ 440    : 128   : CVMreentrantMutexWait
+ 312    : 144   : CVMcondvarWait
+ 168    : 168   : POSIXcondvarWait
+ 0      : ?(0)  : pthread_cond_wait
+</PRE><A name=signalerror><FONT color=blue>
+<H2>The Worst C Stack Usage Chain in Signaling an Exception Routine</H2></FONT>
+<P>Some worst cases of stack consumption occurring in function that signals a 
+thrown exception have a call path from <TT>CVMsignalErrorVaList</TT> to a C 
+library function such as <TT>strncpy</TT>. <PRE>&gt; stacktrace CVMsignalErrorVaList strncpy
+ 5448   : 120   : CVMsignalErrorVaList
+ 5328   : 144   : interpreter:CVMgcSafeSignalError
+ 5184   : 112   : CVMfillInStackTrace
+ 5072   : 200   : jvm:CVMgcUnsafeFillInStackTrace
+ 4872   : 376   : CVMnewStringUTF
+ 4496   : 144   : CVMnewString
+ 4352   : 136   : CVMgcAllocNewInstance
+ 4216   : 128   : CVMjniCallStaticVoidMethod
+ 4088   : 184   : jni_impl:CVMjniInvoke
+ 3904   : 136   : CVMjniExceptionDescribe
+ 3768   : 112   : CVMjniGetMethodID
+ 3656   : 136   : jni_impl:CVMjniGetXMethodID
+ 3520   : 112   : CVMclassInit
+ 3408   : 128   : classinitialize:CVMprivateClassInit
+ 3280   : 128   : CVMjniCallVoidMethod
+ 3152   : 184   : jni_impl:CVMjniInvoke
+ 2968   : 136   : CVMjniExceptionDescribe
+ 2832   : 112   : CVMjniGetMethodID
+ 2720   : 136   : jni_impl:CVMjniGetXMethodID
+ 2584   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 2456   : 240   : typeid:referenceMethodSignature
+ 2216   : 144   : typeid:referenceFieldSignature
+ 2072   : 120   : typeid:referenceClassName
+ 1952   : 144   : typeid:lookupClass
+ 1808   : 120   : typeid:findFreeScalarEntry
+ 1688   : 136   : typeid:findFreeTableEntry
+ 1552   : 120   : typeid:unlockThrowOutOfMemoryError
+ 1432   : 112   : CVMsysMutexUnlock
+ 1320   : 376   : CVMconsolePrintf
+ 944    : 304   : CVMformatStringVaList
+ 640    : 168   : CVMtypeidMethodTypeToCString
+ 472    : 112   : CVMtypeidFieldTypeToCString
+ 360    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 232    : 120   : typeid:conditionalPutstring
+ 112    : 112   : CVMCstrncpyStub
+ 0      : ?(0)  : strncpy
+
+</PRE><PRE>&gt; stacktrace CVMsignalErrorVaList .umul
+ 5344   : 120   : CVMsignalErrorVaList
+ 5224   : 144   : interpreter:CVMgcSafeSignalError
+ 5080   : 112   : CVMfillInStackTrace
+ 4968   : 200   : jvm:CVMgcUnsafeFillInStackTrace
+ 4768   : 376   : CVMnewStringUTF
+ 4392   : 144   : CVMnewString
+ 4248   : 136   : CVMgcAllocNewInstance
+ 4112   : 128   : CVMjniCallStaticVoidMethod
+ 3984   : 184   : jni_impl:CVMjniInvoke
+ 3800   : 136   : CVMjniExceptionDescribe
+ 3664   : 112   : CVMjniGetMethodID
+ 3552   : 136   : jni_impl:CVMjniGetXMethodID
+ 3416   : 112   : CVMclassInit
+ 3304   : 128   : classinitialize:CVMprivateClassInit
+ 3176   : 128   : CVMjniCallVoidMethod
+ 3048   : 184   : jni_impl:CVMjniInvoke
+ 2864   : 136   : CVMjniExceptionDescribe
+ 2728   : 112   : CVMjniGetMethodID
+ 2616   : 136   : jni_impl:CVMjniGetXMethodID
+ 2480   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 2352   : 240   : typeid:referenceMethodSignature
+ 2112   : 144   : typeid:referenceFieldSignature
+ 1968   : 120   : typeid:referenceClassName
+ 1848   : 144   : typeid:lookupClass
+ 1704   : 120   : typeid:findFreeScalarEntry
+ 1584   : 136   : typeid:findFreeTableEntry
+ 1448   : 120   : typeid:unlockThrowOutOfMemoryError
+ 1328   : 112   : CVMsysMutexUnlock
+ 1216   : 376   : CVMconsolePrintf
+ 840    : 304   : CVMformatStringVaList
+ 536    : 168   : CVMtypeidMethodTypeToCString
+ 368    : 128   : CVMtypeidGetSignatureIterator
+ 240    : 120   : CVMtypeidGetTerseSignatureIterator
+ 120    : 120   : typeid:indexSegmentedTable
+ 0      : ?(0)  : .umul
+
+</PRE><PRE>&gt; stacktrace CVMsignalErrorVaList strlen
+ 5328   : 120   : CVMsignalErrorVaList
+ 5208   : 144   : interpreter:CVMgcSafeSignalError
+ 5064   : 112   : CVMfillInStackTrace
+ 4952   : 200   : jvm:CVMgcUnsafeFillInStackTrace
+ 4752   : 376   : CVMnewStringUTF
+ 4376   : 144   : CVMnewString
+ 4232   : 136   : CVMgcAllocNewInstance
+ 4096   : 128   : CVMjniCallStaticVoidMethod
+ 3968   : 184   : jni_impl:CVMjniInvoke
+ 3784   : 136   : CVMjniExceptionDescribe
+ 3648   : 112   : CVMjniGetMethodID
+ 3536   : 136   : jni_impl:CVMjniGetXMethodID
+ 3400   : 112   : CVMclassInit
+ 3288   : 128   : classinitialize:CVMprivateClassInit
+ 3160   : 128   : CVMjniCallVoidMethod
+ 3032   : 184   : jni_impl:CVMjniInvoke
+ 2848   : 136   : CVMjniExceptionDescribe
+ 2712   : 112   : CVMjniGetMethodID
+ 2600   : 136   : jni_impl:CVMjniGetXMethodID
+ 2464   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 2336   : 240   : typeid:referenceMethodSignature
+ 2096   : 144   : typeid:referenceFieldSignature
+ 1952   : 120   : typeid:referenceClassName
+ 1832   : 144   : typeid:lookupClass
+ 1688   : 120   : typeid:findFreeScalarEntry
+ 1568   : 136   : typeid:findFreeTableEntry
+ 1432   : 120   : typeid:unlockThrowOutOfMemoryError
+ 1312   : 112   : CVMsysMutexUnlock
+ 1200   : 376   : CVMconsolePrintf
+ 824    : 304   : CVMformatStringVaList
+ 520    : 168   : CVMtypeidMethodTypeToCString
+ 352    : 112   : CVMtypeidFieldTypeToCString
+ 240    : 128   : typeid:CVMtypeidPrivateFieldTypeToCString
+ 112    : 112   : CVMCstrlenStub
+ 0      : ?(0)  : strlen
+
+</PRE><PRE>&gt; stacktrace CVMsignalErrorVaList pthread_getspecific
+ 5040   : 120   : CVMsignalErrorVaList
+ 4920   : 144   : interpreter:CVMgcSafeSignalError
+ 4776   : 112   : CVMfillInStackTrace
+ 4664   : 200   : jvm:CVMgcUnsafeFillInStackTrace
+ 4464   : 376   : CVMnewStringUTF
+ 4088   : 144   : CVMnewString
+ 3944   : 136   : CVMgcAllocNewInstance
+ 3808   : 128   : CVMjniCallStaticVoidMethod
+ 3680   : 184   : jni_impl:CVMjniInvoke
+ 3496   : 136   : CVMjniExceptionDescribe
+ 3360   : 112   : CVMjniGetMethodID
+ 3248   : 136   : jni_impl:CVMjniGetXMethodID
+ 3112   : 112   : CVMclassInit
+ 3000   : 128   : classinitialize:CVMprivateClassInit
+ 2872   : 128   : CVMjniCallVoidMethod
+ 2744   : 184   : jni_impl:CVMjniInvoke
+ 2560   : 136   : CVMjniExceptionDescribe
+ 2424   : 112   : CVMjniGetMethodID
+ 2312   : 136   : jni_impl:CVMjniGetXMethodID
+ 2176   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 2048   : 240   : typeid:referenceMethodSignature
+ 1808   : 144   : typeid:referenceFieldSignature
+ 1664   : 120   : typeid:referenceClassName
+ 1544   : 144   : typeid:lookupClass
+ 1400   : 120   : typeid:findFreeScalarEntry
+ 1280   : 136   : typeid:findFreeTableEntry
+ 1144   : 120   : typeid:unlockThrowOutOfMemoryError
+ 1024   : 112   : CVMsysMutexUnlock
+ 912    : 376   : CVMconsolePrintf
+ 536    : 304   : CVMformatStringVaList
+ 232    : 120   : CVMgetEE
+ 112    : 112   : POSIXthreadGetSelf
+ 0      : ?(0)  : pthread_getspecific
+
+</PRE><PRE>&gt; stacktrace CVMsignalErrorVaList free
+ 4920   : 120   : CVMsignalErrorVaList
+ 4800   : 144   : interpreter:CVMgcSafeSignalError
+ 4656   : 112   : CVMfillInStackTrace
+ 4544   : 200   : jvm:CVMgcUnsafeFillInStackTrace
+ 4344   : 376   : CVMnewStringUTF
+ 3968   : 144   : CVMnewString
+ 3824   : 136   : CVMgcAllocNewInstance
+ 3688   : 128   : CVMjniCallStaticVoidMethod
+ 3560   : 184   : jni_impl:CVMjniInvoke
+ 3376   : 136   : CVMjniExceptionDescribe
+ 3240   : 112   : CVMjniGetMethodID
+ 3128   : 136   : jni_impl:CVMjniGetXMethodID
+ 2992   : 112   : CVMclassInit
+ 2880   : 128   : classinitialize:CVMprivateClassInit
+ 2752   : 128   : CVMjniCallVoidMethod
+ 2624   : 184   : jni_impl:CVMjniInvoke
+ 2440   : 136   : CVMjniExceptionDescribe
+ 2304   : 112   : CVMjniGetMethodID
+ 2192   : 136   : jni_impl:CVMjniGetXMethodID
+ 2056   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 1928   : 240   : typeid:referenceMethodSignature
+ 1688   : 144   : typeid:referenceFieldSignature
+ 1544   : 120   : typeid:referenceClassName
+ 1424   : 144   : typeid:lookupClass
+ 1280   : 120   : typeid:findFreeScalarEntry
+ 1160   : 136   : typeid:findFreeTableEntry
+ 1024   : 120   : typeid:unlockThrowOutOfMemoryError
+ 904    : 112   : CVMsysMutexUnlock
+ 792    : 376   : CVMconsolePrintf
+ 416    : 304   : CVMformatStringVaList
+ 112    : 112   : CVMCfreeStub
+ 0      : ?(0)  : free
+
+</PRE><PRE>&gt; stacktrace CVMsignalErrorVaList sprintf
+ 4808   : 120   : CVMsignalErrorVaList
+ 4688   : 144   : interpreter:CVMgcSafeSignalError
+ 4544   : 112   : CVMfillInStackTrace
+ 4432   : 200   : jvm:CVMgcUnsafeFillInStackTrace
+ 4232   : 376   : CVMnewStringUTF
+ 3856   : 144   : CVMnewString
+ 3712   : 136   : CVMgcAllocNewInstance
+ 3576   : 128   : CVMjniCallStaticVoidMethod
+ 3448   : 184   : jni_impl:CVMjniInvoke
+ 3264   : 136   : CVMjniExceptionDescribe
+ 3128   : 112   : CVMjniGetMethodID
+ 3016   : 136   : jni_impl:CVMjniGetXMethodID
+ 2880   : 112   : CVMclassInit
+ 2768   : 128   : classinitialize:CVMprivateClassInit
+ 2640   : 128   : CVMjniCallVoidMethod
+ 2512   : 184   : jni_impl:CVMjniInvoke
+ 2328   : 136   : CVMjniExceptionDescribe
+ 2192   : 112   : CVMjniGetMethodID
+ 2080   : 136   : jni_impl:CVMjniGetXMethodID
+ 1944   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 1816   : 240   : typeid:referenceMethodSignature
+ 1576   : 144   : typeid:referenceFieldSignature
+ 1432   : 120   : typeid:referenceClassName
+ 1312   : 144   : typeid:lookupClass
+ 1168   : 120   : typeid:findFreeScalarEntry
+ 1048   : 136   : typeid:findFreeTableEntry
+ 912    : 120   : typeid:unlockThrowOutOfMemoryError
+ 792    : 112   : CVMsysMutexUnlock
+ 680    : 376   : CVMconsolePrintf
+ 304    : 304   : CVMformatStringVaList
+ 0      : ?(0)  : sprintf
+
+</PRE><PRE>&gt; stacktrace CVMsignalErrorVaList fflush
+ 4504   : 120   : CVMsignalErrorVaList
+ 4384   : 144   : interpreter:CVMgcSafeSignalError
+ 4240   : 112   : CVMfillInStackTrace
+ 4128   : 200   : jvm:CVMgcUnsafeFillInStackTrace
+ 3928   : 376   : CVMnewStringUTF
+ 3552   : 144   : CVMnewString
+ 3408   : 136   : CVMgcAllocNewInstance
+ 3272   : 128   : CVMjniCallStaticVoidMethod
+ 3144   : 184   : jni_impl:CVMjniInvoke
+ 2960   : 136   : CVMjniExceptionDescribe
+ 2824   : 112   : CVMjniGetMethodID
+ 2712   : 136   : jni_impl:CVMjniGetXMethodID
+ 2576   : 112   : CVMclassInit
+ 2464   : 128   : classinitialize:CVMprivateClassInit
+ 2336   : 128   : CVMjniCallVoidMethod
+ 2208   : 184   : jni_impl:CVMjniInvoke
+ 2024   : 136   : CVMjniExceptionDescribe
+ 1888   : 112   : CVMjniGetMethodID
+ 1776   : 136   : jni_impl:CVMjniGetXMethodID
+ 1640   : 128   : CVMtypeidNewMethodIDFromNameAndSig
+ 1512   : 240   : typeid:referenceMethodSignature
+ 1272   : 144   : typeid:referenceFieldSignature
+ 1128   : 120   : typeid:referenceClassName
+ 1008   : 144   : typeid:lookupClass
+ 864    : 120   : typeid:findFreeScalarEntry
+ 744    : 136   : typeid:findFreeTableEntry
+ 608    : 120   : typeid:unlockThrowOutOfMemoryError
+ 488    : 112   : CVMsysMutexUnlock
+ 376    : 376   : CVMconsolePrintf
+ 0      : ?(0)  : fflush
+
+</PRE>
+
+<!-- Body text ends here -->
+<!-- ============================================================== -->
+<HR size="2" noshade>
+<font size=-1> 
+<a href="index.html">Contents</a> | <a href="gc.html">Prev</a> | <a href="hpiref.html">Next</a>
+</font>
+<HR SIZE=2 NOSHADE>
+
+<TABLE BORDER="0" WIDTH="100%">
+<TR VALIGN=TOP>
+
+<TD>
+<FONT SIZE="-2">
+   <A HREF="../legal/SMICopyright.html">Copyright</A> &#169; 2000
+   <A HREF="http://www.sun.com/">Sun Microsystems, Inc.</A>
+    All Rights Reserved.</FONT>
+   <br>
+   <br>
+
+   <FONT SIZE="-1">
+   Please send comments to: <a href="mailto:jcp-cdc-comments@eng.sun.com">jcp-cdc-comments@eng.sun.com</a> 
+   </FONT>
+</TD>
+
+<TD ALIGN=RIGHT>
+   <IMG SRC="../images/sunlogo64x30.gif" ALT="Sun" BORDER=0 WIDTH=64 HEIGHT=30>
+</TD>
+
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>
+

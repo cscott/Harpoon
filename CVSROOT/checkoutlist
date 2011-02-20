@@ -1,0 +1,20 @@
+# The "checkoutlist" file is used to support additional version controlled
+# administrative files in $CVSROOT/CVSROOT, such as template files.
+#
+# The first entry on a line is a filename which will be checked out from
+# the corresponding RCS file in the $CVSROOT/CVSROOT directory.
+# The remainder of the line is an error message to use if the file cannot
+# be checked out.
+#
+# File format:
+#
+#	[<whitespace>]<filename><whitespace><error message><end-of-line>
+#
+# comment lines begin with '#'
+log_accum Can't check out log_accum from CVSROOT (mail cananian).
+commit_prep Can't check out commit_prep script from CVSROOT (mail cananian).
+passwd Can't check out passwd from CVSROOT (mail cananian).
+config Can't check out config from CVSROOT (mail cananian).
+readers Can't check out readers from CVSROOT (mail cananian).
+stop_magic Can't check out stop_magic script from CVSROOT (mail cananian).
+cvs_acls Can't check out cvs_acls script from CVSROOT (mail cananian).

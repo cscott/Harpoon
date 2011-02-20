@@ -1,0 +1,30 @@
+Visit($n$:node) =
+\begin{myalgorithmic}
+\STATE \COMMENT{Assignment rules as on page \pageref{alg:scc2}}
+               \EMPTYLINE
+\FOREACH{branch ``if $x=y$ goto $e_1$ else $e_2$'' in $n$}
+ \IF{$L[x]=\top$ or $L[y]=\top$}
+  \STATE RaiseE($e_1$)
+  \STATE RaiseE($e_2$)
+ \ELSIF{$L[x]=c$ and $L[y]=d$}
+  \IF{$c=d$}
+   \STATE RaiseE($e_1$)
+  \ELSE
+   \STATE RaiseE($e_2$)
+  \ENDIF
+ \ENDIF
+\FOREACH{assignment ``$\tuple{v_1,v_2}\gets\sigma(v_0)$'' associated
+         with this branch}
+ \IF{edge $e_1 \in E_e$ and variable $v_0$ is the $x$ or $y$ in the test}
+  \STATE RaiseV($v_1$, min($L[x]$, $L[y]$))
+ \ELSIF{edge $e_1 \in E_e$}
+  \STATE RaiseV($v_1$, $L[v_0]$)
+ \ENDIF
+ \IF[False branch]{edge $e_2 \in E_e$}
+  \STATE RaiseV($v_2$, $L[v_0]$)
+ \ENDIF
+\ENDFOR
+\ENDFOR
+               \EMPTYLINE
+\STATE \COMMENT{Obvious generalization applies for tests like ``$x\not=y$''}
+\end{myalgorithmic}

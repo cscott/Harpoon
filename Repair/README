@@ -1,0 +1,10 @@
+Type ./build to build the main executable...  This is the filesystem 
+example.  Read file.cc for the options.  The spec files for this example 
+are: 
+testmodel teststruct testabstract testconcrete testspace
+
+Contact me to run the ole example - you need to compile the repair tool as a 
+library to link into it (or just hack a makefile to do this)
+
+The game example isn't included yet, its pretty big, and I'm not certain of 
+licensing issues.

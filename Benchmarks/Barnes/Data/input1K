@@ -1,0 +1,13 @@
+in=
+out=
+nbody=1024
+seed=123
+dtime=0.025
+eps=0.05
+tol=1.0
+fcells=1.0
+fleaves=1.0
+tstop=0.075
+dtout=0.25
+dump=0
+parallel=0

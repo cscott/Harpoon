@@ -1,0 +1,52 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi99.tex,v 1.14 2001-11-28 17:36:57 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[preprint]{acmconf}
+% don't forget to turn off 'preprint' before submission!
+\usepackage[section,plain]{algorithm}
+\usepackage{amsthm} % proof environment
+\usepackage{amstext} % the \text command for math mode (replaces \mbox)
+\usepackage{varioref} % \vref command
+\usepackage{graphicx} % for SCC bargraph
+\usepackage{color}
+\usepackage{comdef}
+\newcommand{\figscale}{1.0}
+
+%setup varioref package
+\renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
+
+% Meet symbol
+\newcommand{\meet}{\ensuremath{\sqcap}}
+% lattice inequalities
+\newcommand{\latlt}{\ensuremath{\sqsubset}}
+\newcommand{\latleq}{\ensuremath{\sqsubseteq}}
+% what to use for executable semantics
+\newcommand{\sgt}{\sqsupset}%{\succ}
+\newcommand{\mycomment}[1]{}
+
+\title{\bf Static Single Information Form}
+
+\author{C. Scott Ananian and Martin Rinard \\
+	Laboratory for Computer Science\\
+	Massachusetts Institute of Technology\\ 
+	Cambridge, MA 02139 \\ 
+	{\tt \{cananian, rinard\}@flexc.lcs.mit.edu} }
+
+\begin{document}
+% in preprint mode, tag pages with a revision identifier.
+\pagestyle{myheadings}\markboth{$ $Revision: 1.14 $ $}{$ $Revision: 1.14 $ $}
+\bibliographystyle{plain}
+
+\maketitle
+
+\input{pldi99-abstract}
+\input{pldi99-intro}
+\input{pldi99-tech}
+\input{pldi99-results}
+\input{pldi99-conclusion}
+
+\bibliography{harpoon}
+
+\appendix
+\input{pldi99-appendix}
+\end{document}

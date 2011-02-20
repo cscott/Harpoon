@@ -1,0 +1,59 @@
+CALL_DIR=`pwd`
+
+cd 
+cd Harpoon/Code
+
+cls=$1
+name=$2
+dir=$3
+levels=$4
+
+echo "Analyzing $cls to analyze-$name"
+
+PRE_FILE=${CALL_DIR}/pre-analysis/pre${name}
+
+
+if test -e $PRE_FILE
+then
+     PREANALYSIS_OPT=--loadpre=$PRE_FILE
+else
+     PREANALYSIS_OPT=--savepre=$PRE_FILE
+fi
+
+
+#PA_FILE=pa-${name}
+
+#echo Current directory `pwd`
+
+#if test -e $PA_FILE
+#then
+#     ANALYSIS_OPT=--loadpa=$PA_FILE
+#else
+#     ANALYSIS_OPT=--savepa=$PA_FILE
+#fi
+
+FLEX_DIR=${HARPOON_DIR}/Code
+
+# the class path used by bin/build-precisec
+#stdPath=${FLEX_DIR}/Support/NewThread.jar:${FLEX_DIR}/Support/reflect-thunk.jar:${FLEX_DIR}/SupportNP/sunthunk.jar:${FLEX_DIR}/SupportNP/collections.jar:${FLEX_DIR}/SupportNP/classes.zip:${FLEX_DIR}/Support/realtime.jar
+
+
+# old stuff
+#${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/NewThread.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
+
+# the class path without NewThread.jar
+#stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
+
+if [ -z ${PA_CLASSPATH} ]
+then
+    echo Please set the PA_CLASSPATH variable!
+    exit 1;
+fi
+
+HARPOON_OPTIONS=" -mx1024m -oss200m \
+		  -Dharpoon.runtime=2 \
+    	          -Dharpoon.alloc.strategy=niftystats \
+    	          -Dharpoon.target.elf=yes \
+                  -Dharpoon.class.path=${PA_CLASSPATH}:$dir \
+		  -Dharpoon.precisec.emit_line_directives=true \
+		  -Dharpoon.precisec.emit_fake_line_directives=true"

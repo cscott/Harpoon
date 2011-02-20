@@ -1,0 +1,53 @@
+% algorithm for cycle-equivalency on nodes and edges
+\begin{verbatim}
+Procedure cycle_equiv (G: CFG)
+{
+  /* Preprocessing */
+  G' := Preprocess (G); /* described in text */
+
+  /* Compute CD equivalence classes */
+  for each node n of G', in reverse depth-first order, do {
+    /* Compute Hi(n) */
+    /*  hi0 is highest using backedges only */
+    hi0 := min{ Number(t) | (t,n) is a backedge };
+    /*  hi1 is highest through children */
+    hi1 := min{ Hi(c) | c is a child of n };
+|   /*  hi2 is lowest through children */
+|   hi2 := max{ Hi(c) | c is a child of n };
+
+    Hi(n) := min{ hi0, hi1 };
+
+    /* Compute BList(n) */
+    BList(n) := create ();
+
+    for each child c of n, do
+      BList(n) := concat (BList(n), BList(c));
+
+    for each backedge <d, n> from a descendant d of n to n, do
+      BList(n) := delete (BList(n), <d, n>);
+|   for each capping backedge <d, n> of n, do
+|     BList(n) := delete (BList(n), <d, n>);
+
+    for each backedge <n, a> from n to an ancestor a of n, do {
+      BList(n) := push (BList(n), <n, a>)
+      RecentSize(<n, a>) := -1; /* not a representative node */
+    }
+
+    if n has more than one child, then {
+      BList(n) := push (BList(n), <n, hi2>); /* capping backedge */
+|     RecentSize(<n, hi2>) := -1;
+|     add <n, hi2> to capping backedges list of hi2;
+    }
+
+    /* Compute NQClass (n) */
+    if n is a representative node, then {
+      if RecentSize (top (BList(n))) != size (BList(n)), then {
+        /* start a new equivalence class */
+        RecentSize (top (BList(n))) := size (BList(n));
+        RecentClass (top (BList(n))) := new-class-name();
+      }
+      NQClass (n) := RecentClass (top (Blist(n)));
+    }
+  } /* for each node */
+}
+\end{verbatim}

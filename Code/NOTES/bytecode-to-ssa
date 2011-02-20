@@ -1,0 +1,9 @@
+Bytecode-to-ssa translation.
+
+Place phi functions at merge nodes for all variables going through it.
+(live in the stack.)
+It is a standard optimization to remove phi functions where all arguments
+are identical; this will reduce the graph to minimal-phi SSA form.
+already have branch and join nodes.
+Use bytecode type information only to determine behaviour of stack-weird
+opcodes.

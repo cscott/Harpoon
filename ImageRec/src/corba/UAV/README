@@ -1,0 +1,38 @@
+# =====================================================================
+# (c) Copyright 2001  BBNT Solutions, LLC
+# =====================================================================
+
+$Id: README,v 1.1 2003-01-16 20:15:11 wbeebee Exp $
+
+========================== TOC ================================================
+
+ $QUO_ROOT/idl
+
+ 1) Introduction
+ 2) Contents
+
+===============================================================================
+
+
+
+1) Introduction
+---------------
+
+The files in this directory describe IDL interfaces for the core QuO components.
+
+
+2) Contents
+-----------
+
+The directory $QUOIDL contains:
+
+   quo.idl           - System Conditions, Callback, QuoKernel, etc. 
+
+   quo_corba.idl     - hack to get around shared CORBA structs
+
+   quo_instr.idl     - Instrumentation
+
+
+NOTE: This directory just contains the IDL files. They are being used in other
+      places, so there is nothing to build here.
+

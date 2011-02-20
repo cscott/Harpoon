@@ -1,0 +1,119 @@
+New in release 0.06 (not-yet-released)
+* VMClassLoader.loadClass(), the bootstrap classloader called by
+  Class.forName() and ClassLoader.loadClass(), may now return null when
+  a class is not found instead of throwing a new ClassNotFoundException.
+  This is a performance optimization in some cases. This also changes
+  the Class.forName() reference code.
+* Native methods in Class have been moved to VMClass.  A few additional
+  methods are also available in VMClass to provide optional performance
+  improvements.
+
+New in release 0.05 (2003/02/15)
+* Supports free Java VMs Jikes RVM and Kissme out of the box, perhaps others.
+* Supports GNU Crypto 1.1 as the official provider of cryptographic primitives
+  and tools for GNU Classpath, available separately from 
+  http://www.gnu.org/software/classpathx/crypto/crypto.html. 
+* Supports GNU Classpath Tools sub-project of GNU Classpath, official provider
+  of standard tools such as gjdoc, a javadoc replacement, and others.  Future
+  releases of GNU Classpath will begin to include these tools, available
+  separately from http://www.gnu.org/software/cp-tools/.
+* Java primitives can be used to support AWT native threading, see 
+  the --enable-portable-native-sync configure option which may become the
+  default in a future release.
+* Include file jni.h has been updated to the 1.4 specification.
+* VM specific internal types for jobject, jfieldID, and jmethodID are
+  supported in jni.h.  More details can be found by reading the comment
+  in include/jni.h.in.  By default the old definitions are used instead.
+* New VM helper class java.io.VMObjectStreamClass which should provide
+  the hasClassInitializer() method. Previously ObjectStreamClass used
+  Class.getDeclaredMethod("<clinit>") but according to the spec this
+  should always throw NoSuchMethodException for class initialization methods.
+  A JNI reference implementation is provided as
+  vm/reference/java-io/java_io_VMObjectStreamClass.c
+* There have been numerous infrastructure improvements
+  * Configure option --enable-gjdoc to generate javadoc-like output 
+  * Gjdoc output is included with distribution, see doc/api/html/
+  * DESTDIR fully supported for install and uninstall
+* Runtime.execInternal contract changed to allow for null `env'
+  and to accept `dir' argument.
+* VMObject.getClass() removed. It was never used.
+* java.lang.Throwable is now a 'normal' GNU Classpath class that uses the
+  VM specific java.lang.VMThrowable to get at the VM state and (if needed)
+  the StackTraceElements for a particular exception. A default implementation
+  (that does nothing) is provided in vm/reference/java/lang/VMThrowable.java.
+* The vm/reference classes from the gnu.vm.stack and their counterparts
+  ExecutionStack and StackFrame in gnu.java.lang have been removed since they
+  are not actually part of the VM interface anyway.
+* The GPLed com.sun.javadoc classes have been moved to the gjdoc application
+  from the GNU Classpath Tools project. See for more information the homepage
+  at: <http://www.gnu.org/software/cp-tools/>.
+
+New in release 0.04 (2002/05/05)
+* Additional configure options to disable zip creation and installation as
+  well as disable gtk peer native compilation.
+* Addition of java.nio, java.util.logging, and javax.swing.
+* Integration of most or all of the ORP patches to date, the purpose of 
+  which are to make it possible to use JBOSS with ORP and Classpath.  This
+  is still in a testing phase however.
+* Significant changes in the reference VM interface that may require
+  support from the JVMs.
+* Lots of bugfixes.
+
+New in release 0.03 (2002/02/08)
+* More merges with libgcj have been performed including java.math which now
+  provides a pure Java implementation of that package.
+  Current status at <http://gcc.gnu.org/java/libgcj-classpath-compare.html>
+* A pure Java implementation (Jazzlib) of java.util.zip is available.
+* Added the java.rmi implementation that Transvirtual donated to the FSF.
+* Includes jni.h now, eliminating the need to specify a particular VM
+  via configure.
+* No proprietary classes or programs are required to compile.
+  Compiles out of the box with jikes or gcj.
+* Separation of compiling Java source and native libraries through the 
+  configure mechanism.  If given no arguments, configure will setup the
+  subsequent build to only produce Java bytecode (.class files).  More
+  information is available in INSTALLING.
+* Support for compiling in a separate directory, as an example you may
+  cd classpath-0.03; mkdir build; cd build; ../configure; make
+* Works with Orp 1.0.9 out of the box. Build instructions can be found at
+  <http://www.gnu.org/software/classpath/doc/orp.html>
+* Lots of bugfixes that were found by using Classpath with the gcj, Orp,
+  SableVM, KissMe and Jaos VMs. Please use our bugdatabase at
+  <http://savannah.gnu.org/support/?group_id=85>
+* Lots of updates to make Classpath more compliant with the 1.2, 1.3 and 1.4
+  API specification. The current status can be found at
+  <http://www.gnu.org/software/classpath/status.html>
+* All files are now distributed under the same terms. Added clarification to
+  GPL exception.
+
+New in release 0.02 (2001/01/06)
+* Support for printing exceptions with Japhar 0.09 + patch included in
+  resource/japhar-0.09.patch.1.
+* Typos, assorted bugfixes.
+
+New in release 0.01 (2000/11/20)
+* More packages are included now, though many remain untested.
+* Support for Japhar 0.09 included.
+
+New in release 0.00 (1999/02/01)
+* First official development release of clean room class library for Java
+* Following packages included:
+	-- java.beans
+	-- java.io
+	-- java.lang
+	-- java.lang.reflect
+	-- java.math
+	-- java.net
+	-- java.security (partial and non-functioning)
+	-- java.security.acl
+	-- java.security.interfaces
+	-- java.util
+* Code is mostly Java 2 (see JDK 1.2) compatible with some functionality
+  missing and/or untested.
+* Support for Japhar (http://www.japhar.org/) virtual machine is included.
+  Requires the current Japhar from CVS.
+* Extensive javadoc comments for public API included
+* Licensed under the GNU Library General Public License (see COPYING.LIB)
+* Does not depend on any non-free code - developed in a "clean room"
+  environment.
+

@@ -1,0 +1,3 @@
+# classes dynamically loaded by volano.
+include Support/locale-root-set
+COM.volano.Access.<init>()V

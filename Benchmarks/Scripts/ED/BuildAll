@@ -1,0 +1,46 @@
+#!/bin/bash
+homedir=`pwd`
+tmpdir=$homedir/tmp
+target=$1
+
+cd ../..
+toplevel=`pwd`
+tooldir=$toplevel/Scripts/Tools
+export PATH=$tooldir:$homedir:$PATH
+
+mkfdir $tmpdir
+
+#Build Echo Clients
+Echo/Scripts/ED/buildlong $tmpdir/EchoClientL
+Echo/Scripts/ED/buildshort $tmpdir/EchoClientS
+
+
+#Build Echo Servers
+
+#Echo/Scripts/ED/buildserver $homedir/Compiler-SA $toplevel $tmpdir/ECHOSAED $tmpdir/ECHOSANRM
+Echo/Scripts/ED/buildserver $homedir/Compiler-PC $toplevel $tmpdir/ECHOPCED $tmpdir/ECHOPCNRM
+
+#Build RunTimes
+Runtime-ED $tmpdir/RuntimeED
+Runtime-NRM $tmpdir/RuntimeNRM
+
+#Assemble Echo Servers
+Assemble $tmpdir/ECHOPCED $tmpdir/ECHOPCNRM
+
+#Build Run Directories
+mkfdir $target/runECHOPCEDSHRT
+cp $tmpdir/EchoClientS $target/runECHOPCEDSHRT/client
+link $tmpdir/RuntimeED $tmpdir/ECHOPCED $target/runECHOPCEDSHRT/server
+
+mkfdir $target/runECHOPCNRMSHRT
+cp $tmpdir/EchoClientS $target/runECHOPCNRMSHRT/client
+link $tmpdir/RuntimeNRM $tmpdir/ECHOPCNRM $target/runECHOPCNRMSHRT/server
+
+mkfdir $target/runECHOPCEDLONG
+cp $tmpdir/EchoClientL $target/runECHOPCEDLONG/client
+link $tmpdir/RuntimeED $tmpdir/ECHOPCED $target/runECHOPCEDLONG/server
+
+mkfdir $target/runECHOPCNRMLONG
+cp $tmpdir/EchoClientL $target/runECHOPCNRMLONG/client
+link $tmpdir/RuntimeNRM $tmpdir/ECHOPCNRM $target/runECHOPCNRMLONG/server
+

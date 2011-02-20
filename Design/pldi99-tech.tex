@@ -1,0 +1,1414 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi99-tech.tex,v 1.12 1999-11-13 07:07:30 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Static Single Information form}
+In this section we will provide a formal specification of SSI form and
+its \emph{minimal} and \emph{pruned} variants.  We will also provide
+efficient algorithms for constructing these representations.
+
+% Technical Contents (definitions, algorithms, etc)
+%  Program Representation
+%   Sigmas, placement algorithms, theorems.
+%  Constraint extraction and framework.
+%  Contraint systems and resolution analysis (for example)
+%   Bitwidth
+%   Array bounds analysis, etc.
+
+\subsection{Definition of SSI form}
+SSI form is an extension of the SSA form introduced in \cite{cytron89:ssa}.
+Building SSI form involves adding pseudo-assignments for a variable $V$:
+\begin{enumerate}
+\item[$(\phi)$] at a control-flow merge when disjoint paths from a
+conditional branch come together and at least one of the paths
+contains a definition of $V$; and
+\item[$(\sigma)$] at locations where control-flow splits and at least
+one of the disjoint paths from the split uses the value of $V$.
+\end{enumerate}
+
+\subsection{Criteria for inserting \sigfunction{s}}
+To minimize the number of \sigfunction{s}, there should be a
+\sigfunction{} for variable $a$ at node $z$ of the flowgraph exactly
+when:
+\begin{enumerate}
+\item node $x$ contains a use of $a$,
+\item node $y$ contains a use of $a$,
+\item there is a nonempty path $P_{zx}$ of edges from $z$ to $x$,
+\item there is a nonempty path $P_{zy}$ of edges from $z$ to $y$, and
+\item paths $P_{zx}$ and $P_{zy}$ do not have any node in common
+except $z$ (that is, $z$ is the point of divergence for these paths).
+\end{enumerate}
+We will call this the \textit{path-convergence criterion} for
+inserting \sigfunction{s}.  We consider the start node to contain an
+implicit definition of every variable, and the end node to contain an
+implicit use of every variable.
+
+\mycomment{
+Note that this criterion is very similar to the path-con\-ver\-gence
+criterion for inserting \phifunction{s} described in
+\cite{appel:modern,cytron91:ssa}.  And, just as in the \phifunction{}
+case, the above criterion is open-ended: since the \sigfunction{}
+itself counts as a use of $a$, we must iterate the above definition
+to determine the final set of \sigfunction{s}.
+}
+
+Upon examination, we see that the path-con\-ver\-gence criteria for $\phi$- and
+\sigfunction{s} interact.  Since \sigfunction{s} are variable
+definitions and \phifunction{s} are variable uses, the set of
+equations defined by the respective criteria must be iterated together 
+in order to find the necessary function sets.  The total number of
+$\phi$- and \sigfunction{s} remains linear, however: we can only place 
+a single $\phi$- and/or \sigfunction{} per variable at any given
+flowgraph node, so the total number of added functions is limited to 
+$2 \cdot N \cdot V$.
+
+\mycomment{
+Cytron et al.\ \cite{cytron91:ssa} has shown that the iterated
+path-con\-ver\-gence criterion for \phifunction{s} is equivalent to the
+\textit{iterated dominance frontier criterion}: whenever a node $x$
+contains a definition of a variable $a$, then any node $z$ in the
+dominance frontier of $x$ needs a \phifunction{} for $a$; nodes in the
+dominance frontier of any added \phifunction{} similarly need
+\phifunction{s}.  The equivalent statement for \sigfunction{s}
+references \textit{uses} of the variable $a$ and nodes in its
+post-dominance frontier. 
+}
+
+\subsection{Variable renaming after \phisigfunction insertion}
+
+Once the compiler has determined where to place the 
+\phifunction{s} and \sigfunction{s}, it renames variables to
+satisfy the following two properties:
+\begin{property}[Naming after \phifunction{s}.]\label{crit_phiname}
+For every node $x$ containing a definition of a variable $a$ in
+the renamed program and node $y$ containing a use of that variable, there
+exists at least one non-empty path $P_{xy}$ of edges from $x$ to $y$
+and no such path contains a definition of $a$ other than at $x$.
+\end{property}
+\begin{property}[Naming after \sigfunction{s}.]\label{crit_signame}
+For every pair of nodes $x$ and $y$ containing uses of a
+variable $a$ defined at a node $z$ in the renamed program, either
+every nonempty path $P_{zx}$ of edges from $z$ to $x$ must contain
+node $y$, or every nonempty path $P_{zy}$ of edges from $z$ to $y$
+must contain $x$.
+\end{property}
+
+In addition, correctness requires that the following hold:
+\begin{property}[Correctness.]\label{crit_correct}
+Along any possible control-flow path in a program being executed
+consider any use of a variable $a$ in the original program and the
+corresponding use of $a_i$ in the renamed program.  Then, at every
+occurrence of the use on the path, $a$ and $a_i$ have the same value.
+The path need not be cycle-free.
+\end{property}
+
+\subsection{Minimal and pruned SSI forms}
+
+\emph{Minimal} and \emph{pruned} SSI forms can be defined which
+parallel their SSA counterparts.  \emph{Minimal} SSI has
+the smallest number of \phisigfunction{s} such that the above
+conditions are satisfied.  \emph{Pruned} SSI form is the minimal form
+with any unused \phisigfunction{s} deleted; that is, it contains no
+\phisigfunction[or]{s} after which there are no subsequent
+non-\phisigfunction[or]{} uses of any of the variables defined on the
+left-hand side.\footnote{An even more compact SSI form may be produced
+by removing \sigfunction{s} for which there are uses for \emph{exactly
+one} of the variables on the left-hand side, but by doing so one loses
+the ability to perform renaming at some control-flow splits which may generate
+additional value information.}  Figure~\vref{fig:prunedssi} compares 
+minimal and pruned SSI form for an example program.
+\begin{myfigure*}
+\begin{center}
+\input{Figures/THex1ssi} \vline\ \input{Figures/THex1ssiPr}
+\end{center}
+\caption[Minimal and pruned SSI forms.]
+{Minimal (left) and pruned (right) SSI forms.}
+\label{fig:prunedssi}
+\end{myfigure*}
+
+Note that, as in SSA form, pruned SSI
+does not strictly satisfy the SSI constraints because it omits dead
+\phisigfunction{s} otherwise required by the path-convergence criteria.
+In practice, a subtractive
+definition of pruned form --- generate minimal form and then remove
+the unused \phisigfunction{s} --- is most useful, but a constructive
+definition can be generated from the standard SSI form definition as
+follows:
+\begin{enumerate}
+\item The convergence/divergence node $z$ of the path-convergence
+criteria for inserting \phisigfunction{s}  must also satisfy: ``and
+there exists a nonempty path $P_{zu}$ from $z$ to a $u$, a use of $a$ in the
+original program, which does not contain another definition of $a$.''
+  \label{amend_place}
+\item The boundary condition specified by the path-convergence
+criterion for the node \code{END} can be
+loosened as follows (emphasis indicates modifications):
+``For the purposes of this definition, the \code{START} node is
+assumed to contain a definition for every variable in the original
+program and the \code{END} nodes a use \emph{for every variable live
+at \code{END}} in the original program.''
+  \label{amend_boundary}
+\end{enumerate}
+
+Pruned form is defined as having the minimal set of \phisigfunction{s}
+that satisfy the amended conditions.  It can easily be verified that
+the modifications suffice to eliminate unused \phisigfunction{s}: if
+the variable defined in a \phisigfunction[or]{} is used, there must
+exist a nonempty path $P_{zu}$ as mandated by amendment~\ref{amend_place},
+where amendment~\ref{amend_boundary} lets $u = \code{END}$ for
+variables live exiting the procedure and thus usefully defined.
+
+\begin{property}\label{pty:pruned_live}
+A node $Z$ gets a \phisigfunction[or]{} for some variable $V_i$ in
+pruned SSI form only if the corresponding variable $V$ is live at $Z$
+in the original program.
+\end{property}
+\begin{proof}
+This is a trivial restatement of amendment~\ref{amend_place}.  A
+variable $v$ is said to be live at some node $N$ if there exists
+a node $U$ using $v$ and a path $N\pathplus U$ on which no definitions
+of $v$ are to be found.  If $V$ is not live at $Z$ then no path
+$Z\pathplus U$ satisfying the amended path-convergence criteria
+can be found and neither a
+\phisigfunction[or]{} can be placed.  Amendment~\ref{amend_boundary}
+ensures this holds true at boundaries.
+\end{proof}
+
+\section{SSI construction algorithms}
+
+Construction of SSI form takes place in two phases.  First, the required
+\phisigfunction{s} for each variable are inserted at control-flow
+merge and split points.  Then renaming is performed to create a valid
+SSI form program.
+
+\subsection{Placement algorithms}
+Sreedhar and Gao have shown \cite{sreedhar95:lintime} that it is
+possible to place \phifunction{s} in time proportional to the size of
+the program.  With appropriate modifications to the algorithm, it can
+be used to place \sigfunction{s}.  However, as noted above, $\phi$-
+and \sigfunction{} placement is not independent: the placement of
+\phifunction{s} necessitates additional \sigfunction{} placement, and
+vice versa.  Thus, the (linear time) placement algorithms can be run
+iteratively to find a fixed point.  Since the maximum number of
+$\phi$- or \sigfunction{s} is proportional to the size of the program,
+it is obvious that no more than $N$ iterations will be required,
+resulting in a worst-case running time of $O(N^2)$.  In practice
+one would expect relatively few iterations\footnote{The number of required
+iterations is related to the maximum loop nesting depth, which Knuth
+\cite{knuth74:fortran} showed remains small for ``human-generated'' programs.}
+yielding a near-linear runtime.
+% rewrite last sentence to reference studies on control-flow depth in
+% actual programs.
+
+The most common construction algorithm for SSA form
+\cite{cytron91:ssa} uses dominance frontiers and suffers from a
+possible quadratic blow-up in the size of the dominance frontier for
+certain common programming constructs.  Various improved algorithms
+use such things as DJ graphs \cite{sreedhar95:lintime} and the
+dependence flow graph \cite{johnson93:dfg} to achieve $O(EV)$ time
+complexity for \phifunction placement.  We build on this work to
+achieve $O(EV)$ construction of SSI form, and present a new algorithm
+for variable renaming in SSI form after \phisigfunction{s} are placed.
+
+% refer to program structure tree and cycle-equivalency algorithms.
+Our construction algorithm begins with a program structure tree of
+single-entry single-exit (SESE) regions, constructed as described by
+Johnson, Pearson, and Pingali \cite{johnson94:pst}.  
+\mycomment{
+We will review
+the algorithms involved, as their published descriptions
+\cite{johnson93:sese} contain a number of errors.
+% copy algorithm 5.3 from thesis here.
+}
+\mycomment{
+\begin{myalgorithm}\small
+\input{Figures/THssialg}
+\caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
+\end{myalgorithm}
+}
+
+We split the construction of SSI form into two parts: placing \phisigfunction{s}
+and renaming variables.  The placement algorithm runs in $O(N V_0)$
+time, and is presented as Algorithm~\vref{alg:SSIplace}.  
+The algorithm is parameterized on
+a function called \code{MaybeLive}.  
+For minimal SSI form,
+\code{MaybeLive} should always return \code{true}.  Faster practical
+run-time may be obtained if pruned SSI form is the desired goal by
+allowing \code{MaybeLive} to return any conservative approximation of
+variable liveness information, which will allow early suppression of
+unused \phisigfunction{s}.  Note that \code{MaybeLive} need not be
+precise; conservative values will only result in an excess of
+\phisigfunction{s}, not an invalid SSI form.  Section
+\ref{sec:unusedcode} describes a post-processing algorithm to
+efficiently remove the excess \phisigfunction{s}.%
+\mycomment{
+\footnote{Note that equivalent results could be
+obtained by adding a \phifunction{} for every variable at every merge
+and a \sigfunction{} for every variable at every split, and
+post-processing.  In fact the same time bounds ($O(N V_0)$) would be
+obtained.  There is a large practical difference in actual runtime and
+space costs, however, which motivates our more efficient approach.}
+The remainder of this section will be devoted to a correctness proof
+of Algorithm~\ref{alg:SSIplace}.
+}
+
+\begin{lemma}\label{lem:sese_child}
+No \phifunction{s} (\sigfunction{s}) for a variable $v$ are needed in
+an SESE region not containing a definition (use) of $v$.
+\end{lemma}
+\begin{proof}
+See Appendix~\ref{app:proofs}.
+\end{proof}
+\mycomment{
+\begin{proof}
+Let us assume a \phifunction for $v$ is needed at some node $Z$
+inside an SESE not containing a definition of $v$.  
+Then by condition \ref{crit_phiplace} of the SSI
+form definition, there exist paths $X \pathplus Z$ and $Y \pathplus Z$
+having no nodes but $Z$ in common where $X$ and $Y$ contain either
+definitions of $v$ or \phisigfunction[or]{s} for $v$.  Choose any such
+paths:
+\begin{description}
+\item[Case I:] Both $X$ and $Y$ are outside the SESE.  Then, as there
+is only one entrance edge into the SESE, the paths $X \pathplus Z$ and
+$Y \pathplus Z$ must contain some node in common other than Z.  But
+this contradicts our choice of $X$ and $Y$.
+\item[Case II:] At least one of $X$ and $Y$ must be inside the SESE.
+If both $X$ and $Y$ are not definitions of $v$ but rather
+\phisigfunction[or]{s} for $v$, then by recursive application of this proof
+there must exist some choice of $X$, $Y$, and $Z$ inside this SESE
+where at least one of $X$ and $Y$ is a definition.  But $X$ or $Y$
+cannot be a definition of $v$ because they are inside the SESE of $Z$ which
+was chosen to contain no definitions of $v$.
+\end{description}
+
+A symmetric argument holds for \sigfunction{s} for $v$, using
+condition \ref{crit_sigplace} of the SSI form definition, and the fact
+that there exists one exit edge from the SESE.
+\end{proof}
+}
+
+\mycomment{
+The above lemma justifies line~\ref{line:place_skip} of the algorithm
+on page~\pageref{line:place_skip}, which skips over any SESE region
+not containing a definition (use) of $v$ when placing
+\phifunction{s} (\sigfunction{s}) for $v$.
+}
+
+\begin{lemma}\label{lem:ssi_place_dom}
+If a definition (use) or a \phisigfunction[or]{} for a variable $v$ is
+present at some node $D$ (\/$U$), then a \phifunction (\sigfunction) for
+$v$ is needed at every node $N$:
+\begin{enumerate}
+\item of input (output) arity greater than 1,
+\item reachable from $D$ (from which $U$ is reachable),
+\item whose smallest enclosing SESE contains $D$ (\/$U$), and
+\item which is not dominated by $D$ (not post-dominated by $U$).
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+See Appendix~\ref{app:proofs}.
+\end{proof}
+\mycomment{
+\begin{proof}
+We will first prove that a node $N$ failing any one of the conditions does
+not need a \phisigfunction[or].
+\begin{itemize}
+\item Conditions \ref{crit_phiplace} and \ref{crit_sigplace} of the
+SSI form definition require node $N$ to be the first convergence
+(divergence) of some paths $X \pathplus N$ and $Y \pathplus N$ ($N
+\pathplus X$ and $N \pathplus Y$).  If the input arity is less than 2
+or there is no path from a definition of $v$, than it fails the
+$\phi$-placement criterion \ref{crit_phiplace}.  If the output arity
+is less than 2 or there is no path to a use of $v$, then it fails the
+$\sigma$-placement criterion \ref{crit_sigplace}.
+\item If there exists a SESE containing $N$ that does not contain any
+definition, \phisigfunction[or]{} $D$ for $v$, then $N$ does not require a
+\phisigfunction[or]{} for $v$ by lemma~\ref{lem:sese_child}.
+\item Let us suppose every $D_i$ containing a definition,
+\phisigfunction[or]{} for $v$ dominates $N$.  If $N$ requires a
+\phifunction for $v$,  there exist paths $D_1 \pathplus N$ and
+$D_2 \pathplus N$ containing no nodes in common but $N$.  We use these
+paths to construct simple paths $\code{START}\pathplus D_1 \pathplus N$ and
+$\code{START}\pathplus D_2 \pathplus N$.  By the definition of a
+dominator, every path from \code{START} to $N$ must contain every
+$D_i$.  But $D_1 \pathplus N$ cannot contain $D_2$, and if
+$\code{START} \pathplus D_1$ contains $D_2$, we can make a path
+$\code{START} \pathplus D_2 \pathplus N$ which does not contain $D_1$
+by using the $D_1$-free path $D_2 \pathplus N$.  The assumption leads
+to a contradiction; thus, there must exist some $D_i$ which does not
+dominate $N$ if $N$ is required to have a \phifunction for $v$.  The
+symmetric argument holds for post-dominance and \sigfunction{s}.
+\end{itemize}
+This proves that the conditions are necessary.  It is obvious from an
+examination of conditions \ref{crit_phiplace} and \ref{crit_sigplace}
+of the SSI form definition and lemma \ref{lem:sese_child} that they are
+sufficient.
+\end{proof}
+}
+
+In practice, the conditions of Lemma \ref{lem:ssi_place_dom} are too expensive
+to implement directly.  Instead, we use a conservative approximation
+to SSI form, which allows us to place more \phisigfunction{s} than
+minimal SSI requires 
+\mycomment{(for example, a \phifunction for $v$ at the
+circled node in Figure~\ref{fig:placeerror}), }
+while satisfying the
+conditions of the SSI form definition.  
+Our algorithm also allows us to do pre-pruning of the SSI
+form during placement.  The result is not pruned SSI, but contains a
+tight superset of the \phisigfunction{s} that pruned form requires.
+\mycomment{
+\begin{myfigure}
+\centering\renewcommand{\figscale}{0.30}\input{Figures/THmorephi}
+\caption{An flowgraph where Algorithm~\ref{alg:SSIplace} places
+\phifunction{s} conservatively.}\label{fig:placeerror}
+\end{myfigure}
+}
+
+\begin{theorem}\label{thm:placeproof}
+Algorithm~\ref{alg:SSIplace} places all the
+\phisigfunction{s} required by the path-convergence criteria for
+\phisigfunction{s}.
+\end{theorem}
+\begin{proof}
+Lemma \ref{lem:sese_child} states that the child region exclusion of
+Algorithm~\ref{alg:SSIplace} does not cause required \phisigfunction[or]{s} to
+be omitted.  Property~\ref{pty:pruned_live} allows the omission of
+\phisigfunction{s} for $v$ at nodes where $v$ is dead when creating
+pruned form; \code{MaybeLive} may not return \code{false} for nodes
+where $v$ is not dead, but may return \code{true} at nodes where $v$
+is dead without harming the correctness of the \phisigfunction{}
+placement.
+\end{proof}
+\dontfixme{It would be nice to be able to show a means of using the
+algorithm and the conditions in \ref{lem:ssi_place_dom} to produce exactly
+minimal form or exactly pruned form.  It doesn't hurt our time bounds
+to do fixup later, though.}
+
+\subsubsection{Computing liveness}
+Incorporating liveness information into the creation of pruned SSI
+form appears to lead to a chicken-and-egg problem: although the pruned
+SSI framework allows highly efficient liveness analysis, obtaining the
+liveness information from the original program can be problematic.
+The fastest sparse algorithm has stated time bounds of $O(E+N^2)$
+\cite{ferrante91:pruned}, which is likely to be more expensive than
+the rest of the SSI form conversion.  Luckily, Kam and Ullman
+\cite{kam76:dataflow}, in conjunction with an empirical study by Knuth
+\cite{knuth74:fortran}, show that liveness analysis is highly likely
+to be linear for reducible flow-graphs.  In our work this question is
+avoided, as we obtain our liveness information directly from
+properties of the Java bytecode files that are our input to the
+compiler.  But in any case our algorithms allow conservative
+approximation to liveness, so even in the case of non-reducible flow
+graphs it should not be difficult to quickly generate a rough
+approximation.
+
+\subsubsection{Variable renaming}
+\mycomment{
+\begin{myfigure}[p]\small
+\input{Figures/THssirend}
+\caption{Environment datatype for the SSI renaming algorithm.}
+\label{fig:SSIrename_data}
+\end{myfigure}
+\begin{myalgorithm}\small
+\input{Figures/THssiren1}
+\caption{SSI renaming algorithm.}\label{alg:SSIrename1}
+\end{myalgorithm}
+\begin{myalgorithm}\small
+\input{Figures/THssiren2}
+\caption{SSI renaming algorithm, cont.}\label{alg:SSIrename2}
+\end{myalgorithm}
+}
+
+We have shown that Algorithm~\ref{alg:SSIplace} places all the
+required \phisigfunction{s} in the control-flow graph according to 
+the path-convergence criteria for SSI form and the stated 
+boundary conditions at \code{START} and \code{END}.
+The next step is to rename variables to
+be consistent with properties \ref{crit_phiname} and
+\ref{crit_signame}. Algorithm~\ref{alg:SSIrename1} 
+in Appendix~\ref{app:algorithms} performs
+this variable renaming. 
+Algorithm~\ref{alg:SSIrename1} starts on a
+flow-graph with placed \phisigfunction{s}. 
+When the algorithm finishes, the control flow-graph
+will be in proper SSI form.  The SSI form is not necessarily
+minimal. The next section will show how to post-process 
+to create minimal or pruned SSI form.
+
+\mycomment{
+The algorithm requires
+an \code{Environment} datatype which is defined in
+Figure~\ref{fig:SSIrename_data}.  Using an imperative programming
+style, it is possible to perform a sequence of any $N$ operations on
+\code{Environment} as defined in the figure in $O(N)$ time; in a
+functional programming style any $N$ operations can be completed in
+$O(N \log N)$ time.\footnote{The curious reader is referred to section
+5.1 of Appel \cite{appel:modern} for implementation details.}  As the
+coarse structure of Algorithm~\ref{alg:SSIrename1} is a simple
+depth-first search, it is easy to see that the \code{Search} procedure
+can be invoked from line~\fullref{line:search1} and
+line~\fullref{line:search2} a total of $O(E)$ times; likewise its
+inner loop (lines~\ref{line:searchloop_start} to
+\ref{line:searchloop_end}) can be executed a total of $E$ times across
+all invocations of \code{Search}.  A total of $U_{SSA}+D_{SSA}$ calls
+to the operations of the \code{Environment} datatype will be made
+within all executions of \code{Search}.  For the imperative
+implementation of \code{Environment} a total time bounds of
+$O(E+U_{SSA}+D_{SSA})$ for the variable renaming algorithm is
+obtained.
+
+ to prove that these algorithms combined suffice to
+convert a program into SSI form.  The SSI form is not necessarily
+minimal, as we showed in section~\ref{sec:SSIplace}; the next
+section will show how to post-process to create minimal or pruned SSI
+form.
+}
+
+
+\mycomment{
+\begin{lemma}\label{lem:path_construct}
+The stack trace of calls to \code{Search} defines a unique path
+through $G$ from \code{START}.
+\end{lemma}
+\begin{proof}
+We will prove this lemma by construction.  For every consecutive pair
+of calls to \code{Search} we construct a path $X\pathplus Y$ starting with the
+edge $\tuple{X,N_0}$ which is the argument of the first call, and
+ending with the edge $\tuple{N_n, Y}$ which is the argument of the
+second call.  From line~\ref{line:search_onesucc} of the \code{Search}
+procedure on page~\pageref{line:search_onesucc} we note that every
+edge $\tuple{N_i, N_{i+1}}$ between the first and last has exactly one
+successor.  Furthermore, the call to search on line~\ref{line:search2}
+defines a path starting with the edge which our segment $X\pathplus Y$
+ends with; therefore the paths can be combined.  By so doing from the
+bottom of the call stack to the top we construct a unique path from
+\code{START}.
+\end{proof}
+
+For brevity, we will hereafter refer to the canonical path constructed
+in the manner of lemma~\ref{lem:path_construct} corresponding to the
+stack of calls to \code{Search} when an edge $e$ is first
+encountered as $CP(e)$.  Every edge in the CFG is encountered exactly
+once by \code{Search}, so $CP(e)$ exists and is unique for every edge
+$e$ in the CFG.
+
+\begin{lemma}\label{lem:renamephi}
+SSI form condition~\ref{crit_phiname} (\phifunction{} naming) holds
+for variables renamed according to Algorithm~\ref{alg:SSIrename1}.
+\end{lemma}
+\begin{proof}
+We restate SSI form condition~\ref{crit_phiname} for reference:
+\begin{quote}
+For every node $X$ containing a definition of a variable $V$ in
+the new program and node $Y$ containing a use of that variable, there
+exists at least one path $X \pathplus Y$ and no such path contains a
+definition of $V$ other than at $X$.
+\end{quote}
+We consider the canonical path 
+$CP(\tuple{Y',Y})=\code{START}\pathstar Y' \path Y$
+for some use of a variable $v$ at $Y$, constructed according to
+lemma~\ref{lem:path_construct} 
+from a stack trace of calls to \code{Search}.
+is encountered.  This path is unique, although more than one canonical
+path may terminate at $Y$ at nodes with more than one predecessor.
+These paths are distinguished by the incoming edge to
+$Y$.\footnote{Note that the notation \tuple{N,N'} for denoting edges
+does not always denote an edge unambigiously; imagine a conditional
+branch where both the \code{true} and \code{false} case lead to the
+same label.  In such cases an additional identifier is necessary to
+distinguish the edges.  Alternatively, one may split such edges to
+remove the ambiguity.  We treat edges as uniquely identifiable and
+leave the implementation to the reader.}  We identify each operand
+$v_i$ of a \phifunction{} with the appropriate incoming edge $e$ to
+ensure that $CP(e)$ is well defined and unique in the context of a
+use of $v_i$.
+
+The canonical path $\code{START}\pathplus Y$ must contain $X$, a definition of
+$v$, if $Y$ uses a variable defined in $X$, as \code{Search} renames
+all definitions (in lines \ref{line:rendef1}, \ref{line:rendef2}, and
+\ref{line:rendef3}) and destroys the name mapping in $\mathcal{E}$
+just before it returns.  The call to \code{Search} which creates the
+definition of $v$ must therefore always be on the stack, and thus in
+the path $CP(\tuple{Y',Y})$, for any use to receive a the name $v$.
+Note that this is
+true for \phifunction{s} as well, which receive names when the
+appropriate incoming edge $\tuple{Y',Y}$ is traversed, not necessarily
+when the node $Y$ containing the \phifunction{} is first encountered.
+
+We have proved that $\code{START}\pathplus X\pathplus Y$ exists; now
+we must prove that no other path from $X$ to $Y$ contains a definition
+of $v$.  Call this other definition $D$.  Obviously $D$ cannot be on
+our canonical path $\code{START}\pathplus X\pathplus Y$, or
+line~\ref{line:rendef3} would have caused $Y$ to use a different name.
+But as we just stated, all variable name mappings done by $D$ will be
+removed when the call to \code{Search} which touched $D$ is taken off
+the call stack.  So $D$ must be on the call stack, and thus on the
+canonical path; a contradiction. %
+%
+Since assuming the existence of some other path $X\pathplus Y$
+containing a definition of $v$ leads to contradiction no other such
+path may exist, completing the proof of the lemma.
+\end{proof}
+
+\begin{lemma}\label{lem:renamesig}
+SSI form condition~\ref{crit_signame} (\sigfunction{} naming) holds for
+variables renamed according to Algorithm~\ref{alg:SSIrename1}.
+\end{lemma}
+\begin{proof}
+We restate SSI form condition~\ref{crit_signame} for reference:
+\begin{quote}
+For every pair of nodes $X$ and $Y$ containing uses of a
+variable $V$ defined at node $Z$ in the new program, either every path
+$Z \pathplus X$ must contain $Y$ or every path $Z \pathplus Y$ must
+contain $X$.
+\end{quote}
+Let us assume there are paths $Z\pathplus X$ and $Z\pathplus Y$
+violating this condition; that is, let us chose nodes $X$ and $Y$
+which use $V$ and $Z$ defining $V$ such that there exists a path $P_1$
+from $Z$ to $X$ not containing $Y$ and a path $P_2$ from $Z$ to $Y$ not
+containing $X$.  By the argument of the previous lemma, there exists
+a canonical path $P_3=CP(e)$ from \code{START} to $X$ through $Z$
+corresponding to a stack
+trace of \code{Search}; note that $P_3$ need not contain $P_1$.
+There are two cases:
+\begin{description}
+\item[Case I:] $P_3$ does not contains $Y$.  Then there is some last
+node $N$ present on both $P_2: Z\pathstar N\pathplus Y$ and
+$P_3: \code{START}\pathplus Z\pathstar N\pathplus X$.  By SSI
+condition~\ref{crit_sigplace} this node $N$ requires a \sigfunction{}
+for $V$.  If $N\not=Z$ then line~\ref{line:rendef1} of
+Algorithm~\ref{alg:SSIrename1} would rename $V$ along $P_3$
+and $X$ would not use the same variable $Z$ defined; if
+$N=Z$, then line~\ref{line:rendef2} would have ensured that $X$
+and $Y$ used different names.  Either case contradicts our choices of
+$X$, $Y$, and $Z$.
+\item[Case II:] $P_3$ does contain $Y$.  Then consider the path
+$\code{START}\pathplus Z\pathplus Y$ along $P_3$, which does not
+contain $X$.  The argument of case I applies with $X$ and $Y$ reversed.
+\end{description}
+Any assumed violation of condition~\ref{crit_signame} leads to
+contradiction, proving the lemma.
+\end{proof}
+
+Every path $CP(e)$ corresponds to a execution state in a call to
+\code{Search} at the point where $e$ is first encountered.  The value
+of the environment mapping $\mathcal{E}$ at this point in the
+execution of Algorithm~\ref{alg:SSIrename1} we will denote as
+$\mathcal{E}^e$.  For a node $N$ having a single predecessor $N_p$ and
+single successor $N_s$, we will denote
+$\mathcal{E}^{\tuple{N_p,N}}$ as $\mathcal{E}_{\text{before}}^N$ and 
+$\mathcal{E}^{\tuple{N,N_s}}$ as $\mathcal{E}_{\text{after}}^N$.
+It is obvious that 
+$\mathcal{E}_{\text{after}}^{N_p} = \mathcal{E}_{\text{before}}^{N  }$ and
+$\mathcal{E}_{\text{after}}^{N  } = \mathcal{E}_{\text{before}}^{N_s}$
+when $N_p$ and $N_s$, respectively, are also single-predecessor
+single-successor nodes.
+
+\begin{lemma}\label{lem:correctness}
+SSI form condition~\ref{crit_correct} (correctness) holds for
+variables renamed according to Algorithm~\ref{alg:SSIrename1}.  That
+is, along any possible control-flow path in a program being executed a
+use of a variable $V_i$ in the new program will always have the same
+value as a use of the corresponding variable $V$ in the original
+program.
+\end{lemma}
+\begin{proof}
+We will use induction along the path $N_0\path N_1\path\ldots\path N_n$.
+We consider $e_k=\tuple{N_{k},N_{k+1}}$, the $(k+1)$th edge in the path,
+and assume that, for all $j<k$, each variable $V$ in the original
+program agrees with the value of $\mathcal{E}^{e_j}[V]=V_i$ in the new
+program.  We show that $\mathcal{E}^{e_k}[V]$ agrees with $V$ at edge
+$e_k$ in the path.
+\begin{description}
+\item[Case I:] $k=0$. The base case is trivial: the \code{START} node
+($N_0$) contains no statements, and along each edge $e$ leaving start
+$\mathcal{E}^e[V]=V_0$.  By definition $V_0$ agrees with $V$ at the
+entry to the procedure.
+\item[Case II:] $k>0$ and $N_k$ has exactly one predecessor and one successor.
+If $N_k$ is single-entry single-exit, then it is not a \phisigfunction[or].
+As an ordinary assignment, it will be handled by
+lines~\ref{line:rename_ordinary1} to \ref{line:rename_ordinary2} of
+Algorithm~\vref{alg:SSIrename2}.  By the induction hypothesis (which
+tells us that the uses at $N_k$ correspond to the same values as the
+uses in the original program) and the semantics of
+assignment, the mapping $\mathcal{E}_{\text{after}}^{N_k}$ is easily
+verified to be valid when $\mathcal{E}_{\text{before}}^{N_k}$ is
+valid.  Thus the value of every original variable $V$ corresponds to
+the value of the new variable 
+$\mathcal{E}_{\text{after}}^{N_k}[V]=\mathcal{E}^{e_k}[V]$ on $e_k$.
+\item[Case III:] $k>0$ and $N_k$ has multiple predecessors and one
+successor.  In this case $N_k$ may have multiple \phifunction{s} in
+the new program, and \mycomment{by the definition in section~\ref{sec:defs}} $N_k$
+has no statements in the original program.  Thus the value of any
+variable $V$ in the original program along edge $e_k$ is identical to
+its value along edge $e_{k-1}$.  We need only show that the value of
+the variable $\mathcal{E}^{e_{k-1}}[V]$ is the same as the value of
+the variable $\mathcal{E}^{e_k}[V]$ in the new program.  For any
+variable $V$ not mentioned in a \phifunction{} at $N_k$ this is
+obvious.  Each variable defined in a \phifunction{} will get the value
+of the operand corresponding to the incoming control-flow path edge.
+The relevant lines in Algorithm~\ref{alg:SSIrename2} start with
+\ref{line:phisrc1} and \ref{line:phisrc2}, where we see that the
+operand corresponding to edge $e_{k-1}$ of a \phifunction{} for $V$
+correctly gets $\mathcal{E}^{e_{k-1}}[V]$.  At
+line~\ref{line:rendef1}, we see that the destination of the
+\phifunction{} is correctly $\mathcal{E}^{e_k}[V]$.  Thus the value of
+every original variable $V$ correctly correponds to
+$\mathcal{E}^{e_k}[V]$ by the induction hyptothesis and the semantics
+of the \phifunction{s}.
+\item[Case IV:] $k>0$ and $N_k$ has one predecessor and multiple
+successors.  Here $N_k$ may have multiple \sigfunction{s} in the new
+program, and is empty in the original program.  The argument goes as
+for the previous case.  It is obvious that variables not mentioned in
+the \sigfunction{s} correspond at $e_k$ if they did at $e_{k-1}$.  For
+variables mentioned in \sigfunction{s}, line~\ref{line:sigsrc} shows
+that operands correctly get $\mathcal{E}^{e_{k-1}}[V]$ and
+line~\ref{line:rendef2} shows that the destination corresponding to
+$e_k$ correctly gets $\mathcal{E}^{e_k}[V]$.  Therefore the values of
+original variables $V$ correspond to the value of
+$\mathcal{E}^{e_k}[V]$ by the induction hypothesis and the semantics
+of the \sigfunction{s}.
+\comment{
+\item[Case V:] $N_k$ has multiple predecessors and multiple
+successors.  Forbidden by the CFG definition in section~\ref{sec:defs}.
+\end{description}
+Therefore, on every edge of the chosen path, the values of the
+original variables correspond to the values of the renamed SSI form
+variables. The value correspondence at the path endpoint (a use of
+some variable $V$) follows.
+\end{proof}
+}
+}
+
+\begin{theorem}\label{thm:renameproof}
+Algorithm~\ref{alg:SSIrename1} renames variables such that SSI form
+properties \ref{crit_phiname}, \ref{crit_signame}, and
+\ref{crit_correct} hold.
+\end{theorem}
+\begin{proof}
+Direct from lemmas~\ref{lem:renamephi}, \ref{lem:renamesig}, and
+\ref{lem:correctness}.
+\end{proof}
+
+\begin{theorem}
+Algorithms~\ref{alg:SSIplace} and \ref{alg:SSIrename1} correctly
+transform a program into SSI form.
+\end{theorem}
+\begin{proof}
+Theorem~\ref{thm:placeproof} proves that \phisigfunction{s} are placed
+correctly to satisfy the path-convergence criteria of the SSI form
+definition, and theorem~\ref{thm:renameproof} proves that variables
+are renamed correctly to satisfy properties~\ref{crit_phiname},
+\ref{crit_signame} and~\ref{crit_correct}.
+\end{proof}
+
+\subsubsection{Pruning SSI form}\label{sec:unusedcode}
+The SSI algorithm can be run using any conservative approximation to
+the liveness information
+(including the function $\code{MaybeLive}(v, n)=\code{true}$) if
+unused code elimination%
+\footnote{We follow \cite{wegman91:scc} in distinguishing
+\emph{unreachable code elimination}, which removes code that can never
+be executed, from \emph{unused code elimination}, which deletes
+sections of code whose results are never used.  Both are often called
+``dead code elimination'' in the literature.} is performed to remove
+extra \phisigfunction{s} added and create pruned SSI.
+Figure~\ref{fig:deaddata} and Algorithm~%
+\ref{alg:deadalg} present an algorithm to identify unused code in
+$O(N V_{SSI})$ time, after which a simple $O(N)$ pass suffices to remove it.
+The complexity analysis is simple: nodes and variables are visited at
+most once, raising their value in the analysis lattive from
+\emph{unused} to \emph{used}.  Nodes marked \emph{used} are never
+visted.  So \code{MarkNodeUseful} is invoked at most $N$ times, and
+\code{MarkVarUseful} is invoked at most $V_{SSI}$ times.  The calls to
+\code{MarkNodeUseful} may examine at most every variable use in the
+program in lines~\ref{line:deadnode1}-\ref{line:deadnode2}, taking
+$O(U_{SSI})$ time at worst. Each call
+to \code{MarkVarUseful} examines at most one node (the single
+definition node for the variable, if it exists) and in constant time
+pushes at most one node on to the worklist for a total of $O(V_{SSI})$ time.
+So the total run time of \code{FindUseful} is
+$O(U_{SSI}+V_{SSI})=O(U_{SSI})$.
+%\footnote{If the number of instruction
+%operands and \phisigfunction{} arities are limited by a
+%constant, we get a time bound of $O(N)$.}
+
+\mycomment{
+\begin{myfigure}\small
+\input{Figures/THdeaddata}
+\caption{Datatypes and operations used in unused code elimination.}
+\label{fig:deaddata}
+\end{myfigure}
+
+\begin{myalgorithm}\small\linespread{0.75}
+\input{Figures/THdeadalg}
+\caption{Identifying unused code using SSI form.}
+\label{alg:deadalg}
+\end{myalgorithm}
+}
+
+\subsubsection{Discussion}
+Note that our algorithm for placing \phisigfunction{s} in SSI form is
+\emph{pessimistic}; that is, we at first assume every node in the
+control-flow graph with input arity larger than one requires a
+\phifunction{} for every variable and every node with out-arity larger
+than one requires a \sigfunction{} for every variable, and then use
+the PST, liveness information, and unused code elimination to
+determine safe places to
+\emph{omit} \phisigfunction[or]{s}.  Most SSA construction
+algorithms, by contrast, are \emph{optimistic}; they assume no
+\phisigfunction[or]{s} are needed and attempt to determine where
+they are provably necessary.  
+In our experience, optimistic algorithms tend to have poor
+time bounds because, in the worst case, they 
+may need to perform multiple
+passes over the graph as they propagate \phisigfunction[or]{s}.
+In such cases, a pessimistic algorithm assumes the correct answer at the 
+start, fails to show that any \phisigfunction[or]{s} can be removed, and
+terminates in one pass. See Appendix~\ref{app:optimistic} for more
+information.
+
+\mycomment{
+In our experience, optimistic algorithms tend to
+have poor time bounds because of the possibility of input graphs like
+the one illustrated in Figure~\vref{fig:evil}.
+Proving that all but two nodes require
+\phisigfunction[and/or]{s} for the variable $a$ in this example seems to
+inherently require $O(N)$ passes over the graph; each pass can prove
+that \phisigfunction[or]{s} are required for only those nodes adjacent to
+nodes tagged in the previous pass.  Starting with the circled node, the
+\phisigfunction{s} spread one node left on each pass. On the other hand,
+a pessimistic algorithm assumes the correct answer at the start, fails
+to show that any \phisigfunction[or]{s} can be removed, and
+terminates in one pass.\dontfixme{Are we \emph{sure} similar worst cases
+don't exist for the pessimistic algorithm?}
+
+\begin{myfigure}[t]
+\centering\renewcommand{\figscale}{0.25}\input{Figures/evil}
+\caption{A worst-case CFG for ``optimistic'' algorithms.}
+\label{fig:evil}
+\end{myfigure}
+}
+
+\subsection{Time and space complexity of SSI form}\label{sec:ssi_complexity}
+%\begin{myfigure}%[t]
+%\input{Figures/phisig}
+%\caption{Number of \phisigfunction{s} added versus procedure length.}
+%\label{fig:phisigdata}
+%\end{myfigure}
+\begin{myfigure}%[t]
+\centering\renewcommand{\figscale}{0.7}\input{Figures/THussi}
+\caption{Number of uses in SSI form as a function of
+procedure~length.}
+\label{fig:ussidata}
+\end{myfigure}
+\begin{myfigure}%[t]
+\centering\renewcommand{\figscale}{0.7}\input{Figures/THv0}
+\caption{Number of original variables as a function of
+procedure~length.}
+\label{fig:v0data}
+\end{myfigure}
+Discussions of time and space complexity for sparse evaluation
+frameworks in the literature are often misleadingly called ``linear''
+regardless of what the $O$-notation runtime bounds are.  A canonical
+example is \cite{sreedhar95:lintime}, which states that
+for SSA form, ``the number of $\phi$-nodes needed remains linear.''
+Typically Cytron \cite{cytron91:ssa} is cited; however, that reference
+actually reads:
+\begin{quote}
+For the programs we tested, the plot in [Figure 21 of Cytron's paper]
+shows that the number of \phifunction{s} is also linear in the size of
+the original program.
+\end{quote}
+It is important to note that Cytron's claim is based not on
+algorithmic worst-bounds complexity, but on empirical evidence.  This
+reasoning is not unjustified; Knuth \cite{knuth74:fortran} showed in
+1974 that ``human-generated'' programs almost without exception show
+properties favorable to analysis; in particular shallow maximum loop
+nesting depth.  Wegman and Zadeck \cite{wegman91:scc} clearly make
+this distinction by noting that:
+\begin{quote}
+In theory the size [of the SSA form representation] can be $O(EV)$,
+but empirical evidence indicates that the work required to compute the
+SSA graph is linear in the program size.
+\end{quote}
+Our worst-case space complexity bounds for SSI form are identical to
+SSA form --- $O(EV)$ --- but in this section we will endeavour to show
+that typical complexities are likewise ``linear in the program size.''
+
+The total runtime for SSI placement and subsequent pruning, including
+the time to construct the PST, is $O(E + N V_0 + U_{SSI})$.  For most
+programs $E$ will be a small constant factor multiple of $N$; as
+Wegman and Zadeck \cite{wegman91:scc} note, most control flow graph
+nodes will have at most two successors.  For those graphs where $E$ is
+not $O(N)$, it can be argued that $E$ is the more relevant measure of
+program complexity.
+\mycomment{
+\footnote{We will not follow Cytron \cite{cytron91:ssa} in
+defining a new variable $R$ to denote $\max(N,E,\ldots)$ to avoid
+following him in declaring worst-case complexity $O(R^3)$ and leaving
+it to the reader to puzzle out whether $O(N^6)$ (!) is really being implied.}
+}
+
+Thus the ``linearity'' of our SSI construction algorithm rests on the
+quantities $N V_0$ and $U_{SSI}$.  Figures~\ref{fig:ussidata} and
+\ref{fig:v0data} present empirical data for $V_0$ and $U_{SSI}$ on a
+sample of 1,048 Java methods.  The methods varied in length from 4
+to 6,642 statements and were taken from the dynamic call-graph of the
+FLEX compiler itself, which includes large portions of the standard
+Java class libraries.  Figure~\ref{fig:ussidata} shows convincingly
+that $U_{SSI}$ grows as $N$ for large procedures, and
+Figure~\ref{fig:v0data} supports an argument that $V_0$ grows very
+slowly and that the quantity $N V_0$ would tend to grow as $N^{1.3}$.
+This would argue for a near-linear practical run-time.
+
+In contrast, Cytron's original algorithm for SSA form had theoretical
+complexity $O(E + V_{SSA} |\text{DF}| + N V_{SSA})$.  Cytron does not
+present empirical data for $V_{SSA}$, but one can infer from the data
+he presents for ``number of introduced \phifunction{s}'' that
+$V_{SSA}$ behaves similarly to $V_{SSI}$ --- that is, it grows as $N$,
+not as $V_0$.  It is frequently pointed out\footnote{See Dhamdhere
+\cite{dhamdhere92:large} for example.} that the $|\text{DF}|$
+term, the size of the dominance frontier, can be $O(N^2)$ for common
+programming constructs (\code{repeat-until} loops), which indicates that
+the $V_{SSA} |\text{DF}|$ term in Cytron's algorithm will be $O(N^2)$
+at best and at times as bad as $O(N^3)$.
+
+Note that the space complexity of SSI form, which may be $O(EV)$ in
+the worst case (\phisigfunction{s} for every variable inserted at
+every node) is certainly not greater than $U_{SSI}$, and thus
+Figure~\ref{fig:ussidata} shows linear practical space use.
+
+\section{Uses and applications of SSI}
+The principle benefits of using SSI form are the ability to do
+predicated and backward dataflow analyses efficiently.
+\newterm{Predicated analysis} means that we can use information
+extracted from branch conditions and control flow.  The
+\sigfunction{s} in SSI form provide an variable naming that
+allows us to sparsely associate the predication information with
+variable names at control flow splits.  The \sigfunction{s} also
+provide a reverse symmetry to SSI form that allow efficient backward
+dataflow analyses like \newterm{liveness} and
+\newterm{anticipatability}.
+
+In this section, we will briefly sketch how SSI form can be applied to
+backwards dataflow analyses, including anticipatability, an important
+component of partial redundancy elimination.  We will then describe in
+detail our Sparse Predicated Typed Constant propagation algorithm,
+which shows how the predication information of SSI form may be used to
+advantage in practical applications, including the removal of array
+bounds and null-pointer checks.  Lastly, we will describe an extension
+to SPTC that allows \newterm{bitwidth analysis}, and the possible uses
+of this information.
+
+\subsection{Backward Dataflow Analysis}\label{sec:bidirectional}
+\newterm{Backward dataflow analyses} are those in which information is
+propagated in the direction opposite that of program execution
+\cite{offner95}.  There is general agreement
+\cite{johnson93:dfg,ferrante91:pruned,weise94:vdg}
+that SSA form is unable to directly handle backwards dataflow
+analyses; \newterm{liveness} is often cited as a canonical example.
+
+However, SSI form allows the sparse computation of such backwards
+properties.  Liveness, for example, comes ``for free'' from pruned SSI
+form: every variable is live in the region between its use and
+sole definition.  Every
+non-\phifunction{} use of a variable is dominated by the definition;
+Cytron \cite{cytron91:ssa} has shown that \phifunction{s} will always be
+found on the dominance frontier.  Thus the live region between
+definition and use can be enumerated with a simple depth-first search,
+taking advantage of the topological sorting by dominance that DFS
+provides \cite{offner95}.  Because of \phifunction{} uses, the DFS
+will have to look one node past its spanning-tree leaves to see the
+\phifunction{s} on the dominance frontier; this does not change the
+algorithmic complexity.
+
+Computation of other dataflow properties will use this same
+enumeration routine to propagate values computed on the sparse SSI
+graph to the intermediate nodes on the control-flow graph.  Formally,
+we can say that the dataflow property for variable $v$ at node $N$ is
+dependent only on the properties at nodes $D$ and $U$, defining and
+using $v$, for which there is a path $D\pathplus U$ containing $N$.
+There is a ``default'' property which holds for nodes on no such path
+from a definition to use; for liveness the default property is ``not
+live.''  The remainder of this section will concentrate on the
+dataflow properties at use and definition points.
+
+A slightly more complicated backward dataflow property is
+\newterm{very busy expressions}; this analysis is somewhat obsolete as
+it serves to save code space, not time.  This in turn is related to
+partial and total \newterm{anticipatability}.
+
+\begin{definition}
+An expression $e$ is \newterm{very busy} at a point $P$ of the program iff it
+is always subsequently used before it is killed \cite{offner95}.
+\end{definition}
+\begin{definition}
+An expression $e$ is \newterm{totally (partially) anticipatable} at a
+point $P$ if, on every (some) path in the CFG from $P$ to \code{END},
+there is a computation of $e$ before an assignment to any of the
+variables in $e$ \cite{johnson93:dfg}.
+\end{definition}
+
+Johnson and Pingali \cite{johnson93:dfg} show how to reduce these
+properties of expressions to properties on variables.  We will
+therefore consider properties $\text{BSY}(v,N)$, $\text{ANT}(v,N)$,
+and $\text{PAN}(v,N)$ denoting very busy, totally anticipatable, and
+partially anticipatable variables $v$ at some program point $N$.
+To compute BSY, we start with pruned SSI form.  Any variable defined
+in a \phisigfunction[or]{} is used at some point, by definition.
+So for statements at a point $P$ we have the rules:
+\begin{displaymath}
+\begin{array}{ll}
+v = \ldots & \text{BSY}_{\text{in}}(v,P)=\code{false} \\
+\ldots = v & \text{BSY}_{\text{in}}(v,P)=\code{true} \\
+x=\phi(y_0,\ldots,y_n) &
+       \text{BSY}_{\text{in}}(y_i,P)=\text{BSY}_{\text{out}}(x,P) \\
+\tuple{x_0,\ldots,x_n}=\sigma(y) &
+       \text{BSY}_{\text{in}}(y,P)=\bigwedge_{i=0}^n \text{BSY}_{\text{out}}(x_i,P) \\
+\end{array}
+\end{displaymath}
+
+Total anticipatability, in the single variable case, is identical to
+BSY.  Partial anticipatability for a variable $v$ at point $P$ follows
+the rules:
+\begin{displaymath}
+\begin{array}{ll}
+v = \ldots & \text{PAN}_{\text{in}}(v,P)=\code{false} \\
+\ldots = v & \text{PAN}_{\text{in}}(v,P)=\code{true} \\
+x=\phi(y_0,\ldots,y_n) &
+       \text{PAN}_{\text{in}}(y_i,P)=\text{PAN}_{\text{out}}(x,P) \\
+\tuple{x_0,\ldots,x_n}=\sigma(y) &
+       \text{PAN}_{\text{in}}(y,P)=\bigvee_{i=0}^n \text{PAN}_{\text{out}}(x_i,P) \\
+\end{array}
+\end{displaymath}
+
+The present section is concerned more with feasibility than the
+mechanics of implementation; we refer the interested reader to
+\cite{offner95} and \cite{johnson93:dfg} for details on how to turn
+the efficient computation of BSY, PAN and ANT into practical
+code-hoisting and partial-redundancy elimination routines, respectively.
+
+We note in passing that the sophisticated strength-reduction and code-motion
+techniques of SSAPRE \cite{kennedy98:strength} are applicable to an SSI-based
+representation, as well, and may benefit from the predication
+information available in SSI.  The remainder of this section will
+focus on practical implementations of predicated analyses using SSI form.
+
+\subsection{Sparse Predicated Typed Constant Propagation}
+Sparse Predicated Typed Constant (SPTC) Propagation is a powerful
+analysis tool which
+derives its efficiency from SSI form.  It is built on Wegman and
+Zadeck's Sparse Conditional Constant (SCC) algorithm
+\cite{wegman91:scc} and removes unnecessary array-bounds and
+null-pointer checks, computes variable types, and performs
+floating-point- and string-constant-propagation in addition to the
+integer constant propagation of standard SCC.
+
+We will describe this algorithm incrementally, beginning with the
+standard SCC constant-propagation algorithm.
+Wegman and Zadeck's algorithm operates on a program in SSA form; we will
+call this SCC/SSA to differentiate it from SCC/SSI, which uses the SSI
+form.  Section
+\vref{sec:bitwidth} will discuss an extension to SPTC which does
+\newterm{bit-width analysis}.
+
+\subsubsection{Wegman and Zadeck's SCC/SSA algorithm}
+\begin{myfigure}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat1}
+\caption[Value and executability lattices for SCC.]
+{Three-level value lattice and two-level executability lattice for SCC.}
+\label{fig:scclat1}
+\end{myfigure}
+\begin{mytable}\centering
+$\begin{array}{|l|cccc|} \hline
+\meet & \bot & c & d (\not= c) & \top \\ \hline
+\bot  & \bot & c & d  & \top \\
+c     &   c  & c &\top & \top \\
+\top  & \top &\top&\top& \top \\ \hline
+\end{array}%
+\quad\quad%
+\begin{array}{|l|ccc|}\hline
+\oplus& \bot &   d  & \top \\ \hline
+\bot  & \bot &   d  & \top \\
+c     &   c  &c\oplus d& \top \\
+\top  & \top & \top & \top \\ \hline
+\end{array}$
+\caption{Meet and binary operation rules on the SCC value lattice.}
+\label{tab:sccmeet1}
+\end{mytable}
+
+\mycomment{
+\begin{myalgorithm}\small
+\input{Figures/THsccalg1}
+\caption{SCC algorithm for SSA form.}\label{alg:scc}
+\end{myalgorithm}
+\begin{myalgorithm}\small
+\input{Figures/THsccalg2}
+\caption{SCC algorithm for SSA form, cont.}\label{alg:scc2}
+\end{myalgorithm}
+}
+
+The SCC algorithm works on a simple three-level value lattice
+associated with variable definition points and a two-level
+executability lattice associated with flow-graph edges.  These
+lattices are shown in Figure~\vref{fig:scclat1}.  
+The SCC algorithm itself,
+which runs in $O(E+U_{SSA})$ time, is presented in Figures~\ref{alg:scc}
+and \ref{alg:scc2} from Appendix~\ref{app:algorithms}.
+
+\mycomment{
+Associating a lattice
+value with a definition point is a conservative statement that, for
+all possible program paths, the value of that variable has a certain
+property.  The value lattice is, formally, $\domain{Int}_\bot^\top$;
+the lattice value $\bot$ signifies that no information
+about the value is known, the lattice value $\top$ indicates that it
+is possible that the variable has more than one dynamic value, and the
+other lattice entries (corresponding to integer constants and occuping
+a flat space between $\top$ and $\bot$) indicate that the variable can
+be proven to have a single constant value in all runs of the program.%
+\footnote{Note that we follow the $\top$ and $\bot$ conventions used
+in semantics and abstract interpretation; authors in dataflow analysis
+(including Wegman and Zadeck in their SCC paper \cite{wegman91:scc})
+often use contrary definitions, letting $\top$ mean undefined and
+$\bot$ indicate overdefinition.  As section \ref{sec:semantics} will
+discuss the semantics of \ssiplus at length, we thought it best to
+adhere to one set of definitions consistently, instead of switching
+mid-paper.}
+Similarly, the executability lattice indicates whether it is possible
+that the control flow edge is traversed in some execution of the
+program (marked ``executable''), or if it can be proven that the edge
+is never traversed in any valid program path (marked ``not
+executable'').  The algorithm works with SSA form, and is presented
+as Algorithm~\ref{alg:scc}.  Binary operations on lattice values and
+combination at $\phi$-nodes follow the rules in
+Table~\ref{tab:sccmeet1}; notice that the meet operation ($\meet$) is
+simply the least upper bound on the lattice.
+The time complexity of SCC/SSA can be found
+easily: the procedure \code{RaiseE} puts each node on the $W_n$
+worklist at most once, and \code{RaiseV} puts a variable on the $W_v$
+worklist at most $D-1$ times, where $D$ is the maximum lattice depth.
+The \code{Visit} procedure can thus be invoked a maximum of $N$ times
+by line~\ref{line:visitWn} of the \code{Analyze} procedure of
+Algorithm~\ref{alg:scc}, and a maximum of $U_{SSA}(D-1)$ times by
+line~\ref{line:visitWv}, where $U_{SSA}$ is the number of variable
+\newterm{uses} in the SSA representation of the program.  The lattice
+depth $D$ is the constant 3 in this version of the algorithm, so it
+drops out of the expression.  The \code{RaiseE} procedure itself is
+called at most $E$ times.  The time complexity is thus
+$O(E+N+U_{SSA}(D-1))$ which simplifies to $O(E+U_{SSA})$.
+}
+
+\subsubsection{SCC/SSI: predication using \sigfunction{s}.}\label{sec:sccssi}
+\mycomment{
+\begin{myfigure}%
+\begin{samplecode}[2]%
+foo = f();        & \subvar{foo}{0} = f();\\
+if (foo == 1)     & if (\subvar{foo}{0} == 1) \\
+                  & $\tuple{\subvar{foo}{1},\subvar{foo}{2}}$ =
+                    $  \sigma(\subvar{foo}{0})$ \\
+\>bar = foo + 1;  & \>\subvar{bar}{0} = \subvar{foo}{2} + 1;\\
+else              & else \\
+\>bar = 2;        & \>\subvar{bar}{1} = 2;\\
+                  & \subvar{bar}{2} =
+                    $  \phi(\subvar{bar}{0},\subvar{bar}{1})$%\\
+\end{samplecode}%
+\caption{A simple constant-propagation example.}
+\label{fig:ssa_vs_ssi}
+\end{myfigure}
+}
+
+\begin{myalgorithm}\small
+\input{Figures/THsccssi}
+\caption{A revised \code{Visit} procedure for SCC/SSI.}\label{alg:sccssi}
+\end{myalgorithm}
+Porting the SCC algorithm from SSA to SSI form 
+(so that it takes information from conditionals into 
+account) immediately increases
+the number of constants we can find.
+Only the \code{Visit} procedure must be updated for SCC/SSI: lattice
+update rules for \sigfunction{s} must be added.
+Algorithm~\ref{alg:sccssi} shows a new \code{Visit} procedure for the
+two-level integer constant lattice of Wegman and Zadeck's SCC/SSA;
+with this restricted value set only integer equality tests tap the
+algorithm's full power.  The utility of SCC/SSI's \newterm{predicated
+analysis} will become more evident as the value lattice is extended to
+cover more constant types.
+The time complexity of the updated algorithm is identical to that of
+SCC/SSA: $O(E+U_{SSA})$.
+
+
+\mycomment{
+A simple example is shown in
+Figure~\ref{fig:ssa_vs_ssi}: the version of the program on the right
+is in SSI form, and SCC/SSI---unlike SCC/SSA---can
+determine that \code{\subvar{foo}{2}} is a constant with value 1
+(although nothing can be said about the value of
+\code{\subvar{foo}{0}} or \code{\subvar{foo}{1}}) and therefore that
+\code{\subvar{bar}{0}}, \code{\subvar{bar}{1}}, and
+\code{\subvar{bar}{2}} are constants with the value 2.
+SSI form creates a new name for \code{bar} at the conditional branch
+to indicate that more information about its value is known.
+}
+
+\subsubsection{Extending the value domain}
+\begin{myfigure}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat2}
+\caption{SCC value lattice extended to Java primitive value domain.}
+\label{fig:scclat2}
+\end{myfigure}
+The first simple extension of the SCC value lattice enables us to
+represent floating-point and other values.  For this work, we extended
+the domain to cover the full type system of Java bytecode
+\cite{gosling95:bytecode}; the extended lattice is presented in
+Figure~\ref{fig:scclat2}.
+The figure also introduces the abbreviated lattice notation we will use
+through the following sections; it is understood that the
+lattice entry labelled ``int'' stands for a finite-but-large set of
+incomparable lattice elements, consisting (in this case) of the
+members of the Java \code{int} integer type.
+%\footnote{As the Java \code{int}
+%type is a proper subset of the Java \code{long} integer type, we
+%simplify our lattice by representing all integers as elements of
+%\code{long}. Overflows are handled correctly after analysis.  Although
+%the mechanics are slightly different, the same principle holds for
+%the Java \code{double} and \code{float} types, and we similarly
+%combine them in our lattice.}
+Java \code{int}s are 32 bits long, so the ``int'' entry abbreviates
+$2^{32}$ lattice elements.  Similarly, the ``double'' entry encodes not
+the infinite domain of real numbers, but the domain spanned by the
+Java \code{double} type which has fewer than $2^{64}$
+members.\footnote{In IEEE-standard floating-point, some possible bit
+patterns are not valid number encodings.}  The
+Java \code{String} type is also included, to allow simple constant
+string coalescing to be performed.  The propagation algorithm over
+this lattice is a trivial modification to Algorithm~\ref{alg:sccssi}, and
+will be omitted for brevity.  In the next sections, the ``int'' and ``long''
+entries in this lattice will be summarized as ``Integer Constant'',
+the ``float'' and ``double'' entries as ``Floating-point Constant'',
+and the ``String'' entry as ``String Constant''.  As the lattice is
+still only three levels deep, the asymptotic runtime complexity is
+identical to that of the previous algorithm.
+
+\subsubsection{Type analysis}
+\begin{myfigure}[p]
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat3}
+\caption{SCC value lattice extended with type information.}
+\label{fig:scclat3}
+\end{myfigure}
+\begin{myfigure}[p]
+\centering\renewcommand{\figscale}{0.33}\input{Figures/THlat4}
+\caption{``Typed'' category of Figure~\ref{fig:scclat3} shown expanded.}
+\label{fig:scclat4}
+\end{myfigure}
+\begin{myfigure}%
+\begin{eqnarray*}
+\code{int}\oplus\code{int}&=&\code{int}\\
+\code{long}\oplus\{\code{int},\code{long}\}&=&\code{long}\\
+\code{float}\oplus\{\code{int},\code{long},\code{float}\}&=&\code{float}\\
+\code{double}\oplus\{\code{int},\code{long},\code{float},\code{double}\}&=&\code{double}\\
+\code{String}\oplus\{\code{int},\code{long},\code{float},\code{double},\code{Object},\ldots\} &=& \code{String}
+\end{eqnarray*}%
+\caption{Java typing rules for binary operations.}
+\label{fig:scc_typed_binop}
+\end{myfigure}
+\begin{mytable*}%[t]
+\begin{tabular}{|l|l|c|c|c|}\hline
+\small Hierarchy & \small Source language & \small Classes & \small Avg. depth & \small Max. depth \\ \hline
+FLEX infrastructure & Java  &   550   &    1.9     &     5      \\
+\code{javac} compiler & Java&   304   &    2.8     &     7      \\
+NeXTStep 3.2$^\dag$& Objective-C & 488 &   3.5     &     8      \\
+Objectworks 4.1$^\dag$&Smalltalk & 774 &   4.4     &    10      \\ \hline
+\end{tabular}\\%
+{\small$\dag$ indicates data obtained from Muthukrishnan and M\"uller
+ \cite{muthukrishnan96:ch}.}
+\caption{Class hierarchy statistics for several large O-O projects.}
+\label{tab:chstats}
+\end{mytable*}
+\begin{myalgorithm}\small
+\input{Figures/THscctyped}
+\caption{\code{Visit} procedure for typed SCC/SSI.}
+\label{alg:scctyped}
+\end{myalgorithm}
+In Figure~\ref{fig:scclat3} we extend the lattice to compute Java type
+information.  The new lattice entry marked ``Typed'' is actually
+forest-structured as shown in Figure~\ref{fig:scclat4}; it is as deep
+as the class hierarchy, and the roots and leaves are all comparable to
+$\top$ and $\bot$.  Only the \code{Visit} procedure must be modified;
+the new procedure is given as Algorithm~\ref{alg:scctyped}.
+Because the lattice $L$ is
+deeper, the asymptotic runtime complexity is now $O(E+U_{SSA}D_c)$
+where $D_c$ is the maximum depth of the class hierarchy.  
+To form an estimate of the magnitude of $D_c$, Table~\ref{tab:chstats}
+compares class hierarchy statistics for several large
+object-oriented projects in various source languages. Our FLEX
+compiler infrastructure, as a typical Java example, has an average
+class depth of 1.91.\footnote{Measured August 2, 1999; the
+infrastructure is under continuing development.}
+In a forced example, of course, one can make the class depth $O(N)$;
+however, one can infer from the data given that in real code the $D_c$
+term is not likely to make the algorithm significantly non-linear.
+
+A brief word on the roots of the hierarchy forest in Figure~%
+\ref{fig:scclat4} is called for: Java has both a class hierarchy,
+rooted at \code{java.lang.Object}, and several primitive types, which
+we will also use as roots.  The primitive types include
+\code{int}, \code{long}, \code{float}, and
+\code{double}.\footnote{In the type system our infrastructure uses
+(which is borrowed from Java bytecode) the \code{char},
+\code{boolean}, \code{short} and \code{byte} types are folded into
+\code{int}.}  Integer constants in the lattice are comparable to and
+less than the \code{int} or \code{long} type; floating-point constants
+are likewise comparable to and less than either \code{float} or
+\code{double}.  String constants are comparable to and less than the
+\code{java.lang.String} non-primitive class type.
+
+The \code{void} type, which is the type of the expression \code{null},
+is also a primitive type in Java; however we wish to keep $x \meet y$
+identical to $\bigsqcup_L\{x, y\}$ (the least upper bound of $x$ and
+$y$) while satisfying the Java typing rule that $\code{null} \meet x = x$
+when $x$ is a non-primitive type and not a constant.  This requires
+putting \code{void} comparable to but less than every non-primitive
+leaf in the class hierarchy lattice.
+
+The Java class hierarchy also includes \newterm{interfaces}, which are
+the means by which Java implements multiple inheritance.  Base
+interface classes (which do not extend other interfaces) are additional
+roots in the hierarchy forest, although no examples of this are shown
+in Figure~\ref{fig:scclat4}.
+
+Since untypeable variables are generally forbidden, no operation
+should ever raise a lattice value above ``Typed'' to $\top$.  The
+otherwise-unnecessary $\top$ element is retained to indicate error
+conditions.
+
+This variant of the constant-propagation algorithm allows us to
+eliminate unnecessary \code{instanceof} checks due to type-casting or
+type-safety checks.  Section~\ref{sec:sptc_results} will provide
+experimental validation of its utility.
+
+Finally, note that the ability to represent \code{null} as the
+\code{void} type in the lattice begins to allow us to address
+null-pointer checks, although because $\code{null} \meet x =x$ for
+non-primitive types we can only reason about variables which can be
+proven to be null, not those which might be proven to be non-null
+(which is the more useful case).  The next section will provide a more
+satisfactory treatment.
+
+\subsubsection{Array-bounds and null-pointer checks}
+\begin{myfigure}
+\centering\renewcommand{\figscale}{0.5}\input{Figures/THlat5}
+\caption{Value lattice extended with array and null information.}
+\label{fig:scclat5}
+\end{myfigure}
+\begin{myfigure}
+\[\begin{array}{l}
+\forall C \in \text{Class},\:
+  C_{\text{non-null}} \latlt C_{\text{possibly-null}}\\
+\forall C \in \text{Class}_{\text{non-null}},\:
+  \bigsqcup_L \{\code{void},C\} \in \text{Class}_{\text{possibly-null}}\\
+\forall C \in \text{Class}_{\text{possibly-null}},\:
+  \code{void} \latlt C\\
+\forall C \in \text{Class}_{\text{non-null}},\:
+  \tuple{\code{void},C}\notin\:\latleq\\
+\end{array}\]%
+Let $A(C, n)$ be a
+function to turn a lattice entry representing a non-null array class
+type $C$ into the lattice entry representing a said array class with
+known integer constant length $n$.  Then for any non-null array class
+$C$ and integers $i$ and $j$,
+\[\begin{array}{l}
+A(C, i) \latlt C\\
+\tuple{A(C, i), A(C, j)} \in\:\latleq \text{ if and only if } i=j\\
+\end{array}\]%
+\caption{Extended value lattice inequalities.}\label{fig:arraynull_rules}
+\end{myfigure}
+\begin{myalgorithm}\small
+\input{Figures/THsptc}
+\caption{\code{Visit} procedure outline with array and null information.}
+\label{alg:arraynull_scc}
+\end{myalgorithm}
+\begin{myfigure}
+\begin{samplecode}
+x = 5 + 6;\\
+do \{\\
+\>y = new int[x];\\
+\>z = x-1;\\
+\>if (0 <= z \&\& z < y.length)\\
+\>\>y[z] = 0;\\
+\>else\\
+\>\>x--;\\
+\} while (P);\\
+\end{samplecode}
+\caption{An example illustrating the power of combined analysis.}
+\label{fig:combined}
+\end{myfigure}
+At this point, we can expand the value lattice once more to allow
+elimination of unnecessary array-bounds and null-pointer checks, based
+on our constant-propagation algorithm.  The new lattice is shown in
+Figure~\ref{fig:scclat5}; we have split the ``Typed'' lattice entry to
+enable the algorithm to distinguish between non-null and possibly-null
+values,\footnote{Values which are always-null were discussed in the
+previous section; they are identified as having primitive type \code{void}.}
+and added a lattice level for arrays of known constant length.  
+Some formal definition of the new value lattice can be found in
+Figure~\ref{fig:arraynull_rules}; the meet rule is still the least upper
+bound on the lattice.  Modifications to the \code{Visit} procedure are
+outlined in Algorithm~\ref{alg:arraynull_scc}.
+Notice that we exploit the pre-existing integer-constant propagation to
+identify constant-length arrays, and that our integrated approach
+allows one-pass optimization of the program in Figure~\ref{fig:combined}.
+
+\begin{myfigure}\newcommand{\implicitcheck}[1]{\underline{#1}}
+\begin{samplecode}
+\implicitcheck{if (10 < 0)}\\
+\>\implicitcheck{throw new NegativeArraySizeException();}\\
+int[] A = new int[10]; \\
+\implicitcheck{if (0 < 0 || 0 >= A.length)}\\
+\>\implicitcheck{throw new ArrayIndexOutOfBoundsException();}\\
+A[0] = 1;\\
+for (int i=1; i < 10; i++) \{\\
+\>\implicitcheck{if (i < 0 || i >= A.length)}\\
+\>\>\implicitcheck{throw new ArrayIndexOutOfBoundsException();}\\
+\>A[i] = 0;\\
+\}\\
+\end{samplecode}
+\caption[Implicit bounds checks on Java array references.]
+{Implicit bounds checks (underlined) on Java array references.}
+\label{fig:induction}
+\end{myfigure}
+Note that the variable renaming performed by the SSI form at
+control-flow splits is essential in allowing the algorithm to do 
+null-pointer check elimination.  However, the lattice we are using
+can remove bound checks from an expression $A[k]$ when $k$ is a
+constant, but not when $k$ is an bounded induction variable.
+In the example of Figure~\vref{fig:induction}, the first two implicit
+checks are optimized away by this version of the algorithm, but the
+loop-borne test is not. 
+
+A typical array-bounds check (as shown in the example \vpageref{fig:induction})
+verifies that the index $i$ of the array reference satisfies the
+condition $0\leq i < n$, where $n$ is the length of the
+array.\footnote{Languages in which array indices start at 1 can be
+handled by slight modifications to the same techniques.} By
+identifying integer constants as either positive, negative, or zero
+the first half of the bounds check may be eliminated.  This requires a
+simple extension of the integer constant portion of the lattice,
+outlined in Figure~\vref{fig:scclat6}, with
+negligible performance cost.  However, handling upper bounds
+completely requires a symbolic analysis that is out of the current
+scope of this work.  Future work will use induction variable analysis
+and integrate an existing linear programming approach
+\cite{RR00:PLDI00} to fully address array-bounds checks.
+\begin{myfigure}[t]
+\centering\renewcommand{\figscale}{0.6}\input{Figures/THlat6}
+\caption[An integer lattice for signed integers.]
+{An integer lattice for signed integers. A classification into
+negative (M), positive (P), or zero (Z) is grafted onto the standard
+flat integer constant domain.  The \code{(M-P)} entry is duplicated to
+aid clarity.}
+\label{fig:scclat6}
+\end{myfigure}

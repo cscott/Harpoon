@@ -1,0 +1,138 @@
+<HTML>
+<HEAD>
+   <TITLE>Installing and using FLEX - some advices</TITLE>
+</HEAD>
+<BODY>
+
+
+<h1>Installing and using FLEX - some advices</h1>
+
+The <a href="http://www.cag.lcs.mit.edu/~rugina/config-flex/">FLEX
+installation guide</a> is good (thank you <a
+href="http://www.cag.lcs.mit.edu/~rugina/">Radu</a>!), but there are
+still some problems - FLEX is an ongoing project and any document
+becomes obsolete in a relatively small time :-) Reading this document
+can save you many hours of unpleasant work!
+
+
+<a name="installation">
+<h2>Installation</h2>
+</a>
+
+
+This proved to be an incredibly difficult task! This is somehow
+strange as Java is supposed to be an extremely portable language with
+a clear and simple standard. Unfortunately, the standard is not at all
+clear about the new features of the languages (e.g. the inner classes)
+and Java compilers tend to implement them in an incomplete manner.
+
+<p>The FLEX code uses many of these newly introduced features which
+make its impossible to compile with the actual versions of JDK
+(Blackdown, IBM, etc.). To compile it, you have to use IBM's
+<code>jikes</code>. However, there is still a trick here:
+<code>jikes</code> expects a <code>classes.zip</code> file; so, JDK
+1.2 won't work (JDK 1.2 maintains two <code>.jar</code> files instead
+of <code>classes.zip</code>.)<br>
+
+<p>Here is the complete FLEX installation procedure (see the links at the
+end if you have difficulties finding some software; you can always
+ask/email people in the group to obtain RPM's from their machines):
+
+<ol>
+
+<li> Install some JDK 1.1.x (if you don't have one yet).<br>
+I'm using IBM's JDK 1.1.8 and everything is perfect.<br><br>
+
+<li> Install <code>jikes</code> (suggested version: 1.06 or later).
+If you install Red Hat Linux 6.1 you can simply include jikes package
+and get the appropriate version.<br><br>
+
+<li> Download the FLEX source code from the 
+<a href="http://www.flex-compiler.lcs.mit.edu/Harpoon/">FLEX homepage</a>
+and set up the configuration files as explained in Section 2 of the
+<a href="http://www.cag.lcs.mit.edu/~rugina/config-flex/">FLEX installation
+guide</a>.<br><br>
+
+<li> Logout and login again so that the changes to the configuration
+files become effective.<br><br>
+
+<li> <code>cd Harpoon/Code</code> and execute <code>gmake jikes</code>
+TWICE without paying any attention to the errors you receive first
+time.
+
+<p>You really have to execute it twice - as 
+<a href="http://www.pdos.lcs.mit.edu/~cananian/">Scott</a> said,
+<I>&quot;Evil people use <code>import *</code>!&quot;</I>. 
+See more about the import statements problem in the 
+<a href="http://www.flex-compiler.lcs.mit.edu/Harpoon/HOWTO/code-conventions.html">
+FLEX coding conventions</a><br><br>
+
+<li> Now, everything should work fine! Try
+<code>java harpoon.Main.Main harpoon.Main.Main</code> for a short test. You
+should obtain something like this: 
+
+<small>
+<pre>
+[salcianu@retezat Code]$ java harpoon.Main.Main harpoon.Main.Main
+Codeview "bytecode" for public static void harpoon.Main.Main.main([Ljava/
+lang/String;) throws java.io.IOException:
+  #0/Main.java:29 - new class java.io.PrintWriter
+  #1/Main.java:29 - dup 
+  #2/Main.java:29 - getstatic public static final java.io.PrintStream jav
+a.lang.System.out
+  ...
+</pre>
+</small>
+
+</ol>
+
+
+Useful links for FLEX installation:
+
+<ul>
+<li><a href="http://www.ibm.com/java/jdk/">IBM's JDK</a>
+<li><a href="http://rufus.w3.org/linux/RPM/">rufus.w3.org</a>'s RPM
+repository; here you find <code>jikes</code> and various JDKs, other than IBM's.
+<li><a href="http://www.research.ibm.com/jikes/">Jikes project homepage</a> in case
+you want to know more about <code>jikes</code>.
+<li><a href="http://www.flex-compiler.lcs.mit.edu/Harpoon/">FLEX homepage</a>
+</ul>
+
+
+<a name="use">
+<h2>Using FLEX</h2>
+</a>
+
+Just a few advices:
+
+<ol>
+
+<li> FLEX is not a compiler, it's a <i>compiler infrastructure</i>.
+So, don't expect to find a big, nice main file and don't ask about the
+time ordering of the different phases.  What FLEX gives you is a set
+of classes that you can assemble in possibly infinitely many ways to
+satisfy your own requirements.<br><br>
+
+<li> Always keep in mind that FLEX is an academic research project. As
+a result, it is focused on modularity and functionality instead of raw
+performance. Also, it is an ongoing project: many things are the way
+they are simply because nobody had yet the time to optimize or update
+them.<br><br>
+
+<li> Many of the team members read Appel's book 
+<a href="http://www.flex-compiler.lcs.mit.edu/Harpoon/biblio/node1.html#appel:modern">&quot;
+Modern Compiler Implementation in Java&quot;</a>. This influenced a
+lot the structure of the project and the terminology used in the
+comments. Reading this book will make it MUCH easier for you to
+understand the code! It's also a nice book to read even if you have
+already read the <i>Dragon</i> book.
+
+</ol>
+
+<hr>
+Alexandru Salcianu &nbsp;&nbsp;<a href="mailto:salcianu@MIT.EDU">salcianu@MIT.EDU</a><br>
+January 3, 2000
+
+</BODY>
+
+</HTML>

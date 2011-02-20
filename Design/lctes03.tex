@@ -1,0 +1,1189 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: lctes03.tex,v 1.23 2003-04-26 00:51:03 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% lctes03.tex
+% Data Size Optimizations for Java Programs
+% Author: C. Scott Ananian / Martin Rinard
+% Apr 2003
+\documentclass{sig-alt-full}
+%\usepackage[section,plain]{algorithm}
+%\usepackage{amsthm} % proof environment
+%\usepackage{amstext} % the \text command for math mode (replaces \mbox)
+\usepackage{varioref} % \vref command
+\usepackage{graphicx} % for eps figures
+\usepackage{color}
+\usepackage{comdef}
+\usepackage{support}
+\newcommand{\figscale}{1.0}
+
+%setup varioref package
+\renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
+
+\newcommand{\mycomment}[1]{}
+\newcommand{\meet}{\ensuremath{\sqcap}}
+
+\renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\topfraction}{0.35}
+
+% MISSING IDEAS:
+%  pointer compression? NO
+%  more discussion of multithreading semantics? NO
+%  atomic update of 3-byte objects NO
+%  hashtable picture? NO
+%  more discussion of exectution time? YES
+%  more back-patting on bitwidth analysis?  signed integers. NO
+%  which fields got split/specialized? YES
+%  make the case for constant field elimination *in the compiler* YES
+%  talk about static elimination of hash/locks? NO
+%  kava paper in related work? YES
+
+\begin{document}
+\bibliographystyle{plain}
+\conferenceinfo{LCTES'03,} {June 11--13, 2003, San Diego, California, USA.}
+\CopyrightYear{2003}
+\crdata{1-58113-647-1/03/0006}  
+\title{Data Size Optimizations for Java Programs}
+\numberofauthors{2}
+\author{
+\alignauthor C.~Scott~Ananian\\
+\affaddr{Laboratory for Computer Science}\\
+\affaddr{Massachusetts Institute of Technology}\\
+\affaddr{Cambridge, MA 02139}\\
+\email{cananian@lcs.mit.edu}
+\alignauthor Martin~Rinard\\
+\affaddr{Laboratory for Computer Science}\\
+\affaddr{Massachusetts Institute of Technology}\\
+\affaddr{Cambridge, MA 02139}\\
+\email{rinard@lcs.mit.edu}
+}
+\maketitle
+\support{%
+This research was supported by
+DARPA/AFRL Contract F33615-00-C-1692,
+NSF Grant CCR-0086154, NSF Grant CCR-0073513, NSF Grant CCR-0209075,
+and the Singapore-MIT Alliance.}
+%
+% abstract
+\begin{abstract}
+We present a set of techniques for reducing the memory consumption of
+object-oriented programs.  These techniques 
+include analysis algorithms and optimizations that use the results
+of these analyses to eliminate fields with
+constant values, reduce the sizes of fields based on the range
+of values that can appear in each field, and 
+eliminate fields with common default values
+or usage patterns.
+We apply these optimizations both 
+to fields declared by the programmer and to implicit fields in
+the runtime object header.
+Although it is possible to apply these techniques to any object-oriented
+program, we expect they will be particularly appropriate for
+memory-limited embedded systems. 
+
+We have implemented these techniques in the MIT FLEX compiler
+system and applied them to the programs in the SPECjvm98 
+benchmark suite. Our experimental results show that 
+our combined techniques can reduce the maximum live heap size required
+for the programs in our benchmark suite by as much as 40\%.
+Some of the optimizations reduce the overall execution time;
+others may impose modest performance penalties.
+\end{abstract}
+\category{C.3}{Computer Systems Organization}{Special-Purpose and
+  Application-Based Systems}[Real-time and embedded systems]
+\category{D.3.2}{Programming Languages}{Language
+  Classifications}[Object-oriented languages, Java]
+\category{D.3.4}{Program\-ming Languages}{Processors}[Compilers]
+\category{D.3.4}{Program\-ming Languages}{Processors}[Optimization]
+\category{E.2}{Data Storage Representations}{Object representation}
+\terms{Languages, Performance, Experimentation, Algorithms}
+\keywords{Embedded systems, size optimizations, static specialization,
+field externalization, field packing, bitwidth analysis}
+%
+\section{Introduction}
+%
+We present a set of techniques for reducing the
+amount of data space required to represent objects
+in object-oriented programs. Our techniques optimize
+the representation of both the programmer-defined fields
+within each object and the header information used by the
+run-time system:
+\begin{itemize}
+\item {\bf Field Reduction:} 
+Our flow-sensitive, interprocedural bitwidth analysis
+computes the range of values that the program
+may assign to each field. The compiler then transforms the program
+to reduce the size of the field to the smallest type
+capable of storing that range of values. 
+\item {\bf Unread and Constant Field Elimination:} 
+If the bitwidth analysis finds that a field always holds
+the same constant value, the compiler eliminates the field. 
+It removes each write to the field, and replaces each read
+with the constant value.  Fields without executable reads are
+also removed.
+\item {\bf Static Specialization:} Our analysis finds 
+classes with fields whose values do not change after initialization,
+even though different instances of the object may
+have different values for these fields. It then generates 
+specialized versions of each class which omit these fields,
+substituting accessor methods which return constant values.
+\item {\bf Field Externalization:} Our analysis uses profiling
+to find fields that almost always have the same default value. 
+It then removes these fields from their enclosing class, 
+using a hash table to store only values of the field that differ
+from the default value. It replaces writes to the field with
+an insertion into the hash table (if the written value is not the
+default value) or a removal from the hash table (if the written value
+is the default value). It replaces reads with hash table lookups; 
+if the object is not present in the hash table, the lookup simply
+returns the default value. 
+\item {\bf Class Pointer Compression:} We use rapid type analysis
+to compute an upper bound on the number of classes that the
+program may instantiate. Objects in standard 
+Java implementations have a header field, commonly called {\tt claz},
+which contains a pointer
+to the class data for that object,
+such as inheritance information and method dispatch tables.
+Our compiler uses the results of the 
+analysis to replace the reference with a smaller
+offset into a table of pointers to the class data. 
+\item {\bf Byte Packing:} All of the above transformations may
+reduce or eliminate the amount of space required to store each
+field in the object or object header. Our byte packing algorithm
+arranges the fields in the object to minimize the object size.
+\end{itemize}
+All of these transformations reduce the space required to store
+objects, but some potentially increase the running time of the program.
+Our experimental results show that, for our set of benchmark
+programs, all of our techniques combined can reduce the peak amount of memory
+required to run the program by as much as 40\%, although the running
+time may increase.  In a memory-limited embedded system where
+performance is not critical, cost savings may directly result from the
+reduced minimum heap size.
+
+\subsection{Contributions}
+
+This paper makes the following contributions:
+\begin{itemize}
+\item {\bf Space Reduction Transformations:} It presents a set
+of novel transformations for reducing the memory required to 
+represent objects in object-oriented programs.
+
+\item {\bf Analysis Algorithms:} It presents a set of 
+analysis algorithms that automatically extract the 
+information required to apply the space reduction 
+transformations.
+
+\item {\bf Implementation:} We have fully 
+implemented all of the analyses and techniques 
+presented in the paper. Our experience with this
+implementation enables us to discuss the pragmatic
+details necessary for an effective implementation 
+of our techniques. 
+
+\item {\bf Experimental Results:} This paper presents a set
+of experimental results that characterize the impact
+of our transformations, revealing the extent of the
+savings available and the performance cost of attaining them.
+\end{itemize}
+%
+\section{Examples}
+%
+We next present a pair of examples that illustrate the kinds of 
+analyses and transformations that our compiler performs.
+%
+\subsection{Field Reduction and Constant Field \\ Elimination}
+%
+Figure~\ref{fig:value} presents the {\tt JValue} class, which is 
+a wrapper around either an {\tt Integer} object or a {\tt Float}
+object. The {\tt type} field indicates which kind of object
+is stored in the {\tt value} field of the class, 
+essentially implementing a tagged 
+union.\footnote{This class is a simplified version of similar
+classes that appear in some of our benchmarks.
+See for example the {\tt jess.Value} class in SPECjvm98 benchmark
+{\tt jess}.} 
+The class also maintains the {\tt positive} field, which is
+{\tt 1} if the wrapped number is positive and {\tt 0} otherwise. 
+
+Our bitwidth analysis uses an interprocedural
+value-flow algorithm to compute upper and lower bounds for the
+values that can appear in each variable. This analysis tracks
+the flow of values across procedure boundaries via parameters,
+into and out of the heap via instance variables of classes, and through
+intermediate temporaries and local variables in the program.
+It also reasons about the semantics of arithmetic operators such
+as {\tt +} and {\tt *} to obtain bounds for the values computed
+by arithmetic expressions. 
+Assume that the analysis examines the rest of the program (not shown)
+and discovers the following facts about 
+how the program uses this class: a) the {\tt integerType} 
+field always has the value {\tt 0}, b) the {\tt floatType} 
+field always has the value {\tt 1}, c) the {\tt type} 
+field always has a value between {\tt 0} and {\tt 1} (inclusive),
+and d) the {\tt positive} field always has a value between 
+{\tt 0} and {\tt 1} (also inclusive).
+
+\begin{figure}[tp]
+\renewcommand{\baselinestretch}{0.6}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+public class JValue \{ \\
+\>int integerType = 0;\\
+\>int floatType = 1;\\
+\>int type, positive;\\
+\>Object value;\\
+\>void setInteger(Integer i) \{ \\
+\>\>type = integerType; value = i;\\
+\>\>positive = (i.intValue() > 0) ? 1 : 0;\\
+\>\}\\
+\>void setFloat(Float f) \{ \\
+\>\>type = floatType; value = f;\\
+\>\>positive = (f.floatValue() > 0) ? 1 : 0;\\
+\>\}\\
+\}
+\end{tabular}}%
+\caption{The {\tt JValue} class.}
+\label{fig:value}
+\end{figure}
+\begin{figure}[tp]
+\renewcommand{\baselinestretch}{0.6}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+public final class String \{\\
+\>private final char value[];\\
+\>private final int offset;\\
+\>private final int count;\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[offset+i];\\
+\>\}\\
+\>public String substring(int start)\\
+\>\{\\
+\>\>int noff = offset + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(noff, ncnt, value);\\
+\>\}\\
+\}\\
+\end{tabular}}%
+\caption{Portions of the {\tt java.lang.String} class.}
+\label{fig:string}
+\end{figure}
+
+Our compiler uses this information to remove all occurrences
+of the {\tt integerType} and {\tt floatType} fields from the
+program. It replaces each read of the {\tt integerType} field
+with the constant {\tt 0}, and each read of the {\tt floatType}
+field with the constant {\tt 1}. It also uses the bounds on the 
+values of the {\tt type} and {\tt positive} variables to reduce the size of the 
+corresponding fields. Our currently implemented compiler rounds
+field sizes to the nearest byte required to hold the range
+of values that can occur. Our byte packing algorithm then 
+generates a dense packing of the values, attempting to preserve
+the alignment of the variables if possible. In this case, the
+algorithm can reduce the field sizes by six bytes and the overall
+size of the object by one four-byte word.  If the runtime can support
+unaligned objects without external fragmentation, we can reduce the
+size of all allocated {\tt JValue} objects by the full six bytes.
+
+\subsection{Static Specialization} 
+
+Figure~\ref{fig:string} presents portions of the implementation
+of the {\tt java.lang.String} class from the Java standard class
+library. The {\tt value} field in this
+class refers to a character array that holds the characters
+in the string; the {\tt count} field holds the length of the
+string. In some cases, instances of the {\tt String} class
+are derived substrings of other instances 
+(see the {\tt substring} method in Figure~\ref{fig:string}), in
+which case the
+{\tt offset} field provides the offset of the starting 
+point of the string within a shared {\tt value} character array. 
+Note that the {\tt value}, {\tt offset}, and {\tt count} 
+fields are all initialized when the string is constructed
+and do not change during the lifetime of the string.
+
+\begin{figure}[tp]
+\renewcommand{\baselinestretch}{0.6}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+public final class SmallString \{\\
+\>private final char value[];\\
+\>private final int count;\\
+\>int getOffset() \{ return 0; \}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[getOffset()+i];\\
+\>\}\\
+\}\\
+public final class BigString extends SmallString \{\\
+\>private final int offset;\\
+\>int getOffset() \{ return offset; \}\\
+\}\\
+\end{tabular}}%
+\caption{Static specialization of {\tt java.lang.String}.}
+\label{fig:split}
+\end{figure}
+\begin{figure}[tp]
+\renewcommand{\baselinestretch}{0.6}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+public SmallString substring(int start)\\
+\{\\
+\>int noff = offset + start;\\
+\>int ncnt = count - start;\\
+\>if (noff==0)\\
+\>\>return new SmallString(value, noff, ncnt);\\
+\>else\\
+\>\>return new BigString(value, noff, ncnt);\\
+\}\\
+\end{tabular}}%
+\caption{Dynamic selection among specialized classes in a method
+             from {\tt java.lang.String}.
+}
+\label{fig:dynsel}
+\end{figure}
+
+In practice, most strings are not created as explicit substrings of other
+strings, so
+the {\tt offset} field in most strings is zero.
+In fact, all of the public {\tt String} constructors create
+strings with {\tt offset} zero; only the {\tt substring} method
+creates strings with a nonzero offset. And even at 
+calls to the private {\tt String(int, int, char[])} constructor
+inside the {\tt substring} method, it is possible to dynamically
+test the values of the parameters at the allocation site to determine
+if the newly
+constructed string will have a zero or nonzero offset.
+
+Our analysis exploits this fact by splitting the 
+{\tt String} class into two classes: a superclass {\tt SmallString}
+that omits the {\tt offset} field, and a subclass {\tt BigString} that
+extends {\tt SmallString} and includes the {\tt offset} field. 
+Each of these two new classes implements a {\tt getOffset()} method
+to replace the field: the {\tt getOffset()} method
+in the {\tt SmallString} class simply returns zero; but the {\tt
+getOffset()} method in the {\tt BigString} class returns the 
+value of the {\tt offset} field in {\tt BigString}.
+Figure~\ref{fig:split} illustrates this transformation.
+
+At every allocation site except the one inside the {\tt substring}
+method, the transformed program allocates a {\tt SmallString} 
+object. Inside the {\tt substring} method, the program generates
+code that dynamically tests if the offset in the substring
+will be zero. If so, it allocates a {\tt SmallString} object;
+if not, it allocates a {\tt BigString} object.
+(See Figure~\ref{fig:dynsel}.)
+This transformation
+therefore eliminates the {\tt offset} field in the majority
+of strings. 
+
+The analysis required to support this transformation takes place
+in two phases. The first phase scans the program
+to identify fields that
+are amenable to transformation.\footnote{See
+  Section~\ref{sec:subclass-final} for a precise definition.}
+In our example, the analysis
+determines that the {\tt offset} field is never written after
+it is initialized.
+%
+In the next phase, we determine if the initialized value of the field
+can be determined before the object is created, by examining the
+specific constructor invoked and its parameters.
+%
+ In our example, the analysis determines
+that the {\tt offset} field is zero for all constructors
+except the private constructor invoked within the {\tt substring}
+method. It also determines that, for objects created within substring,
+the value of the {\tt offset} field is simply
+the value of the {\tt noff} parameter to this constructor. 
+
+This analysis identifies a set of candidate fields. 
+The analysis chooses one of the candidate fields, then 
+splits the class along the possible values
+that can appear in the field. Our current implementation uses
+profiling to select the field that will provide the largest
+space savings; our policy takes both the size of the field
+and the percentage of objects that have the same value for 
+that field. In our example, the analysis identifies the 
+{\tt offset} field as the best candidate and splits the class
+on that field. We can apply this idea recursively to the 
+new program to obtain the benefits of splitting on multiple
+fields. 
+
+In this example all of the relevant fields are {\tt private}, which
+would, in principle, enable an implementation to apply the
+optimization with an analysis of only the {\tt String} class.  Our
+analysis, however, is powerful enough to examine the rest of the
+program and discover the facts required to apply the optimization in
+the absence of {\tt private} or {\tt final} declarations and even for
+fields accessed outside their declaring class.
+
+\subsection{Field Externalization}
+
+In the string example discussed above, it was possible to determine
+which version of the specialized class to use at object allocation
+time. In some cases, however, a given field may almost always have
+a given value, even though it is not possible to statically determine
+when the value might be changed or which objects will contain fields of that 
+value. In such cases we apply another optimization, 
+{\em field externalization}. This optimization removes the field
+from the class, replacing fields whose values differ from the default 
+value with hash table entries that map objects to values. If an object/value
+mapping is present in the hash table, that entry provides the 
+value of the removed field. If there is no mapping for a given object,
+the field is assumed to have the default value. 
+In our current implementation, we use profiling 
+to identify the default value. 
+
+In this scheme, writes to the field are converted into a check to see
+if the new value of the field is the default value. If so, the 
+generated code simply removes any old mappings for that 
+object from the hash table.
+If not, the generated code replaces any old mapping with a new
+mapping recording the new value. 
+
+\subsection{Hash/Lock Externalization}
+
+Our currently implemented system applies field externalization
+in a general way to any field in the object. We would, however,
+like to highlight an especially useful extension of the basic
+technique. Java implementations typically store an object
+hash code and lock information in the object header. For many
+objects, however, the program never actually uses the hash code
+or lock information. Our implemented system therefore uses
+a variant of field externalization called {\em hash/lock 
+externalization}. This variant allocates all objects 
+without the hash code and lock information fields in the header,
+then lazily creates the fields when necessary. 
+Specifically, if the program ever uses the hash code or lock information, 
+the generated code creates the hash code or lock information
+for the object, then stores this information in a table
+mapping objects to their hash code or lock information.%
+\footnote{The object's address is used as its key when
+  field externalization is done.  The garbage collector is responsible
+  for updating the field entries if it moves objects, by rehashing on
+  the new address.}
+
+Note that, in general, this transformation (as well as field
+externalization) may actually increase space usage. But in practice,
+we have found that our set of benchmark programs
+rarely uses these fields. The overall result is a substantial
+space savings. The combination of class pointer compression 
+and hash/lock elimination can produce a common-case object header
+size of one byte---one byte for a class index and no
+space at all for hash code or lock.
+
+\section{Analysis Algorithms}
+%
+In this section we will present details of the analyses that enable
+our transformations.
+%
+\subsection{Rapid Type Analysis}
+We start with a rapid type analysis \cite{bacon96} to collect the set of
+instantiated classes and callable methods.  This analysis allows us to generate
+a conservative call graph for the program, using the known receiver
+type at the call-site and its set of instantiated subclasses in the
+hierarchy.  Based on the class hierarchy, we can also tag all leaf
+classes as {\tt final}, regardless of whether the source code contained
+this modifier.  Methods which are not overridden, based on
+the hierarchy, are also marked {\tt final}, and calls with a single
+receiver method are devirtualized.  We also remove uncallable methods
+and assign non-conflicting slots to interface methods using a
+graph-coloring algorithm.  The results of some class casts and {\tt
+  instanceof} operations can also be determined statically using
+these results.
+
+Our analysis keeps separate the set of {\it mentioned} and
+{\it instantiated} classes.
+Although the program can contain type-checks on and method-invocations
+of abstract, interface, or otherwise uninstantiated classes,
+every object
+in the heap must belong to one of the instantiated class types.
+The size of the set of instantiated classes is quite small for a
+typical Java program, and over half of the benchmarks in SPECjvm98
+have less than 256 instantiated class types.%
+\footnote{Note that \emph{all} have more than 256 \emph{total} class types.}
+We use this information
+to replace the class pointer in the object header, which
+identifies the type of the object, with a one-byte {\it index} into a
+small lookup table.  The {\tt jess}, {\tt javac}, and {\tt jack}
+benchmarks require more than one byte of index, but a two byte index
+amply suffices in these three cases.
+%
+% Our implementation does claz numbering so that we can use the
+% claz index for a fast instanceof test, too!  But we don't
+% actually use it for that, yet, so I'm not going to describe it here.
+
+\subsection{Bitwidth Analysis}
+% this allows us to reduce fields and remove unused/const fields.
+We use a flow-sensitive interprocedural combined value-propagation and
+bitwidth analysis to
+find constant values, unread and constant fields, and to reduce
+field sizes where possible.
+Since almost all types in Java are signed (with the exception of the
+16-bit {\tt char}), we must be able to describe bitwidths of both
+negative and positive numbers, which we do by splitting the set of
+values into negative, zero, and positive parts, and describing the
+bitwidth of each individually.
+
+We abstract non-singleton sets of integer values into a tuple
+\tuple{m,p} where $m\ge 1+\lfloor\log_2 N\rfloor$ for all negative $N$
+in the set, and $p\ge 1+\lfloor\log_2 N\rfloor$ for positive $N$.  We
+use $m=p=0$ to represent the constant zero.
+Some combination rules for arithmetic operations are
+shown in Figure~\ref{fig:bitrules}.  The rules for simple arithmetic
+operators should be self-evident upon examination (adding two $N$ bit
+integers yields at most an $N+1$-bit integer, for example) although
+care must be taken to ensure that combinations of negative and
+positive integers are handled correctly.  Our implementation contains
+additional rules giving it greater precision for common special cases,
+such as multiplication by
+a one-bit quantity, division by a constant, and (as the figure shows)
+bitwise operations on positive numbers.
+
+\begin{figure}[tp]
+\begin{eqnarray*}
+-\tuple{m,p} &=& \tuple{p,m}\\
+\tuple{m_l,p_l} + \tuple{m_r,p_r} &=& \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}\\
+%\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=& \langle\max(m_l+p_r,p_l+m_r),\\
+%                                       &&  \max(m_l+m_r,p_l+p_r)\rangle\\
+\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=&
+\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
+                       \max(m_l+m_r,p_l+p_r)\end{array}}\\
+\tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
+\tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+\end{eqnarray*}%
+\caption{Some combination rules for bitwidth analysis of arithmetic
+  and bitwise-logical operators.
+  Note that the penultimate entry is a
+  special-case rule that only applies if the neither of the
+  arguments can be negative.
+}\label{fig:bitrules}
+\end{figure}
+
+\subsubsection{Treatment of Fields}
+Dataflow on this bitwidth lattice is performed on the entire Java
+program interprocedurally.  The analysis is
+{\it field-based} \cite{heintze01}: for each field $f$ in 
+class $X$, the analysis uses the abstract analysis value $X.f$ to represent
+all of the values in the $f$ field of instances of $X$. 
+The analysis therefore models an assignment to $f$ in any instance of 
+$X$ as an assignment to the corresponding analysis value $X.f$.%
+\footnote{An obvious extension is to use pointer
+analysis to discriminate between fields allocated at different
+program points.}  The result of the analysis is a bitwidth
+specification for each variable and field in the program.
+We also identify constant variables and
+fields; we replace reads of constant fields with their constant
+value and eliminate the field.  Fields for which no reads are
+found (even if writes are present) are also eliminated.%
+\footnote{Note that checks which may throw exceptions on reads and
+  writes are preserved.}
+
+\subsubsection{Other Details}
+Our analysis handles method calls by merging the lattice values of the
+method parameters at the call site with the formal parameters of the
+method.  Similarly, the return value of the method is propagated back
+to all call-sites.  Our compiler's intermediate representation handles
+thrown exceptions by treating the method return value as a tuple, and
+the call site as a conditional branch.  The ``normal return value'' is
+assigned and the first branch taken on a normal method return, and the
+``exceptional return value'' is assigned and the second branch taken when an
+exception is thrown from the method.
+
+Our implementation of this analysis is actually context-sensitive,
+with a user-defined context length.  All results presented here were
+obtained with the context set to zero; we saw no clear benefit from 1-
+or 2-deep calling contexts, and the increase in analysis
+time was considerable.
+
+Space does not permit us to describe the remaining details of the full
+analysis, including the extension of the value
+lattice to handle the full range of Java types, the class hierarchy,
+{\tt null} and {\tt String} constants, and fixed-length arrays.
+We refer the interested reader to \cite{ananian99:tech} for an
+exhaustive description of the intraprocedural analysis.
+
+In Table~\ref{tab:const-unused} we show the number of unread and
+constant fields found by this analysis in our benchmark set.
+Table~\ref{tab:bitwidth-results} shows the space reductions due to
+bitwidth analysis and field reduction using our byte packing strategy.
+\begin{table}[t]
+\begin{tabular}{lcccr@{.}l}
+&\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
+\bf Benchmark&\bf fields &\bf unread &\bf constant &
+\multicolumn{2}{c}{\bf space saved} \\\hline
+%check      & 279 &   79   &   35   &  2&6\% \\
+compress   & 298 &   75   &   31   &  2&5\% \\
+jess       & 485 &   91   &   43   &  9&9\% \\
+raytrace   & 341 &   75   &   30   &  0&0\% \\
+db         & 286 &   75   &   35   &  0&0\% \\
+javac      & 531 &   85   &   34   &  0&6\% \\
+mpegaudio  & 286 &   75   &   35   &  1&4\% \\
+mtrt       & 341 &   75   &   30   &  0&0\% \\
+jack       & 378 &   77   &   31   & 10&2\% \\
+\end{tabular}
+\caption{Number of unused and constant fields in SPEC benchmarks,
+  and the savings realized (in \% of total dynamic allocated bytes) by
+  removing them.}
+\label{tab:const-unused}
+\end{table}
+\begin{table}[t]
+\centering\begin{tabular}{lccr@{.}l}
+&\multicolumn{2}{c}{\bf static field bits}&\multicolumn{2}{c}{\bf\% alloc'ed}\\
+\bf Benchmark &
+\bf before & \bf after &
+\multicolumn{2}{c}{\bf space saved} \\ \hline
+% data from 11-15 build of NO and 11-01 build of BW.
+%check      & 7343& 4958&  3&4\% \\
+compress   & 7591& 5430&  3&0\% \\
+jess       &13349&10634& 30&1\% \\
+raytrace   & 7467& 5296&  0&9\% \\
+db         & 6777& 4983&  0&3\% \\
+javac      &11560& 8161&  5&4\% \\
+mpegaudio  & 6777& 4983&  1&5\% \\
+mtrt       & 7467& 5296&  0&9\% \\
+jack       & 8356& 6037& 17&2\% \\
+\end{tabular}
+\caption{Number of field bits in SPEC benchmarks statically removed
+  due to bitwidth analysis,
+  and the dynamic savings (in \% of total allocated bytes) of
+  field bitwidth reduction using byte packing.}
+\label{tab:bitwidth-results}
+\end{table}
+
+\subsection{Definite Initialization Analysis}
+Java field semantics dictate that uninitialized fields must have
+the value zero (or {\tt null}, for pointer fields).  It may seem,
+then, that the starting lattice value for every integer field should
+be $\mathbf{0}$.  This starting value, however, prevents us from
+finding nonzero field
+constants in the program: a simple initialization statement like {\tt
+  x=5} will assign {\tt x} the value $\mathbf{0}\meet\mathbf{5}$,
+which is not equal to $\mathbf{5}$!\footnote{On the SCC lattice of
+\cite{wegman91:scc}, $\mathbf{0}\meet\mathbf{5}=\top$ (but see
+footnote \ref{ft:topbot}).}
+
+We perform a {\it definite initialization} analysis to remedy this
+problem and restore precision to our analysis.
+For example, with only constructor {\tt A$_1$} in the following code,
+field {\tt f} will get the lattice value $\mathbf{5}$:
+{\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
+public class A \{\\
+\>int f;\\
+\>A$_1$(\ldots) \{ f = 5; \}\\
+\>A$_2$(\ldots) \{ /* no assignment to f */ \}\\
+\}
+\end{samplecode}%
+}
+Without constructor {\tt A$_2$} in the class,
+we say that field {\tt f} is {\it definitely initialized} because
+every constructor of {\tt A} assigns a value to {\tt f} before
+returning or calling an unsafe method.
+Adding constructor {\tt A$_2$} allows the
+default $\mathbf{0}$ value of {\tt f} to be seen; {\tt f} is then no longer
+definitely initialized.
+
+We actually allow the constructor great flexibility with regard to
+definite initialization; it is free to call any method which does not
+read {\tt A.f} before finally executing a definite initializer.
+We construct a mapping from methods to all
+fields which they may read, in a flow-insensitive manner, and compute
+a transitive closure of this map over the call graph to determine 
+a ``safe set'' of
+methods which the constructor may call before a definite
+initialization of {\tt f}.  As long as control flow may not pass to a
+method not in the safe set before {\tt f} is written, then {\tt f} is
+definitely initialized.
+
+When performing bitwidth analysis,
+definitely-initialized fields are allowed to start at $\bot$ in the
+dataflow lattice.%
+\footnote{We use $\bot$ for ``nothing known'' and $\top$ for
+  ``under-constrained''; another segment of the compiler community
+  commonly reverses these definitions.\label{ft:topbot}}
+  All other fields must start at value
+$\mathbf{0}$, which will make it impossible for the field to represent a
+nonzero constant value.  The results of the definite initialization
+analysis are also used when profiling mostly-constant fields, as described
+in the next section.
+%
+\subsection{Profiling Mostly-Constant Fields}
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{llrcrrr}
+              &     &\bf always-zero&&\bf field bytes&\bf zero&\bf benchmark\\
+\bf Benchmark &\bf Field &\bf bytes &&\bf dyn. alloc'd & \bf \% & \bf total
+dyn. alloc'n\\
+\hline
+compress   & Hashtable\$Entry.next & 3,552 &/& 7,148 & 49.7\% & 105MB\\
+           & String.offset & 3,180 &/& 3,500 & 90.9\% \\
+jess       & jess.Token.negcnt & 7,573,616 &/& 7,573,616 & 100.0\% & 252MB\\
+           & jess.Value.floatval & 5,688,080 &/& 10,170,640 & 55.9\% \\
+raytrace   & Point.z & 4,101,328 &/& 17,464,188 & 23.5\% & 126MB\\
+           & Point.x & 3,291,076 &/& 17,464,188 & 18.8\% \\
+db         & String.offset & 508,204 &/& 508,524 & 99.9\% & 73MB\\
+           & Vector.capacityIncrement & 62,548 &/& 62,548 & 100.0\% \\
+javac      & String.offset & 3,735,388 &/& 3,847,816 & 97.1\% & 161MB\\
+% missing one here
+           & Statement.labels & 578,608 &/& 578,688 & 100.0\% \\
+mpegaudio  & Hashtable\$Entry.next & 3,616 &/& 7,336 & 49.3\% & 666kB\\
+           & String.offset & 2,352 &/& 2,672 & 88.0\% \\
+%mtrt       & Point.z & 4,106,728 &/& 17,846,808 & 23.0\% & 132MB\\
+%           & Point.x & 3,296,476 &/& 17,846,808 & 18.5\% \\
+jack       & String.offset & 7,442,956 &/& 7,443,276 & 100.0\% & 178MB\\
+           & Hashtable\$Enumerator.type & 5,288,364 &/& 5,288,364 & 100.0\% \\
+\end{tabular}
+\caption{Representative ``mostly-zero'' fields found in SPEC benchmarks.}
+\label{tab:mostly-zero}
+\end{table*}
+To inform the static specialization and field externalization
+transformations, we instrument a profiling build of the code
+to determine which fields are {\it mostly-constant}.  Our implementation
+builds one binary per examined constant, that is, one binary to look
+for ``mostly-zero'' fields, a separate binary to look for fields which
+are usually ``one'', a third binary to look for fields commonly
+``two'', and so forth.  We built eleven binaries for each benchmark,
+looking for
+field default values in the interval $[-5,5]$.
+For pointer fields, we only look for {\tt null} as a default value.
+It should be stressed that our use of multiple separate binaries was
+solely for ease of implementation, and is not an inherent limitation
+of the technique.
+
+Our instrumentation pass starts by
+adding a counter per class
+to record the number of times each exact class type is instantiated.
+We also add per-field counters which are incremented the first
+time a non-$N$ value is stored into a certain field.%
+\footnote{Note that implementing this counter requires storing an
+  additional bit per field during profiling
+  to record whether a non-$N$ value has been seen previously.}
+By comparing the
+number of times the class (thus field) is instantiated and the number
+of times the field is set to a non-$N$ value, we can determine the
+amount of memory recoverable by applying a ``mostly-$N$''
+transformation to the field, whether static specialization or field
+externalization.  We use this potential savings to guide our selection
+of fields for static specialization, using the field and default value
+which the profile indicates will yield the largest gain.  If static
+specialization isn't an option, the
+proportion of non-$N$ fields helps indicate whether externalization is
+likely to result in a net savings; see Section~\ref{sec:extern-impl}
+for further discussion.
+
+There is one last detail to attend to:  when looking for nonzero $N$
+values, the default zero value of
+uninitialized fields becomes a problem.  For these cases, we use the
+definite-initialization analysis described in the previous section to
+increment the
+``non-$N$'' counter on any path where the field in question is not
+definitely initialized.
+
+Table~\ref{tab:mostly-zero} presents some representative
+``mostly-zero'' fields which our profiling technique identifies in the
+SPEC benchmarks.
+
+\subsection{Finding Subclass-Final Fields}
+\label{sec:subclass-final}
+Our static specialization transformation can only be applied to what
+we call {\it subclass-final} fields.  Subclass-finality is a less strict
+but similar constraint to Java's {\tt final} modifier.  We do a
+single-pass analysis to determine subclass-finality, using the results
+from the bitwidth analysis to improve our precision.%
+\footnote{By using analysis rather than relying on programmer
+  specification, the author need not restrict \emph{all} users of
+  their code in order to obtain maximum efficiency for \emph{some}
+  constrained uses of it.}
+
+A \emph{subclass-final} field {\tt f} of a class {\tt A} can be
+written to from any method of a \emph{subclass} of {\tt A}, as well as
+in any constructor of {\tt A}.  In each write, the receiver's type
+must be a subtype of {\tt A}, except inside {\tt A}'s constructors,
+where the receiver may also be the method's {\tt this} parameter.
+Other writes are disallowed.  Unlike fields marked with Java's
+{\tt final} modifier,
+multiple writes to {\tt f} are permitted, as long as each write
+satisfies the above constraints.
+
+Subclass-finality matches the requirements of the static
+specialization transformation.  Since we always insert a ``big''
+version of the class between the specialized class and its children,
+subclasses can write to the field present in objects of the ``big'' type
+without restriction.
+We need only restrict writes which occur in the class proper.
+
+Our analysis constructs the set of subclass-final fields by finding
+its dual, the set of {\it non}-subclass-final fields.  We scan every
+method and collect all fields with illegal writes; all
+fields found are added to the set of non-subclass-final fields.
+
+\subsection{Constructor Classification}
+% includes MustParamOracle and ConstMap
+The final requirement to enable static specialization is to identify
+constructors which always initialize certain fields in a given way.
+In particular, we wish to find constructors which always give fields
+statically--known-constant values, as well as constructors which
+initialize fields with simple functions of their input parameters.
+The first case enables us to unconditionally replace an instantiated
+class with a smaller split version; the second case allows us to wrap
+the constructor in an appropriate conditional to enable the creation
+of the small version when dynamically possible.
+
+This analysis builds upon our previous results.
+In a single pass over the constructor, we merge the values written
+to a selected subclass-final field, treating $\text{\tt Param}N$ as an
+abstract value for the $N$th constructor parameter.
+We treat any call to a {\tt this()}
+constructor as if it were inlined.  By the properties of
+subclass-final fields, we know that all writes to the
+field are to the {\tt this} object and that there are no bad writes to
+the field outside of the constructor.
+If the merged value at the end of the pass 
+is a {\tt Param} value or a constant equal to the desired ``default''
+value of the selected field,
+then we can statically specialize on the field for calls to this
+particular constructor.
+Further, we rule out specialization on any otherwise-suitable
+fields for which there is not at least one callable constructor
+amenable to static specialization.
+%
+\section{Implementation Issues}
+%
+In this section we will talk briefly about some of the practical
+issues arising in an implementation of our space-saving techniques.
+%
+\subsection{Byte Packing}
+%
+A typical Java implementation may waste large amounts of space by
+aligning fields for the most efficient memory access.  Fields are
+often aligned to their widths (a 4-byte field will be placed at an address
+which is an even multiple of 4, for example), and the object as a
+whole is often placed on a double-word boundary. Our implementation
+places object fields at the nearest byte boundary, although
+the information provided by our bitwidth
+analysis is sufficient to {\it bit}-pack the fields in the object
+when space is truly at a premium.  Preliminary investigation
+indicated that the amount of additional space gained by bit-packing 
+is typically only a few percent, because there aren't enough sub-byte
+fields to fill the space ``wasted'' by byte alignment.%
+\footnote{Note also that ``bit-packing'' may lead to the loss of
+atomicity on concurrent writes to adjacent fields packed within a byte,
+typically the processor's smallest atomic write size.  An escape
+analysis would be sufficient to ensure that fields accessed from
+differing threads are not packed within the same atomic unit.}
+
+Some architectures penalize unaligned accesses to fields.  It is
+worthwhile to {\it attempt} to align fields to their preferred
+alignment while not allowing this alignment to cause the object size to grow.
+Further, there are often {\it forced} alignment constraints on
+(for example) pointers.  Our Java runtime uses a conservative garbage
+collector; its efficiency decreases markedly if pointers are not
+word-aligned.\footnote{This pointer alignment restriction means that
+  objects have to be word-aligned as well.}
+
+Our ``byte-packing'' heuristic achieves
+tight packing of fields while respecting forced alignments.  Packing
+proceeds recursively through superclasses, and returns a list of
+free-space intervals available between the fields of the superclass.
+The algorithm first places all {\it forced-alignment} fields in
+the class, from largest to smallest.  The aim is for the
+alignment-induced spaces left by the large fields to be fillable by
+the following smaller fields.
+
+When there are no more forced-alignment fields, we attempt to allocate
+fields on their ``preferred'' alignment boundaries, largest first.
+At this stage fields are not allowed to introduce an alignment gap at
+the end of the object.  If their preferred alignment does not allow
+them to be placed flush
+against the last field of the object, they are skipped.
+
+Finally, when there are no more fields satisfying
+preferred-alignments, we
+allocate the {\it smallest} available field at the lowest possible
+byte boundary.
+The aim is that the small fields will fill space and nudge
+the end of the object out so that a larger field may be allocated on
+its preferred alignment.  After each field is placed, we begin again
+by attempting to place fields on preferred boundaries.
+
+We have observed that this heuristic strategy works well in practice,
+and the penalties for occasionally placing an unaligned non-pointer
+field were not seen to have a material adverse effect on performance (see
+Section~\ref{sec:byte-pack}). 
+
+% header optimizations.
+% java-vs-byte-vs-bit packing.
+% byte-packing strategy.
+% garbage collection; dynamic methods.  conservative gc.
+% efficiency of field virtualization.
+% single-inheritance when splitting.
+% efficiency of external hashtable
+% distribution of mostly-constants.
+% array allocation?
+% pointer size improvements.
+% parameter widening; reflection; interface to native code. stoplist
+
+% header optimizations.
+% pointer compression?
+
+\subsection{External Hashtable Implementation}
+\label{sec:extern-impl}
+
+The implementation of the hashtable used for field and hash/lock
+externalization can dramatically affect the space savings possible
+with these transformations.  The overhead of
+dynamically-allocated buckets and the required {\it next} pointers
+makes separate chaining impractical as a hashtable implementation technique.
+Open-addressing
+implementations are preferable: in addition to the stored data,
+all that is necessary is a key value and the empty space required to
+limit the load factor.  A load factor of two-thirds and one-word keys
+and values yield an average space consumption of three words per
+field.  This implementation breaks even when the mostly-zero fields
+identified are zero over 66\% of the time.  This break-even point is
+compared to the profiling data to allow our field externalization
+transformation to intelligently choose targeted fields.
+
+Key-size reduction is an important component of the implementation:
+a na{\"\i}ve approach
+would combine a one-word reference to the virtual-container object and a
+one-word field identifier for a two-word key.  The large key will
+shift the break-even point up so that only fields which are 82\% zero
+will profit.  Instead, we can offset the
+object reference (up to the limit of its size) by small integers
+to discriminate the externalized fields of the object, yielding
+a single-word key.
+
+Our implementation puts a weak reference to the object in the
+hashtable, enabling the garbage collector to remove unneeded entries.
+%
+\subsection{Class Loading and Reflection}
+We conducted this research using the MIT FLEX compiler infrastructure,%
+\footnote{Available from {\tt http://flexc.lcs.mit.edu/}.} which is a
+whole-program static compiler.  Although the analyses as described reflect
+this compilation model, it would be straightforward to use
+\emph{extant analysis}
+\cite{sreedhar00} to apply transformations to only the closed-world
+portions of a program which used dynamic class loading.  The space
+allocated to the class index could be updated during garbage collection
+as new classes are discovered.  Concurrent profiling could actually
+expose more opportunities for space compression in a JIT environment.
+Finally, our various transformations need not be exposed to the program if the
+reflection implementation is carefully written.
+%
+\section{Experimental Results}
+\label{sec:results}
+%
+We have implemented all of the analyses and transformations described
+in this paper in FLEX.
+We measure the effectiveness
+of our optimizations by using FLEX to analyze the SPECjvm98 benchmarks
+and apply our transformations,
+then measuring the resulting space savings and
+performance.   All benchmarks were run with the full input size
+on a dual-processor 900 MHz
+Pentium III running Debian Linux.
+%
+\subsection{Memory Savings}
+%
+To evaluate the effectiveness of our technique at reducing the
+amount of memory required to execute the program, 
+we first ran an instrumented version of each
+application with no space optimizations. We used this
+instrumented version to compute the maximum amount of live data on the
+heap at any point during the execution.  
+We then ran an instrumented version of our program after each stage of
+optimization.
+These versions enabled us to calculate the amount by which each 
+technique reduced the size of the live heap data.%
+\footnote{The instrumented versions collect all non-live data before
+each allocation, so that our computed maximum heap sizes are accurate.}
+
+\begin{figure*}
+\begin{center}%
+\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-ttllive.eps}\\
+(a) Reduction in the maximum live heap achieved with our transformations.}%
+~~\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-ttlalloc.eps}\\
+(b) Cumulative reduction in dynamic allocation achieved with
+    our transformations.
+}%
+\\[.3cm]
+\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-objalloc.eps}\\
+(c) Reduction in non-array dynamic allocation achieved with
+    our transformations.
+\\~}%
+~~\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/sas-objarrptr.eps}\\
+(d) Pre-transformation allocation breakdown between arrays and objects,
+with allocations attributable to fields of pointer type split out.}%
+\\[.3cm]
+\parbox[b]{8cm}{\centering%
+\includegraphics[width=7.8cm,clip=true]{Figures/oopsla-speed.eps}\\
+(e) Runtime performance of space optimizations.}%
+\end{center}
+\caption{Experimental results of space optimization transformations.}
+\label{fig:results}
+\end{figure*}
+%
+Figure~\ref{fig:results}a presents the total space savings. This
+figure contains a bar for each application, with the bar broken
+down into categories that indicate the percentage of live data from 
+the original unoptimized execution that we were able to eliminate
+with each optimization. The black section of each bar indicates the
+amount of live heap data remaining after all optimizations. 
+We obtain as much as 40\% reduction in live data on the {\tt
+  javac} benchmark, with almost all of this reduction coming from our
+bitwidth-driven field reductions and static specialization.  In fact
+we obtain more than 15\% reduction on all of the ``object-oriented''
+benchmarks.  The {\tt compress} benchmark allocates a small
+number of very large arrays, limiting the optimization opportunities
+discoverable by our analysis.  Likewise, the {\tt raytrace} and
+{\tt mtrt} benchmarks make heavy use of floating-point numbers,
+limiting the applicability of our integer bitwidth analysis.
+However, these raytracing benchmarks allocate a large number
+of small arrays to represent vectors and matrices, and so our header
+optimizations still allow us to reduce the maximum live data size by
+over 20\%.
+
+We also used an instrumented executable to determine the total amount
+of memory allocated during the entire execution of the program, in
+both the optimized and unoptimized versions.  Reducing this total
+allocation decreases the load on the garbage collector.
+Figure~\ref{fig:results}b presents the space savings according to this
+metric.  Comparison to the previous figure reveals that
+long-lived objects provide proportionally more opportunities for
+optimization.
+%
+\subsection{Objects Versus Arrays}
+%
+The majority of our optimizations are designed to optimize
+object fields rather than arrays. For context, we present numbers 
+that characterize the reductions in total allocation for objects only,
+rather than for both objects and arrays. Figure~\ref{fig:results}c
+presents space savings numbers for objects alone, omitting
+any storage required for arrays.
+Figure~\ref{fig:results}d explains the difference by showing how the total
+program allocation for each benchmark is broken down into array and
+object allocations.
+%The space required for pointer fields, which can
+%not be compressed, are further broken out of
+%the object allocations.
+The reason for our poor performance on {\tt compress} is now
+  obvious---a few large uncompressible integer arrays
+  account for over 99\% of the total space allocated.
+%
+\subsection{Execution Times} 
+\label{sec:byte-pack}
+%
+We next evaluate the execution time impact of applying our space
+optimizations. Figure~\ref{fig:results}e presents the normalized execution 
+times of each benchmark after the application of our sequence
+of optimizations. These numbers show that the first several
+optimizations (class pointer compression, field reduction, and byte packing)
+typically reduce the execution times, while the
+remainder (static specialization, field externalization, and  hash/lock
+externalization) generate modest increases in the execution times.
+The speedup is due to reduced GC times, despite the indirection and
+misalignment costs.
+Static specialization's virtualization of fields is responsible for
+its slowdown; it is likely that an optimized speculatively-inlined
+implementation of the field accessors which it adds to the program
+would improve its performance.  Field externalization (including
+hash/lock externalization) causes the expected penalty for hashtable
+lookup; note that synchronization elimination would greatly reduce the
+cost of hash/lock externalization in the four cases where the overhead
+is unreasonable.
+%
+%%% distribution of mostly-N fields?
+%
+\section{Related Work}
+%
+Many researchers have focused on the problem of reducing the amount of
+header space required to represent Java
+locks~\cite{bacon98,OK99,ADGKRW99}. The vast
+majority of programs do not use the lock associated with every object
+in its full generality, so it is possible to develop improved
+algorithms optimized for the common case.
+The idea is to represent the lock with the minimum amount
+of state (typically a bit) required to support the common usage
+pattern of an acquire followed by a release,
+and to back off to a more elaborate scheme only when the thread
+exhibits a more complex pattern such as nested locking. The
+primary focus has been on improving performance rather than on
+reducing space; however, many of the algorithms also eliminate the
+need to store the complicated locking objects required to support the
+most general lock usage pattern possible in a Java program. These
+techniques typically reduce the lock space overhead to 24 header bits
+\cite{bacon98}; Bacon et al. in \cite{bacon02:efficient} show speed
+improvements from header-size reduction, in agreement with the results
+presented here.
+
+Research on escape analysis and related analyses can enable the
+compiler to find objects whose locks are never 
+acquired~\cite{ACSE99,BH99,whaley99,CGSSM99,Ruf00:PLDI00,salcianu01}.
+This information can enable the compiler to remove the space
+reserved for synchronization support in these objects. 
+Our hash/lock removal algorithm uses a totally dynamic approach
+based on our field externalization mechanism. 
+
+Several researchers have used bitwidth analysis to reduce the size
+of the generated circuits for compilers that generate hardware
+implementations of programs written in C or similar programming 
+languages~\cite{ananian:siliconc,ananian99:tech,RR00:PLDI00,stephenson00,BGSW00}.
+
+Dieckmann and H\"olzle have performed an in-depth analysis of the
+memory allocation behavior of Java programs~\cite{DH99}. Although 
+space is not their primary focus, their study does quantify 
+the space overhead associated with the use of a two-word header
+and of 8-byte alignment. In general, our measurements of the 
+memory system behavior of Java programs broadly agree with their
+measurements. 
+
+Sweeney and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
+members of C++ programs, which is similar to the unread field
+elimination done by our bitwidth analysis.  However, they
+fail to identify constant members, as our analysis algorithm
+can.  Further, our results show that unread and constant field
+elimination is very dependent on the coding style of a particular
+application.  The collection of techniques we have presented here
+gives much more consistent savings over a wide range of benchmarks.
+
+Aggarwal and Randall \cite{aggarwal01} described an array bounds check
+removal method using {\it related fields}.  This work attempted to
+discover fields, such as {\tt Vector.size}, which are guaranteed to be
+less than or equal to the length of some array, for example, the
+backing array stored in {\tt Vector.data}.  Tests against the related
+field could then provide information about bounds checks on accesses
+to the array.  This technique could be used to infer additional
+bitwidth information on related fields from our analysis.
+
+Marinov and O'Callahan have presented Object Equality Profiling
+\cite{marinov03}, a technique which identifies when several instances
+of an object may be safely merged to a single representative instance.
+The merging which is suggested is an orthogonal memory-saving
+measure which could be used in addition to the ones described here.
+
+Zhang and Gupta describe a runtime technique that recognizes two
+special cases when an integer or a pointer field in a designated C
+data structure may be compressed \cite{zhang02}.  For all but two of
+their benchmarks, their heap savings (on these benchmarks, an average
+of 27\%) are entirely due to a pointer compression techique which is
+orthogonal to the transformations described in this paper.  The
+techniques could be combined for greater savings.
+
+\section{Conclusions}
+%
+We have presented a set of techniques for reducing the memory
+consumption of object-oriented programs.  Our techniques include
+program analyses to detect unused, constant, or overly-wide fields,
+and transformations to eliminate fields with common default values
+or usage patterns.  These techniques apply equally well to
+both user-defined fields and
+fields implicit in the runtime's object header, and can reduce the
+maximum heap required for a program by as much as 40\%. 
+Our experimental results from our fully-implemented system validate the
+opportunity for space savings on typical object oriented programs.
+
+\bibliography{harpoon}
+
+\end{document}

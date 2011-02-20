@@ -1,0 +1,61 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi99-outline.tex,v 1.2 1999-05-08 00:18:33 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[notitlepage,twocolumn,twoside]{article}
+\usepackage{comdef}
+
+% What's the name of the project this week?
+\newcommand{\Harpoon}{Harpoon}%{ActiveWorld}
+\newcommand{\harpoon}{harpoon}%{activeWorld}
+\newcommand{\magic}{\textsc{magic}}
+
+\author{C.~Scott~Ananian}
+\title{PLDI paper}
+\date{\today \\ $ $Revision: 1.2 $ $}
+
+% PDF-friendly fonts:
+\renewcommand{\rmdefault}{ptm}
+\renewcommand{\sfdefault}{phv}
+\renewcommand{\ttdefault}{pcr}
+
+\begin{document}
+\bibliographystyle{alpha}
+\maketitle
+
+\section{Introduction}
+% Introduction:
+%  SSA form is great.
+%   - Designed for forward dataflow analysis
+%   - Information is generated only a defs.
+%   - Principle: one name per information unit.
+%  BUT: get info at conditional branches.
+%   - Key insight: split at conditional branches, get names for values,
+%     generate constraint system and solve.
+%   - It's useful: bitwidth, etc.
+%   - also great for backwards analysis: (____, ____, ____)
+%  THIS PAPER MAKES THE FOLLOWING CONTRIBUTIONS:
+%   - New x
+%   - New y
+%   - New z
+
+\section{Example}
+% Example:
+%  Spectacular
+
+\section{Technical Content}
+% Technical Contents (definitions, algorithms, etc)
+%  Program Representation
+%   Sigmas, placement algorithms, theorems.
+%  Constraint extraction and framework.
+%  Contraint systems and resolution analysis (for example)
+%   Bitwidth
+%   Array bounds analysis, etc.
+
+\section{Experimental Results}
+% Small bitwidths
+% Static elimination of array bounds checks.
+
+\nocite{*}
+\bibliography{harpoon}
+
+\end{document}

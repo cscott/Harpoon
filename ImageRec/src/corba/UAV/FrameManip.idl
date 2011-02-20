@@ -1,0 +1,57 @@
+//=============================================================================
+/**
+ *  @file    FrameManip.idl
+ *
+ *  $Id: FrameManip.idl,v 1.6 2003-08-05 20:54:58 wbeebee Exp $
+ *
+ *  @author  Gary Duzan <gduzan@bbn.com>
+ */
+//=============================================================================
+
+#ifndef FRAMEMANIP_IDL
+#define FRAMEMANIP_IDL
+
+#include "CosPropertyService.idl"
+
+#pragma prefix ""
+
+#include "Image.idl"
+
+/**
+  * @namespace FrameManip
+  * @brief  Interfaces for sending frame data to processing nodes.
+  */
+module FrameManip {
+  typedef ::omg::org::CosPropertyService::Properties	FrameInfo;
+  typedef sequence<octet>			FrameData;
+
+  struct Frame {
+    unsigned long long timestamp;
+    FrameInfo info;
+    Img::ImageHeader header;
+    FrameData data;
+  };
+
+   /**
+     * @interface Processor
+     * @brief Send data to node for processing.
+     *
+     */
+  interface Processor {
+     /**
+       * Send data to ATR to be processed
+       * @param f  Frame data
+       * @return the processed frame
+       */
+    Frame transform(in Frame f);
+
+     /**
+       * Send data to ATR to be processed
+       * @param f  Frame data
+       *
+       */
+    void process(in Frame f);
+  };
+};
+
+#endif

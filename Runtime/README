@@ -1,0 +1,95 @@
+This directory contains (mostly) C source files for the FLEX runtime.
+
+See the file REQUIRED for the tools required to build it.
+After installing the tools, you'll want to run ./setup
+to let autoheader/autoconf/automake do their thing.
+See the INSTALL file for generic build instructions;
+the BUILDING file has more specific information.
+
+
+FILES & DIRECTORY STRUCTURE:
+
+AUTHORS
+BUILDING
+COPYING
+README
+REQUIRED
+
+  Standard files with very explanatory names.
+  
+
+INSTALL
+
+  Standard installation-help file for GNU projects.  Not specific to
+  the Flex Runtime.  Consult the BUILDING file instead.
+
+
+PROFILING
+
+  Info on profiling applications compiled with Flex.
+
+
+setup
+
+  Setup script you should run immediately after checking out the
+  Runtime.  It invokes GNU automake, followed by GNU autoconf to produce
+  (1) Makefile.in (a generic Makefile), and (2) configure, a script
+  that will configure Makefile.in into the real Makefile, function of
+  the architecture/OS details and the user-selected configuration
+  options.
+
+
+Makefile.am
+
+  Input file used by GNU automake to generate Makefile.in.
+
+
+configure.in
+
+  Input file used by GNU autoconf to generate the "configure" script.
+  configure takes Makefile.in as input and produces a configured,
+  (hopefully) ready-to-use Makefile.
+
+
+JarRules.make
+JavaRules.make
+
+  Additional make rules for building jars and compiling java
+  applications.
+
+
+arch/
+
+  Architecture-dependent source code.  Inside it, one subdir for each
+  relevant architecture (e.g., "arch/ix86/").
+
+
+src/
+
+  Architecture-independent source code.
+
+
+include/
+
+  C header files for the C sources from both arch/ and src/.  The
+  configuration process will create a directory symlink "asm" to the
+  relevant subdirectory of arch/ (e.g., arch/ix86).
+
+
+Contrib/
+
+  External code we use in the Flex Runtime.  Currently, the only
+  component is the BDW GC in Contrib/gc.
+
+
+scripts/
+
+  Various scripts: flexrun-config.in gen-link-script hacked-java-make
+  query-size.sh.
+
+  [AS] TODOCUMENT much more doc is required here ...
+
+
+## $Id: README,v 1.6 2005-11-21 20:16:41 salcianu Exp $
+
+

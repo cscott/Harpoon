@@ -1,0 +1,2 @@
+[forall c in chainblocks], sizeof(c.~nextblock)=1
+[forall f in fatblockindex], sizeof(f.fatblockslist)=1

@@ -1,0 +1,39 @@
+// -*- IDL -*-
+// above line tells emacs to use IDL mode on this file
+
+// ================================================================
+/**
+ * @file Image.idl
+ *
+ * $Id: Image.idl,v 1.2 2003-09-12 20:39:22 wbeebee Exp $
+ *
+ * @author Craig Rodrigues <crodrigu@bbn.com>
+ *
+ * @brief  This file contains an interfaces and structures for image data
+ */
+// ================================================================
+
+#ifndef IMAGE_IDL
+#define IMAGE_IDL
+module Img {
+  typedef sequence<octet>                       ImageData;
+
+  struct ImageHeader {
+    unsigned long long timestamp;
+    long importance;
+    long id;
+
+    // Sequence number is incremented for every frame sent.
+    // Used to detect loss.
+    long seq_num;
+  };
+
+  struct Image {
+    ImageHeader header;
+    ImageData data;
+  };
+};
+
+#endif /* IMAGE_IDL */
+
+

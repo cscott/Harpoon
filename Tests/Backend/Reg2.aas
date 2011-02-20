@@ -1,0 +1,11 @@
+	int i j
+	def(i)
+	def(j)
+	use(j) jump(L0,L1)
+L0:
+	use(i)
+	jump(L2)
+L1:
+	use(j)
+L2:
+	

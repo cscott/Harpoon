@@ -1,0 +1,50 @@
+RaiseE($e$:edge) =
+\begin{myalgorithmic}
+\STATE\COMMENT{When called, $e \notin E_e$}
+\STATE $E_e \gets E_e \cup \{ e \}$
+\LET $n$ be the destination of edge $e$
+\IF{$n \notin E_n$}
+\STATE $E_n \gets E_n \cup \{ n \}$
+\STATE $W_n \gets W_n \cup \{ n \}$
+\ENDIF
+\end{myalgorithmic}
+~\\
+RaiseV($v$:variable, $L$:lattice value) =
+\begin{myalgorithmic}
+\IF{$V[v] \latlt L$}
+\STATE $V[v] \gets L$
+\STATE $W_v \gets W_v \cup \{ v \}$
+\ENDIF
+\end{myalgorithmic}
+~\\
+Visit($n$:node) =
+\begin{myalgorithmic}
+\FOREACH{assignment ``$v \gets x \oplus y$'' in $n$}
+ \STATE RaiseV($v$, $V[x] \oplus V[y]$)
+ \COMMENT{binop rule: see table~\ref{tab:sccmeet1}}
+\ENDFOR
+               \EMPTYLINE
+\FOREACH{assignment ``$v \gets \text{MEM}(\ldots)$'' or 
+                    ``$v \gets \text{CALL}(\ldots)$'' in $n$}
+ \STATE RaiseV($v$, $\top$)
+\ENDFOR
+               \EMPTYLINE
+\FOREACH{assignment ``$v \gets \phi(x_1,\ldots,x_n)$'' in $n$}
+ \FOREACH{variable $x_i$ corresponding to predecessor edge $e_i$ of $n$}
+  \IF{$e_i \in E_e$}
+   \STATE RaiseV($v$, $V[v] \meet V[x_i]$)
+   \COMMENT{meet rule: see table~\ref{tab:sccmeet1}}
+  \ENDIF
+ \ENDFOR
+\ENDFOR
+               \EMPTYLINE
+\FOREACH{branch ``if $v$ goto $e_1$ else $e_2$'' in $n$}
+ \STATE $L \gets V[v]$
+ \IF{$L=\top$ or $L=c$ where $c$ signifies ``true'' and $e_1 \notin E_e$}
+  \STATE RaiseE($e_1$)
+ \ENDIF
+ \IF{$L=\top$ or $L=c$ where $c$ signifies ``false'' and $e_2 \notin E_e$}
+  \STATE RaiseE($e_2$)
+ \ENDIF
+\ENDFOR
+\end{myalgorithmic}

@@ -1,0 +1,3 @@
+#!/bin/sh
+export JACORB_HOME=contrib/JacORB1_3_30
+java  -classpath $JACORB_HOME/lib/idl.jar:$CLASSPATH org.jacorb.idl.parser  "$@"

@@ -1,0 +1,152 @@
+--- /root/src/jasmin/Scanner.java	Mon Mar  3 04:57:38 1997
++++ Scanner.java	Sun Nov  7 15:24:08 1999
+@@ -86,7 +86,7 @@
+         line_num = 1;
+         char_num = 0;
+         line = new StringBuffer();
+-        chars = new char[512];
++        chars = new char[2048];
+         is_first_sep = true;
+         advance();
+     }
+@@ -101,6 +101,67 @@
+         return ((d1-'0')&7) * 64 + ((d2-'0')&7) * 8 + ((d3-'0')&7);
+     }
+ 
++    int handleEscape(int firstchar)
++	throws java.io.IOException, jasError
++    {
++	advance();
++	switch (next_char) {
++	case 'n': next_char = '\n'; break;
++	case 'r': next_char = '\r'; break;
++	case 't': next_char = '\t'; break;
++	case 'f': next_char = '\f'; break;
++	case 'b': next_char = '\b'; break;
++	case 'u': 
++	    advance();
++	    next_char = readHex(next_char); 
++	    break;
++	case '\'': next_char = '\''; break;
++	case '0': case '1': case '2': case '3': case '4':
++	case '5': case '6': case '7':
++	    next_char = readOctal(next_char);
++	    break;		    
++	default:
++	    throw new jasError("Bad backslash escape sequence!");
++	}
++	return next_char;
++    }
++
++    int readHex(int firstChar) throws java.io.IOException {
++        int d1, d2, d3, d4;
++        d1 = firstChar;
++	if ((d1>='A')&&(d1<='F'))
++	    d1=(d1-'A')+10;
++	else if ((d1>='a')&&(d1<='f'))
++	    d1=(d1-'a')+10;
++	else if ((d1>='0')&&(d1<='9'))
++	    d1=(d1-'0');
++        advance();
++        d2 = next_char;
++	if ((d2>='A')&&(d2<='F'))
++	    d2=(d2-'A')+10;
++	else if ((d2>='a')&&(d2<='f'))
++	    d2=(d2-'a')+10;
++	else if ((d2>='0')&&(d2<='9'))
++	    d2=(d2-'0');
++        advance();
++        d3 = next_char;
++	if ((d3>='A')&&(d3<='F'))
++	    d3=(d3-'A')+10;
++	else if ((d3>='a')&&(d3<='f'))
++	    d3=(d3-'a')+10;
++	else if ((d3>='0')&&(d3<='9'))
++	    d3=(d3-'0');
++	advance();
++	d4 = next_char;
++	if ((d4>='A')&&(d4<='F'))
++	    d4=(d4-'A')+10;
++	else if ((d4>='a')&&(d4<='f'))
++	    d4=(d4-'a')+10;
++	else if ((d4>='0')&&(d4<='9'))
++	    d4=(d4-'0');
++        return (d1*4096 + d2 * 256 + d3*16+d4);
++    }
++
+     //
+     // recognize and return the next complete token
+     //
+@@ -143,7 +204,9 @@
+ 
+                     // record that we have found first item
+                     is_first_sep = false;
+-
++		    if (next_char=='\\') {
++			next_char=handleEscape(next_char);
++		    }
+                     chars[0] = (char)next_char;
+                     pos++;
+                     for (;;) {
+@@ -151,6 +214,9 @@
+                         if (separator(next_char)) {
+                             break;
+                         }
++			if (next_char=='\\') {
++			    next_char=handleEscape(next_char);
++			}
+                         chars[pos] = (char)next_char;
+                         pos++;
+                     }
+@@ -196,7 +262,11 @@
+                             case 't': next_char = '\t'; break;
+                             case 'f': next_char = '\f'; break;
+                             case 'b': next_char = '\b'; break;
+-                            // case 'u': next_char = 'u'; break;
++				//read in unicode
++                            case 'u': 
++				advance();
++				next_char = readHex(next_char); 
++				break;
+                             case '"': next_char = '"'; break;
+                             case '\'': next_char = '\''; break;
+ 
+@@ -239,11 +309,18 @@
+                 line.setLength(0);
+                 return new token(sym.EOF);
+ 
++
++
+             default:
+                 {
+                     // read up until a separatorcharacter
+ 
+                     int pos = 0;
++		    boolean flagnoescape=true;
++		    if (next_char=='\\') {
++			flagnoescape=false;
++			next_char=handleEscape(next_char);
++		    }
+                     chars[0] = (char)next_char;
+                     is_first_sep = false;
+ 
+@@ -253,6 +330,10 @@
+                         if (separator(next_char)) {
+                             break;
+                         }
++			if (next_char=='\\') {
++			    flagnoescape=false;
++			    next_char=handleEscape(next_char);
++			}
+                         chars[pos] = (char)next_char;
+                         pos++;
+                     }
+@@ -261,7 +342,7 @@
+                     String str = new String(chars, 0, pos);
+ 
+                     token tok;
+-                    if ((tok = ReservedWords.get(str)) != null) {
++                    if (flagnoescape&&((tok = ReservedWords.get(str)) != null)) {
+                         // Jasmin keyword or directive
+                         return tok;
+                     } else if (InsnInfo.contains(str)) {

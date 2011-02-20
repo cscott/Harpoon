@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+.deps
+.libs
+*.l?
+link-script
+Flex_MIPS.S

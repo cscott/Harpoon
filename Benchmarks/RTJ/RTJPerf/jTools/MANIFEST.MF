@@ -1,0 +1,5 @@
+Manifest-Version: 0.1
+Implementation-Title: jTools
+Implementation-Version: 0.1
+Implementation-Vendor: DOC Lab, University of California at Irvine
+Created-By: Angelo Corsaro <corsaro@ece.uci.edu>

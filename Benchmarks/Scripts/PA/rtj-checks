@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# E.g. rtj-checks Fib /home/salcianu/Harpoon/Benchmarks/Fib
+
+
+CALL_DIR=`pwd`
+
+cd 
+cd Harpoon/Code
+
+cls=$1
+name=$1
+dir=$2
+levels=2
+
+echo "Analyzing $cls to analyze-$name"
+
+PRE_FILE=${CALL_DIR}/pre-analysis/pre${name}
+
+if test -e $PRE_FILE
+then
+     PREANALYSIS_OPT=--loadpre=$PRE_FILE
+else
+     PREANALYSIS_OPT=--savepre=$PRE_FILE
+fi
+
+FLEX_DIR=${HARPOON_DIR}/Code
+
+stdPath=${FLEX_DIR}/Support/NewThread.jar:${FLEX_DIR}/Support/reflect-thunk.jar:${FLEX_DIR}/SupportNP/sunthunk.jar:${FLEX_DIR}/SupportNP/collections.jar:${FLEX_DIR}/SupportNP/classes.zip:${FLEX_DIR}/Support/realtime.jar
+
+echo "harpoon.class.path = \""${dir}:${stdPath}"\""
+
+HARPOON_OPTIONS=" -mx512m -oss100m \
+		  -Dharpoon.runtime=2 \
+    	          -Dharpoon.alloc.strategy=niftystats \
+    	          -Dharpoon.target.elf=yes \
+                  -Dharpoon.class.path=$dir:$stdPath"
+
+echo "HARPOON_OPTIONS = "${HARPOON_OPTIONS}
+
+java -mx128m -oss100m \
+    ${HARPOON_OPTIONS} \
+harpoon.Main.PAMain ${PREANALYSIS_OPT} \
+    -s --ccs=$levels --wts \
+    --rtjchecks \
+$cls
+
+exit $?

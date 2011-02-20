@@ -1,0 +1,7 @@
+#!/bin/bash
+gcc -gdwarf-2 -c readelf.c -Iinclude
+gcc -gdwarf-2 -c unwind-ia64.c -Iinclude
+gcc -gdwarf-2 -c typedata.c -Iinclude
+gcc -gdwarf-2 -c GenericHashtable.c
+gcc -gdwarf-2 -c common.c
+gcc -gdwarf-2 dumpstructures.c *.o -Iinclude -o dumpstructures

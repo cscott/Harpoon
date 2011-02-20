@@ -1,0 +1,330 @@
+<!-- SCCS @(#)indirectmem.html	1.3 00/04/07 -->
+
+<BODY BGCOLOR=white>
+
+<title>The indirect memory interface</title>
+<font color=blue><h1>The indirect memory interface reference</h1></font>
+
+<font color=blue><h2>Introduction</h2></font>
+
+This document is the reference manual for the indirect memory
+layer. These functions are used for accessing the garbage-collected
+heap <i>indirectly</i> using pointers to ICells. Please refer to <a
+href=gcsafety.html><i>How to be GC-safe in CVM</i></a> for context
+and examples.
+
+<p>Note that the indirect memory interface is <i>GC-safe</i>, and is
+appropriate for use in VM code outside of the interpreter, like the
+class loader, or JNI implementation.
+
+<p>
+<font color=blue><h2>Table of Contents</h2></font>
+<ul>
+    <li><A HREF=#icell>ICell manipulations</A>
+    <li><A HREF=#roots>Registered indirection cells</i>
+    <ul>
+        <li><A HREF=#localroots>Local roots</A>
+        <li><A HREF=#globalroots>Global roots</A>
+    </ul>
+    <li><A HREF=#object>Object operations</A>
+    <ul>
+        <li><A HREF=#rw32>Accessing fields of 32-bit width</A>
+	<li><A HREF=#rw64>Accessing fields of 64-bit width</A>
+    </ul>
+    <li><A HREF=#array>Array operations</A>
+    <ul>
+        <li><A HREF=#rw32arr>Accessing elements of 32-bit width and below</A>
+	<li><A HREF=#rw64arr>Accessing elements of 64-bit width</A>
+	<li><A HREF=#arrmisc>Miscellaneous array operations</a>
+    </ul>
+    <li><A HREF=#gcunsafe>GC-unsafe operations</A>
+</ul>
+
+
+<A name=icell>
+<font color=blue><h3>ICell manipulations</h3></font>
+
+Let's define the <i>referent</i> of an ICell as the direct object
+reference encapsulated by the ICell. The indirect memory interface
+allows GC-safe assignments and comparisons between referents of
+ICell's.
+
+<p>Assign referent of <tt>srcICellPtr</tt> to be the referent of
+<tt>dstICellPtr</tt>:
+<pre>
+    <i>macro</i> void <b>CVMID_icellAssign</b>(CVMExecEnv* ee, CVMObjectICell* destICellPtr, CVMObjectICell* srcICellPtr)
+</pre>
+
+<p>Null out the referent of <tt>icellPtr</tt>:
+<pre>
+    <i>macro</i> void <b>CVMID_icellSetNull</b>(CVMExecEnv* ee, CVMObjectICell* icellPtr)
+</pre>
+
+<p>Test whether the referent of <tt>icellPtr</tt> is null, The result
+is in <tt>res</tt>:
+<pre>
+    <i>macro</i> void <b>CVMID_icellIsNull</b>(CVMExecEnv* ee, CVMObjectICell* icellPtr, CVMBool res)
+</pre>
+
+<p>Test whether the referent of <tt>icellPtr1</tt> is the same object
+reference as <tt>icellPtr2</tt>. The result
+is in <tt>res</tt>:
+<pre>
+    <i>macro</i> void <b>CVMID_icellSameObject</b>(CVMExecEnv* ee, CVMObjectICell* icellPtr1, CVMObjectICell* icellPtr2, CVMBool res)
+</pre>
+
+<a name=object>
+<font color=blue><h2>Registered indirection cells</h2></font>
+
+<p>An indirection cell must be registered with GC to be scanned as a
+root. A registered indirection cell is either a local root or global
+root. In both cases, the client code is handed a pointer to an ICell
+that is part of the root set of GC.
+
+<a name=localroots>
+<font color=blue><h3>Local roots</h3></font>
+
+Local roots are allocated within <i>local root blocks</i>. At the end
+of a local root block, all allocated local roots within the block are
+destroyed. Note that local root blocks may be nested arbitrarily.
+
+<p>To begin a local root block, with respect to the current thread's
+execution environment, <tt>ee</tt>:
+
+<pre>
+    <i>macro</i> <b>CVMID_localrootBegin</b>(CVMExecEnv* ee)
+</pre>
+
+To allocate a local root and return a pointer to it:
+
+<pre>
+    <i>macro</i> <b>CVMID_localrootDeclare</b>(&lt;ICell&gt;, var)
+</pre>
+
+Here <tt>&lt;ICell&gt;</tt> may be any legal object or array ICell
+type. <tt>CVMID_localrootDeclare</tt> allocates a new local root,
+nulls out its referent, declares a <tt>&lt;ICell&gt;* var</tt>, and
+makes <tt>var</tt> point to the new local root. <tt>var</tt> is
+visible within the scope of the local root block.
+
+<p>To end the local root block, and to discard all local roots allocated
+within the block:
+
+<pre>
+    <i>macro</i> <b>CVMID_localrootEnd</b>()
+</pre>
+
+<a name=globalroots>
+<font color=blue><h3>Global roots</h3></font>
+
+Global roots are not bound to any one thread, but are shared between
+all threads. They are analogous to JNI global refs. Note that unlike
+local roots, global roots may be allocated out-of-order.
+
+<p>To allocate a new global root, null out its referent and return a
+pointer to it:
+
+<pre>
+    CVMObjectICell* <b>CVMID_getGlobalRoot</b>()
+</pre>
+
+<p>To free the global root pointed to by <tt>globalRoot</tt>:
+
+<pre>
+    void <b>CVMID_freeGlobalRoot</b>(CVMObjectICell* globalRoot)
+</pre>
+
+
+<a name=object>
+<font color=blue><h2>Object field accesses</h2></font>
+
+The following macros access object fields. The result-producing ones
+take an l-value as the last argument, and assign to it.
+
+<A name=rw32>
+<font color=blue><h3>Accessing fields of 32-bit width</h3></font>
+
+In these macros, the first parameter is a pointer to the execution
+environment (<tt>CVMExecEnv</tt>) of the current thread, the second
+parameter is a registered indirect object reference
+(<tt>CVMObjectICell*</tt>), the third is an offset in number of words
+from the beginning of the object, <i>counting the first header word as
+0</i>, and the fourth is an l-value to read into or a value to write.
+
+<p>Note that the implementation of GC read and write barriers are
+hidden beneath the <tt>Ref</tt> typed accessors.
+
+<p>Weakly-typed 32-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMID_fieldRead32</b>( CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal32 res)
+    <i>macro</i> void <b>CVMID_fieldWrite32</b>(CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal32 res)
+</pre>
+
+<p>Strongly-typed 32-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMID_fieldReadRef</b>(    CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMObjectICell* item)
+    <i>macro</i> void <b>CVMID_fieldWriteRef</b>(   CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMObjectICell* item)
+
+    <i>macro</i> void <b>CVMID_fieldReadInt</b>(    CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaInt item)
+    <i>macro</i> void <b>CVMID_fieldWriteInt</b>(   CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaInt item)
+
+    <i>macro</i> void <b>CVMID_fieldReadFloat</b>(  CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaFloat item)
+    <i>macro</i> void <b>CVMID_fieldWriteFloat</b>( CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaFloat item)
+
+</pre>
+
+<A name=rw64>
+<font color=blue><h3>Accessing fields of 64-bit width</h3></font>
+
+In these macros, the first parameter is a pointer to the execution
+environment (<tt>CVMExecEnv</tt>) of the current thread, the second
+parameter is a registered indirect object reference
+(<tt>CVMObjectICell*</tt>), the third is an offset in number of words
+from the beginning of the object, <i>counting the first header word as
+0</i>, and the fourth is an l-value of type <tt>CVMJavaVal64</tt> to
+read into or a value to write.
+
+<p>The weakly-typed versions read from and write into a word-aligned
+two-word area pointed to by <tt>location</tt>.
+
+<p>Weakly-typed 64-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMID_fieldRead64</b>(   CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal32* location)
+    <i>macro</i> void <b>CVMID_fieldWrite64</b>(  CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal32* location)
+</pre>
+
+<p>Strongly-typed 64-bit read and write:
+
+<pre>
+    <i>macro</i> void <b>CVMID_fieldReadLong</b>(   CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMID_fieldWriteLong</b>(  CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal64 val64)
+
+    <i>macro</i> void <b>CVMID_fieldReadDouble</b>( CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMID_fieldWriteDouble</b>(CVMExecEnv* ee, CVMObjectICell* o, CVMUint32 off, CVMJavaVal64 val64)
+</pre>
+
+<a name=array>
+<font color=blue><h2>Array accesses</h2></font>
+
+The following macros access object fields. The result-producing ones
+take an l-value as the last argument, and assign to it.
+
+<A name=rw32arr>
+<font color=blue><h3>Accessing elements of 32-bit width and below</h3></font>
+
+<p>In these macros, the first parameter is a pointer to the execution
+environment (<tt>CVMExecEnv</tt>) of the current thread, the second
+parameter is a registered indirect array reference
+(<tt>CVMArrayOf&lt;T&gt;ICell*</tt>), the third is the array index
+<i>where the first array element is at index 0</i>, and the fourth is
+an l-value to read into, or a value to write.
+
+<p>These macros are all strongly typed. All the Java basic types are
+represented.
+
+<p>Note that the implementation of GC read and write barriers are
+hidden beneath the <tt>Ref</tt> typed accessors.
+
+<pre>
+    <i>macro</i> void <b>CVMID_arrayReadRef</b>(    CVMExecEnv* ee, CVMArrayOfRefICell* arr,   CVMUint32 index, CVMObjectICell* item)
+    <i>macro</i> void <b>CVMID_arrayWriteRef</b>(   CVMExecEnv* ee, CVMArrayOfRefICell* arr,   CVMUint32 index, CVMObjectICell* item)
+
+    <i>macro</i> void <b>CVMID_arrayReadInt</b>(    CVMExecEnv* ee, CVMArrayOfIntICell* arr,   CVMUint32 index, CVMJavaInt item)
+    <i>macro</i> void <b>CVMID_arrayWriteInt</b>(   CVMExecEnv* ee, CVMArrayOfIntICell* arr,   CVMUint32 index, CVMJavaInt item)
+
+    <i>macro</i> void <b>CVMID_arrayReadByte</b>(   CVMExecEnv* ee, CVMArrayOfByteICell* arr,  CVMUint32 index, CVMJavaByte item)
+    <i>macro</i> void <b>CVMID_arrayWriteByte</b>(  CVMExecEnv* ee, CVMArrayOfByteICell* arr,  CVMUint32 index, CVMJavaByte item)
+
+    <i>macro</i> void <b>CVMID_arrayReadBool</b>(   CVMExecEnv* ee, CVMArrayOfBoolICell* arr,  CVMUint32 index, CVMJavaBool item)
+    <i>macro</i> void <b>CVMID_arrayWriteBool</b>(  CVMExecEnv* ee, CVMArrayOfBoolICell* arr,  CVMUint32 index, CVMJavaBool item)
+
+    <i>macro</i> void <b>CVMID_arrayReadShort</b>(  CVMExecEnv* ee, CVMArrayOfShortICell* arr, CVMUint32 index, CVMJavaShort item)
+    <i>macro</i> void <b>CVMID_arrayWriteShort</b>( CVMExecEnv* ee, CVMArrayOfShortICell* arr, CVMUint32 index, CVMJavaShort item)
+
+    <i>macro</i> void <b>CVMID_arrayReadChar</b>(   CVMExecEnv* ee, CVMArrayOfCharICell*  arr, CVMUint32 index, CVMJavaChar item)
+    <i>macro</i> void <b>CVMID_arrayWriteChar</b>(  CVMExecEnv* ee, CVMArrayOfCharICell*  arr, CVMUint32 index, CVMJavaChar item)
+
+    <i>macro</i> void <b>CVMID_arrayReadFloat</b>(  CVMExecEnv* ee, CVMArrayOfFloatICell* arr, CVMUint32 index, CVMJavaFloat item)
+    <i>macro</i> void <b>CVMID_arrayWriteFloat</b>( CVMExecEnv* ee, CVMArrayOfFloatICell* arr, CVMUint32 index, CVMJavaFloat item)
+
+</pre>
+
+<A name=rw64arr>
+<font color=blue><h3>Accessing elements of 64-bit width</h3></font>
+
+<p>In these macros, the first parameter is a pointer to the execution
+environment (<tt>CVMExecEnv</tt>) of the current thread, the second
+parameter is a registered indirect array reference
+(<tt>CVMArrayOf&lt;T&gt;ICell*</tt>), the third is the array index
+<i>where the first array element is at index 0</i>, and the fourth is
+an l-value of type <tt>CVMJavaVal64</tt> to read into or a value to
+write.
+
+<p>The weakly-typed versions read from and write to a word-aligned
+two-word area pointed to by <tt>location</tt>:
+
+<pre>
+    <i>macro</i> void <b>CVMID_arrayRead64</b>(   CVMExecEnv* ee, &lt;CVMArrayOf64ICell&gt;* o, CVMUint32 off, CVMJavaVal32* location)
+    <i>macro</i> void <b>CVMID_arrayWrite64</b>(  CVMExecEnv* ee, &lt;CVMArrayOf64ICell&gt;* o, CVMUint32 off, CVMJavaVal32* location)
+</pre>
+
+where <tt>&lt;CVMArrayOf64ICell&gt;</tt> is either
+<tt>CVMArrayOfLongICell</tt> or <tt>CVMArrayOfDoubleICell</tt>.
+
+<p>Strongly-typed versions:
+
+<pre>
+    <i>macro</i> void <b>CVMID_arrayReadLong</b>(   CVMExecEnv* ee, &lt;CVMArrayOf64ICell&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMID_arrayWriteLong</b>(  CVMExecEnv* ee, &lt;CVMArrayOf64ICell&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+
+    <i>macro</i> void <b>CVMID_arrayReadDouble</b>( CVMExecEnv* ee, &lt;CVMArrayOf64ICell&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+    <i>macro</i> void <b>CVMID_arrayWriteDouble</b>(CVMExecEnv* ee, &lt;CVMArrayOf64ICell&gt;* o, CVMUint32 index, CVMJavaVal64 val64)
+</pre>
+
+where <tt>&lt;CVMArrayOf64ICell&gt;</tt> is either
+<tt>CVMArrayOfLongICell</tt> or <tt>CVMArrayOfDoubleICell</tt>.
+
+<A name=arrmisc>
+<font color=blue><h3>Miscellaneous array operations</h3></font>
+
+<p>All generic object operations apply to arrays as well. In
+particular, the header of an array object starts out with an object
+header, with an additional length entry, so any operation on the
+header of an object may be performed on an array header.
+
+<p>Below are array-specific operations.
+
+<p>Getting the length of an array:
+<pre>
+    <i>macro</i> void <b>CVMID_arrayGetLength</b>(&lt;CVMArrayOfAnyICell&gt;* o, CVMJavaInt32 len)
+</pre>
+
+where <tt>&lt;CVMArrayOfAnyICell&gt;*</tt> is a registered indirect
+array reference, and <tt>len</tt> is an l-value of type
+<tt>CVMJavaInt32</tt> to store the length result in.
+
+<A name=gcunsafe>
+<font color=blue><h3>GC-unsafe operations</h3></font>
+
+The remaining two operations allow setting and getting the referent
+of an ICell. 
+
+<p><b>WARNING</b>: The use of the ICell referent operations is
+<i>GC-unsafe</i>. Therefore, these operations should be used with
+extreme care in a few select places, and only within GC-unsafe
+regions.
+
+<p>Get the referent of <tt>icellPtr</tt>:
+<pre>
+    <i>macro</i> CVMObject* <b>CVMID_icellDirect</b>(CVMObjectICell* icellPtr)
+</pre>
+
+<p>Set the referent of <tt>icellPtr</tt> to be the direct object
+reference <tt>directObj</tt>:
+<pre>
+    <i>macro</i> void <b>CVMID_icellSetDirect</b>(CVMObjectICell* icellPtr, CVMObject* directObj)
+</pre>
+

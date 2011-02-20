@@ -1,0 +1,5 @@
+methods can be inlined if they are *final*.
+(hmm.  dynamic loading won't like that.)
+optimization pass which tags methods which aren't
+explicitly final with the final attribute if they
+meet criteria (like, never being subclassed).

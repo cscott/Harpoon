@@ -1,0 +1,40 @@
+#!/bin/bash
+
+echo "TODO: Write a more elegant version of me!"
+
+./buildone ETruc
+
+./buildone martin-db
+
+./buildone Barnes/Barnes
+
+./buildone Water/Water
+
+./buildone Chat/Chat
+./buildone Chat/Client
+
+./buildone Echo/Echo
+
+./buildone Game/Game
+./buildone Game/Client
+
+./buildone HTTP/HTTP
+
+echo -n "Compiling the HTTP C client ..."
+gcc -o HTTP/Client/webmark2 HTTP/Client/webmark2.c
+echo done
+
+./buildone Phone/Phone
+echo -n "Compiling the Phone C client ..."
+gcc -o Phone/Client/phonemark Phone/Client/phonemark.c
+echo done
+
+./buildone Quote/Quote
+./buildone Quote/Client
+
+./buildone Time/Time
+echo -n "Compiling the Time C client ..."
+gcc -o Time/Client/timemark Time/Client/timemark.c
+echo done
+
+./buildone martin-raytrace

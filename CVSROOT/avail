@@ -1,0 +1,6 @@
+# whole repository available by default.
+avail
+# cvsguest and rtest users can not commit.
+unavail|cvsguest, rtest
+# no one can commit to the 'magic-2-0' or the 'java-1-5' branch (of Code)
+unavail||Code|magic-2-0, java-1-5

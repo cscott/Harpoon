@@ -1,0 +1,118 @@
+# fill in the host-prefix with the appropriate prefix for your architecture.
+# for example, the StrongARM tools hosted on lesser-magoo have:
+#    HOST_PREFIX=arm-unknown-linuxelf-
+# so that, for example, the cross-compiling gcc is arm-unknown-linuxelf-gcc.
+# this is probably best set on the command-line, as:
+#   make HOST_PREFIX=arm-unknown-linuxelf-
+# instead of editing this (pretty generic and general-purpose, yay) file.
+HOST_PREFIX=
+CC:=$(HOST_PREFIX)$(CC)
+LD:=$(HOST_PREFIX)$(LD)
+AR:=$(HOST_PREFIX)$(AR)
+# use the -fno-zero-initialized-in-bss option to CC if it is supported.
+# this is *vitally important* to ensure that all the data structure
+# pieces end up in the right place.
+CFLAGS=$(patsubst %,-fno-%,$(findstring zero-initialized-in-bss,$(shell $(CC) -v --help 2>&1)))
+
+SECTIONS=\
+	FLEX_CODE FLEX_CODE_RW \
+	FLEX_FIXUP \
+	FLEX_INIT_DATA FLEX_STATIC_PRIMITIVES FLEX_STRING_DATA \
+	FLEX_REFLECTION_OBJECTS FLEX_REFLECTION_DATA \
+	FLEX_CLASS FLEX_GC_INDEX FLEX_GC FLEX_STATIC_OBJECTS \
+	FLEX_STRING_CONSTANTS \
+	FLEX_ZERO \
+	TEXT
+# only one pass needed, at the moment.  For GC support, we'd
+# probably need more.
+PASSES = FLEX_STRING_CONSTANTS
+
+SRCS=header.c $(wildcard _Primitive_*.c _Class_*.c) footer.c
+OBJS=$(patsubst %.c,%.o,$(SRCS))
+PASSOBJS=$(patsubst %.o,$(PASS)-%.o,$(OBJS))
+# this is the name of the archive which will hold the native code for your
+# java proggie.  needs to be linked with a runtime implementation to make
+# a full executable.
+TARGET=Java.a
+TARGETOBJ=$(patsubst %.a,%.o,$(TARGET))
+
+# what's the maximum number of files to link at a time
+# (this is needed to work around losing OSes, like AIX)
+INCR=100
+# the definition of START is usually overridden on the command-line
+START=1
+
+################ SEQ helper function definition ##################
+# seq is 'first' 'increment' 'last', first and last are inclusive
+# generates a sequence of numbers from 'first' to 'last', skipping 'incr'
+seq=$(if $(shell echo "if ($(1)>$(3)) 1;"|bc),,$(1) $(call seq,$(shell echo $(1)+$(2)|bc),$(2),$(3)))
+##################################################################
+
+all: $(TARGET)
+# each pass generates a .o file.  Put them all in the archive.
+$(TARGET): $(TARGETOBJ)
+	for f in $(PASSES) ; do \
+		$(MAKE) PASS=$$f $$f-$< ; \
+	done
+	$(AR) r $@ $< $(patsubst %,%-$<,$(PASSES))
+
+# generate the master .o file for the 'default' pass.
+# note that we chunk the dependencies to not choke losing OSes
+$(START)-$(INCR)-$(TARGETOBJ):\
+    $(wordlist 1,$(INCR),$(wordlist $(START),$(words $(OBJS)),$(OBJS)))
+	$(LD) -r -o $@ $^
+%-$(INCR)-$(TARGETOBJ):
+	$(MAKE) START=$* $@
+$(TARGETOBJ): $(patsubst %,%-$(INCR)-$(TARGETOBJ), \
+			$(call seq,1,$(INCR),$(words $(OBJS))))
+	$(LD) -r -o $@ $^
+# generate the master .o file for the specified $(PASS)
+# again, chunked linking
+$(START)-$(INCR)-$(PASS)-$(TARGETOBJ):\
+    $(wordlist 1,$(INCR),$(wordlist $(START),$(words $(PASSOBJS)),$(PASSOBJS)))
+	$(LD) -r -o $@ $^
+%-$(INCR)-$(PASS)-$(TARGETOBJ):
+	$(MAKE) START=$* $@
+$(PASS)-$(TARGETOBJ): $(patsubst %,%-$(INCR)-$(PASS)-$(TARGETOBJ), \
+			$(call seq,1,$(INCR),$(words $(PASSOBJS))))
+	$(LD) -r -o $@ $^
+
+# okay, the simple c-to-o rules
+$(PASS)-%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ -DNO_SECTION_SUPPORT -DSECTION_$(PASS) $<
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ -DNO_SECTION_SUPPORT \
+	    $(patsubst %,-DSECTION_%,$(filter-out $(PASSES),$(SECTIONS))) $<
+
+# and clean up after ourselves.
+clean:
+	$(RM) *.o header.c footer.c
+wipe: clean
+	$(RM) $(TARGET)
+.INTERMEDIATE: $(TARGETOBJ)
+
+# generate header and footer files from this template.
+header.c: Makefile
+	echo "#ifdef SECTION_FLEX_CODE" > $@
+	echo "char code_start[0];" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_FIXUP" >> $@
+	echo "char fixup_start[0] __attribute__ ((aligned (8)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_CLASS" >> $@
+	echo "char claz_start[0] __attribute__ ((aligned (4)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_GC_INDEX" >> $@
+	echo "char gc_index_start[0] __attribute__ ((aligned (4)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_GC" >> $@
+	echo "char gc_start[0] __attribute__ ((aligned (4)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_STATIC_OBJECTS" >> $@
+	echo "char static_objects_start[0] __attribute__ ((aligned (4)));" >>$@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_STRING_CONSTANTS" >> $@
+	echo "char string_constants_start[0] __attribute__ ((aligned(4)));">>$@
+	echo "#endif" >> $@
+footer.c: header.c
+	sed -e 's/_start/_end/g' < $< > $@

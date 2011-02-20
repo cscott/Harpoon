@@ -1,0 +1,42 @@
+ConstructMap($G$:~CFG):~variable$\rightarrow$variable =
+\begin{myalgorithmic}
+\STATE $N\gets \mathbf{I}_V$
+       \COMMENT{$N$ initially maps every variable to itself}
+\STATE\COMMENT{elide \sigfunction{s} via mapping $N$}\label{line:sigelide1}
+\FOREACH{\sigfunction{} $s$ in $G$}
+ \FOREACH{destination variable $v_d$ corresponding to a source operand $v_s$}
+  \STATE $N \gets N[v_d \rightarrow v_s]$
+         \COMMENT{add a definition to source mapping}\label{line:sigelide2}
+ \ENDFOR
+\ENDFOR
+\STATE\COMMENT{now prune redundant \phifunction{s}}\label{line:phiprune1}
+\FOREACH{variable $v$ in $G$}
+ \STATE $\text{MakeSet}(N[v])$
+\ENDFOR
+\FOREACH{\phifunction{} $P$, in reverse depth-first order}
+ \STATE $\text{CheckOne}(P)$\label{line:phiprune2}
+\ENDFOR
+\STATE\COMMENT{construct final mapping from union-find sets}
+\FOREACH{variable $v$ in $G$}
+ \STATE $N \gets N[v \rightarrow \text{FindSet}(N[v])]$
+\ENDFOR
+\RETURN $N$
+\end{myalgorithmic}
+~\\
+CheckOne($P$:~\phifunction{}) =
+\begin{myalgorithmic}
+\LET $v$ be the variable defined by \phifunction{} $P$
+\STATE $V\gets \text{FindSet}(v)$
+       \COMMENT{defs don't have to be mapped by $N$}
+\STATE $S\gets \{ V \}$ \COMMENT{set of union-find sets}
+\FOREACH{operand $v_i$ of $P$}
+ \STATE $V_i\gets \text{FindSet}(N[v_i])$
+ \STATE $S\gets S \cup \{ V_i \}$
+\ENDFOR
+\IF[it's redundant:  merge it]{$|S| \leq 2$}
+ \FOREACH{operand $v_i$ of $P$}
+  \STATE $\text{Union}(v, N[v_i])$
+ \ENDFOR
+\ENDIF
+\RETURN
+\end{myalgorithmic}

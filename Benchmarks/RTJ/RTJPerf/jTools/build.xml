@@ -1,0 +1,64 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:34:35 wbeebee Exp $ -->
+
+<!--+
+    |
+    | This is the mail ANT file for jTools. Please before building jTools make sure
+    | that you've read the README files, so that you have had a change to
+    | select all the component that you want/need to build.
+    |
+    | File: build.xml
+    | Author: Angelo Corsaro <corsaro@doc.ece.uci.edu>
+    | $Revision: 1.1 $
+    |
+    +-->
+
+<project name="jTools" default="all" basedir=".">
+
+   
+   <!-- Targets Definition  -->
+
+   <target name="all" depends="init, src"/>
+
+
+   <target name="init">
+      <ant antfile="configure.xml"/>
+      <property file="jtools-build-bootstrap.properties"/>
+      <property file="jtools-build.properties"/>
+   </target>
+
+   <target name="src">
+      <ant antfile="${jtools.srcdir}/build.xml"/>
+      <jar jarfile="${jtools.libdir}/jtools.jar"
+           basedir="${jtools.classdir}"
+           includes="edu/uci/ece/ac/**"
+           manifest="MANIFEST.MF"/>
+   </target>
+
+   <target name="demo">
+      <property file="jtools-build-bootstrap.properties"/>
+      <property file="jtools-build.properties"/>
+      <ant antfile="${jtools.demodir}/build.xml"/>
+   </target>
+
+   <target name="api">
+      <property file="jtools-build-bootstrap.properties"/>
+      <property file="jtools-build.properties"/>
+      <mkdir dir="${jtools.basedir}/docs/api"/>
+      <ant antfile="${jtools.srcdir}/build.xml"
+           target="api"/>
+   </target>
+
+
+   <target name="clean">
+      <property file="jtools-build-bootstrap.properties"/>
+      <property file="jtools-build.properties"/>
+      <delete dir="docs/api"/>
+      <ant antfile="${jtools.srcdir}/build.xml" target="clean"/>
+      <ant antfile="${jtools.demodir}/build.xml" target="clean"/>
+      <delete dir="classes"/>
+      <delete dir="lib"/>
+      <delete file="jtools-build-bootstrap.properties"/>
+   </target>
+
+
+</project>

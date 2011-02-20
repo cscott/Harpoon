@@ -1,0 +1,370 @@
+\section{Algorithms}
+\label{app:algorithms}
+
+\begin{myalgorithm}\small
+\input{Figures/THssialg}
+\caption{Placing \phisigfunction{s}.}\label{alg:SSIplace}
+\end{myalgorithm}
+
+\begin{myfigure}[p]\small
+\input{Figures/THssirend}
+\caption{Environment datatype for the SSI renaming algorithm.}
+\label{fig:SSIrename_data}
+\end{myfigure}
+\begin{myalgorithm}\small
+\input{Figures/THssiren1}
+\caption{SSI renaming algorithm.}\label{alg:SSIrename1}
+\end{myalgorithm}
+\begin{myalgorithm}\small
+\input{Figures/THssiren2}
+\caption{SSI renaming algorithm, cont.}\label{alg:SSIrename2}
+\end{myalgorithm}
+
+\begin{myfigure}\small
+\input{Figures/THdeaddata}
+\caption{Datatypes and operations used in unused code elimination.}
+\label{fig:deaddata}
+\end{myfigure}
+
+\begin{myalgorithm}\small\linespread{0.75}
+\input{Figures/THdeadalg}
+\caption{Identifying unused code using SSI form.}
+\label{alg:deadalg}
+\end{myalgorithm}
+
+\begin{myalgorithm}\small
+\input{Figures/THsccalg1}
+\caption{SCC algorithm for SSA form.}\label{alg:scc}
+\end{myalgorithm}
+\begin{myalgorithm}\small
+\input{Figures/THsccalg2}
+\caption{SCC algorithm for SSA form, cont.}\label{alg:scc2}
+\end{myalgorithm}
+
+\section{Proofs}
+\label{app:proofs}
+
+\noindent
+Proof of Lemma~\ref{lem:sese_child}.
+\begin{proof}
+Let us assume a \phifunction for $v$ is needed at some node $Z$
+inside an SESE not containing a definition of $v$.  
+Then by the path-convergence criterion for \phifunction{s},
+there exist paths $X \pathplus Z$ and $Y \pathplus Z$
+having no nodes but $Z$ in common where $X$ and $Y$ contain either
+definitions of $v$ or \phisigfunction[or]{s} for $v$.  Choose any such
+paths:
+\begin{description}
+\item[Case I:] Both $X$ and $Y$ are outside the SESE.  Then, as there
+is only one entrance edge into the SESE, the paths $X \pathplus Z$ and
+$Y \pathplus Z$ must contain some node in common other than Z.  But
+this contradicts our choice of $X$ and $Y$.
+\item[Case II:] At least one of $X$ and $Y$ must be inside the SESE.
+If both $X$ and $Y$ are not definitions of $v$ but rather
+\phisigfunction[or]{s} for $v$, then by recursive application of this proof
+there must exist some choice of $X$, $Y$, and $Z$ inside this SESE
+where at least one of $X$ and $Y$ is a definition.  But $X$ or $Y$
+cannot be a definition of $v$ because they are inside the SESE of $Z$ which
+was chosen to contain no definitions of $v$.
+\end{description}
+
+A symmetric argument holds for \sigfunction{s} for $v$, using
+the path-convergence criterion for \sigfunction{s}, and the fact
+that there exists one exit edge from the SESE.
+\end{proof}
+
+\noindent
+Proof of Lemma~\ref{lem:ssi_place_dom}.
+\begin{proof}
+We will first prove that a node $N$ failing any one of the conditions does
+not need a \phisigfunction[or].
+\begin{itemize}
+\item The path-convergence criteria for \phifunction{s} (\sigfunction{s})
+require node $N$ to be the first convergence
+(divergence) of some paths $X \pathplus N$ and $Y \pathplus N$ ($N
+\pathplus X$ and $N \pathplus Y$).  If the input arity is less than 2
+or there is no path from a definition of $v$, than it fails the
+path-convergence criterion for \phifunction{s}.  If the output arity
+is less than 2 or there is no path to a use of $v$, then it fails the
+path-convergence criterion for \sigfunction{s}.
+\item If there exists a SESE containing $N$ that does not contain any
+definition, \phisigfunction[or]{} $D$ for $v$, then $N$ does not require a
+\phisigfunction[or]{} for $v$ by lemma~\ref{lem:sese_child}.
+\item Let us suppose every $D_i$ containing a definition,
+\phisigfunction[or]{} for $v$ dominates $N$.  If $N$ requires a
+\phifunction for $v$,  there exist paths $D_1 \pathplus N$ and
+$D_2 \pathplus N$ containing no nodes in common but $N$.  We use these
+paths to construct simple paths $\code{START}\pathplus D_1 \pathplus N$ and
+$\code{START}\pathplus D_2 \pathplus N$.  By the definition of a
+dominator, every path from \code{START} to $N$ must contain every
+$D_i$.  But $D_1 \pathplus N$ cannot contain $D_2$, and if
+$\code{START} \pathplus D_1$ contains $D_2$, we can make a path
+$\code{START} \pathplus D_2 \pathplus N$ which does not contain $D_1$
+by using the $D_1$-free path $D_2 \pathplus N$.  The assumption leads
+to a contradiction; thus, there must exist some $D_i$ which does not
+dominate $N$ if $N$ is required to have a \phifunction for $v$.  The
+symmetric argument holds for post-dominance and \sigfunction{s}.
+\end{itemize}
+This proves that the conditions are necessary.  It is obvious from an
+examination of the path convergence criteria for \phisigfunction{s}
+and lemma \ref{lem:sese_child} that they are sufficient.
+\end{proof}
+
+The SSI renaming algorithm presented in Figures~\ref{alg:SSIrename1}
+and \ref{alg:SSIrename2} requires
+an \code{Environment} datatype which is defined in
+Figure~\ref{fig:SSIrename_data}.  Using an imperative programming
+style, it is possible to perform a sequence of any $N$ operations on
+\code{Environment} as defined in the figure in $O(N)$ time; in a
+functional programming style any $N$ operations can be completed in
+$O(N \log N)$ time.\footnote{The curious reader is referred to section
+5.1 of Appel \cite{appel:modern} for implementation details.}  As the
+coarse structure of Algorithm~\ref{alg:SSIrename1} is a simple
+depth-first search, it is easy to see that the \code{Search} procedure
+can be invoked from line~\fullref{line:search1} and
+line~\fullref{line:search2} a total of $O(E)$ times; likewise its
+inner loop (lines~\ref{line:searchloop_start} to
+\ref{line:searchloop_end}) can be executed a total of $E$ times across
+all invocations of \code{Search}.  A total of $U_{SSA}+D_{SSA}$ calls
+to the operations of the \code{Environment} datatype will be made
+within all executions of \code{Search}.  For the imperative
+implementation of \code{Environment} a total time bounds of
+$O(E+U_{SSA}+D_{SSA})$ for the variable renaming algorithm is
+obtained.
+
+\begin{lemma}\label{lem:path_construct}
+The stack trace of calls to \code{Search} defines a unique path
+through $G$ from \code{START}.
+\end{lemma}
+\begin{proof}
+We will prove this lemma by construction.  For every consecutive pair
+of calls to \code{Search} we construct a path $X\pathplus Y$ starting with the
+edge $\tuple{X,N_0}$ which is the argument of the first call, and
+ending with the edge $\tuple{N_n, Y}$ which is the argument of the
+second call.  From line~\ref{line:search_onesucc} of the \code{Search}
+procedure on page~\pageref{line:search_onesucc} we note that every
+edge $\tuple{N_i, N_{i+1}}$ between the first and last has exactly one
+successor.  Furthermore, the call to search on line~\ref{line:search2}
+defines a path starting with the edge which our segment $X\pathplus Y$
+ends with; therefore the paths can be combined.  By so doing from the
+bottom of the call stack to the top we construct a unique path from
+\code{START}.
+\end{proof}
+
+For brevity, we will hereafter refer to the canonical path constructed
+in the manner of lemma~\ref{lem:path_construct} corresponding to the
+stack of calls to \code{Search} when an edge $e$ is first
+encountered as $CP(e)$.  Every edge in the CFG is encountered exactly
+once by \code{Search}, so $CP(e)$ exists and is unique for every edge
+$e$ in the CFG.
+
+\begin{lemma}\label{lem:renamephi}
+SSI form property~\ref{crit_phiname} (\phifunction{} naming) holds
+for variables renamed according to Algorithm~\ref{alg:SSIrename1}.
+\end{lemma}
+\begin{proof}
+We restate SSI form property~\ref{crit_phiname} for reference:
+\begin{quote}
+For every node $X$ containing a definition of a variable $V$ in
+the new program and node $Y$ containing a use of that variable, there
+exists at least one path $X \pathplus Y$ and no such path contains a
+definition of $V$ other than at $X$.
+\end{quote}
+We consider the canonical path 
+$CP(\tuple{Y',Y})=\code{START}\pathstar Y' \path Y$
+for some use of a variable $v$ at $Y$, constructed according to
+lemma~\ref{lem:path_construct} 
+from a stack trace of calls to \code{Search}.
+is encountered.  This path is unique, although more than one canonical
+path may terminate at $Y$ at nodes with more than one predecessor.
+These paths are distinguished by the incoming edge to
+$Y$.\footnote{Note that the notation \tuple{N,N'} for denoting edges
+does not always denote an edge unambigiously; imagine a conditional
+branch where both the \code{true} and \code{false} case lead to the
+same label.  In such cases an additional identifier is necessary to
+distinguish the edges.  Alternatively, one may split such edges to
+remove the ambiguity.  We treat edges as uniquely identifiable and
+leave the implementation to the reader.}  We identify each operand
+$v_i$ of a \phifunction{} with the appropriate incoming edge $e$ to
+ensure that $CP(e)$ is well defined and unique in the context of a
+use of $v_i$.
+
+The canonical path $\code{START}\pathplus Y$ must contain $X$, a definition of
+$v$, if $Y$ uses a variable defined in $X$, as \code{Search} renames
+all definitions (in lines \ref{line:rendef1}, \ref{line:rendef2}, and
+\ref{line:rendef3}) and destroys the name mapping in $\mathcal{E}$
+just before it returns.  The call to \code{Search} which creates the
+definition of $v$ must therefore always be on the stack, and thus in
+the path $CP(\tuple{Y',Y})$, for any use to receive a the name $v$.
+Note that this is
+true for \phifunction{s} as well, which receive names when the
+appropriate incoming edge $\tuple{Y',Y}$ is traversed, not necessarily
+when the node $Y$ containing the \phifunction{} is first encountered.
+
+We have proved that $\code{START}\pathplus X\pathplus Y$ exists; now
+we must prove that no other path from $X$ to $Y$ contains a definition
+of $v$.  Call this other definition $D$.  Obviously $D$ cannot be on
+our canonical path $\code{START}\pathplus X\pathplus Y$, or
+line~\ref{line:rendef3} would have caused $Y$ to use a different name.
+But as we just stated, all variable name mappings done by $D$ will be
+removed when the call to \code{Search} which touched $D$ is taken off
+the call stack.  So $D$ must be on the call stack, and thus on the
+canonical path; a contradiction. %
+%
+Since assuming the existence of some other path $X\pathplus Y$
+containing a definition of $v$ leads to contradiction no other such
+path may exist, completing the proof of the lemma.
+\end{proof}
+
+\begin{lemma}\label{lem:renamesig}
+SSI form property~\ref{crit_signame} (\sigfunction{} naming) holds for
+variables renamed according to Algorithm~\ref{alg:SSIrename1}.
+\end{lemma}
+\begin{proof}
+We restate SSI form property~\ref{crit_signame} for reference:
+\begin{quote}
+For every pair of nodes $X$ and $Y$ containing uses of a
+variable $V$ defined at node $Z$ in the new program, either every path
+$Z \pathplus X$ must contain $Y$ or every path $Z \pathplus Y$ must
+contain $X$.
+\end{quote}
+Let us assume there are paths $Z\pathplus X$ and $Z\pathplus Y$
+violating this condition; that is, let us chose nodes $X$ and $Y$
+which use $V$ and $Z$ defining $V$ such that there exists a path $P_1$
+from $Z$ to $X$ not containing $Y$ and a path $P_2$ from $Z$ to $Y$ not
+containing $X$.  By the argument of the previous lemma, there exists
+a canonical path $P_3=CP(e)$ from \code{START} to $X$ through $Z$
+corresponding to a stack
+trace of \code{Search}; note that $P_3$ need not contain $P_1$.
+There are two cases:
+\begin{description}
+\item[Case I:] $P_3$ does not contains $Y$.  Then there is some last
+node $N$ present on both $P_2: Z\pathstar N\pathplus Y$ and
+$P_3: \code{START}\pathplus Z\pathstar N\pathplus X$.  By 
+the path-convergence criterion for \sigfunction{s},
+this node $N$ requires a \sigfunction{}
+for $V$.  If $N\not=Z$ then line~\ref{line:rendef1} of
+Algorithm~\ref{alg:SSIrename1} would rename $V$ along $P_3$
+and $X$ would not use the same variable $Z$ defined; if
+$N=Z$, then line~\ref{line:rendef2} would have ensured that $X$
+and $Y$ used different names.  Either case contradicts our choices of
+$X$, $Y$, and $Z$.
+\item[Case II:] $P_3$ does contain $Y$.  Then consider the path
+$\code{START}\pathplus Z\pathplus Y$ along $P_3$, which does not
+contain $X$.  The argument of case I applies with $X$ and $Y$ reversed.
+\end{description}
+Any assumed violation of property~\ref{crit_signame} leads to
+contradiction, proving the lemma.
+\end{proof}
+
+Every path $CP(e)$ corresponds to a execution state in a call to
+\code{Search} at the point where $e$ is first encountered.  The value
+of the environment mapping $\mathcal{E}$ at this point in the
+execution of Algorithm~\ref{alg:SSIrename1} we will denote as
+$\mathcal{E}^e$.  For a node $N$ having a single predecessor $N_p$ and
+single successor $N_s$, we will denote
+$\mathcal{E}^{\tuple{N_p,N}}$ as $\mathcal{E}_{\text{before}}^N$ and 
+$\mathcal{E}^{\tuple{N,N_s}}$ as $\mathcal{E}_{\text{after}}^N$.
+It is obvious that 
+$\mathcal{E}_{\text{after}}^{N_p} = \mathcal{E}_{\text{before}}^{N  }$ and
+$\mathcal{E}_{\text{after}}^{N  } = \mathcal{E}_{\text{before}}^{N_s}$
+when $N_p$ and $N_s$, respectively, are also single-predecessor
+single-successor nodes.
+
+\begin{lemma}\label{lem:correctness}
+SSI form property~\ref{crit_correct} (correctness) holds for
+variables renamed according to Algorithm~\ref{alg:SSIrename1}.  That
+is, along any possible control-flow path in a program being executed a
+use of a variable $V_i$ in the new program will always have the same
+value as a use of the corresponding variable $V$ in the original
+program.
+\end{lemma}
+\begin{proof}
+We will use induction along the path $N_0\path N_1\path\ldots\path N_n$.
+We consider $e_k=\tuple{N_{k},N_{k+1}}$, the $(k+1)$th edge in the path,
+and assume that, for all $j<k$, each variable $V$ in the original
+program agrees with the value of $\mathcal{E}^{e_j}[V]=V_i$ in the new
+program.  We show that $\mathcal{E}^{e_k}[V]$ agrees with $V$ at edge
+$e_k$ in the path.
+\begin{description}
+\item[Case I:] $k=0$. The base case is trivial: the \code{START} node
+($N_0$) contains no statements, and along each edge $e$ leaving start
+$\mathcal{E}^e[V]=V_0$.  By definition $V_0$ agrees with $V$ at the
+entry to the procedure.
+\item[Case II:] $k>0$ and $N_k$ has exactly one predecessor and one successor.
+If $N_k$ is single-entry single-exit, then it is not a \phisigfunction[or].
+As an ordinary assignment, it will be handled by
+lines~\ref{line:rename_ordinary1} to \ref{line:rename_ordinary2} of
+Algorithm~\vref{alg:SSIrename2}.  By the induction hypothesis (which
+tells us that the uses at $N_k$ correspond to the same values as the
+uses in the original program) and the semantics of
+assignment, the mapping $\mathcal{E}_{\text{after}}^{N_k}$ is easily
+verified to be valid when $\mathcal{E}_{\text{before}}^{N_k}$ is
+valid.  Thus the value of every original variable $V$ corresponds to
+the value of the new variable 
+$\mathcal{E}_{\text{after}}^{N_k}[V]=\mathcal{E}^{e_k}[V]$ on $e_k$.
+\item[Case III:] $k>0$ and $N_k$ has multiple predecessors and one
+successor.  In this case $N_k$ may have multiple \phifunction{s} in
+the new program, and \mycomment{by the definition in section~\ref{sec:defs}} $N_k$
+has no statements in the original program.  Thus the value of any
+variable $V$ in the original program along edge $e_k$ is identical to
+its value along edge $e_{k-1}$.  We need only show that the value of
+the variable $\mathcal{E}^{e_{k-1}}[V]$ is the same as the value of
+the variable $\mathcal{E}^{e_k}[V]$ in the new program.  For any
+variable $V$ not mentioned in a \phifunction{} at $N_k$ this is
+obvious.  Each variable defined in a \phifunction{} will get the value
+of the operand corresponding to the incoming control-flow path edge.
+The relevant lines in Algorithm~\ref{alg:SSIrename2} start with
+\ref{line:phisrc1} and \ref{line:phisrc2}, where we see that the
+operand corresponding to edge $e_{k-1}$ of a \phifunction{} for $V$
+correctly gets $\mathcal{E}^{e_{k-1}}[V]$.  At
+line~\ref{line:rendef1}, we see that the destination of the
+\phifunction{} is correctly $\mathcal{E}^{e_k}[V]$.  Thus the value of
+every original variable $V$ correctly correponds to
+$\mathcal{E}^{e_k}[V]$ by the induction hyptothesis and the semantics
+of the \phifunction{s}.
+\item[Case IV:] $k>0$ and $N_k$ has one predecessor and multiple
+successors.  Here $N_k$ may have multiple \sigfunction{s} in the new
+program, and is empty in the original program.  The argument goes as
+for the previous case.  It is obvious that variables not mentioned in
+the \sigfunction{s} correspond at $e_k$ if they did at $e_{k-1}$.  For
+variables mentioned in \sigfunction{s}, line~\ref{line:sigsrc} shows
+that operands correctly get $\mathcal{E}^{e_{k-1}}[V]$ and
+line~\ref{line:rendef2} shows that the destination corresponding to
+$e_k$ correctly gets $\mathcal{E}^{e_k}[V]$.  Therefore the values of
+original variables $V$ correspond to the value of
+$\mathcal{E}^{e_k}[V]$ by the induction hypothesis and the semantics
+of the \sigfunction{s}.
+\mycomment{
+\item[Case V:] $N_k$ has multiple predecessors and multiple
+successors.  Forbidden by the CFG definition in section~\ref{sec:defs}.
+some variable $V$) follows.
+}
+\end{description}
+Therefore, on every edge of the chosen path, the values of the
+original variables correspond to the values of the renamed SSI form
+variables. The value correspondence at the path endpoint (a use of
+\end{proof}
+
+\section{Optimistic and Pessimistic Algorithms}
+\label{app:optimistic}
+
+In our experience, optimistic algorithms tend to
+have poor time bounds because of the possibility of input graphs like
+the one illustrated in Figure~\vref{fig:evil}.
+Proving that all but two nodes require
+\phisigfunction[and/or]{s} for the variable $a$ in this example seems to
+inherently require $O(N)$ passes over the graph; each pass can prove
+that \phisigfunction[or]{s} are required for only those nodes adjacent to
+nodes tagged in the previous pass.  Starting with the circled node, the
+\phisigfunction{s} spread one node left on each pass. On the other hand,
+a pessimistic algorithm assumes the correct answer at the start, fails
+to show that any \phisigfunction[or]{s} can be removed, and
+terminates in one pass.\dontfixme{Are we \emph{sure} similar worst cases
+don't exist for the pessimistic algorithm?}
+
+\begin{myfigure}[t]
+\centering\renewcommand{\figscale}{0.25}\input{Figures/evil}
+\caption{A worst-case CFG for ``optimistic'' algorithms.}
+\label{fig:evil}
+\end{myfigure}

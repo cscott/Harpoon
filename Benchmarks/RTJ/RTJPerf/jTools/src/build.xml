@@ -1,0 +1,51 @@
+<!-- $Id: build.xml,v 1.1 2002-07-02 15:35:10 wbeebee Exp $ -->
+
+<project name="JTools Source Build" default="all" basedir="..">
+
+   <property file="jtools-build-bootstrap.properties"/>
+   <property file="jtools-build.properties"/>
+
+   <target name="all" depends="jargo, time, concurrent"/>
+
+   <target name="jargo" depends="util">
+      <ant antfile="${jtools.srcdir}/edu/uci/ece/ac/jargo/build.xml"/>
+   </target>
+
+   <target name="util">
+      <ant antfile="${jtools.srcdir}/edu/uci/ece/ac/util/build.xml"/>
+   </target>
+
+   <target name="time">
+      <ant antfile="${jtools.srcdir}/edu/uci/ece/ac/time/build.xml"/>
+   </target>
+
+   <target name="concurrent">
+      <ant antfile="${jtools.srcdir}/edu/uci/ece/ac/concurrent/build.xml"/>
+   </target>
+
+
+   <target name="api">
+      <javadoc packagenames="edu.uci.ece.ac.jargo.*,
+                             edu.uci.ece.ac.time.*,
+                             edu.uci.ece.ac.concurrent.*,
+                             edu.uci.ece.ac.util.*"
+               sourcepath="src"
+               destdir="docs/api"
+               author="true"
+               version="true"
+               use="true"
+               windowtitle="jTools API">
+
+        <doctitle><![CDATA[<h1> jTools </h1>]]></doctitle>
+        <bottom><![CDATA[<i> <a  href="http://tao.doc.wustl.edu/~corsaro/periscope.html"> jTools </a> is developed and maintained Angelo Corsaro,  <a href="http://doc.ece.uci.edu"> DOC Group </a>, at the University of California, Irvine.</i>]]></bottom>
+     </javadoc>
+   </target>
+
+
+   <target name="clean">
+      <ant antfile="${jtools.srcdir}/edu/uci/ece/ac/jargo/build.xml" target="clean"/>
+      <ant antfile="${jtools.srcdir}/edu/uci/ece/ac/time/build.xml" target="clean"/>
+      <delete dir="${jtools.classdir}"/>
+   </target>
+
+</project>

@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+export CLASSPATH=/home/govereau/urop/src/webserver/bin:.
+export PATH=$PATH:/usr/java/bin
+
+export CVSEDITOR=joe
+export CVS_RSH=ssh
+export CVSROOT=:ext:govereau@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT
+
+alias jc="javac -d /home/govereau/urop/src/webserver/bin $1"

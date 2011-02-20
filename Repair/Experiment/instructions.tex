@@ -1,0 +1,98 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{epsfig}
+\usepackage{bbold}
+
+\title{}
+\author{Instructions}
+\date{July 30, 2003}
+
+\setlength{\topmargin}{0in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.6in}
+\setlength{\textheight}{9in}
+\setlength{\parindent}{0.5in}
+
+
+
+\begin{document}
+\maketitle
+\begin{flushleft}
+
+\thispagestyle{empty}
+
+
+
+\vspace{0.1in}
+The goal of this experiment is to evaluate the applicability of our system 
+as a debugging tool.  There are two populations taking part in this
+experiment.  Both of them are given a series of short C programs (around 500 
+lines each) and are asked to find and fix the bugs they contain. The first 
+population is given the buggy programs alone, while the second population is 
+given the buggy programs and our tool. 
+
+\vspace{0.2in}
+You are a member of the ................ population. 
+
+\vspace{0.2in}
+
+More precisely, you will receive a program that implements a simplified version
+of the Linux ext2 file system.  A brief description of the ext2 file system can
+be found in an attached document. 
+
+\vspace{0.1in}
+You will receive three variants of this program.  These variants are extremely
+similar, but there might be small differences between them.  You are going
+to see one variant at a time, and {\em you are not allowed to go back to work 
+on a previous variant}.
+
+\vspace{0.1in}
+All three variants are buggy and you are supposed to find and fix the bugs.
+Note that the bugs are not given in order of difficulty.  So if after a 
+certain amount of time you don't find the first bug, please continue with
+the second program.
+
+\vspace{0.1in}
+For each buggy program, we ask you to provide the following pieces of 
+information:
+
+\begin{enumerate}
+\item{The time spent to localize the bug at a procedure level (that is, how 
+      much time you spent until you found the procedure that contains the 
+      bug);}
+
+\item{The time spent to understand what the bug does (what effect it has on the
+      program);}
+
+\item{The time spent to fix the bug.}
+\end{enumerate}
+
+
+\vspace{0.2in}
+\underline{Setup}
+
+\vspace{0.05in}
+Before anything else, please type the following command at the command line:
+\begin{verbatim}
+add cristic
+\end{verbatim}
+
+
+\vspace{0.1in}
+Then, please type:
+\begin{verbatim}
+setenv NAME 'your_name'
+\end{verbatim}
+
+where {\it your\_name} is your full name.  For example, \\
+\begin{verbatim}
+setenv NAME 'Cristian Cadar'
+\end{verbatim}
+
+
+\end{flushleft}
+\end{document}

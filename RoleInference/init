@@ -1,0 +1,7 @@
+#!/bin/bash
+./FastScan
+cp basicpolicy policy
+rm atomic
+rm fields
+./RoleInference -w -cpolicy -n -r -ptemp
+java JhttpServer $1

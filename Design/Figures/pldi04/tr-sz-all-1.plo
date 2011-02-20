@@ -1,0 +1,201 @@
+#setifnotgiven COLOR = true
+
+// Set up plotting area using proc areadef
+#proc areadef
+  title: Transactional size distribution for SPECjvm98
+  titledetails: align=C adjust=0,.1
+  rectangle: 1 1 6.5 4
+  xscaletype: log
+  yscaletype: linear
+  xrange: 1 200000000
+//  xrange: 1 20000000
+//  xrange: 1 1000000
+//  xrange: 1 1000
+  yrange: 0 100
+
+// Read and process data file using proc getdata
+#proc getdata
+  command: ./acc-trsize-all.pl
+//  showresults: yes
+  fieldnameheader: yes
+
+// do gray grid..
+#proc xaxis
+  selflocatingstubs: text
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+20
+30
+40
+50
+60
+70
+80
+90
+100
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+2000
+3000
+4000
+5000
+6000
+7000
+8000
+9000
+10000
+20000
+30000
+40000
+50000
+60000
+70000
+80000
+90000
+100000
+200000
+300000
+400000
+500000
+600000
+700000
+800000
+900000
+1000000
+2000000
+3000000
+4000000
+5000000
+6000000
+7000000
+8000000
+9000000
+10000000
+20000000
+30000000
+40000000
+50000000
+60000000
+70000000
+80000000
+90000000
+100000000
+200000000
+
+  grid: color=gray(0.9)
+
+#proc yaxis
+  stubs: inc 10
+  stubformat: %3.0f%%
+  minortics: yes
+  minorticinc: 5
+  grid: color=gray(0.9)
+  label: Percentage of xops\nin transactions larger than given size
+  labeldetails: adjust=-.3
+
+#proc xaxis
+  selflocatingstubs: text
+1 1
+10 10
+100 100
+1000 1k
+10000 10k
+100000 100k
+1000000 1M
+10000000 10M
+100000000 100M
+1000000000 1G
+
+  label: Transaction size (# memory operations)
+
+#proc lineplot
+  xfield: 1
+  yfield: 4
+  sort: yes
+  stairstep: yes
+#if @COLOR = true
+  linedetails: color=red style=0
+#else
+  linedetails: style=0
+#endif
+  legendlabel: 201_compress
+  #saveas L
+
+#proc lineplot
+  #clone L
+  yfield: 7
+  legendlabel: 202_jess
+#if @COLOR = true
+  linedetails: color=orange style=1 dashscale=1
+#else
+  linedetails: style=1 dashscale=1
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 10
+  legendlabel: 205_raytrace
+#if @COLOR = true
+  linedetails: color=yellow style=1 dashscale=2
+#else
+  linedetails: style=1 dashscale=2
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 13
+  legendlabel: 209_db
+#if @COLOR = true
+  linedetails: color=green style=3 dashscale=2
+#else
+  linedetails: style=3 dashscale=2
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 16
+  legendlabel: 213_javac
+#if @COLOR = true
+  linedetails: color=blue style=6 dashscale=1
+#else
+  linedetails: style=6 dashscale=1
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 19
+  legendlabel: 222_mpegaudio
+#if @COLOR = true
+  linedetails: color=purple style=6 dashscale=2
+#else
+  linedetails: style=6 dashscale=2
+#endif
+
+#proc lineplot
+  #clone L
+  yfield: 22
+  legendlabel: 228_jack
+#if @COLOR = true
+  linedetails: color=black style=8 dashscale=2
+#else
+  linedetails: style=8 dashscale=2
+#endif
+
+#proc legend
+  location: max-1.3 max-.2
+  seglen: 0.3

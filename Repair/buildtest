@@ -1,0 +1,9 @@
+#!/bin/bash
+rm file.o
+g++ -Wno-deprecated -g -O0 -c danfile.cc
+
+g++ -Wno-deprecated -O0 -g *.o -o dantest
+
+rm file.o
+ar -r libchecker.a *.o
+ranlib libchecker.a

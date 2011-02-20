@@ -1,0 +1,19 @@
+cd $HOME
+mkdir Experiment
+mkdir Experiment/First
+cp /mit/cristic/Public/Repair/Debug1/Tool/* Experiment/First
+
+#send email
+echo "To: cristic@mit.edu, bdemsky@mit.edu" >email.txt
+echo "From: Experiment <"$USER"@MIT.EDU>" >>email.txt
+echo "Subject: " $NAME "(tool) copied program 1" >>email.txt
+
+echo >>email.txt
+echo "Participant: " $NAME >>email.txt
+echo "User name: " $USER >>email.txt
+echo "Population: 2 (tool)" >>email.txt
+echo "Action: copied program 1" >>email.txt
+echo "Time: \c"  >>email.txt
+date +%T  >>email.txt
+
+send $HOME/email.txt

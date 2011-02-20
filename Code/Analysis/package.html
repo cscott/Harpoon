@@ -1,0 +1,17 @@
+<HTML>
+<!-- $Id: package.html,v 1.2 2002-02-25 20:56:11 cananian Exp $ -->
+<BODY>
+This package contains analysis routines applicable to a variety of
+intermediate representations.  Typically, the only requirement is
+that the IR implement some set of properties from 
+<code>harpoon.IR.Properties</code>.
+<p>
+IR-specific analysis should <b>not</b> be placed in this package.
+In addition, if you analysis is very complicated, you should also
+create a separate package for it.  Primarily basic compiler algorithms
+go here, including construction of dominance trees and frontiers
+and basic graph algorithms.
+
+@author various
+</BODY>
+</HTML>

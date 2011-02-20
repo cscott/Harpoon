@@ -1,0 +1,8 @@
+#!/bin/sh
+CLS=f$$
+TMP=/tmp/${CLS}.java
+echo "import java.util.TreeMap; class $CLS { }" > $TMP
+javac -d . $TMP 1>/dev/null 2>/dev/null
+RSLT=$?
+/bin/rm -f $TMP ${CLS}.class
+exit $RSLT

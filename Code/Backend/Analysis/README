@@ -1,0 +1,8 @@
+The harpoon.Backend.Analysis package is for the various analyses needed
+for the backend.  These are not generic optimizations; they are specific
+information directly needed by the back end.  Examples would include
+class/interface numbering, code reordering for cache locality, certain
+escape analyses, etc.
+
+All analyses that don't easily fit into a single class should have their
+own subpackage under harpoon.Backend.Analysis.

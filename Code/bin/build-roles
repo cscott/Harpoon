@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Usage: build-roles <class_name> <directory>
+
+
+
+# set RUNTIME_DIR
+. `dirname $0`/find-flex-dir
+
+# grab flex options from the command line.
+javaopts=""
+while [ -n "$3" ]; do
+    case "$1" in
+    -D*) javaopts="$javaopts $1" ;;
+    *)   opts="$opts $1" ;;
+    esac
+    shift
+done
+
+# at this point, there are only two items left on the command line.
+cls=$1
+name=`basename $2`
+dir=`dirname $2`/as$name
+
+echo "Building $cls in $dir; result will be ${name}-Java.a" 1>&2
+if [ -d $dir ]; then
+    /bin/rm -rf $dir
+fi
+if [ ! -d $dir ]; then
+    mkdir $dir
+fi
+
+# these are really the only differences from bin/build-precisec
+OPT_FLEX_SUPPORT_FILES="$OPT_FLEX_SUPPORT_FILES ${FLEX_DIR}/SupportNP/specialobject.jar"
+opts="$opts -e"
+# and the output of SAMain is redirected to $dir/pre...
+
+. `dirname $0`/run-java ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -b precisec -c $cls -o $dir > $dir/pre && \
+if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
+    grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
+    make -C $dir CC="gcc -I${RUNTIME_DIR}/include -g -O9" && \
+    mv -f $dir/Java.a ${RUNTIME_DIR}/${name}-Java.a && \
+    make -C ${RUNTIME_DIR} run${name} && \
+    if [ -z $KEEP_ARCHIVE ]; then \
+	rm -f ${RUNTIME_DIR}/${name}-Java.a ; \
+    fi && \
+    echo "EXECUTABLE left in ${RUNTIME_DIR}/run${name}." 1>&2
+else
+    echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build." 1>&2
+fi
+exit $?
+
+
+
+

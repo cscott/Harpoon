@@ -1,0 +1,67 @@
+Building Realtime Java support
+by Wes Beebee (wbeebee@mit.edu) 
+on Friday, January 19, 2001
+
+RTJ support has 3 components: 
+  1) Java files to build realtime.jar.  
+     (in ~/Harpoon/Realtime)
+  2) Modifications to the Harpoon compiler (Java).  
+     (in ~/Harpoon/Code/Analysis/Realtime)
+  3) Modifications to the C runtime for the compiler.
+     (in ~/Harpoon/Runtime)
+
+% emacs ~/.bashrc   (or ~/.cshrc)
+
+Add the following line after your "export CLASSPATH" (in ~/.bashrc):
+export CLASSPATH=$CLASSPATH:$HOME/Harpoon/Realtime/realtime.jar 
+
+For csh users, it's:
+setenv CLASSPATH $CLASSPATH:$HOME/Harpoon/Realtime/realtime.jar
+
+% source ~/.bashrc  (or ~/.cshrc)
+
+Then, check out all the components using CVS.
+
+% cd ~/Harpoon
+% cvs co Realtime     (duh!)
+% cd Realtime
+% make
+% cd ~/Harpoon
+% cvs co Tests
+
+Also follow the checkout info in ~/Harpoon/Runtime/BUILDING, from where this 
+document was blatently ripped off.  Thanks Scott!
+
+% cd ~/Harpoon/Runtime
+% ./setup             (you need to re-run this to grab updates to configure.in)
+% ./configure --with-precise-c --with-gc=conservative \
+              --with-thread-model=heavy --disable-shared \
+              --with-realtime-java
+
+The key option is --with-realtime-java, you also need thread support enabled
+in order for Realtime Java extensions to work properly (since the current 
+MemoryArea information is conveyed through threads).  See ./configure --help
+for more options.
+
+Note: RTJ extensions have only been tested with the precise-c backend so far...
+If you choose another backend, you do so at your own risk.
+
+OK, now to compile the automated testing driver:
+
+% cd ~/Harpoon/Code
+% cp ~/Harpoon/Tests/Java/RTJ/Tester.java .
+% javac Tester.java
+% bin/build-precisec -t SIMPLE Tester Test
+
+The -t option turns on realTime java extensions.  
+SIMPLE = simple conservative analysis
+CHEESY = a little less conservative pointer analysis
+REAL = real pointer analysis
+ALL = remove all checks
+
+This will create code files in Code/asTest, assembled source in 
+Runtime/Test-Java.a, and an executable in Runtime/runTest.
+
+Have fun!
+
+- Wes

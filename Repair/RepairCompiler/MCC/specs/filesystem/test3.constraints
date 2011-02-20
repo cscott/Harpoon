@@ -1,0 +1,58 @@
+// sEXT2 - Simple File System Example
+// Constraint Definition Language File
+
+// Constraints 1-4 verify that the bitmaps and references to block's match up
+// Constraints 5-6 verify that references counts and filesizes match up
+// Constraints 7-13 are singleton tests
+
+// C1
+// for all used inodes, verify that the inodestatus (built from the
+// inodebitmap is marked 'used'
+[forall u in UsedInode], u.inodestatus=true;
+
+// C2
+// for all free inodes, verify that the inodestatus (built from the 
+// inodebitmap is marked 'free'
+[forall f in FreeInode], f.inodestatus=false;
+
+// C3
+// for all used blocks, verify that the blockstatus (built from the
+// blockbitmap is marked 'used'
+[forall u in UsedBlock], u.blockstatus=true;
+
+// C4
+// for all free blocks, verify that the blockstatus (built from the
+// block bitmap is marked 'free'
+[forall f in FreeBlock], f.blockstatus=false;
+
+// C5
+// for all used inodes, verify that the reference count is equal to
+// the number of directory entries (files/links) that refer to that
+// inode
+[forall i in UsedInode], i.referencecount=sizeof(i.~inodeof);
+
+// C6
+// for all used inodes, verify that the filesize is consistent with
+// the number of blocks used (those in i.contents)
+[forall i in UsedInode], i.filesize <= sizeof(i.contents)*8192;
+
+// C7
+// ??? for all files and directory blocks check that
+// only one inode references this block
+[forall b in FileDirectoryBlock],sizeof(b.~contents)=1; // should be <=
+
+// C10
+// verify that there is one inodetableblock
+[],sizeof(InodeTableBlock)=1;
+
+// C11
+// verify that there is one inodebitmapblock 
+[],sizeof(InodeBitmapBlock)=1;
+
+// C12
+// verify that there is one blockbitmapblock
+[],sizeof(BlockBitmapBlock)=1;
+
+// C13
+// verify that there is one rootdirectoryinode
+[],sizeof(RootDirectoryInode)=1;

@@ -1,0 +1,50 @@
+Constraint Definition Language
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+constraints ::= constraints constraint | constraint
+
+constraint ::= optcrash OPENBRACKET quantifiers CLOSEBRACKET COMMA body SEMICOLON
+	    
+optcrash ::= CRASH | /* nothing */
+
+quantifiers ::= quantifiers COMMA quantifier | quantifier | /* nothing */
+	   
+quantifier ::= FORALL ID:var IN set:set 
+
+set ::= ID:setname 
+      | OPENBRACE listofliterals CLOSEBRACE
+    
+listofliterals ::= listofliterals COMMA literal | literal
+
+body ::= body AND body
+       | body OR body
+       | NOT body
+       | OPENPAREN body CLOSEPAREN
+       | predicate
+
+predicate ::= SIZEOF OPENPAREN setexpr CLOSEPAREN limitedcompare DECIMAL:dec
+            | ID:var IN setexpr
+            | ID:var DOT ID:relation compare:compare expr
+
+setexpr ::= ID:var
+          | ID:var DOT ID:relation
+          | ID:var DOTINV ID:relation
+
+expr ::= ID:var 
+       | OPENPAREN expr CLOSEPAREN 
+       | LITERAL OPENPAREN literal CLOSEPAREN
+       | expr operator expr
+       | expr DOT ID:field
+       | SIZEOF OPENPAREN setexpr CLOSEPAREN
+       | CAST OPENPAREN ID:type COMMA expr CLOSEPAREN 
+
+operator ::= ADD | SUB | MULT | DIV 
+
+literal ::= TRUE | DECIMAL | STRING | CHAR | ID
+
+limitedcompare ::= EQUALS | wGT
+
+compare ::= LT | GT | LE | GE | EQUALS
+
+
+

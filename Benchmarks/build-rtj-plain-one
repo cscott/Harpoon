@@ -1,0 +1,17 @@
+#!/bin/bash
+
+class=$1
+dir=$2
+name=$3
+
+cd $dir
+
+#~/Harpoon/Code/bin/build-precisec -t SIMPLE_STATS $class $name | tee $name.out
+
+~/Harpoon/Code/bin/build-precisec -t SIMPLE $class $name | tee $name.out
+
+mv $name.out $HOME/Harpoon/Runtime/run$name $HOME/Harpoon/Benchmarks/Results/execs/rtj/plain
+
+#rm -rf as$name
+
+ls -l $HOME/Harpoon/Benchmarks/Results/execs/rtj/plain/run$name

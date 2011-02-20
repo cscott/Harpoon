@@ -1,0 +1,38 @@
+Database
+
+This java program implements a command line interface database manager with
+the following commands:
+
+	a - add record
+	b - show beginning record
+	d - delete record
+	e - show end record
+	f - find record
+	m - modify record
+	n - next entry
+	p - previous record
+	q - quit
+	w - write database
+	s - sort
+	. - current record number
+	x - Total records
+	num - goto record number 'num'
+
+Usage:
+
+    java [options] Main dbname  
+
+where dbname is the database name and files dbname.fmt and dbname.dat exist
+in the current directory (dbname.dat, the data file, is created if it does
+not exist).
+
+
+SPEC tests:
+
+Full run:   run
+Train:      run.train
+Test:       run.test
+
+
+Randy Heisch.
+heisch@austin.ibm.com

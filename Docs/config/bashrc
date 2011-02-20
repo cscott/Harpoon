@@ -1,0 +1,15 @@
+
+#----------------------------------------------------------------------
+# Flex Settings for CVS remote shell and editor
+export CVS_RSH=ssh
+export CVSEDITOR=emacs
+
+# Flex Settings for the CLASSPATH environment variable
+if [ -z CLASSPATH ]; then
+  export CLASSPATH=.:$HOME/Harpoon/Code/Support/collections.jar:$CLASSPATH
+else
+  tempclasses=`dirname \`which java\``/../lib/classes.zip
+  export CLASSPATH=.:$HOME/Harpoon/Code/Support/collections.jar:$tempclasses
+fi
+#----------------------------------------------------------------------
+

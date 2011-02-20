@@ -1,0 +1,7 @@
+Structure extractor
+
+To build type ./build
+
+To run, build a binary with dwarf-2 debug information (for gcc, add the -gdwarf-2 flag).
+
+Then run ./structextract binaryfilename

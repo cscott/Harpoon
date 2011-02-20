@@ -1,0 +1,140 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: phd-thesis.tex,v 1.60 2007-05-26 20:52:44 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% REMOVE DRAFTNOTICE FOR FINAL COPY %%%%%%%%%%%%%%%%%%%
+%\documentclass[letterpaper,draftnotice]{phd-thesis}
+\documentclass[letterpaper]{phd-thesis}
+\newboolean{phdcolor}
+\setboolean{phdcolor}{true} % set to false for b&w copy of thesis for archive
+\notesfalse % comment out this line to turn on notes.
+
+\usepackage{verbatim}
+\usepackage{alltt}
+\usepackage{epigraph}
+\usepackage{makeidx}
+\usepackage[square,sort&compress,numbers]{natbib}
+\usepackage[pdfusetitle,pagebackref,bookmarks,bookmarksnumbered,pdfpagelayout=TwoPageRight,breaklinks]{hyperref} % ooh, hyperlinks!
+\ifthenelse{\boolean{phdcolor}}{\hypersetup{colorlinks}}{}
+%\hypersetup{linktocpage} % useful when previewing with dvi
+\usepackage{hypernat}
+\usepackage{bold-extra}
+%\makeindex % punting!
+%\usepackage{showidx} % for draft only.
+
+% nicer bibliography back-references.
+\renewcommand*{\backref}[1]{} % tell backref we're using the alt interface
+\renewcommand*{\backrefalt}[4]{%
+  % alternative interface
+  % #1: number of distinct back references
+  % #2: backref list with distinct entries
+  % #3: number of back references including duplicates
+  % #4: backref list including duplicates
+  [on
+  \ifnum#1=1 %
+    p.~%
+  \else%
+    pp.~%
+  \fi%
+  #2.]
+}
+% describe these back-references; also add the bibliography to the toc.
+\renewcommand{\bibsection}{\chapter{Bibliography}}
+\newcommand{\bibpreamble}{%
+Each citation is followed by a bracketed list of the pages
+on which it appears.\\
+DOI names can be resolved at \url{http://doi.org}.
+}
+
+% hyperlink doi references
+\newcommand{\doi}[1]{doi: \href{http://hdl.handle.net/#1}{\urlstyle{rm}\nolinkurl{#1}}}
+
+\author{C.~Scott~Ananian}
+\newcommand{\subtitle}{Architectural and Compiler Support for Strongly
+                       Atomic Transactional Memory}
+\newcommand{\subdate}{May 25, 2007}
+\title{\subtitle}
+\date{\subdate}
+
+% definitions for this thesis
+\newcommand{\atomic}{\texttt{atomic}\xspace}
+\newcommand{\funcname}[1]{\ensuremath{\text{\sc #1}}}
+\newcommand{\var}[1]{\ensuremath{\text{\it #1}}}
+\newcommand{\fref}[2]{\ensuremath{#1\text{\tt .#2}}}
+\newcommand{\addr}[1]{\ensuremath{\text{\tt \&}(#1)}}
+\newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
+\newcommand{\FLAG}{\texttt{FLAG}\xspace}
+\newcommand{\Spin}{\textsc{Spin}\xspace}
+\newcommand{\flex}{\textsc{Flex}\xspace}
+\newcommand{\Flex}{\textsc{Flex}\xspace} % initial cap version
+\newcommand{\apex}{\textsc{ApeX}\xspace}
+\newcommand{\lapex}{\textsc{Large ApeX}\xspace}
+\newcommand{\hyx}{\textsc{HyApeX}\xspace}
+\newcommand{\naive}{naive\xspace} % Charles doesn't like the \"\i version
+\newcommand{\etal}{\textit{et al.}\@\xspace}
+
+\newcommand{\contribution}[1]{\begin{quote}\textbf{\textsf{#1}}\end{quote}}
+
+\begin{document}
+\bibliographystyle{plainnat}
+%\frontmatter
+\input{phd-titlepage}
+
+%\mainmatter
+%\chapter{Introduction}
+%\section{Locking vs nonblocking synchronization}
+%\section{Transactions and transactional memory}
+\input{phd-intro}
+
+%\chapter{An efficient software implementation of transactions}\label{cha:stm}
+\input{phd-stm}
+
+\input{phd-htm}
+\input{phd-hybrid}
+
+\punt{
+\chapter{Extending the hardware}\label{cha:htmplus}
+\epigraphhead[70]{\epigraph{%
+To create a new standard, it takes something that's not just a little
+bit different; it takes something that's really new and really
+captures people's imagination\ldots.}{\textit{Bill Gates}, 1984.}}
+\input{phd-htmplus}
+}
+
+\punt{
+\epigraphhead[70]{\epigraph{%
+Hybrids are often named by the portmanteau method, combining the names
+of the two parent species. For example, a zeedonk is a cross between a
+zebra and a donkey.}{\textit{Wikipedia}, ``Hybrid''}}
+
+% dual-path coding: publishable paper: try in hw, fall back to software
+
+
+\chapter{Compiler optimizations and type systems}
+\input{phd-opt}
+}
+
+\input{phd-chall}
+
+\input{phd-related}
+
+%\chapter{Conclusion}
+\input{phd-concl}
+
+\appendix
+\input{phd-ver}
+
+\input{phd-cmd}
+%\chapter{Formal equivalence proof of UTM/xstate}\label{cha:hw-proof}
+%\input{phd-utm-impl}
+
+%\chapter{Compiling to precise garbage-collectable C code}
+
+\backmatter
+\sis % single-space bibliography
+\bibliography{xaction,flex}
+%\printindex % punt index; as Bradley says, it's sad.
+             % Plus Google does it better.
+\end{document}
+
+% LocalWords:  Ananian

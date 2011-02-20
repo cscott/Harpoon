@@ -1,0 +1,4 @@
+cpp struct.work -P -o dll.struct
+cpp space.work -P -o dll.space
+cpp model.work -P -o dll.model
+cpp constraints.work -P -o dll.constraints

@@ -1,0 +1,7 @@
+#set key 1,1500
+set xlabel "Days since start of editing"
+set ylabel "Number of Lines"
+set title "#TITLE#"
+set terminal pbm small color
+set output "#OUTFILE#"
+plot "#INFILE#" using 1:5 title "Total lines" with impulses, "#INFILE#" using 1:7 title "Lines changed" with steps

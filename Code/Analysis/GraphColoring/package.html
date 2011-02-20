@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<!-- $Id: package.html,v 1.2 2002-02-25 20:57:17 cananian Exp $ -->
+<body bgcolor="white">
+Provides the classes for coloring generic Graphs.
+
+The purpose of Graph Coloring is to detect potential Interferences
+(Resource Conflicts), and then use that knowledge to allow resource
+consumers to share resources.  <Q>Graph coloring problems derive from
+the old mapmakers' rule that adjacent countries on a map should be
+colored with different colors</Q>.  So in that case, colors are the
+resource, countries are the consumers, and borders between countries
+are the interferences.
+
+<P>
+The design of the GraphColoring package implements graph coloring
+analysis in terms of four parts: Graphs to represent resource
+consumers and the interferences between them, Colors to represent the
+resources, ColorFactories to represent resource generators (to allow
+for unbounded resources to be represented, like Stack Offsets), and
+GraphColorers to assign a mapping from consumers to resources.
+
+<P>
+Usually graph coloring is used for Register Allocation problems,
+although other problems can often be reduced to graph coloring (such
+as interface method table layout).
+
+<h2>Related Documentation</h2>
+
+For further information, see:
+<ul>
+  <li>Muchnick, Steven S., <U>Advanced Compiler Design & Implementation</U>,
+  Section 16.3: "Graph Coloring" 
+  <li>Appel, Andrew W., <U>Modern Compiler Implementation in Java</U>,
+  Chapter 11: "Register Allocation"
+  <li>Aho, Sethi, Ullman, <U>Compilers: Principles, Techniques and Tools</U> 
+  (Dragon Book), pgs. 545-546
+</ul>
+
+@author Felix Klock (pnkfelix@mit.edu)
+</body>
+</html>

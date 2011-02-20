@@ -1,0 +1,25 @@
+<HTML>
+<!-- $Id: package.html,v 1.2 2002-02-25 21:05:42 cananian Exp $ -->
+<BODY>
+An expression-tree oriented low-level IR, intended to facilitate
+machine-specific pattern-matching code-generation.  <code>Tree</code>
+form is our "portable assembly language"; a loosely-typed
+non-register-allocated fine-grain representation that exposes all the
+details of object representation, method invocation, and runtime
+interfacing, which can easily be translated to the machine-specific
+<code>Instr</code>s of <code>harpoon.IR.Assem</code> for register
+allocation and scheduling before output.
+<p>
+The details of run-time organization and datatype representation are
+abstracted away by the machine-specific <code>Frame</code>, conforming
+to the interface in <code>harpoon.Backend.Generic.Frame</code>.
+Frames are not entirely machine-specific; all machines with roughly
+the same datatypes (for example, 32-bit words) which use the same
+runtime implementation will be able to share large parts of a Frame
+implementation.
+See <code>harpoon.Backend.Generic.Frame</code> for more details.
+
+@author C. Scott Ananian <cananian@alumni.princeton.edu>
+@author Duncan Bryce <duncan@lcs.mit.edu>
+</BODY>
+</HTML>

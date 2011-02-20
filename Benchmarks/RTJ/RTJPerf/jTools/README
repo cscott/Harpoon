@@ -1,0 +1,32 @@
+
+
+                     oooooooooooooo               o 
+                           o                      o
+                       o   o                      o      
+                       o   o      o o      o o    o     o o    
+                       o   o    o     o  o     o  o    o    
+                       o   o    o     o  o     o  o      o 
+                       o   o    o     o  o     o  o   o   o
+                  o o o    o      o o      o o    o    o o    
+
+
+  jTools is a collection of classes that are commonly used by Java applications.
+Currently the things provided by jTools include:
+
+          - jArgo: Argument parsing and validation
+
+          - High Resolution Time/Clock: Classes that provide high
+            resolution time measurement, in a platform specific way. On
+            Pentium processors the RDTSC register is used.
+
+          - Basic Assertions support
+
+
+All the sources are under the "src" directory, while the directory
+"demo" contains some code sample that show how to use the feature
+provided by jTools. The API is under "doc/api".
+
+For submitting bug, new feature, of any kind of feedback, send email
+to Angelo Corsaro <corsaro@ece.uci.edu>
+
+

@@ -1,0 +1,79 @@
+These are the instructions for compiling/running RTJPerf on FLEX.
+
+Note, these instructions assume that your Harpoon installation is
+at $HOME/Harpoon.  Feel free to replace $HOME/Harpoon with the appropriate
+root for Harpoon.
+
+First, add the following to your ~/.bashrc:
+export OPT_FLEX_SUPPORT_FILES=$HOME/Harpoon/Benchmarks/RTJ/RTJPerf/rtjperf.jar
+
+or
+
+export OPT_FLEX_SUPPORT_FILES=$OPT_FLEX_SUPPORT_FILES:$HOME/Harpoon/Benchmarks/RTJ/RTJPerf/rtjperf.jar 
+
+if OPT_FLEX_SUPPORT_FILES has already been defined.
+
+Make sure that Runtime, Code, Realtime, and Benchmarks are up to date 
+(make clean, make).
+
+Then configure the runtime:
+cd $HOME/Harpoon/Runtime
+./setup
+./configure --with-precise-c --with-gc=copying --with-thread-model=user \
+--disable-shared --with-all-static -with-realtime-java=threads,noheap,debug-ref \
+--with-rtj-perf --with-event-driven
+make clean
+make
+
+(You can omit the debug-ref if not debugging! 
+--with-all-static is only required on RedHat 7.3.
+--with-gc=copying can also be --with-gc=marksweep)
+
+cd $HOME/Harpoon/Code
+bin/build-precisec -t SIMPLE_DEBUG_REF_RTJ_PERF_THREADS <test> <testName>
+
+where <test> is a fully qualified test from the list below:
+edu.uci.ece.doc.rtjperf.asynch.DispatchDelayTestLauncher
+edu.uci.ece.doc.rtjperf.loading.EagerClassLoadingTest
+edu.uci.ece.doc.rtjperf.loading.EagerTypeFactoryTest
+edu.uci.ece.doc.rtjperf.loading.TypeII
+edu.uci.ece.doc.rtjperf.loading.TypeIII
+edu.uci.ece.doc.rtjperf.loading.TypeIIITest
+edu.uci.ece.doc.rtjperf.loading.TypeIITest
+edu.uci.ece.doc.rtjperf.loading.TypeITest
+edu.uci.ece.doc.rtjperf.loading.TypeIV
+edu.uci.ece.doc.rtjperf.loading.TypeIVTest
+edu.uci.ece.doc.rtjperf.loading.TypeIXTest
+edu.uci.ece.doc.rtjperf.loading.TypeVIIITest
+edu.uci.ece.doc.rtjperf.loading.TypeVIITest
+edu.uci.ece.doc.rtjperf.loading.TypeVITest
+edu.uci.ece.doc.rtjperf.loading.TypeVTest
+edu.uci.ece.doc.rtjperf.loading.TypeXTest
+edu.uci.ece.doc.rtjperf.mem.plain.AllocTimeTest
+edu.uci.ece.doc.rtjperf.mem.AllocTimeTest
+edu.uci.ece.doc.rtjperf.synch.MonitorTest
+edu.uci.ece.doc.rtjperf.synch.PrioInvTest
+edu.uci.ece.doc.rtjperf.thread.plain.CreationLatencyTest
+edu.uci.ece.doc.rtjperf.thread.plain.SynchYieldTest
+edu.uci.ece.doc.rtjperf.thread.plain.YieldTest
+edu.uci.ece.doc.rtjperf.thread.CreationLatencyTest
+edu.uci.ece.doc.rtjperf.thread.PeriodicThreadTest
+edu.uci.ece.doc.rtjperf.thread.RTCreationLatencyTest
+edu.uci.ece.doc.rtjperf.thread.SynchYieldTest
+edu.uci.ece.doc.rtjperf.thread.YieldTest
+edu.uci.ece.doc.rtjperf.time.clock.ClockTest
+edu.uci.ece.doc.rtjperf.timer.AbsOneShotTimerTest
+edu.uci.ece.doc.rtjperf.timer.OneShotTimerTest
+edu.uci.ece.doc.rtjperf.timer.PeriodicTimerTest
+
+The code for the tests can be found at: 
+$HOME/Harpoon/Benchmarks/RTJ/RTJPerf/src/edu/uci/ece/doc/rtjperf/
+
+Copy RTJPerfTests to your Harpoon/Code directory so that
+you can just:
+./RTJPerfTests bin/build-precisec -t SIMPLE_DEBUG_REF_RTJ_PERF 
+
+to build all of the tests (after configuring the Runtime).
+
+Happy hacking!
+- Wes 'Crazy RTJ nut' Beebee

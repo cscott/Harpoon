@@ -1,0 +1,53 @@
+# The "loginfo" file is used to control where "cvs commit" log information is
+# sent.  The first entry on a line is a regular expression which is tested
+# against the directory that the change is being made to, relative to the
+# $CVSROOT.  For the first match that is found, the remainder of the line is a
+# filter program that should expect log information on its standard input
+#
+# If the repository name does not match any of the regular expressions in the
+# first field of this file, the "DEFAULT" line is used, if it is specified.
+#
+# If the name "ALL" appears as a regular expression it is always used
+# in addition to the first matching regex or "DEFAULT".
+#
+# The filter program may use one and only one "%s" modifier (ala printf).  If
+# such a "%s" is specified in the filter program, a brief title is included
+# (as one argument, enclosed in single quotes) showing the relative directory
+# name and listing the modified file names.
+#
+# For example:
+#DEFAULT		(echo ""; who am i; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
+#---------------------------------------------------------------------------
+# Notes for log/log_accum scripts:
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# NOTE: contrib/log usage:  (currently requires perl)
+#	-d		- turn debugging on....
+#	-m mailto	- send mail to "mailto" (multiple -m's permitted)
+#	-f logfile	- required arg:  save messages to logfile
+#	%s		- may follow other options at the end of the line
+#
+# NOTE: contrib/log_accum usage:  (currently requires perl)
+# (must have 'commit_prep -r' in commitinfo)
+#	-d		- turn debugging on....
+#	-M modulename	- use this as the module name (necessary for sub-dirs)
+#	-m mailto	- send mail to "mailto" (multiple -m's permitted) [optional]
+#	-f logfile	- save messages to logfile [optional]
+#       -u              - add diff info to commit email [optional]
+#                         (you must also specify '-u' to commit_prep)
+#	%s		- must follow other options at the end of the line
+#-------------------------------------------------------------------
+ALL	( chgrp -R -f java-dev $CVSROOT/. ; chgrp -R -f java-public $CVSROOT/{BuildScripts,Classpath,Code,CVSROOT,Realtime,Repair,Runtime} ; chmod -R -f go+rX,o-w $CVSROOT/. )
+Benchmarks $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+BuildScripts	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Classpath $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Code	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+EventDriven $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+ImageRec $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Realtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Repair	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+RoleDiscovery	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+RoleInference	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Runtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+SupportNP	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+Tests	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s
+FOC     $CVSROOT/CVSROOT/log_accum -u -s -m java-dev-cvs@lm.csail.mit.edu %s

@@ -1,0 +1,32 @@
+%% This is the abstract of my thesis.
+{\sis
+
+Transactions are gaining ground as a programmer-friendly means of
+expressing concurrency, as microarchitecture trends make it
+clear that parallel systems are in our future.  This thesis
+presents the design and implementation of four efficient and powerful
+transaction systems: \apex, an object-oriented software-only system;
+UTM and LTM, two scalable systems using custom processor extensions;
+and \hyx, a hybrid of the software and hardware systems,
+obtaining the benefits of both.
+
+The software transaction system implements \textit{strong atomicity},
+which ensures that transactions are protected from the influence of
+nontransactional code.  Previous software systems use weaker
+atomicity guarantees because strong atomicity is presumed to be too
+expensive.  In this thesis strong atomicity is obtained with
+\punt{as little as 15\%}
+minimal slowdown for nontransactional code.  Compiler analyses can
+further improve the efficiency of the mechanism, which has been
+formally verified with the \Spin model-checker.
+
+The low overhead of \apex allows it to be profitably
+combined with a hardware transaction system to provide fast execution
+of short and small transactions, while allowing fallback to software
+for large or complicated transactions.  I present UTM, a hardware
+transactional memory system allowing unbounded virtualizable
+transactions, and show how a hybrid system can be obtained.
+
+}
+
+% LocalWords:  analyses microarchitecture virtualizable UTM

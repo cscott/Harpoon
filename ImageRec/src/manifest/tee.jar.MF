@@ -1,0 +1,3 @@
+Manifest-Version: 1.2
+Created-By: Wes Beebee (wbeebee@mit.edu)
+Main-Class: imagerec/TeeMain

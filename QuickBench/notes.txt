@@ -1,0 +1,19 @@
+Note that LL/SC only work for word-size data.  Double-word writes must be
+done as two word writes (which is consistent with the Java language
+spec's atomicity language).  Sub-word writes, however, must be done as
+follows:
+   x = LL(header byte)
+   if (x!=NULL) bail();
+   v = load(location)
+   update subrange of v <-- instruction in PPC arch for this
+   if (!SC(location, v)) loop.
+
+This ensures that transactional -vs- non-transactional writes are safe
+(due to the lock on the header byte), but racing non-transactional
+writes to adjacent bytes or shorts can result in corruption.
+---
+
+0: ll // set cc
+bne _handler
+scrx
+bne- 0b

@@ -1,0 +1,31 @@
+<HTML>
+<!-- $Id: package.html,v 1.2 2002-02-25 21:06:02 cananian Exp $ -->
+<BODY>
+An interpreter for tree form.  Uses Java's built-in garbage collection
+and run-time to serve as the run-time for the interpreted code.
+Outputs profiling information and statistics if you ask nicely.
+Currently handles only canonical tree form.  It is unclear to me that there
+is any benefit to supporting an interpreter for tree with ESEQ, but if 
+there is enough demand, perhaps I will get around to it. 
+
+The interpreter is similar to the quad interpreter.  The main differences 
+are:
+
+<UL>
+  <LI>The <code>Pointer</code> classes, to handle Tree form's pointers.
+  <LI>The <code>TreeInterpreter</code> class, which is found in 
+      <code>Method.java</code>.  This class is the heart of the interpreter.
+  <LI>The class loading mechanisms found in the <code>StaticState</code> 
+      class.
+</UL>
+
+The similarities of the interpreters may warrant eventually unifying them
+under a set of common superclasses.   
+
+
+@author C. Scott Ananian <cananian@alumni.princeton.edu>
+@author Duncan Bryce <duncan@lcs.mit.edu>
+
+</BODY>
+</HTML>
+

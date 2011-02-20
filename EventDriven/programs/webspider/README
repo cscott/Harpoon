@@ -1,0 +1,10 @@
+README FILE $Id: README,v 1.1 2000-04-03 01:03:25 govereau Exp $
+The html files in this directory are used for testing the web spider.
+Each file give the number of links in each level down to the level at
+which the number becomes constant. 
+e.g.
+4-4.html has 4 links and all of it's children have 4 links
+4-3-2.html has four links to documents with 3 links 
+           to documets with 2 links to documents with 2 links
+
+

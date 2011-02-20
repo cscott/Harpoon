@@ -1,0 +1,19 @@
+#!/bin/sh
+RUNTIME=~/Harpoon/Runtime
+#DEBUG=-DDEBUG
+make -C $RUNTIME/arch/arm32 CPPFLAGS="-P $DEBUG -I${RUNTIME}/include" header.s footer.s lookup.s dispatch.s
+mv  ~/Harpoon/Runtime/arch/arm32/header.s \
+    ~/Harpoon/Runtime/arch/arm32/footer.s \
+    ~/Harpoon/Runtime/arch/arm32/lookup.s \
+    ~/Harpoon/Runtime/arch/arm32/dispatch.s \
+    .
+
+echo Concatenating files.
+rm -f all.s
+cat header.s _Primitive_*.s _Class_*.s lookup.s dispatch.s footer.s \
+    > all.s
+
+echo Building archive.
+rm -f Java.a
+make "Java.a(all.o)"
+ranlib Java.a

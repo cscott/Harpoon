@@ -1,0 +1,28 @@
+% algorithm for phi/sigma renaming.
+
+Rename($G$:~CFG) =
+\begin{myalgorithmic}
+\STATE $\text{Init}(G)$
+\FOREACH{edge $e$ leaving \code{START}}
+ \STATE $\text{Search}(e)$ \label{line:search1}
+\ENDFOR
+\end{myalgorithmic}
+~\\
+Init($G$:~CFG) =
+\begin{myalgorithmic}
+\FOREACH{edge $e$ in $G$}
+ \STATE $\text{Marked}[e] \gets \code{false}$
+\ENDFOR
+\FOREACH{variable $V$ in $G$}
+ \STATE $C(V) \gets 0$
+\ENDFOR
+\STATE $\mathcal{E} = \text{create}()$ \COMMENT{create a new environment}
+\end{myalgorithmic}
+~\\
+Inc($\mathcal{E}$:~Environment, $V$:~variable):~variable =
+\begin{myalgorithmic}
+\STATE $i \gets C(V) + 1$
+\STATE $C(v) \gets i$
+\STATE $\mathcal{E}.\text{put}(V, V_i)$
+\RETURN $V_i$
+\end{myalgorithmic}

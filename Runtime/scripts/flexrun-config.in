@@ -1,0 +1,228 @@
+#!/bin/sh
+#
+# This script was borrowed from Japhar, 
+# http://www.hungry.com/old-hungry/products/japhar
+
+PACKAGE="@PACKAGE@"
+scriptname="@PACKAGE@-config"
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+
+japhar_jni_libs=#"@JAPHAR_JNI_LIBS@"
+japhar_cflags=#"@JAPHAR_CFLAGS@"
+
+LIBS="@LIBS@"
+pkgincludedir="@pkgincludedir@"
+pkglibdir="@pkglibdir@"
+includedir="@includedir@"
+mandir="@mandir@"
+infodir="@infodir@"
+libdir="@libdir@"
+localstatedir="@localstatedir@"
+sysconfdir="@sysconfdir@"
+datadir="@datadir@"
+datarootdir="@datarootdir@"
+libexecdir="@libexecdir@"
+sbindir="@sbindir@"
+bindir="@bindir@"
+#${prefix}
+#exec_prefix_set=no
+srcdir="@srcdir@"
+top_srcdir="@top_srcdir@"
+
+# need LIBS in two cases, hence this is here
+for i in $japhar_jni_libs ; do
+  add_to_lib=1
+  for j in ${LIBS}; do
+    if test $i = $j || test $i = "-L${libdir}"; then
+      add_to_lib=0
+    fi
+  done
+  if test $add_to_lib -eq 1; then
+    LIBS="${LIBS} $i"
+  fi
+done
+
+usage="\
+Usage: \n\
+  $scriptname --version         - show installed script and $PACKAGE version\n\
+  $scriptname --help            - show usage info (this message)          \n\
+  $scriptname --help SUBCOMMAND - show help for SUBCOMMAND                \n\
+  $scriptname link              - print libraries to link with            \n\
+  $scriptname link-jvmdi        - print libraries to link with (when using the JVMDI interface) \n\
+  $scriptname compile           - print C compiler flags to compile with  \n\
+  $scriptname info [VAR]        - print $PACKAGE build directories          \n\
+  \n\
+Compatibility options to mimic other *-config programs\n\
+  $scriptname --prefix\n\
+  $scriptname --exec-prefix\n\
+  $scriptname --libs\n\
+  $scriptname --jni-libs\n\
+  $scriptname --cflags\n"
+
+if test $# -eq 0; then
+      echo -e "${usage}" 1>&2
+      exit 1
+fi
+
+if test $# -gt 0; then
+  case $1 in
+    --version)
+      echo @VERSION@
+      ;;
+    --jni-libs)
+      libdirs=-L${exec_prefix}/lib
+      for i in $japhar_jni_libs ; do
+        if test $i = -L${exec_prefix}/lib ; then
+          libdirs=""
+        fi
+      done
+      echo $libdirs $japhar_jni_libs
+      ;;
+    --help)
+      if test $# -eq 1; then
+        echo -e "${usage}" 1>&2
+      elif test $# -eq 2; then
+        case $2 in 
+          link|--libs)
+            echo "Usage: $0 link"
+            echo "  Print linker flags for building the \`$PACKAGE' executable."
+            echo "  Print the linker command-line flags necessary to link against"
+            echo "  the Japhar JNI library, and any other libraries it requires."
+            ;;
+          compile|--cflags)
+            echo "Usage: $0 compile"
+            echo "  Print C compiler flags for compiling code that uses Japhar JNI."
+            echo "  This includes any \`-I' flags needed to find Japhar's header files."
+            ;;
+          info)
+            echo "Usage: $0 info [VAR]"
+            echo "  Display the value of the Makefile variable VAR used when Japhar"
+            echo "  was built.  If VAR is omitted, display all Makefile variables."
+            echo "  Use this command to find out where Japhar was installed,"
+            echo "  where it installed its class library, etc."
+            ;;
+        esac
+      else
+        echo -e "${usage}" 1>&2
+      fi
+      exit 1
+      ;;
+    link|--libs)
+      echo "-L${libdir} ${LIBS}"
+      ;;
+    link-jvmdi|--libs-jvmdi)
+      echo "-L${libdir} -ljvmdi ${LIBS}"
+      ;;
+    compile|--cflags)
+      unique_cflags="-I${includedir}"
+      for i in $japhar_cflags; do
+        if test $i != $includedir; then
+          unique_cflags="${unique_cflags} $i"
+        fi
+      done
+      echo ${unique_cflags}
+      ;;
+    info)
+      if test $# -eq 1; then
+        echo "LIBS = ${LIBS}"
+#        echo "pkgincludedir = ${pkgincludedir}"
+#        echo "pkglibdir = ${pkglibdir}"
+        echo "includedir = ${includedir}"
+        echo "mandir = ${mandir}"
+        echo "infodir = ${infodir}"
+        echo "libdir = ${libdir}"
+        echo "localstatedir = ${localstatedir}"
+        echo "sysconfdir = ${sysconfdir}"
+        echo "datadir = ${datadir}"
+        echo "datarootdir = ${datarootdir}"
+        echo "libexecdir = ${libexecdir}"
+        echo "sbindir = ${sbindir}"
+        echo "bindir = ${bindir}"
+        echo "prefix = ${prefix}"
+        echo "exec_prefix = ${exec_prefix}"
+        echo "srcdir = ${srcdir}"
+        echo "top_srcdir = ${top_srcdir}"
+      elif test $# -eq 2; then
+        case $2 in
+          LIBS)
+            echo ${LIBS}
+            ;;
+          pkgincludedir)
+            echo ${pkgincludedir}
+            ;;
+          pkglibdir)
+            echo ${pkglibdir}
+            ;;
+          pkgdatadir)
+            echo ${pkgdatadir}
+            ;;
+          includedir)
+            echo ${includdir}
+            ;;
+          mandir)
+            echo ${mandir}
+            ;;
+          infodir)
+            echo ${infodir}
+            ;;
+          libdir)
+            echo ${libdir}
+            ;;
+          localstatedir)
+            echo ${localstatedir}
+            ;;
+          sharedstatedir)
+            echo ${sharedstatedir}
+            ;;
+          sysconfdir)
+            echo ${sysconfdir}
+            ;;
+          datadir)
+            echo ${datadir}
+            ;;
+          datarootdir)
+            echo ${datarootdir}
+            ;;
+          libexecdir)
+            echo ${libexecdir}
+            ;;
+          sbindir)
+            echo ${sbindir}
+            ;;
+          bindir)
+            echo ${bindir}
+            ;;
+          exec_prefix)
+            echo ${exec_prefix}
+            ;;
+          prefix)
+            echo ${prefix}
+            ;;
+#          top_srcdir)
+#            echo ${top_srcdir}
+#            ;;
+#          srcdir)
+#            echo ${srcdir}
+#            ;;
+          *)
+            echo -e "${usage}" 1>&2
+            ;;
+        esac          
+      fi
+      ;;
+    --prefix)
+      echo ${prefix}
+      ;;
+    --exec-prefix)
+      echo ${exec_prefix}
+      ;;
+    *)
+      echo -e "${usage}" 1>&2
+      exit 1
+      ;;
+  esac
+fi
+
+

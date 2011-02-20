@@ -1,0 +1,1063 @@
+This is hacking.info, produced by makeinfo version 4.0b from
+hacking.texinfo.
+
+   This file contains important information you will need to know if you
+are going to hack on the GNU Classpath project code.
+
+   Copyright (C) 1998,1999,2000,2001,2002,2003 Free Software
+Foundation, Inc.
+
+
+File: hacking.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
+
+GNU Classpath Hacker's Guide
+****************************
+
+   This document contains important information you'll want to know if
+you want to hack on GNU Classpath, the free implementation of the Java
+standard class libraries.
+
+* Menu:
+
+* Introduction::                An introduction to the Classpath project
+* Requirements::                Very important rules that must be followed
+* Volunteering::                So you want to help out
+* Project Goals::               Goals of the Classpath project
+* Programming Tools::           A list of tools you will need for hacking
+* Programming Standards::       Standards to use when writing code for Classpath
+* Programming Goals::           What to consider when writing code for Classpath
+* API Compatibility::
+* Specification Sources::       Where to find the Java class library specs
+* Naming Conventions::          How files and directories are named in Classpath
+* Character Conversions::       Working on Character conversions
+* Localization::                How Classpath handles localization/internationalization
+
+ --- The Detailed Node Listing ---
+
+Programming Goals
+
+* Portability::                 Writing Portable Software
+* Robustness::                  Writing Robust Software
+* Java Efficiency::             Writing Efficient Java
+* Native Efficiency::           Writing Efficient JNI
+* Security::                    Writing Secure Software
+
+Localization
+
+* String Collation::            Sorting strings in different locales
+* Break Iteration::             Breaking up text into words, sentences, and lines
+* Date Formatting and Parsing::  Locale specific date handling
+* Decimal/Currency Formatting and Parsing::  Local specific number handling
+
+
+File: hacking.info,  Node: Introduction,  Next: Requirements,  Prev: Top,  Up: Top
+
+Introduction
+************
+
+   The Classpath Project is a dedicated to providing a 100% free, clean
+room implementation of the standard Java class libraries which offer
+free software developers an alternative to Sun's proprietary libraries.
+The Classpath Project was started in the Spring of 1998 as an official
+Free Software Foundation project.  Most of the volunteers working on
+GNU Classpath do so in their spare time.  We appreciate everyone's
+efforts in the past to improve and help the project and look forward to
+future contributions by old and new members alike.
+
+
+File: hacking.info,  Node: Requirements,  Next: Volunteering,  Prev: Introduction,  Up: Top
+
+Requirements
+************
+
+   Although Classpath is following an open development model where input
+from developers is welcome, there are certain base requirements that
+need to be met by anyone who wants to contribute code to this project.
+They are mostly dictated by legal requirements and are not arbitrary
+restrictions chosen by the Classpath team.
+
+   You will need to adhere to the following things if you want to donate
+code to the Classpath project:
+
+   * Never under any circumstances refer to Sun's code while working on
+     Classpath.  It is best if you have never looked at Sun's code at
+     all.  To reduce temptation, it would be best if you deleted the
+     `src.zip' file from your JDK distribution.  If you have signed
+     Sun's non-disclosure statement, then you unfortunately cannot work
+     on Classpath code at all.  If you have any reason to believe that
+     your code might be "tainted", please say something on the mailing
+     list before writing anything.  If it turns out that your code was
+     not developed in a clean room environment, we could be very
+     embarrassed someday in court.  Please don't let that happen.
+
+   * Never decompile Sun's class libraries.  While the wording of the
+     license in Sun's Java 2 releases has changed, it is not
+     acceptable, under any circumstances, for a person working on
+     Classpath to decompile Sun's class libraries.  Allowing the use of
+     decompilation in the Classpath project would open up a giant can
+     of legal worms, which we wish to avoid.
+
+   * Classpath is licensed under the terms of the GNU General Public
+     License (http://www.fsf.org/copyleft/gpl.html), with a special
+     exception included to allow linking with non-GPL licensed works as
+     long as no other license would restrict such linking.  To preserve
+     freedom for all users and to maintain uniform licensing of
+     Classpath, we will not accept code into the main distribution that
+     is not licensed under these terms.  The license can be read from
+     any alpha release distributed from
+     `ftp://alpha.gnu.org/gnu/classpath/' or by obtaining a copy of the
+     current CVS tree.
+
+   * Classpath is GNU software and this project is being officially
+     sponsored by the Free Software Foundation (http://www.fsf.org/).
+     Because of this, the FSF will hold copyright to all code developed
+     as part of Classpath.  This will allow them to pursue copyright
+     violators in court, something an individual developer may neither
+     have the time nor resources to do.  Everyone contributing code to
+     Classpath will need to sign a copyright assignment statement.
+     Additionally, if you are employed as a programmer, your employer
+     may need to sign a copyright waiver disclaiming all interest in
+     the software.  This may sound harsh, but unfortunately, it is the
+     only way to ensure that the code you write is legally yours to
+     distribute.
+
+
+File: hacking.info,  Node: Volunteering,  Next: Project Goals,  Prev: Requirements,  Up: Top
+
+Volunteering to Help
+********************
+
+   The Classpath project needs volunteers to help us out.  People are
+needed to write unimplemented Java packages, to test Classpath on
+various platforms, and to port it to platforms that are currently
+unsupported.
+
+   While pretty much all contributions are welcome (but see *note
+Requirements::) it is always preferable that volunteers do the whole
+job when volunteering for a task.  So when you volunteer to write a
+Java package, please be willing to do the following:
+
+   * Implement a complete drop-in replacement for the particular
+     package.  That means implementing any "internal" classes.  For
+     example, in the java.net package, there are non-public classes for
+     implementing sockets.  Without those classes, the public socket
+     interface is useless.  But do not feel obligated to completely
+     replace all of Sun's functionality at once.  For example, in the
+     java.net package, there are different types of protocol handlers
+     for different types of URL's.  Not all of these need to be written
+     at once.
+
+   * Please write complete and thorough javadoc comments for every
+     public and protected method and variable.  These should be
+     superior to Sun's and cover everything about the item being
+     documented.
+
+   * Please write a regression test package that can be used to run
+     tests of your package's functionality.  GNU Classpath uses the
+     Mauve project (http://sources.redhat.com/mauve/) for testing the
+     functionality of the core class libraries.  The Classpath Project
+     is fast approaching the point in time where all modifications to
+     the source code repository will require appropriate test cases in
+     Mauve to ensure correctness and prevent regressions.
+
+   With the exception of the AWT, writing tests and fixing bugs should
+be every developer's top priority in order to reach the elusive release
+of version 1.0.
+
+
+File: hacking.info,  Node: Project Goals,  Next: Programming Tools,  Prev: Volunteering,  Up: Top
+
+Project Goals
+*************
+
+   The goal of the Classpath project is to produce a free
+(http://www.fsf.org/philosophy/free-sw.html) implementation of the
+standard class library for Java.  However, there are other more
+specific goals as to which platforms should be supported.
+
+   Classpath is targeted to support the following operating systems:
+
+  1. Free operating systems.  This includes GNU/Linux, GNU/Hurd, and
+     the free BSDs.
+
+  2. Other UNIX-like operating systems.
+
+  3. Platforms which currently have no Java support at all.
+
+  4. Other platforms such as MS-Windows.
+
+   While free operating systems are the top priority, the other
+priorities can shift depending on whether or not there is a volunteer
+to port Classpath to those platforms and to test releases.
+
+   Eventually we hope the Classpath will support all JVM's that provide
+JNI or CNI support.  However, the top priority is free JVM's.  A small,
+and probably incomplete list is below.
+
+  1. Kissme (http://kissme.sourceforge.net/)
+
+  2. Jikes RVM (http://www-124.ibm.com/developerworks/oss/jikesrvm/)
+
+  3. SableVM (http://www.sablevm.org/)
+
+  4. Intel's Open Runtime Platform
+     (http://www.intel.com/research/mrl/orp/)
+
+  5. Kaffe (http://www.kaffe.org/)
+
+  6. Japhar (http://www.japhar.org/)
+
+  7. LaTTe (http://latte.snu.ac.kr/)
+
+   As with OS platform support, this priority list could change if a
+volunteer comes forward to port, maintain, and test releases for a
+particular JVM.  Kaffe is now developing its own class library, so the
+priority of supporting that platform is not as high as for other free
+VMs.
+
+   The initial target version for Classpath is Java 1.1.  Java 2 can be
+implemented if desired, but please do not create classes that depend on
+Java 2 features in other packages unless Classpath already contains
+those features.
+
+
+File: hacking.info,  Node: Programming Tools,  Next: Programming Standards,  Prev: Project Goals,  Up: Top
+
+Programming Tools
+*****************
+
+   If you want to hack on Classpath, you should download, install, and
+familiarize yourself with the following tools:
+
+   * CVS 1.11
+
+   * automake 1.6+
+
+   * autoconf 2.53+
+
+   * libtool 1.4.2+
+
+   * GNU m4 1.4
+
+   All of these tools are available from gnudist.gnu.org
+(ftp://gnudist.gnu.org/pub/gnu/) via anonymous ftp, except CVS which is
+available from www.cvshome.org (http://www.cvshome.org/).  They are
+fully documented with texinfo manuals.  Texinfo can be browsed with the
+Emacs editor, or with the text editor of your choice, or transformed
+into nicely printable Postscript.
+
+   Here is a brief description of the purpose of those tools.
+
+CVS
+     A version control system that maintains a centralized Internet
+     repository of all code in the Classpath system.  Access to the
+     repository requires an account.  Contact C. Brian Jones
+     (<cbj@gnu.org>) for details.
+
+automake
+     This tool automatically creates Makefile.in files from Makefile.am
+     files.  The Makefile.in is turned into a Makefile by autoconf.  Why
+     use this?  Because it automatically generates every makefile target
+     you would ever want (clean, install, dist, etc) in full compliance
+     with the GNU coding standards.  It also simplifies Makefile
+     creation in a number of ways that cannot be described here.  Read
+     the docs for more info.
+
+autoconf
+     Automatically configures a package for the platform on which it is
+     being built and generates the Makefile for that platform.
+
+libtool
+     Handles all of the zillions of hairy platform specific options
+     needed to build shared libraries.
+
+m4
+     The free GNU replacement for the standard UNIX macro processor.
+     Proprietary m4 programs are broken and so GNU m4 is required for
+     autoconf to work though knowing a lot about GNU m4 is not required
+     to work with autoconf.
+
+perl
+     Larry Wall's scripting language.  It is used internally by
+     automake.
+
+
+File: hacking.info,  Node: Programming Standards,  Next: Programming Goals,  Prev: Programming Tools,  Up: Top
+
+Programming Standards
+*********************
+
+   For C code, follow the GNU Coding Standards
+(http://www.fsf.org/prep/standards_toc.html).  The standards also
+specify various things like the install directory structure.  These
+should be followed if possible.
+
+   For Java code, please follow the GNU Coding Standards
+(http://www.fsf.org/prep/standards_toc.html), with the exception of
+naming conventions.  Please follow Sun's naming conventions
+(http://java.sun.com/docs/codeconv/html/CodeConventions.doc8.html).
+There are a number of exceptions to the GNU Coding Standards that we
+make for GNU Classpath and these will be documented soon as well as
+hopefully providing developers with a code formatting tool that closely
+matches those rules.
+
+   For documentation comments, please follow How to Write Doc Comments
+for Javadoc
+(http://java.sun.com/products/jdk/javadoc/writingdoccomments.html).
+
+
+File: hacking.info,  Node: Programming Goals,  Next: API Compatibility,  Prev: Programming Standards,  Up: Top
+
+Programming Goals
+*****************
+
+   When you write code for Classpath, write with three things in mind,
+and in the following order: portability, robustness, and efficiency.
+
+   If efficiency breaks portability or robustness, then don't do it the
+efficient way.  If robustness breaks portability, then bye-bye robust
+code.  Of course, as a programmer you would probably like to find sneaky
+ways to get around the issue so that your code can be all three ... the
+following chapters will give some hints on how to do this.
+
+* Menu:
+
+* Portability::                 Writing Portable Software
+* Robustness::                  Writing Robust Software
+* Java Efficiency::             Writing Efficient Java
+* Native Efficiency::           Writing Efficient JNI
+* Security::                    Writing Secure Software
+
+
+File: hacking.info,  Node: Portability,  Next: Robustness,  Prev: Programming Goals,  Up: Programming Goals
+
+Portability
+===========
+
+   The portability goal for Classpath is the following:
+
+  1. native functions for each platform that work across all VMs on that
+     platform
+
+  2. a single classfile set that work across all VMs on all platforms
+     that support the native functions.
+
+   For almost all of Classpath, this is a very feasible goal, using a
+combination of JNI and native interfaces.  This is what you should shoot
+for.  For those few places that require knowledge of the Virtual Machine
+beyond that provided by the Java standards, the VM Interface was
+designed.  Read the Virtual Machine Integration Guide for more
+information.
+
+   Right now the only supported platform is Linux.  This will change as
+that version stabilizes and we begin the effort to port to many other
+platforms.
+
+
+File: hacking.info,  Node: Robustness,  Next: Java Efficiency,  Prev: Portability,  Up: Programming Goals
+
+Robustness
+==========
+
+   Native code is very easy to make non-robust.  (That's one reason
+Java is so much better!)  Here are a few hints to make your native code
+more robust.
+
+   Always check return values for standard functions.  It's sometimes
+easy to forget to check that malloc() return for an error.  Don't make
+that mistake.  (In fact, use JCL_malloc() in the jcl library instead-it
+will check the return value and throw an exception if necessary.)
+
+   Always check the return values of JNI functions, or call
+`ExceptionOccurred' to check whether an error occurred.  You must do
+this after _every_ JNI call.  JNI does not work well when an exception
+has been raised, and can have unpredictable behavior.
+
+   Throw exceptions using JCL_ThrowException.  This guarantees that if
+something is seriously wrong, the exception text will at least get out
+somewhere (even if it is stderr).
+
+   Check for null values of jclasses before you send them to JNI
+functions.  JNI does not behave nicely when you pass a null class to
+it: it terminates Java with a "JNI Panic."
+
+   In general, try to use functions in native/jni/classpath/jcl.h.  They
+check exceptions and return values and throw appropriate exceptions.
+
+
+File: hacking.info,  Node: Java Efficiency,  Next: Native Efficiency,  Prev: Robustness,  Up: Programming Goals
+
+Java Efficiency
+===============
+
+   For methods which explicitly throw a NullPointerException when an
+argument is passed which is null, per a Sun specification, do not write
+code like:
+
+     int
+     strlen (String foo) throws NullPointerException
+     {
+       if (foo == null)
+         throw new NullPointerException ("foo is null");
+       return foo.length ();
+     }
+
+   Instead, the code should be written as:
+
+     int
+     strlen (String foo) throws NullPointerException
+     {
+       return foo.length ();
+     }
+
+   Explicitly comparing foo to null is unnecessary, as the virtual
+machine will throw a NullPointerException when length() is invoked.
+Classpath is designed to be as fast as possible - every optimization,
+no matter how small, is important.
+
+
+File: hacking.info,  Node: Native Efficiency,  Next: Security,  Prev: Java Efficiency,  Up: Programming Goals
+
+Native Efficiency
+=================
+
+   You might think that using native methods all over the place would
+give our implementation of Java speed, speed, blinding speed.  You'd be
+thinking wrong.  Would you believe me if I told you that an empty
+_interpreted_ Java method is typically about three and a half times
+_faster_ than the equivalent native method?
+
+   Bottom line: JNI is overhead incarnate.  In Sun's implementation,
+even the JNI functions you use once you get into Java are slow.
+
+   A final problem is efficiency of native code when it comes to things
+like method calls, fields, finding classes, etc.  Generally you should
+cache things like that in static C variables if you're going to use them
+over and over again.  GetMethodID(), GetFieldID(), and FindClass() are
+*slow*.  Classpath provides utility libraries for caching methodIDs and
+fieldIDs in native/jni/classpath/jnilink.h.  Other native data can be
+cached between method calls using functions found in
+native/jni/classpath/native_state.h.
+
+   Here are a few tips on writing native code efficiently:
+
+   Make as few native method calls as possible.  Note that this is not
+the same thing as doing less in native method calls; it just means
+that, if given the choice between calling two native methods and
+writing a single native method that does the job of both, it will
+usually be better to write the single native method.  You can even call
+the other two native methods directly from your native code and not
+incur the overhead of a method call from Java to C.
+
+   Cache methodIDs and fieldIDs wherever you can.  String lookups are
+expensive.  The best way to do this is to use the native/lib/jnilink.h
+library.  It will ensure that jmethodIDs are always valid, even if the
+class is unloaded at some point.  In 1.1, jnilink simply caches a
+NewGlobalRef() to the method's underlying class; however, when 1.2 comes
+along, it will use a weak reference to allow the class to be unloaded
+and then re-resolve the jmethodID the next time it is used.
+
+   Cache classes that you need to access often.  jnilink will help with
+this as well.  The issue here is the same as the methodID and fieldID
+issue-how to make certain the class reference remains valid.
+
+   If you need to associate native C data with your class, use Paul
+Fisher's native_state library (NSA).  It will allow you to get and set
+state fairly efficiently.  Japhar now supports this library, making
+native state get and set calls as fast as accessing a C variable
+directly.
+
+   If you are using native libraries defined outside of Classpath, then
+these should be wrapped by a Classpath function instead and defined
+within a library of their own.  This makes porting Classpath's native
+libraries to new platforms easier in the long run.  It would be nice to
+be able to use Mozilla's NSPR or Apache's APR, as these libraries are
+already ported to numerous systems and provide all the necessary system
+functions as well.
+
+
+File: hacking.info,  Node: Security,  Prev: Native Efficiency,  Up: Programming Goals
+
+Security
+========
+
+   Security is such a huge topic it probably deserves its own chapter.
+Most of the current code needs to be audited for security to ensure all
+of the proper security checks are in place within the Java platform,
+but also to verify that native code is reasonably secure and avoids
+common pitfalls, buffer overflows, etc.  A good source for information
+on secure programming is the excellent HOWTO by David Wheeler, Secure
+Programming for Linux and Unix HOWTO
+(http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO/index.html).
+
+
+File: hacking.info,  Node: API Compatibility,  Next: Specification Sources,  Prev: Programming Goals,  Up: Top
+
+API Compatibility
+*****************
+
+   Sun has produced documentation concerning much of the information
+needed to make Classpath serializable compatible with Sun
+implementations.  Part of doing this is to make sure that every class
+that is Serializable actually defines a field named serialVersionUID
+with a value that matches the output of serialver on Sun's
+implementation.  The reason for doing this is below.
+
+   If a class has a field (of any accessibility) named serialVersionUID
+of type long, that is what serialver uses. Otherwise it computes a
+value using some sort of hash function on the names of all method
+signatures in the .class file.  The fact that different compilers
+create different synthetic method signatures, such as access$0() if an
+inner class needs access to a private member of an enclosing class,
+make it impossible for two distinct compilers to reliably generate the
+same serial #, because their .class files differ. However, once you
+have a .class file, its serial # is unique, and the computation will
+give the same result no matter what platform you execute on.
+
+   Serialzation compatibility can be tested using tools provided with
+Japitools (http://rainbow.netreach.net/~sballard/japi/).  These tools
+can test binary serialization compatibility and also provide
+information about unknown serialized formats by writing these in XML
+instead.  Japitools is also the primary means of checking API
+compatibility for GNU Classpath with Sun's Java Platform.
+
+
+File: hacking.info,  Node: Specification Sources,  Next: Naming Conventions,  Prev: API Compatibility,  Up: Top
+
+Specification Sources
+*********************
+
+   There are a number of specification sources to use when working on
+Classpath.  In general, the only place you'll find your classes
+specified is in the JavaDoc documentation or possibly in the
+corresponding white paper.  In the case of java.lang, java.io and
+java.util, you should look at the Java Language Specification.
+
+   Here, however, is a list of specs, in order of canonicality:
+
+  1. Clarifications and Amendments to the JLS - 1.1
+     (http://java.sun.com/docs/books/jls/clarify.html)
+
+  2. JLS Updates - 1.1
+     (http://java.sun.com/docs/books/jls/html/1.1Update.html)
+
+  3. The 1.0 JLS (http://java.sun.com/docs/books/jls/html/index.html)
+
+  4. JVM spec - 1.1 (http://java.sun.com/docs/books/vmspec/index.html)
+
+  5. JNI spec - 1.1
+     (http://java.sun.com/products/jdk/1.1/docs/guide/jni/spec/jniTOC.doc.html)
+
+  6. Sun's javadoc - 1.1
+     (http://java.sun.com/products/jdk/1.1/docs/api/packages.html)
+     (since Sun's is the reference implementation, the javadoc is
+     documentation for the Java platform itself.)
+
+  7. JVMDI spec - 1.2
+     (http://java.sun.com/products/jdk/1.2/docs/guide/jvmdi/jvmdi.html),
+     JNI spec - 1.2
+     (http://java.sun.com/products/jdk/1.2/docs/guide/jni/jni-12.html)
+     (sometimes gives clues about unspecified things in 1.1; if it was
+     not specified accurately in 1.1, then use the spec for 1.2; also,
+     we are using JVMDI in this project.)
+
+  8. Sun's javadoc - 1.2
+     (http://java.sun.com/products/jdk/1.2/docs/api/frame.html)
+     (sometimes gives clues about unspecified things in 1.1; if it was
+     not specified accurately in 1.1, then use the spec for 1.2)
+
+  9. The Bug Parade
+     (http://developer.java.sun.com/developer/bugParade/index.html): I
+     have obtained a ton of useful information about how things do work
+     and how they *should* work from the Bug Parade just by searching
+     for related bugs.  The submitters are very careful about their use
+     of the spec.  And if something is unspecified, usually you can find
+     a request for specification or a response indicating how Sun
+     thinks it should be specified here.
+
+   You'll notice that in this document, white papers and specification
+papers are more canonical than the JavaDoc documentation.  This is true
+in general.
+
+
+File: hacking.info,  Node: Naming Conventions,  Next: Character Conversions,  Prev: Specification Sources,  Up: Top
+
+Directory and File Naming Conventions
+*************************************
+
+   The Classpath directory structure is laid out in the following
+manner:
+
+     classpath
+      |
+      |---->java
+      |       |
+      |       |-->awt
+      |       |-->io
+      |       |-->lang
+      |       |-->util
+      |       |     |
+      |       |     |--->zip
+      |       |     |--->jar
+      |       |-->net
+      |       |-->etc
+      |
+      |---->gnu
+      |       |
+      |       |-->java
+      |             |
+      |             |-->awt
+      |             |-->lang
+      |             |-->util
+      |             |     |
+      |             |     |-->zip
+      |             |-->etc
+      |
+      |---->native
+              |
+              |-->jni
+              |    |-->classpath
+              |    |-->gtk-peer
+              |    |-->java-io
+              |    |-->java-lang
+              |    |-->java-net
+              |    |-->java-util
+              |    |-->etc
+              |-->cni
+
+   Here is a brief description of the toplevel directories and their
+contents.
+
+java
+     Contains the source code to the Java packages that make up the core
+     class library.  Because this is the public interface to Java, it is
+     important that the public classes, interfaces, methods, and
+     variables are exactly the same as specified in Sun's
+     documentation.  The directory structure is laid out just like the
+     java package names.  For example, the class java.util.zip would be
+     in the directory java-util.
+
+gnu/java
+     Internal classes (roughly analogous to Sun's sun.* classes) should
+     go under the gnu/java directory.  Classes related to a particular
+     public Java package should go in a directory named like that
+     package.  For example, classes related to java.util.zip should go
+     under a directory gnu/java/util/zip.  Sub-packages under the main
+     package name are allowed.  For classes spanning multiple public
+     Java packages, pick an appropriate name and see what everybody
+     else thinks.
+
+native
+     This directory holds native code needed by the public Java
+     packages.  Each package has its own subdirectory, which is the
+     "flattened" name of the package.  For example, native method
+     implementations for java.util.zip should go in
+     native/classpath/java-util.  Classpath actually includes an all
+     Java version of the zip classes, so no native code is required.
+
+   Each person working on a package get's his or her own "directory
+space" underneath each of the toplevel directories.  In addition to the
+general guidelines above, the following standards should be followed:
+
+   * Classes that need to load native code should load a library with
+     the same name as the flattened package name, with all hyphens
+     removed.  For example, the native library name specified in
+     LoadLibrary for java-util would be "javautil".
+
+   * Each package has its own shared library for native code (if any).
+
+   * The main native method implementation for a given method in class
+     should go in a file with the same name as the class with a ".c"
+     extension.  For example, the JNI implementation of the native
+     methods in java.net.InetAddress would go in
+     native/jni/java-net/InetAddress.c.  "Internal" native functions
+     called from the main native method can reside in files of any name.
+
+
+File: hacking.info,  Node: Character Conversions,  Next: Localization,  Prev: Naming Conventions,  Up: Top
+
+Character Conversions
+*********************
+
+   Java uses the Unicode character encoding system internally.  This is
+a sixteen bit (two byte) collection of characters encompassing most of
+the world's written languages.  However, Java programs must often deal
+with outside interfaces that are byte (eight bit) oriented.  For
+example, a Unix file, a stream of data from a network socket, etc.
+Beginning with Java 1.1, the `Reader' and `Writer' classes provide
+functionality for dealing with character oriented streams.  The classes
+`InputStreamReader' and `OutputStreamWriter' bridge the gap between
+byte streams and character streams by converting bytes to Unicode
+characters and vice versa.
+
+   In Classpath, `InputStreamReader' and `OutputStreamWriter' rely on
+an internal class called `gnu.java.io.EncodingManager' to load
+translaters that perform the actual conversion.  There are two types of
+converters, encoders and decoders.  Encoders are subclasses of
+`gnu.java.io.encoder.Encoder'.  This type of converter takes a Java
+(Unicode) character stream or buffer and converts it to bytes using a
+specified encoding scheme.  Decoders are a subclass of
+`gnu.java.io.decoder.Decoder'.  This type of converter takes a byte
+stream or buffer and converts it to Unicode characters.  The `Encoder'
+and `Decoder' classes are subclasses of `Writer' and `Reader'
+respectively, and so can be used in contexts that require character
+streams, but the Classpath implementation currently does not make use
+of them in this fashion.
+
+   The `EncodingManager' class searches for requested encoders and
+decoders by name.  Since encoders and decoders are separate in
+Classpath, it is possible to have a decoder without an encoder for a
+particular encoding scheme, or vice versa.  `EncodingManager' searches
+the package path specified by the `file.encoding.pkg' property.  The
+name of the encoder or decoder is appended to the search path to
+produce the required class name.  Note that `EncodingManager' knows
+about the default system encoding scheme, which it retrieves from the
+system property `file.encoding', and it will return the proper
+translator for the default encoding if no scheme is specified.  Also,
+the Classpath standard translator library, which is the `gnu.java.io'
+package, is automatically appended to the end of the path.
+
+   For efficiency, `EncodingManager' maintains a cache of translators
+that it has loaded.  This eliminates the need to search for a commonly
+used translator each time it is requested.
+
+   Finally, `EncodingManager' supports aliasing of encoding scheme
+names.  For example, the ISO Latin-1 encoding scheme can be referred to
+as "8859_1" or "ISO-8859-1".  `EncodingManager' searches for aliases by
+looking for the existence of a system property called
+`gnu.java.io.encoding_scheme_alias.<encoding name>'.  If such a
+property exists.  The value of that property is assumed to be the
+canonical name of the encoding scheme, and a translator with that name
+is looked up instead of one with the original name.
+
+   Here is an example of how `EncodingManager' works.  A class requests
+a decoder for the "UTF-8" encoding scheme by calling
+`EncodingManager.getDecoder("UTF-8")'.  First, an alias is searched for
+by looking for the system property
+`gnu.java.io.encoding_scheme_alias.UTF-8'.  In our example, this
+property exists and has the value "UTF8".  That is the actual decoder
+that will be searched for.  Next, `EncodingManager' looks in its cache
+for this translator.  Assuming it does not find it, it searches the
+translator path, which is this example consists only of the default
+`gnu.java.io'.  The "decoder" package name is appended since we are
+looking for a decoder.  ("encoder" would be used if we were looking for
+an encoder).  Then name name of the translator is appended.  So
+`EncodingManager' attempts to load a translator class called
+`gnu.java.io.decoder.UTF8'.  If that class is found, an instance of it
+is returned.  If it is not found, a `UnsupportedEncodingException'.
+
+   To write a new translator, it is only necessary to subclass
+`Encoder' and/or `Decoder'.  Only a handful of abstract methods need to
+be implemented.  In general, no methods need to be overridden.  The
+needed methods calculate the number of bytes/chars that the translation
+will generate, convert buffers to/from bytes, and read/write a
+requested number of characters to/from a stream.
+
+   Many common encoding schemes use only eight bits to encode
+characters.  Writing a translator for these encodings is very easy.
+There are abstract translator classes
+`gnu.java.io.decode.DecoderEightBitLookup' and
+`gnu.java.io.encode.EncoderEightBitLookup'.  These classes implement
+all of the necessary methods.  All that is necessary to create a lookup
+table array that maps bytes to Unicode characters and set the class
+variable `lookup_table' equal to it in a static initializer.  Also, a
+single constructor that takes an appropriate stream as an argument must
+be supplied.  These translators are exceptionally easy to create and
+there are several of them supplied in the Classpath distribution.
+
+   Writing multi-byte or variable-byte encodings is more difficult, but
+often not especially challenging.  The Classpath distribution ships with
+translators for the UTF8 encoding scheme which uses from one to three
+bytes to encode Unicode characters.  This can serve as an example of
+how to write such a translator.
+
+   Many more translators are needed.  All major character encodings
+should eventually be supported.
+
+
+File: hacking.info,  Node: Localization,  Prev: Character Conversions,  Up: Top
+
+Localization
+************
+
+   There are many parts of the Java standard runtime library that must
+be customized to the particular locale the program is being run in.
+These include the parsing and display of dates, times, and numbers;
+sorting words alphabetically; breaking sentences into words, etc.  In
+general, Classpath uses general classes for performing these tasks, and
+customizes their behavior with configuration data specific to a given
+locale.
+
+* Menu:
+
+* String Collation::            Sorting strings in different locales
+* Break Iteration::             Breaking up text into words, sentences, and lines
+* Date Formatting and Parsing::  Locale specific date handling
+* Decimal/Currency Formatting and Parsing::  Local specific number handling
+
+   In Classpath, all locale specific data is stored in a
+`ListResourceBundle' class in the package `gnu/java/locale'.  The
+basename of the bundle is `LocaleInformation'.  See the documentation
+for the `java.util.ResourceBundle' class for details on how the
+specific locale classes should be named.
+
+   `ListResourceBundle''s are used instead of
+`PropertyResourceBundle''s because data more complex than simple
+strings need to be provided to configure certain Classpath components.
+Because `ListResourceBundle' allows an arbitrary Java object to be
+associated with a given configuration option, it provides the needed
+flexibility to accomodate Classpath's needs.
+
+   Each Java library component that can be localized requires that
+certain configuration options be specified in the resource bundle for
+it.  It is important that each and every option be supplied for a
+specific component or a critical runtime error will most likely result.
+
+   As a standard, each option should be assigned a name that is a
+string.  If the value is stored in a class or instance variable, then
+the option should name should have the name name as the variable.
+Also, the value associated with each option should be a Java object
+with the same name as the option name (unless a simple scalar value is
+used).  Here is an example:
+
+   A class loads a value for the `format_string' variable from the
+resource bundle in the specified locale.  Here is the code in the
+library class:
+
+       ListResourceBundle lrb =
+         ListResourceBundle.getBundle ("gnu/java/locale/LocaleInformation", locale);
+       String format_string = lrb.getString ("format_string");
+
+   In the actual resource bundle class, here is how the configuration
+option gets defined:
+
+     /**
+       * This is the format string used for displaying values
+       */
+     private static final String format_string = "%s %d %i";
+     
+     private static final Object[][] contents =
+     {
+       { "format_string", format_string }
+     };
+
+   Note that each variable should be `private', `final', and `static'.
+Each variable should also have a description of what it does as a
+documentation comment.  The `getContents()' method returns the
+`contents' array.
+
+   There are many functional areas of the standard class library that
+are configured using this mechanism.  A given locale does not need to
+support each functional area.  But if a functional area is supported,
+then all of the specified entries for that area must be supplied.  In
+order to determine which functional areas are supported, there is a
+special key that is queried by the affected class or classes.  If this
+key exists, and has a value that is a `Boolean' object wrappering the
+`true' value, then full support is assumed.  Otherwise it is assumed
+that no support exists for this functional area.  Every class using
+resources for configuration must use this scheme and define a special
+scheme that indicates the functional area is supported.  Simply checking
+for the resource bundle's existence is not sufficient to ensure that a
+given functional area is supported.
+
+   The following sections define the functional areas that use resources
+for locale specific configuration in GNU Classpath.  Please refer to the
+documentation for the classes mentioned for details on how these values
+are used.  You may also wish to look at the source file for
+`gnu/java/locale/LocaleInformation_en' as an example.
+
+
+File: hacking.info,  Node: String Collation,  Next: Break Iteration,  Prev: Localization,  Up: Localization
+
+String Collation
+================
+
+   Collation involves the sorting of strings.  The Java class library
+provides a public class called `java.text.RuleBasedCollator' that
+performs sorting based on a set of sorting rules.
+
+   * RuleBasedCollator - A `Boolean' wrappering `true' to indicate that
+     this functional area is supported.
+
+   * collation_rules - The rules the specify how string collation is to
+     be performed.
+
+   Note that some languages might be too complex for `RuleBasedCollator'
+to handle.  In this case an entirely new class might need to be written
+in lieu of defining this rule string.
+
+
+File: hacking.info,  Node: Break Iteration,  Next: Date Formatting and Parsing,  Prev: String Collation,  Up: Localization
+
+Break Iteration
+===============
+
+   The class `java.text.BreakIterator' breaks text into words,
+sentences, and lines.  It is configured with the following resource
+bundle entries:
+
+   * BreakIterator - A `Boolean' wrappering `true' to indicate that
+     this functional area is supported.
+
+   * word_breaks - A `String' array of word break character sequences.
+
+   * sentence_breaks - A `String' array of sentence break character
+     sequences.
+
+   * line_breaks - A `String' array of line break character sequences.
+
+
+File: hacking.info,  Node: Date Formatting and Parsing,  Next: Decimal/Currency Formatting and Parsing,  Prev: Break Iteration,  Up: Localization
+
+Date Formatting and Parsing
+===========================
+
+   Date formatting and parsing is handled by the
+`java.text.SimpleDateFormat' class in most locales.  This class is
+configured by attaching an instance of the `java.text.DateFormatSymbols'
+class.  That class simply reads properties from our locale specific
+resource bundle.  The following items are requiered (refer to the
+documentation of the `java.text.DateFormatSymbols' class for details io
+what the actual values should be):
+
+   * DateFormatSymbols - A `Boolean' wrappering `true' to indicate that
+     this functional area is supported.
+
+   * months - A `String' array of month names.
+
+   * shortMonths - A `String' array of abbreviated month names.
+
+   * weekdays - A `String' array of weekday names.
+
+   * shortWeekdays - A `String' array of abbreviated weekday names.
+
+   * ampms - A `String' array containing AM/PM names.
+
+   * eras - A `String' array containing era (ie, BC/AD) names.
+
+   * zoneStrings - An array of information about valid timezones for
+     this locale.
+
+   * localPatternChars - A `String' defining date/time pattern symbols.
+
+   * shortDateFormat - The format string for dates used by
+     `DateFormat.SHORT'
+
+   * mediumDateFormat - The format string for dates used by
+     `DateFormat.MEDIUM'
+
+   * longDateFormat - The format string for dates used by
+     `DateFormat.LONG'
+
+   * fullDateFormat - The format string for dates used by
+     `DateFormat.FULL'
+
+   * defaultDateFormat - The format string for dates used by
+     `DateFormat.DEFAULT'
+
+   * shortDateFormat - The format string for times used by
+     `DateFormat.SHORT'
+
+   * mediumDateFormat - The format string for times used by
+     `DateFormat.MEDIUM'
+
+   * longDateFormat - The format string for times used by
+     `DateFormat.LONG'
+
+   * fullDateFormat - The format string for times used by
+     `DateFormat.FULL'
+
+   * defaultDateFormat - The format string for times used by
+     `DateFormat.DEFAULT'
+
+   Note that it may not be possible to use this mechanism for all
+locales.  In those cases a special purpose class may need to be written
+to handle date/time processing.
+
+
+File: hacking.info,  Node: Decimal/Currency Formatting and Parsing,  Prev: Date Formatting and Parsing,  Up: Localization
+
+Decimal/Currency Formatting and Parsing
+=======================================
+
+   `NumberFormat' is an abstract class for formatting and parsing
+numbers.  The class `DecimalFormat' provides a concrete subclass that
+handles this is in a locale independent manner.  As with
+`SimpleDateFormat', this class gets information on how to format
+numbers from a class that wrappers a collection of locale specific
+formatting values.  In this case, the class is `DecimalFormatSymbols'.
+That class reads its default values for a locale from the resource
+bundle.  The required entries are:
+
+   * DecimalFormatSymbols - A `Boolean' wrappering `true' to indicate
+     that this functional area is supported.
+
+   * currencySymbol - The string representing the local currency.
+
+   * intlCurrencySymbol - The string representing the local currency in
+     an international context.
+
+   * decimalSeparator - The character to use as the decimal point as a
+     `String'.
+
+   * digit - The character used to represent digits in a format string,
+     as a `String'.
+
+   * exponential - The char used to represent the exponent separator of
+     a number written in scientific notation, as a `String'.
+
+   * groupingSeparator - The character used to separate groups of
+     numbers in a large number, such as the "," separator for thousands
+     in the US, as a `String'.
+
+   * infinity - The string representing infinity.
+
+   * NaN - The string representing the Java not a number value.
+
+   * minusSign - The character representing the negative sign, as a
+     `String'.
+
+   * monetarySeparator - The decimal point used in currency values, as a
+     `String'.
+
+   * patternSeparator - The character used to separate positive and
+     negative format patterns, as a `String'.
+
+   * percent - The percent sign, as a `String'.
+
+   * perMill - The per mille sign, as a `String'.
+
+   * zeroDigit - The character representing the digit zero, as a
+     `String'.
+
+   Note that several of these values are an individual character.
+These should be wrappered in a `String' at character position 0, not in
+a `Character' object.
+
+
+
+Tag Table:
+Node: Top285
+Node: Introduction2078
+Node: Requirements2735
+Node: Volunteering5776
+Node: Project Goals7808
+Node: Programming Tools9730
+Node: Programming Standards11816
+Node: Programming Goals12825
+Node: Portability13753
+Node: Robustness14657
+Node: Java Efficiency15976
+Node: Native Efficiency16855
+Node: Security19915
+Node: API Compatibility20558
+Node: Specification Sources22159
+Node: Naming Conventions24595
+Node: Character Conversions28085
+Node: Localization33709
+Node: String Collation37961
+Node: Break Iteration38683
+Node: Date Formatting and Parsing39328
+Node: Decimal/Currency Formatting and Parsing41607
+
+End Tag Table

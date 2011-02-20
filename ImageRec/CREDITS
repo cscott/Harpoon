@@ -1,0 +1,23 @@
+Lockheed Martin created the original ATR for the UAV OEP software.
+
+Steven Howard (MIT) created the original image recognition pipeline 
+as a CEE RSI intern.
+
+Wes Beebee (MIT) completely rewrote the image recognition program and created
+several new pipelines as well as provided CORBA support for integration
+into the BBN UAV OEP software.
+
+Reuben Sterling (MIT) wrote several new pipelines, added many new features, 
+developed many new algorithms, and is writing his undergraduate thesis 
+on the ATR.
+
+Craig Rodrigues (BBN) helped integrate the MIT ATR into the 
+BBN UAV OEP software.
+
+New members:
+Chris Jones (BBN), Prakash Manghwani (BBN), Amerson Lin (MIT)
+
+We thank Martin Rinard for supervision and guidance.
+
+Main funding was made possible by DARPA under Contract #F33615-00-C-1692
+as part of the Program Composition for Embedded Systems program.

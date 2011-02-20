@@ -1,0 +1,151 @@
+TIMESYS COMMUNITY SOURCE LICENSE
+
+You must be at least a Research Use (as that term is defined in the SCSL) licensee under Sun Microsystems, Inc.'s Sun Community Source License for Java 2 Platform technology (either Java 2 Platform, Standard Edition, Enterprise Edition, or Micro Edition) ("SCSL"), or otherwise authorized by Sun Microsystems, Inc. in writing to share and receive source code for the Java 2 Platform, in order to receive access to the TimeSys Real Time Specification for Java-Reference Implementation ("RTSJ-RI") licensed hereunder. You hereby acknowledge and agree that You are so authorized by Sun Microsystems, Inc., and that portions of Covered Code are subject to the terms of the SCSL or other written Sun authorization.
+
+I. DEFINITIONS.
+
+"Community Code" means Reference Code, Contributed Code, and any combination thereof.
+"Community Member" means You, Original Contributor and any other party that has entered into and has in effect a version of this License (or who is similarly authorized and obligated by Original Contributor) for the Technology with Original Contributor.
+"Contributed Code" means Error Corrections, Shared Modifications and any other code other than Reference Code made available to all Community Members in accordance with this License.
+"Contributed Code Specifications" means the functional, interface and operational specifications and documentation for Contributed Code.
+"Contributor" means any Community Member who makes available Contributed Code.
+"Covered Code" means any and all code (including Modifications) implementing all or any portion of the Technology Specifications. 
+"Error Correction(s)" mean Modifications which correct any failure of Community Code to conform to any aspect of the Technology Specifications.
+"Interfaces" means classes or other programming code or specifications designed for use with the Technology comprising a means or link for invoking functionality, operations or protocols and which are additional to or extend the interfaces designated in the Technology Specifications.
+"Modifications" means any (i) change or addition to Covered Code, or (ii) new source or object code implementing any portion of the Technology Specifications, but (iii) excluding any incorporated Reference Code. 
+"Original Contributor" means TimeSys Corporation, its affiliates, successors and assigns.
+"Reference Code" means source code for the Technology designated by Original Contributor at the Technology Site from time to time.
+"Research Use" means research, evaluation, development, educational or personal and individual use, excluding use or distribution for direct or indirect commercial (including strategic) gain or advantage.
+"Shared Modifications" means those Modifications which Community Members elect to share with other Community Members pursuant to Section III.B.
+"Technology Specifications" means the functional, interface and operational specifications and documentation for the Technology designated by Original Contributor at the Technology Site from time to time.
+"Technology" means the technology described in and contemplated by the Technology Specifications and which You have received pursuant to this License.
+"Technology Site" means the website designated by Original Contributor for accessing Community Code and Technology Specifications.
+"You" means the individual executing this license or the legal entity or entities represented by the individual executing this license. "Your" is the possessive of "You."
+
+II. PURPOSE.
+
+Original Contributor is licensing the Reference Code and Technology Specifications and is permitting implementation of Technology under and subject to this TimeSys Community Source License (the "License") to promote research, education, innovation and product development using the Technology. 
+
+COMMERCIAL USE AND DISTRIBUTION OF TECHNOLOGY IS PERMITTED ONLY UNDER OPTIONAL SUPPLEMENTS TO THIS LICENSE.
+
+III. RESEARCH USE RIGHTS.
+
+A. From Original Contributor. Subject to and conditioned upon Your full compliance with the terms and conditions of this License, including Sections IV (Restrictions and Community Responsibilities) and V.E.7 (International Use), Original Contributor:
+
+1. grants to You a non-exclusive, perpetual, worldwide and royalty-free license to the extent of Original Contributor's copyrights and trade secret rights in and covering the Reference Code and Technology Specifications to do the following for Your Research Use only:
+
+a) reproduce, prepare derivative works of, display and perform the Reference Code, in whole or in part, alone or as part of Covered Code;
+b) reproduce, prepare derivative works of and display the Technology Specifications;
+c) distribute source or object code copies of Reference Code, in whole or in part, alone or as part Covered Code, to other Community Members or to students; and
+d) distribute object code copies of Reference Code, in whole or in part, alone or as part of object code copies of Covered Code, to third parties.
+
+2. will not at any time bring against You any claim alleging that Your using, making, having made, importing or distributing Community Code for Your Research Use, insofar as permitted under Section III.A.1 of this License, necessarily infringes any patent now owned or hereafter acquired by Original Contributor whose claims cover subject matter contained in or embodied by the Reference Code or which would necessarily be infringed by the use or distribution of any and all implementations of the Technology Specifications. 
+
+3. grants to You a non-exclusive, perpetual, worldwide and royalty-free license, to the extent of its intellectual property rights therein, to use (a) Original Contributor's class, interface and package names only insofar as necessary to accurately reference or invoke Your Modifications for Research Use, and (b) any associated software tools, documents and information provided by Original Contributor at the Technology Site for use in exercising the above license rights. 
+
+B. Contributed Code. Subject to and conditioned upon compliance with the terms and conditions of this License, including Sections IV (Restrictions and Community Responsibilities) and V.E.7 (International Use), each Community Member: 
+
+1. grants to each Community Member a non-exclusive, perpetual, worldwide and royalty-free license to the extent of such Community Member's copyrights and trade secret rights in and covering its Contributed Code, to reproduce, modify, display and distribute Contributed Code, in whole or in part, in source code and object code form, to the same extent as permitted under such Community Member's License with Original Contributor (including all supplements thereto).
+
+2. will not at any time bring against any Community Member any claim alleging that using, making, having made, importing or distributing Contributed Code as permitted under this License (including any supplements) infringes any patents or patent applications now owned or hereafter acquired by such Community Member which patents or patent applications are infringed by using, making, having made, selling, offering for sale, importing or otherwise transferring the Contributed Code ("Community Member Patents"). This covenant shall apply to the combination of the Contributed Code with other Covered Code if, at the time the Contributed Code is posted, such addition of the Contributed Code causes such combination to be covered by the Community Member Patents. The covenant shall not apply to any other combinations which include the Contributed Code or to the use or distribution of modified Contributed Code where the modifications made by the Community Member add to the functions performed by the Contributed Code in question and where, in the absence of such modifications, there would be no infringement of a Community Member Patent.
+
+3. grants to Original Contributor, in addition to the rights set forth in Sections III.B.1 and III.B.2, the right to sublicense all such rights in Contributed Code, in whole or in part, as part of Reference Code or other technologies based in whole or in part on Reference Code or Technology and to copy, distribute, modify and prepare derivative works of Contributed Code Specifications, in whole or in part, in connection with the exercise of such rights.
+
+C. Subcontracting. You may provide Covered Code to a contractor for the sole purpose of providing development services exclusively to You consistent with Your rights under this License. Such Contractor must be a Community Member or have executed an agreement with You that is consistent with Your rights and obligations under this License. Such subcontractor must assign exclusive rights in all work product to You. You agree that such work product is to be treated as Covered Code.
+
+D. No Implied Licenses. Neither party is granted any right or license other than the licenses and covenants expressly set out herein. Other than the licenses and covenants expressly set out herein, Original Contributor and its licensor(s) retain all right, title and interest in Reference Code and Technology Specifications and You, subject to the foregoing, retain all right, title and interest in Your Modifications and associated specifications. Except as expressly permitted herein, You must not otherwise use any package, class or interface naming conventions that appear to originate from Original Contributor or its licensors.
+
+IV. RESTRICTIONS AND COMMUNITY RESPONSIBILITIES.
+
+As a condition to Your license and other rights and immunities, You must comply with the restrictions and responsibilities set forth below, as modified or supplemented, if at all, in Attachment B, Additional Research Use Terms and Conditions.
+
+A. Source Code Availability. You must provide source code and any specifications for Your Error Corrections to Original Contributor as soon as practicable. You may provide other Contributed Code to Original Contributor at any time, in Your discretion. Original Contributor may, in its discretion, post Your Contributed Code and Contributed Code Specifications on the Technology Site. You may post Your Contributed Code and/or Contributed Code Specifications on another website of Your choice; provided, source code of Community Code and Technology Specifications must be provided to Community Members only and only following certification of Community Member status as required under Section IV.D.
+
+B. Notices. You must reproduce without alteration copyright and other proprietary notices in any Covered Code that You distribute. The statement, "Use and Distribution is subject to the TimeSys Community Source License available at http://www.timesys.com/tcsl.html" must appear prominently in Your Modifications and, in all cases, in the same file as all Your copyright and other proprietary notices. 
+
+C. Modifications. You must include a diff file with Your Contributed Code that identifies and details the changes or additions You made, the version of Reference Code or Contributed Code You used and the date of such changes or additions. In addition, You must provide any Contributed Code Specifications for Your Contributed Code. Your Modifications are Covered Code and You expressly agree that use and distribution, in whole or in part, of Your Modifications shall only be done in accordance with and subject to this License.
+
+D. Distribution Requirements. You may distribute object code of Covered Code to third parties for Research Use only pursuant to a license of Your choice which is consistent with this License. You may distribute source code of Covered Code and the Technology Specifications for Research Use only to (i) Community Members from whom You have first obtained a certification of status in the form set forth in Attachment A-1, and (ii) students from whom You have first obtained an executed acknowledgment in the form set forth in Attachment A-2. You must keep a copy of each such certificate and acknowledgment You obtain and provide a copy to Original Contributor, if requested. 
+
+E. Extensions.
+1. You may create and add Interfaces but, unless expressly permitted at the Technology Site, You must not incorporate any Reference Code in Your Interfaces. If You choose to disclose or permit disclosure of Your Interfaces to even a single third party for the purposes of enabling such third party to independently develop and distribute (directly or indirectly) technology which invokes such Interfaces, You must then make the Interfaces open by (a) promptly following completion thereof, publishing to the industry, on a non-confidential basis and free of all copyright restrictions, a reasonably detailed, current and accurate specification for the Interfaces, and (b) as soon as reasonably possible, but in no event more than thirty (30) days following publication of Your specification, making available on reasonable terms and without discrimination, a reasonably complete and practicable test suite and methodology adequate to create and test implementations of the Interfaces by a reasonably skilled technologist.
+
+2. You shall not assert any intellectual property rights You may have covering Your Interfaces which would necessarily be infringed by the creation, use or distribution of all reasonable independent implementations of Your specification of such Interfaces by a Community Member or Original Contributor. Nothing herein is intended to prevent You from enforcing any of Your intellectual property rights covering Your specific implementation of Your Interfaces or functionality using such Interfaces other than as specifically set forth in this Section IV.E.2.
+
+V. GOVERNANCE.
+
+A. License Versions. 
+Only Original Contributor may promulgate new versions of this License. Once You have accepted Reference Code, Technology Specifications, Contributed Code and/or Contributed Code Specifications under a version of this License, You may continue to use such version of Reference Code, Technology Specifications, Contributed Code and/or Contributed Code Specifications under that version of the License. New code and specifications which You may subsequently choose to accept will be subject to any new License in effect at the time of Your acceptance of such code and specifications.
+
+B. Disclaimer Of Warranties.
+1. COVERED CODE, ALL TECHNOLOGY SPECIFICATIONS AND CONTRIBUTED CODE SPECIFICATIONS ARE PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED INCLUDING, WITHOUT LIMITATION, WARRANTIES THAT ANY SUCH COVERED CODE, TECHNOLOGY SPECIFICATIONS AND CONTRIBUTED CODE SPECIFICATIONS ARE FREE OF DEFECTS, MERCHANTABLE, FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING OF THIRD PARTY RIGHTS. YOU AGREE THAT YOU BEAR THE ENTIRE RISK IN CONNECTION WITH YOUR USE AND DISTRIBUTION OF ANY AND ALL COVERED CODE, TECHNOLOGY SPECIFICATIONS AND CONTRIBUTED CODE SPECIFICATIONS UNDER THIS LICENSE. NO USE OF ANY COVERED CODE, TECHNOLOGY SPECIFICATIONS OR CONTRIBUTED CODE SPECIFICATIONS IS AUTHORIZED EXCEPT SUBJECT TO AND IN CONSIDERATION FOR THIS DISCLAIMER.
+
+2. You understand that, although each Community Member grants the licenses set forth in the License and any supplements hereto, no assurances are provided by any Community Member that Covered Code or any specifications do not infringe the intellectual property rights of any third party.
+
+C. Limitation Of Liability.
+1. Infringement. Each Community Member disclaims any liability to all other Community Members for claims brought by any third party based on infringement of intellectual property rights. Original Contributor represents that, to its knowledge, it has sufficient copyrights to allow You to use and distribute the Reference Code as herein permitted (including as permitted in any Supplement hereto) and You represent that, to Your knowledge, You have sufficient copyrights to allow each Community Member and Original Contributor to use and distribute Your Shared Modifications and Error Corrections as herein permitted (including as permitted in any supplements to the License). 
+
+2. Disclaimer. EACH COMMUNITY MEMBER'S LIABILITY TO YOU FOR ALL CLAIMS RELATING TO THIS LICENSE OR ANY SUPPLEMENT HERETO, WHETHER FOR BREACH OR TORT, IS LIMITED TO THE GREATER OF ONE THOUSAND DOLLARS (US$1000.00) OR THE FULL AMOUNT PAID BY YOU FOR THE MATERIALS GIVING RISE TO THE CLAIM, IF ANY. IN NO EVENT WILL ANY COMMUNITY MEMBER BE LIABLE FOR ANY INDIRECT, PUNITIVE, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES IN CONNECTION WITH OR ARISING OUT OF THIS LICENSE (INCLUDING, WITHOUT LIMITATION, LOSS OF PROFITS, USE, DATA OR ECONOMIC ADVANTAGE OF ANY SORT), HOWEVER IT ARISES AND ON ANY THEORY OF LIABILITY (including negligence), WHETHER OR NOT ANY COMMUNITY MEMBER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE AND NOTWITHSTANDING FAILURE OF THE ESSENTIAL PURPOSE OF ANY REMEDY.
+
+D. Termination.
+You may terminate this License at any time by notifying Original Contributor in writing.
+
+All Your rights will terminate under this License if You fail to comply with any of the material terms or conditions of this License and do not cure such failure in a reasonable period of time after becoming aware of such noncompliance.
+
+If You institute patent litigation against a Community Member with respect to a patent applicable to Community Code, then any patent licenses or covenants granted by such Community Member to You under this License shall terminate as of the date such litigation is filed. In addition, if You institute patent litigation against any Community Member or Original Contributor alleging that Reference Code, Technology or Technology Specifications infringe Your patent(s), then the rights granted to You under this License and any supplement hereto will terminate.
+
+Upon termination, You must discontinue all uses and distribution of Community Code, except that You may continue to use, reproduce, prepare derivative works of, display and perform Your Modifications, so long as the license grants and covenants of this license are not required to do so. Properly granted sublicenses to third parties will survive termination. 
+
+Provisions which, by their nature, should remain in effect following termination survive.
+
+E. Miscellaneous.
+1. Integration. This License represents the complete agreement of the parties concerning the subject matter hereof.
+
+2. Severability. If any provision of this License is held unenforceable, such provision shall be reformed to the extent necessary to make it enforceable unless to do so would defeat the intent of the parties, in which case, this License shall terminate.
+
+3. Governing Law. This License is governed by the laws of the United States and the Commonwealth of Pennsylvania, as applied to contracts entered into and performed in California between California residents. The United Nations Convention on Contracts for the International Sale of Goods shall not apply. Nor shall any law or regulation which provides that a contract be construed against the drafter.
+
+4. Dispute Resolution.
+a) Any dispute arising out of or relating to this License shall be finally settled by arbitration as set forth in this Section, except that either party may bring an action in a court of competent jurisdiction (which jurisdiction shall be exclusive), relative to any dispute relating to such party's intellectual property rights. Arbitration will be administered (i) by the American Arbitration Association (AAA), (ii) in accordance with the rules of the United Nations Commission on International Trade Law (UNCITRAL) (the "Rules") in effect at the time of arbitration, modified as set forth herein, and (iii) by an arbitrator described in Section 5.b who shall apply the governing laws required under Section V.E.4 above. Judgment upon the award rendered by the arbitrator may be entered in any court having jurisdiction to enforce such award. The arbitrator must not award damages in excess of or of a different type than those permitted by this License and any such award is void.
+
+b) All proceedings will be in English and conducted by a single arbitrator selected in accordance with the Rules who is fluent in English, familiar with technology matters pertinent in the dispute and is either a retired judge or practicing attorney having at least ten (10) years litigation experience. Venue for arbitration will be in Pittsburgh, Pennsylvania, unless the parties agree otherwise. Each party will be required to produce documents relied upon in the arbitration and to respond to no more than twenty-five single question interrogatories. All awards are payable in US dollars and may include for the prevailing party (i) pre-judgment interest, (ii) reasonable attorneys' fees incurred in connection with the arbitration, and (iii) reasonable costs and expenses incurred in enforcing the award.
+
+5. U.S. Government. If this Software is being acquired by or on behalf of the U.S. Government or by a U.S. Government prime contractor or subcontractor (at any tier), the Government's rights in this Software and accompanying documentation shall be only as set forth in this license, in accordance with 48 CFR 227.7201 through 227.7202-4 (for Department of Defense acquisitions) and with 48 CFR 2.101 and 12.212 (for non-DoD acquisitions).
+
+6. International Use. Covered Code is subject to US export control laws and may be subject to export or import regulations in other countries. Each party shall comply fully with all such laws and regulations and acknowledges its responsibility to obtain such licenses to export, re-export or import as may be required. You must pass through these obligations to all Your licensees.
+
+READ ALL THE TERMS OF THIS LICENSE CAREFULLY BEFORE ACCEPTING. 
+BY CLICKING ON THE ACCEPT BUTTON BELOW, YOU ARE ACCEPTING AND AGREEING TO ABIDE BY THE TERMS AND CONDITIONS OF THIS LICENSE. 
+IF YOU ARE AGREEING TO THIS LICENSE ON BEHALF OF A COMPANY, YOU REPRESENT THAT YOU ARE AUTHORIZED TO BIND THE COMPANY TO THE LICENSE. 
+WHETHER YOU ARE ACTING ON YOUR OWN BEHALF OR THAT OF A COMPANY, YOU MUST BE OF MAJORITY AGE AND OTHERWISE COMPETENT TO ENTER INTO CONTRACTS. 
+IF YOU DO NOT MEET THESE CRITERIA, OR YOU DO NOT AGREE TO ANY OF THE TERMS OF THIS LICENSE, CLICK ON THE REJECT BUTTON AND EXIT NOW.
+
+ACCEPT LICENSE 
+
+REJECT LICENSE AND EXIT
+ATTACHMENT A-1
+COMMUNITY MEMBER CERTIFICATE
+You certify that You are a Licensee in good standing under the TimeSys Community Source License for the ____________ Technology (fill in applicable Technology and Version) (the "License") and that You agree to use and distribute code, documentation and information You may obtain pursuant to this certification only in accordance with the terms and subject to the conditions of the License.
+Add to the end of the foregoing, as appropriate:
+For written documents:
+Signature:____________________
+Printed Name 
+and Title:_____________________
+Company _____________________
+For web downloads add buttons with the following:
+Agreed and Accepted Reject and Exit
+
+ATTACHMENT A-2
+STUDENT ACKNOWLEDGMENT 
+You acknowledge that this software and related documentation has been obtained by your educational institution subject to the TimeSys Community Source License (the "License"). You have been provided with access to the software and documentation for use only in connection with your course work as a matriculated student of your educational institution. Commercial use of the software and documentation is expressly prohibited.
+THIS SOFTWARE AND RELATED DOCUMENTATION CONTAINS PROPRIETARY MATERIALS OF TIMESYS CORPORATION PROTECTED BY VARIOUS INTELLECTUAL PROPERTY RIGHTS. YOUR USE OF THE SOFTWARE AND DOCUMENTATION IS LIMITED.
+- - - - - - - - -
+Add to the end of the foregoing, as appropriate:
+For written documents:
+Signature:____________________
+Printed Name :_____________________
+For web downloads add buttons with the following:
+Agreed and Accepted Reject and Exit
+ATTACHMENT B (ADDITIONAL TERMS/RESPONSIBILITIES):
+NONE
+ 

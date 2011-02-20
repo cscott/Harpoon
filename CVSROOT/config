@@ -1,0 +1,2 @@
+# don't allow users on lesser-magoo to use pserver, it's insecure!
+SystemAuth=no

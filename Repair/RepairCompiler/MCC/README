@@ -1,0 +1,41 @@
+Note:  The compiler requires jdk version 1.4 or later.
+
+1. Building the compiler
+---------------------------------------------------------------------
+To build the compiler:
+cd MCC
+make
+
+2. Compiling the filesystem example:
+---------------------------------------------------------------------
+A. First compile the specification checker:
+
+cd MCC
+java -cp .. MCC.Compiler -aggressivesearch -prunequantifiernodes specs/filesystem/test3
+
+B. Next move files to the CRuntime directory:
+
+cp size.* CRuntime
+cp specs/filesystem/test3_aux.* CRuntime
+cp specs/filesystem/test3.c CRuntime
+
+C. Next build the runtime:
+
+cd CRuntime
+mkdir specs
+cd specs
+ln -s .. filesystem
+cd ..
+./buildruntime
+gcc -O9 -c test3_aux.c
+gcc -O9 file.c *.o -o file
+
+D. To run:
+
+./file 0 (create filesystem)
+
+./file 5 (write file to filesytem, interrupt with ctrl-C to
+introduce an error)
+
+./file x (check & repair filesystem)
+

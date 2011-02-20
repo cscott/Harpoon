@@ -1,0 +1,62 @@
+Some notes about a ``real'' implementation of UTM.
+
+MIPS.  Let's assume a primary cache line of 16 bytes, and a secondary
+cache line of 128 bytes.  Our transaction block size will be the same
+as the secondary cache line size, 128-bytes, which will limit our
+address-space overhead to approximately 8\%.  The transaction data (descriptor)
+associated with a block will fit into 8 bytes (one 64-bit word), since
+virtual addresses are limited to 40 bits on MIPS (42 if you include
+the kernel/supervisor/user mode bits; AMD-64 has 52-bit virtual
+addresses).\footnote{A(63:62)=$10_2$ is not currently used; we could
+steal this to indicate ``transaction descriptors''.  This would probably
+cause protection problems.}
+
+There would be 16 transaction descriptor words on a cache line; this
+could cause ping-ponging.  An 8k page contains descriptors for the
+transaction blocks on 16 other pages ($2^{10}$ descriptors).  The
+descriptors should be arranged so the ``no information'' is an
+all-zeros pattern.  The OS can then garbage collect any transaction
+descriptor pages which contain all zeros (instead of eg paging them to
+disk; I believe most OSes will do this optimization already, but maybe
+not if the page was once dirty).\footnote{Alternatively, we could reference
+count these pages in the page table, and deallocate them when the
+number of non-zero entries on the page drops to zero.  This is
+probably not the best way to do it.}
+
+To find the transaction descriptor for a given virtual address, we
+just flip a high-order bit and shift the low-order bits.  This reuses
+the TLB, etc, mechanisms for virtualization, but we must be careful
+that we can still ensure forward progress and don't introduce spurious
+transaction performance conflicts (because transaction descriptors for
+two different transactions reside on the same cache line).
+
+The caches need to know the details of these 'special' addresses so
+that ``on chip'' transactions are handled correctly.  In fact, the
+cache organization would probably look more like the figure (with the
+information stored alongside the cache lines), and we might want to
+have extra cache-associativity or other mechanisms to prevent
+ping-ponging of the transaction descriptors. (Is this right?)
+
+Nice feature: pin-compatible UTM!  Only the processor and caches
+(maybe not even the L2 cache) need to know about transactions.
+May be nice to have a word-level caching strategy.
+
+Nice idea (with Bradley): so one concern is that a neighboring xaction
+(in the same 2k memory block) may need to access a transaction
+descriptor on the same cache line as our transaction descriptor.  We
+can handle this by (ahead of time) obtaining the 'next' line in our
+transaction log w/ exclusive access.  When we need to ship the cache
+line with our descriptor, we just write in the address of the 'next'
+log line.  We can then fill this with appropriate information in our
+cache, but we still don't actually have to write it back out into main
+memory unless someone actually tries to follow the pointer (in which
+case we're likely to conflict anyway).  We may want to hack the cache
+coherence protocol slightly to allow us exclusive access to a large
+log region, which we can generate data for on-the-fly if need be.
+This solves the problem where we have to spill our transaction just
+because another transaction occurred in the same 2k block.
+
+Another alternative: 9-bit bytes would give enough transaction
+descriptor info for 64-byte transaction blocks.
+
+

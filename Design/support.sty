@@ -1,0 +1,19 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: support.sty,v 1.1 2002-11-16 09:09:59 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Magic TeX code for the 'support' footnote.       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{support}[2002/11/16 v1.0 (C. Scott Ananian)]
+
+% This is used like this:
+%  \support{This research was supported by ...}
+% after \begin{document} and just after \maketitle.
+
+\makeatletter
+\long\def\unmarkedfootnote#1{{\long\def\@makefntext##1{##1}\footnotetext{#1}}}
+\makeatother
+
+\def\support#1{\protect\unmarkedfootnote{\noindent #1}}

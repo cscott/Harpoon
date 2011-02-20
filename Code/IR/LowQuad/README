@@ -1,0 +1,3 @@
+The harpoon.IR.LowQuad representation is similar to harpoon.IR.Quads,
+except is has explicit pointers.  This allows easier optimization of
+(for example) array references in loops.

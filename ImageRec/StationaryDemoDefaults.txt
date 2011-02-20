@@ -1,0 +1,10 @@
+LabelDelay 50
+Brightness 255
+Contrast 220
+Gain 2
+FrameRate 15
+InterruptDelay 2000
+ForwardSpeed 20
+BackwardSpeed 20
+Turn 127
+

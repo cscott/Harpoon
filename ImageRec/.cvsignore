@@ -1,0 +1,7 @@
+doc
+movie
+.jacorb
+*.jar
+*.jar.TIMESTAMP
+*.tgz
+*.tgz.TIMESTAMP

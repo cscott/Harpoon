@@ -1,0 +1,44 @@
+% fast algorithm for dead code elimination (unused code elimination)
+
+FindUseful($G$:~CFG) =
+\begin{myalgorithmic}
+\LET $W$ be an empty work list
+\FOREACH{variable $v$ in $G$}
+ \STATE $\text{VarUseful}(v) \gets \code{false}$
+\ENDFOR
+\FOREACH{node $n$ in $G$ in any order}
+ \STATE $\text{NodeUseful}(n) \gets \code{false}$
+ \IF{$n$ is a \code{CALL}, \code{RETURN}, or other node with side-effects}
+  \STATE add $n$ to $W$
+ \ENDIF
+\ENDFOR
+      \EMPTYLINE
+\WHILE{$W$ is not empty}
+ \LET $n$ be any element from $W$
+ \STATE remove $n$ from $W$
+ \STATE $\text{MarkNodeUseful}(n, W)$
+\ENDWHILE
+\end{myalgorithmic}
+~\\
+MarkNodeUseful($n$:~node, $W$:~WorkList) =
+\begin{myalgorithmic}
+\STATE $\text{NodeUseful}(n) \gets \code{true}$
+\STATE\COMMENT{everything used by a useful node is useful}
+\FOREACH{variable $v$ in $\text{Uses}(n)$}\label{line:deadnode1}
+ \IF{not $\text{VarUseful(v)}$}
+  \STATE $\text{MarkVarUseful}(v, W)$\label{line:deadnode2}
+ \ENDIF
+\ENDFOR
+\end{myalgorithmic}
+~\\
+MarkVarUseful($v$:~variable, $W$:~WorkList) =
+\begin{myalgorithmic}
+\STATE $\text{VarUseful}(v) \gets \code{true}$
+\STATE\COMMENT{The definition of a useful variable is useful}
+\FOREACH{node $n$ in $\text{Definitions}(v)$}
+ \STATE\COMMENT{In SSI form, $\text{size}(\text{Definitions}(v)) \leq 1$}
+ \IF{not $\text{NodeUseful}(n)$}
+  \STATE add $n$ to $W$
+ \ENDIF
+\ENDFOR
+\end{myalgorithmic}

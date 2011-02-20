@@ -1,0 +1,8 @@
+[], sizeof(firstblock)=1;
+[], sizeof(Fragments)=1;
+[], sizeof(secondblock)=1;
+[forall f in Frags], (!(sizeof(f.Next)=1)) or ((f.Next.Prev=f) and sizeof(f.Next.Prev)=1);
+[forall f in Frags], (sizeof(f.~Next)<=1);
+[forall f in firstblock], sizeof(f.~Next)=0;
+[forall l in Last, forall f in Fragments], f.PLast=l and sizeof(f.PLast)=1;
+[forall f in Frags], f.Length>=1;

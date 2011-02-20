@@ -1,0 +1,943 @@
+% -*-latex-*- This is a LaTeX document.
+% $Id: ptran.tex,v 1.56 2003-05-13 16:06:22 cananian Exp $
+\documentclass[11pt,notitlepage]{article}
+%\documentclass{acmconf}
+\usepackage{comdef} % common definitions
+\usepackage{pdffonts} % PDF-friendly fonts
+\usepackage{stmaryrd} % for \rrbracket and \llbracket
+\usepackage{amsmath}
+\author{C.~Scott~Ananian}
+\title{Points-To Analysis with Companion Objects}
+\date{\today \\ $ $Revision: 1.56 $ $}
+
+\newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
+% boldface was kinda nice here:
+\newcommand{\func}[1]{\ensuremath{\text{\sffamily #1}}}
+
+% points-to graphs are large and unwieldy tuples.
+\newcommand{\ptgraphA}
+           {\tuple{O,I,\func{c}_\text{from},\func{c}_\text{to},r}}
+\newcommand{\ptgraphB}
+           {\tuple{O,I,\func{e},\func{c}_\text{from},\func{c}_\text{to},r}}
+
+\begin{document}
+\bibliographystyle{abbrv}
+\maketitle
+\section{Motivation}
+Typical Java code makes extensive use of classes encapsulating abstract
+collections of objects: hashes, sets, and lists.  As has been
+previously noted, analyzing a collection using standard pointer-analysis
+techniques ``not only adds extra cost to the analysis, but also causes
+a context-insensitive points-to analysis to be less precise.  For
+example, data stored in one Vector instance may be returned by
+invoking \texttt{elementAt()} on another Vector instance because these
+data are referenced by the return statement of \texttt{elementAt()},
+which is shared by all instances of Vector'' \cite[p. 75]{379676}.
+The underlying cause is over-conservative may-aliasing of the data
+structures backing the collection.  Context-sensitivity helps, but the
+cost is often too high: Figure~\ref{fig:vector} shows a typical
+code path in \texttt{java.util.Vector} which requires four levels of
+context-sensitivity to disambiguate.  This amount of
+context-sensitivity applied to an entire program would severely
+curtail the scalability of the analysis, due to the exponential blowup
+in problem complexity which context-sensitivity entails.  Furthermore,
+it is impossible to know how much context-sensitivity is ``enough''
+for any particular program.  Every simple wrapper class around a
+collection increases the required context-sensitivity.
+
+We would like to disambiguate the backing stores used in collections
+frameworks (including in user-authored collections classes) without
+the large cost of indiscriminate context-sensitivity.  Furthermore, we
+would like this to work even for tree-based collections and iterator
+objects for collections (see Figure~\ref{fig:tree} and
+Figure~\ref{fig:iterator}).
+
+Our strategy will be to identify \newterm{companion objects}, which
+are objects related by a particular aliasing relationship.  Iterators
+will be \newterm{from-companions} of their related collections, and
+backing stores will be \newterm{to-companions} of the collection
+class.  By invoking additional context-sensitivity for companion
+objects, we will ensure that undesired may-aliasing does not occur.
+
+We will first define companion objects, and then introduce the notion
+of \newterm{singular values}.  We will then define an approximation to
+companionship based on approximated singularity.  We will then show
+how to construct a compositional pointer analysis which uses
+\newterm{possible companions} to guide its treatment of call sites.
+
+\begin{myfigure}\small
+\begin{samplecode}
+class Vector \{\\
+\>Object[] elements;\\
+\>int size;\\
+\>Vector() \{\\
+\>\>\textbf{this.elements = new Object[10];}\\
+\>\>this.size = 0;\\
+\>\}\\
+\>private void expand() \{\\
+\>\>Object[] nelements = new Object[elements.length*2];\\
+\>\>for (int i=0; i<elements.length; i++)\\
+\>\>\>nelements[i] = elements[i];\\
+\>\>\textbf{this.elements = nelements;}\\
+\>\}\\
+\>void add(Object o) \{\\
+\>\>if (size >= elements.length)\\
+\>\>\>expand();\\
+\>\>this.elements[size++] = o;\\
+\>\}\\
+\>void addAll(Collection c) \{\\
+\>\>for (Iterator it=c.iterator(); it.hasNext(); )\\
+\>\>\>add(it.next());\\
+\>\}\\
+\>int length() \{\\
+\>\>return size;\\
+\>\}\\
+\>Iterator iterator() \{\\
+\>\>return new Iterator() \{ \textit{// also singular}\\
+\>\>\>int i=0;\\
+\>\>\>public boolean hasNext() \{\\
+\>\>\>\>return i < size;\\
+\>\>\>\}\\
+\>\>\>public Object next() \{\\
+\>\>\>\>return elements[i++];\\
+\>\>\>\}\\
+\>\>\>public void remove() \{\\
+\>\>\>\>throw new UnsupportedOperationException();\\
+\>\>\>\}\\
+\>\>\};\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{A client call to \texttt{addAll()} in \texttt{java.util.Vector}
+  requires four levels of context-sensitivity to disambiguate.  Our
+  analysis will succeed here by noting the mutual singularity of the
+  values used in the boldface field assignments.}
+\label{fig:vector}
+\end{myfigure}
+
+\begin{myfigure}\small
+\begin{samplecode}
+%import java.util.*;\\
+%\\
+public class Tree \{\\
+\>Comparator c;\\
+\>Node root;\\
+\>Tree() \{\\
+\>\>\textbf{this.root=null;}\\
+\>\>this.c=new Comparator() \{\\
+\>\>\>public int compare(Object o1, Object o2) \{\\
+\>\>\>\>return ((Comparable)o1).compareTo(o2);\\
+\>\>\>\}\\
+\>\>\};\\
+\>\}\\
+\>void add(Object o) \{\\
+\>\>Node newnode = new Node(o);\\
+\>\>if (root==null) \{\\
+\>\>\>\textbf{root=newnode;}\\
+\>\>\>return;\\
+\>\>\}\\
+\>\>for (Node n=root; ;) \{\\
+\>\>\>if (c.compare(n.value, o) < 0) \{\\
+\>\>\>\>if (n.left==null) \{\\
+\>\>\>\>\>\textbf{n.left=newnode;}\\
+\>\>\>\>\>return;\\
+\>\>\>\>\} else n=n.left;\\
+\>\>\>\} else \{\\
+\>\>\>\>if (n.right==null) \{\\
+\>\>\>\>\>\textbf{n.right=newnode;}\\
+\>\>\>\>\>return;\\
+\>\>\>\>\} else n=n.right;\\
+\>\>\>\}\\
+\>\>\}\\
+\>\}\\
+\}\\
+class Node \{\\
+\>public Object value;\\
+\>public Node left, right;\\
+\>Node(Object value) \{\\
+\>\>this.value = value;\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{An implementation of a tree-based collection.  Our analysis
+  will disambiguate \texttt{Node}s by utilizing the mutual singularity
+  of the values used in the boldface field assignments.}
+\label{fig:tree}
+\end{myfigure}
+
+\begin{myfigure}\small
+\begin{samplecode}
+import java.util.*;\\
+\\
+class Tree2 extends Tree \{\\
+\>Iterator iterator() \{\\
+\>\>\textbf{return new Iterator()} \{\\
+\>\>\>List stack = null;\\
+\>\>\>\{ for (Node n=root; n!=null; n=n.left)\\
+\>\>\>\>stack = new List(n, stack);\\
+\>\>\>\}\\
+\>\>\>public boolean hasNext() \{ return stack==null; \}\\
+\>\>\>public Object next() \{\\
+\>\>\>\>Node n = (Node) stack.head;\\
+\>\>\>\>stack = stack.tail;\\
+\>\>\>\>// now recurse down the right-hand path.\\
+\>\>\>\>for (Node nn = n.right; nn!=null; nn=nn.left)\\
+\>\>\>\>\>stack = new List(nn, stack);\\
+\>\>\>\>// done.\\
+\>\>\>\>return n.value;\\
+\>\>\>\}\\
+\>\>\>public void remove() \{\\
+\>\>\>\>throw new UnsupportedOperationException();\\
+\>\>\>\}\\
+\>\>\};\\
+\>\}\\
+\}\\
+class List \{\\
+\>Object head;\\
+\>List tail;\\
+\>List(Object head, List tail) \{\\
+\>\>this.head = head; this.tail = tail;\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{A typical iterator class.  It is important for the analysis
+  to note that the return value of the \texttt{iterator()} method is
+  singular.}
+\label{fig:iterator}
+\end{myfigure}
+
+
+\section{Companion objects}
+Given a heap $H: O\times F\times O$ consisting of tuples where
+\tuple{a,f,b} means that field $f$ of object $a$ points to $b$, and a
+partition $P:O\to R$ of the heap assigning representatives $r\in R$ to
+sets of object $o\in O$, we say that two objects $a$ and $b$ are
+\newterm{to-companions} in $f$ if $C_{to}^O(H,P,a,f,b)$ is true, and
+\newterm{from-companions} in $f$ if $C_{from}^O(H,P,a,f,b)$ is true,
+where
+\begin{eqnarray*}
+C_{to}^O(H,P,a,f,b) &=& \tuple{c,f,b}\in H \wedge P(a)=P(c) \implies a=c
+\\
+C_{from}^O(H,P,a,f,b) &=& \tuple{a,f,c}\in H \wedge P(b)=P(c) \implies b=c
+\end{eqnarray*}
+Intuitively, if $a$ is a to-companion through $f$ of $b$, it means
+that no other object $c$ with the same representative as $a$ may point
+to $b$ through field $f$.  Similarly, if $a$ if a from-companion
+through $f$ of $b$, then no other object $c$ with the same
+representative as $b$ may be pointed to by $a$ through field $f$.
+For heaps representing a single program point, all tuples
+\tuple{a,f,b} represent from-companions, since an object can point to
+at most one other object through a given field at any program point.%
+\footnote{Note that objects can be companions even if there are no
+edges between them in the heap.}
+
+We will often want to speak of companion relationships between object
+\textit{representatives}.  We say representative $r$ is a to (from)
+companion through $f$ of $s$ if $C_{to}^R(H,P,r,f,s)$
+($C_{from}^R(H,P,r,f,s)$), where:
+\begin{eqnarray*}
+C_{to}^R(H,P,r,f,s) &=& \forall a,b\in O : P(a)=r \wedge P(b)=s \implies C_{to}^O(H,P,a,f,b)
+\\
+C_{from}^R(H,P,r,f,s) &=& \forall a,b\in O : P(a)=r \wedge P(b)=s \implies C_{from}^O(H,P,a,f,b)
+\end{eqnarray*}
+
+We may generalize over $H^*$, the set of all possible heaps that may occur
+during program execution, as follows:
+\begin{eqnarray*}
+\mathcal{C}_{to}^R(P,r,f,s) &=& \forall H\in H^*: C_{to}^R(H,P,r,f,s)
+ = C_{to}^R(\cup_{H\in H^*} H, P, r, f, s)
+\\
+\mathcal{C}_{from}^R(P,r,f,s) &=& \forall H\in H^*: C_{from}^R(H,P,r,f,s)
+ = C_{from}^R(\cup_{H\in H^*} H, P, r, f, s)
+\end{eqnarray*}
+
+Note that these formulations may be true for edges not actually
+present in heap $H$.  For this reason, we will usually only speak of the
+companionship of edges known to be in the heap.
+
+\section{Singular Values}
+We will use $v\in V$ for variables and $s\in S$ for statements.  The
+function $\func{use}:S\to 2^V$ returns the set of variables whose
+values are used in a given statement; the function $\func{def}:S\to
+2^V$ similarly reports variables defined at a statement point.
+We call a tuple \tuple{v,s} a \newterm{static value}, as it represents
+a variable's possible values at a given program point.%
+\footnote{As opposed to a ``dynamic value'', which would represent the
+  unique value of the variable at a given moment during a possible execution.}
+
+We say a program variable $v$ is \newterm{singular} at a statement $s$
+if $v$ will have a different value at every execution of $s$.  An
+allocation site $a = \text{\tt new }A$ produces a value which is singular
+at the site; other defintions of $a$ might reach other statements
+$s_x$ in the program, so $a$ is not guaranteed to be singular at $s_x$.
+
+A variable $v_1$ singular at a statement $s_1$ is
+\newterm{pairwise-singular} with a variable $v_2$ singular at a statement
+$s_2$ iff no value of $v_1$ at an execution $s_1$ is ever equal to any
+value of $v_2$ at an execution of $s_2$.
+
+Now we can say that a set of static values
+$\bigvar{SV}=\left\{ \tuple{v,s} | v \text{ is singular at } s \right\}$
+is
+\newterm{mutually-singular} iff
+\begin{displaymath}
+\forall \left\{ \tuple{v_1,s_1}, \tuple{v_2,s_2} \right\} \subseteq
+        \bigvar{SV} :
+v_1 \text{ at } s_1 \text{ is pairwise-singular with } v_2 \text{ at } s_2
+\end{displaymath}
+Note that $s_1$ and $s_2$ can be the same statement as long as $v_1\neq v_2$.
+
+We can compute a conservative approximation to singularity as follows.
+We say a variable $v$ is singular at a use $s$ iff:
+\begin{itemize}
+\item all reaching definitions of $v$ are either allocation statements 
+$v = \text{\tt new }T$ or moves $v = x$ where $x$ is singular at
+the move, and
+\item every non-trivial path from $s$ to $s$ gives a fresh value to $v$
+  (where a non-trivial path traverses at least one edge).
+\end{itemize}
+
+\footnote{An infeasible path analysis \cite{267921} could be used to refine
+our dataflow analysis by excluding paths never traversed by any
+execution of the program.}
+% note that a statement ... = a + b *could* however have a=b and still
+% be singular.  does this need to be fixed?
+
+\begin{myfigure}%[p]
+\begin{samplecode}[2]%
+while (\ldots) \{         &while (\ldots) \{         \\
+\>v = new T(\ldots)       &\>v1 = new T(\ldots)      \\
+\>if (\ldots)             &\>if (\ldots)             \\
+\>\>\ldots = v;  /* s1 */ &\>\>v2 = v1;              \\
+\>else                    &\>if (\ldots)             \\
+\>\>\ldots = v;  /* s2 */ &\>\>\ldots = v2;  /* s3 */ \\
+\}                        &\>else                    \\
+                          &\>\>\ldots = v2;  /* s4 */ \\
+                          &\}                        \\
+\end{samplecode}%
+\caption{Statements $s_1$ and $s_2$ are pairwise-singular in the code
+  on the left; statements $s_3$ and $s_4$ are not singular because
+  there exist paths $s_3\pathplus s_3$ and $s_4\pathplus s_4$ which do not
+  redefine \texttt{v2}.}
+\label{fig:pairwise-singular}
+\end{myfigure}
+
+\subsection{Intraprocedural singular value analysis}
+Let $\func{RD}(\tuple{v,s})$ be the set of (intraprocedural) reaching
+definitions
+of $v$ at $s$.
+We define the set of \newterm{generation sites} for a variable $v$ singular at
+use $s$ as:
+\begin{displaymath}
+\func{GenSite}(\tuple{v,s}) %\text{ where } v\in\func{use}(s)
+ =
+\bigcup_{d \in \func{RD}(\tuple{v,s})} \func{g}(d)
+\text{ where }
+\func{g}(d) = \begin{cases}
+                \func{GenSite}(\tuple{x,d}) &\text{when } d \text{ is } v=x \\
+                \{d\}&\text{when } d \text{ is } v=\text{\tt new } T
+       \end{cases}
+\end{displaymath}
+
+Note that the definition of $\func{GenSite}$ is similar to a
+transitive closure over move statements of the $\func{RD}$ (reaching
+definitions) function.  We will therefore use $\func{RD}^*$ to
+represent our dataflow computation of $\func{GenSite}$, and we will
+define a function $\func{RU}^*$ which is a similarly-tweaked version
+of standard \newterm{reaching uses}.
+
+We perform a dataflow analysis to determine
+$\func{RD}^*_\text{in}[s]:\mathcal{V}\to(2^\mathcal{S})_\bot$, the set
+of reaching generation sites for a variable $v$ at statement $s$.
+Initially, let $\func{RD}^*_\text{in}$ map every variable to the empty set.
+The update rules are:
+\\
+\begin{tabular}{lll}
+&\textbf{Statement}&\textbf{Update Rule}\\\hline
+$s$: & $t_0=\text{\tt new }T$ & $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]\left[t_0:=\left\{s\right\}\right]$ \\
+$s$: & $t_0=t_1$ & $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]\left[t_0:=\func{RD}^*_\text{in}[s](t_1)\right]$ \\
+$s$: & $t_0=\text{\tt<other def>}$ & $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]\left[t_0:=\bot\right]$ \\
+$s$: & \texttt{<other stmt>} &  $\func{RD}^{*'}_\text{out}[s]=\func{RD}^*_\text{in}[s]$ \\
+\end{tabular}
+\\
+and the join rule is:
+\begin{displaymath}
+\func{RD}^*_\text{in}[s] = \lambda v. \bigsqcup_{p\in\func{pred}(s)} \func{RD}^*_\text{out}[p](v)
+\end{displaymath}
+where
+\begin{displaymath}
+A_1 \sqcup A_2 = \begin{cases}
+\bot & \text{if } A_1=\bot \text{ or } A_2=\bot \\
+A_1 \cup A_2 & \text{otherwise}
+\end{cases}
+\end{displaymath}
+
+We define a ``reaching generation sites'' analysis,
+$\func{RU}^*_\text{in}[s] : \mathcal{S}\to 2^\mathcal{V\times S}$ which
+maps definition sites to a set of static values using the values
+generated at those sites.  Initially, let $\func{RU}^*_\text{in}$ map
+every statement to the empty set.  The update rules are:
+\\
+\begin{tabular}{lll}
+&\textbf{Statement}&\textbf{Update Rule}\\\hline
+$s$: & $t_0=\text{\tt new }T$ & $\func{RU}^{*'}_\text{out}[s]=\func{RU}^*_\text{in}[s]\left[s:=\emptyset\right]$ \\
+$s$: & $t_0=t_1$ &  $\func{RU}^{*'}_\text{out}[s]=\func{RU}^*_\text{in}[s]$ \\
+$s$: & $t_0=\ldots t_1 \ldots t_n \ldots$ &
+ $\func{RU}^{*'}_\text{out}[s]=\lambda s' . \begin{cases}
+\emptyset &\text{if }s'=s\text{, else}\\
+\func{RU}^*_\text{in}[s](s')\cup\left\{s\right\}
+ & \text{if }s'\in\func{RD}^*_\text{in}[s]\left[\left\{t_1\ldots
+    t_n\right\}\right] \\
+\func{RU}^*_\text{in}[s](s') & \text{otherwise} \\
+\end{cases}$ \\
+$s$: & \texttt{<other stmt>} &  $\func{RU}^{*'}_\text{out}[s]=\func{RU}^*_\text{in}[s]$ \\
+\end{tabular}
+\\
+and the join rule is:
+\begin{displaymath}
+\func{RU}^*_\text{in}[s] = \lambda s'.\bigcup_{p\in\func{pred}(s)} \func{RU}^*_\text{out}[p](s')
+\end{displaymath}
+
+Now we can say that a set of static values $\bigvar{SV} \subseteq V \times S$
+are (conservatively) mutually singular if
+\begin{displaymath}
+  \forall \tuple{v,s}\in \bigvar{SV} : \func{RD}^*_\text{in}[s](v) \neq \bot
+  \wedge 
+  \left(\bigvar{SV}\cap\func{RU}^*_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
+\end{displaymath}
+
+\subsection{Interprocedural singular value analysis}
+
+We turn our intraprocedural singular value analysis into a compositional
+interprocedural analysis by introducing ``conditional singularity''
+for formal parameters and others which depend on them.  A
+conditionally-singular variable is only singular if some set of actual
+parameters is mutually-singular when the method is invoked.%
+\footnote{Note that aliasing of parameters is one of the ways that
+a set of parameters may fail to be mutually-singular.}
+We let
+$\func{CondParam}(\bigvar{SV}):2^\mathcal{V\times S}\to 2^\mathcal{P}$
+be the set of formal parameters which the mutual singularity of the
+set of static values $\bigvar{SV}$ is dependent on.  We can extend our dataflow
+analysis of the previous section to compute this function.
+
+Previously, the function $\func{RD}^*[s]$ was typed
+$\mathcal{V}\to(2^\mathcal{S})_\bot$.  We expand that type to
+$\mathcal{V}\to(2^{\mathcal{S}\cup\mathcal{P}})_\bot$, where
+$\mathcal{P}$ is a domain
+representing formal parameters.  The set $P_m$ of formal parameters for
+a method $m$ consists of unique tokens (possibly ordinal integers) for
+each formal parameter of the method.  Let
+$\func{formal}(p):\mathcal{P\to V}$ map parameter tokens to the
+corresponding formal variables in a callee, and
+$\func{actual}(p):\mathcal{P\to V}$ map parameter tokens to the
+corresponding actual variables at a callsite.
+Now, instead of initializing $\forall s :
+\func{RD}^*_\text{in}[s]=\lambda v.\emptyset$, we let
+\begin{displaymath}
+\forall s: \func{RD}^*_\text{in}[s]=\lambda v.\begin{cases}
+p & \text{if }v=formal(p)\text{ and }s=s_0\\
+\emptyset & \text{otherwise} \\
+\end{cases}
+\end{displaymath}
+where $s_0$ is the unique header statement for the method.
+The remainder of the $\func{RD}^*$ analysis is identical.
+
+We also extend the type of the function $\func{RU}^*[s]$ from
+$\mathcal{S}\to 2^\mathcal{V\times S}$ to
+$(\mathcal{S}\cup\mathcal{P})\to 2^\mathcal{V\times S}$.
+This will accomodate the expanded type of the $\func{RD}^*$ function,
+and the remainder of the analysis is identical.
+
+Now we can define
+\begin{displaymath}
+\func{CondParam}(\bigvar{SV}) = \mathcal{P} \cap
+    \bigcup_{\tuple{v,s}\in\bigvar{SV}} \func{RD}^*_\text{in}[s](v)
+\end{displaymath}
+
+A set of static values $\bigvar{SV}$ is (conservatively)
+mutually-singular conditional on $P$ if
+$$P=\func{CondParam}(\bigvar{SV})$$ and
+\begin{displaymath}
+  \forall \tuple{v,s}\in \bigvar{SV} : \func{RD}^*_\text{in}[s](v) \neq \bot
+  \wedge 
+  \left(\bigvar{SV}\cap\func{RU}^*_\text{in}[s]\left[\func{RD}^*_\text{in}[s](v)\right]\right) = \emptyset
+\end{displaymath}
+as before.
+
+Now we can resolve conditional singularity compositionally by
+examining actual parameters at a call-site $s_\text{call}\in S_\text{caller}$.
+We let 
+$\bigvar{SV}_\text{caller} \subseteq 
+  V_\text{caller} \times S_\text{caller}$
+be the set of static values in the caller, and
+$\bigvar{SV}_\text{callee} \subseteq 
+  V_\text{callee} \times S_\text{callee}$
+be the set of static values in the callee.
+A set $\bigvar{SV}=\bigvar{SV}_1 \cup \bigvar{SV}_2$ of static values,
+where $\bigvar{SV}_1\subseteq \bigvar{SV}_\text{caller}$ and
+      $\bigvar{SV}_2\subseteq \bigvar{SV}_\text{callee}$,
+are mutually-singular conditional on $P$ if:
+\begin{itemize}
+\item $\bigvar{SV}_2$ are mutually-singular conditional on some $P'$,
+and
+\item all actual parameters corresponding to $P'$ at callsite $s_\text{call}$
+  unioned with $\bigvar{SV}_1$ are mutually-singular conditional on $P$;
+  that is, let
+\begin{displaymath}
+U = 
+\left\{\tuple{\func{actual}(p), s_\text{call}} | p \in P' \right\}
+    \cup
+\bigvar{SV}_1
+\end{displaymath}
+then the set of static values $U$ is mutually-singular conditional on $P$.
+\end{itemize}
+
+%So we can throw away all information internal to the callee except
+%mutually-singular sets of statements and their sets of dependent
+%formal parameters.
+
+%A compositional
+%analysis is presented to compute interprocedural singularity.
+%This might be in some ways similar to interprocedural reaching defs?
+%Computing mutual singularity can rest on the fact that values
+%generated at sites inside a method can never be the same as values generated
+%at sites outside the method; we don't have to compare site-by-site.
+
+\section{Compositional Pointer Analysis}
+
+\subsection{Overview}
+Our compositional pointer analysis is loosely based on the Vivien/Whaley/Rinard
+escape and points-to framework.  We maintain additional
+information sufficient to mark possible ``companion'' edges, and
+extend the composition rules to maintain this information.
+Unlike Whaley/Rinard, our analysis is flow-insensitive
+and may be partially context-insensitive as well.  
+We use the potential companion edges, in addition to escape information,
+to determine whether to evaluate call-sites monomorphically or
+polymorphically.
+We also allow points-to solutions via Steensgaard-style unification as well as
+the Anderson-style set constraints in the previous Whaley/Rinard
+work.\footnote{Not yet.}
+
+We have broken our analysis into three phases.  In the first phase, we
+construct method summaries which describe the effect of each method
+individually on the points-to graph, and indicate which other methods
+it may call.  Phase two composes these summaries to create a points-to
+graph valid for the entire program.  In the third phase, the overall
+points-to graph is used to construct points-to information for
+points inside methods and for variables pruned out of the method
+summaries.
+
+\begin{myfigure}
+\begin{tabular}{ll|ll}
+$l\in L$ & local variables           &$n\in N$ & nodes\\
+$p\in P$ & formal parameter variables&$N_I\subseteq N$ & inside nodes\\
+$v\in V=L\cup P$& all variables      &$N_T\subseteq N_I$ & thread nodes\\
+$\bigvar{cl}\in \bigvar{CL}$& classes&$N_O\subseteq N$ & outside nodes\\
+$m\in M$ & methods                   &$\bigvar{CL}\subseteq N$ 
+                                                       & (static) class nodes\\
+$f\in F$ & fields                    &$N_P\subseteq N_O$ & parameter nodes\\
+$s\in S$ & statements                &$N_G\subseteq N_O$ & global nodes\\
+         &                           &$N_L\subseteq N_O$ & load nodes\\
+         &                           &$N_R\subseteq N_O$ & return nodes\\
+\end{tabular}
+\caption{Definitions}
+\label{fig:defin}
+\end{myfigure}
+
+% abbreviate the points-to-graph tuple.
+\subsection{Building Method Summaries}
+                             
+A points-to graph $\mathcal{G}_\bigvar{pt}$ is a 4-tuple of the form \ptgraphA,
+where:
+\begin{itemize}
+\item $O \subseteq (N\times F)\times(N_L \cup N_G)$ is a set of
+outside edges.  Outside edges represent references which may be
+created outside the current analysis scope.%
+\footnote{They may also (perhaps exclusively) alias to inside edges.}
+\item $I \subseteq (V\cup(N\times F))\times N$ is a set of inside
+edges.  Inside edges represent references created inside the current
+analysis scope.
+%\item $\func{e}:N\to 2^S$ is an escape function that records the set of
+%unanalyzed method invocation sites that a node escapes down into.
+\item $\func{c}_\text{from}:I\to 2^{(V\times S)_\bot}$ collects static values
+used on the left-hand side of store statements associated with
+inside edges.  This allows us to detect possible from-companion edges.
+The presence of the bottom value $\bot$ in the set designates that
+this edge cannot possibly be a from-companion.
+\item $\func{c}_\text{to}:I\to 2^{(V\times S)_\bot}$ collects static values
+used on the right-hand size of store statements associated with
+inside edges.  This allows us to detect possible to-companion edges.
+The presence of the bottom value $\bot$ in the set designates that
+this edge cannot possibly be a to-companion.
+\item $r \subseteq N$ is a return set representing the set of objects
+that may be returned by the currently analyzed method.
+\end{itemize}
+\textbf{XXX: note that nothing can point \emph{to} a variable node.}
+
+At this stage we assume that we are constructing a map
+$\bigvar{PT}:M\to\ptgraphA$ from methods to the points-to graphs that
+represent them.  We also assume we have a map $\bigvar{XX}:M\to 2^S$
+from methods to all call-sites in the method.  (This isn't needed
+until phase 2.  Phase 2 will also want a map from call-sites to
+the possible methods reachable from that call-site, which will
+use the current points-to graph for filtering.)
+
+We define:
+\begin{eqnarray*}
+\func{unanalyzed}_\text{direct}(\ptgraphA, n) &=&
+\func{e}(n)\neq\emptyset
+\\
+\func{escaped}_\text{direct}(\ptgraphA, n) &=&
+ n\in N_P \cup N_R \cup N_T \cup \bigvar{CL}
+ \vee
+ \func{unanalyzed}(n)
+%\\
+%\func{escaped}_\text{v}(\ptgraphA,v) &=&
+% \exists n\in N : \tuple{v,n}\in I
+% \wedge
+% \func{escaped}_\text{n}(\ptgraphA,n)
+\end{eqnarray*}
+and then recursively:
+\begin{multline*}
+\func{escaped}%_\text{n}
+              (\ptgraphA,n) =
+ \func{escaped}_\text{direct}(\ptgraphA,n) \vee {}
+\\
+ \exists n'\in N,f\in F : \left(\tuple{\tuple{n,f},n'}\in O\cup I
+ \wedge
+{} \right. \\ \left.
+ \func{escaped}%_\text{n}
+               (\ptgraphA,n')\right)
+\end{multline*}
+%\begin{multline*}
+%\func{unanalyzed}
+%              (\ptgraphA,n) =
+% \func{unanalyzed}_\text{direct}(\ptgraphA,n) \vee {}
+%\\
+% \exists n'\in N,f\in F : \left(\tuple{\tuple{n,f},n'}\in O\cup I
+% \wedge
+% \func{unanalyzed}
+%               (\ptgraphA,n')\right)
+%\end{multline*}
+
+% INVARIANT: a node n never *un*escapes during the (intraproc?) analysis.
+
+We define the following auxilliary functions:
+\begin{eqnarray*}
+\func{condsing}(\bigvar{SV}):2^{(V\times S)_\bot}\to 2^P_\bot &=& \begin{cases}
+\bot & \text{if }\bot\in\bigvar{SV}\text{, else}\\
+P&\text{such that }\bigvar{SV}\text{ are mutually-singular conditional
+                                     on }P\text{, else} \\
+\bot & \text{if no such }P\text{ exists.}
+\end{cases}
+\end{eqnarray*}
+Now we say that given \ptgraphA,
+an edge $e_i=\tuple{\tuple{n_1,f},n_2} \in I$ is a:
+\begin{itemize}
+\item \newterm{Definite companion} if:
+\[
+ n_1\in N_I \wedge n_2\in N_I \wedge
+ \func{condsing}\left(U\right)=\emptyset \wedge
+ \neg\func{escaped}(n_1)
+\]
+
+Note that $\func{escaped}(n_1)\implies\func{escaped}(n_2)$.  
+We're only worried about the case where {\it both} $n_1$ and $n_2$
+escape; if only one or the other escapes it won't be possible to
+create any new $n_1.f=n_2$ references between them.
+% XXX some redundancy here?
+% note no outside edges to inside nodes.
+% if n_1 escapes, then n_2 escapes.
+% if only n_2 escapes, we can't create any new n_1.f=n_2 references
+%   because we can't get to n_1
+\item \newterm{Non-companion} if \(
+ \func{condsing}(U) = \bot
+\), and
+\item \newterm{Possible companion} otherwise;
+\end{itemize}
+where 
+$U=\func{c}_\text{from}(e_i)$ for \newterm{from-companions} and
+$U=\func{c}_\text{to}(e_i)$ for \newterm{to-companions}.
+We will say that an edge is a \newterm{companion edge} if it is a
+definite or possible companion.  
+
+Once analysis is complete, $\func{escaped}(n)$ is true iff the node
+can be reached from unanalyzed (incl native) code.  So, at that point,
+``possibly companion'' nodes are companions unless the unanalyzed code
+kills them.
+
+\subsection{Inference rules}
+At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
+$\func{e}(n)=\emptyset$ for all $n\in N$, 
+$\func{c}_\text{from}(i)=\func{c}_\text{to}(i)=\emptyset$ for all $i\in I$,
+and $r=\emptyset$.%
+\footnote{
+Each inference rule is written in the standard form
+\[\dfrac{c_1,\ldots,c_k}{c'_1,\ldots,c'_j}\]
+which imposes the constraint that if all of $c_1,\ldots,c_k$ are true,
+then all of $c'_1,\ldots,c'_j$ must be true.
+}
+
+\subsubsection{Static fields}
+
+\begin{displaymath}
+\dfrac{1\leq i \leq j}{\tuple{\tuple{\bigvar{cl}_i,f_i},n_{c_i.f_i}}\in O}
+\end{displaymath}
+
+\subsubsection{Method header}
+Given method $m$ with formals $p_0,\ldots,p_k$:
+\begin{displaymath}
+\dfrac{0\leq i \leq k}{\tuple{p_i, n_{p_i}}\in I}
+\end{displaymath}
+
+\subsubsection{Copy statement}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=v]}\in\mathcal{P}, \tuple{v,n}\in I}
+{\tuple{l,n}\in I}
+\end{displaymath}
+
+\textbf{Unify $l$ and $v$ for Steensgaard;  also the rule above is
+  kept transitively closed; we actually want pre-transitive w/
+  cycle-elimination for performance.}
+
+\subsubsection{Load statement}
+
+\begin{eqnarray*}
+&
+\dfrac
+{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P},
+ \tuple{l_2,n}\in I,
+ \tuple{\tuple{n,f},n'}\in I}
+{\tuple{l_1,n'}\in I}
+\\&
+\dfrac
+{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P},
+ \tuple{l_2,n}\in I,
+ \func{escaped}(n),
+ n' \text{ is load node for statement} }
+{\tuple{l_1,n'}\in I, \tuple{\tuple{n,f},n'}\in O}
+\end{eqnarray*}
+
+\subsubsection{Store statement}
+
+\begin{displaymath}
+\dfrac
+{s=\text{\tt [l$_1$.f=l$_2$]}\wedge s\in\mathcal{P},
+ \tuple{l_1,n_1}\in I,
+ \tuple{l_2,n_2}\in I }
+{\tuple{\tuple{n_1,f},n_2}\in I,
+ \tuple{l_1,s}\in\func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2}),
+ \tuple{l_2,s}\in\func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2}) }
+\end{displaymath}
+
+\textbf{More unification here??}
+
+\subsubsection{Global load}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=cl.f]}\in\mathcal{P},
+ \tuple{\tuple{\bigvar{cl},f},n}\in (O\cup I) }
+{\tuple{l,n}\in I}
+\end{displaymath}
+
+\subsubsection{Global store}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [cl.f=l]}\in\mathcal{P},
+ \tuple{l,n}\in I}
+{\tuple{\tuple{\bigvar{cl},f},n}\in I}
+\end{displaymath}
+
+\subsubsection{Allocation}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=new cl]}\in\mathcal{P},
+ n \text{ is inside node for statement} }
+{\tuple{l,n}\in I}
+\end{displaymath}
+
+\subsubsection{Method return}
+% analogously; method throw.
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [return l]}\in\mathcal{P},
+ \tuple{l,n}\in I}
+{n\in r}
+\end{displaymath}
+
+\subsection{Trimming a graph}
+\textbf{XXX: show how we get rid of cruft before composing this method.}
+
+\subsection{Skipping a call-site}
+The inference rules for a skipped call-site are simple:
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}\in\mathcal{P},
+ n_R \text{ is new outside node for statement} }
+{\tuple{l,n_R}\in I}
+\end{displaymath}
+\begin{displaymath}
+\dfrac
+{s=\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}, s\in\mathcal{P},
+ 0\leq i\leq k,
+ \tuple{l_i,n}\in I}
+{s \in \func{e}(n) }
+\end{displaymath}
+\textbf{XXX: again, this is post-transitive form.}
+
+Note that it will be impossible for some edges ever to become definite
+companions now, as we can never be certain that the unanalyzed call
+doesn't spoil the companion property.  However, we will be optimistic
+and continue to treat them as if they could become definite
+companions; that is, treat them as if we knew that the unanalyzed code
+doesn't spoil the companion.
+
+\subsection{Evaluating a call-site polymorphically}
+
+present rules.  don't need to say how we choose to eval
+polymorphically yet.  Just keep the companion edges accurate,
+keep updating mutual-singularity of field gets,
+and rename internal nodes by call-site.
+
+Given $s_\text{call}=\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}$:
+
+Initial rules:
+\[\dfrac
+{0\leq i \leq k, \tuple{l_i, n}\in I}
+{n\in\mu(n_{p_i})}
+\]
+\[\dfrac
+{1\leq i\leq j}
+{\bigvar{cl}_i \in\mu(\bigvar{cl}_i)}
+\]
+\[\dfrac
+{\tuple{\tuple{n_1,f}, n_2}\in O_R, \tuple{\tuple{n_3,f},n_4}\in I,
+ n_3\in\mu(n_1), n_1\notin N_I}
+{n_4 \in \mu(n_2)}
+\]
+
+Rules for $\mu$ and 
+\tuple{O_M, I_M, e_M, \func{c}_{\text{from}_M}, \func{c}_{\text{to}_M}, r_M}:
+\[ O\subseteq O_M \quad
+   \left(I-I(l)\right)\subseteq I_M \quad
+   \func{e}(n)\subseteq\func{e}_M(n) \quad
+   r_M = r % is this right?  *equals*?
+\]
+\[\dfrac
+{\tuple{\tuple{n_1,f},n2}\in I_R, n_3\in\mu(n_1),n_4\in\mu(n_2)}
+{\begin{array}{c}
+\tuple{\tuple{n_3,f},n_4}\in I_M,
+\\
+\func{resolve}\left(\func{condsing}\left(\func{c}_{\text{from}_R}\left(\tuple{\tuple{n_1,f},n_2}\right)\right)\right)
+\subseteq\func{c}_{\text{from}_M}\left(\tuple{\tuple{n_3,f},n_4}\right),
+\\
+\func{resolve}\left(\func{condsing}\left(\func{c}_{\text{to}_R}\left(\tuple{\tuple{n_1,f},n_2}\right)\right)\right)
+\subseteq\func{c}_{\text{to}_M}\left(\tuple{\tuple{n_3,f},n_4}\right)
+\end{array} }
+\]
+where
+\[
+\func{resolve}(P):2^P_\bot\to 2^{(V\times S)_\bot} = \begin{cases}
+\{\bot\} & \text{if }P=\bot \\
+\left\{\tuple{\func{actual}(p),s_\text{call}} | p\in P\right\}&\text{otherwise}
+\end{cases}
+\]
+
+\[\dfrac
+{\tuple{\tuple{n_1,f},n_2}\in I_R,
+  n\in\mu(n_1),
+  n_2\in N_I\cup N_R}
+{n_2\in\mu(n_2)}
+\]
+\[\dfrac
+{\tuple{\tuple{n_1,f},n_2}\in O_R,
+ n\in\mu(n_1),
+ \func{escaped}(
+\tuple{O_M, I_M, e_M, \func{c}_{\text{from}_M}, \func{c}_{\text{to}_M}, r_M}
+ ,n) }
+{\tuple{\tuple{n,f},n_2}\in O_M,
+ n_2\in\mu(n_2) }
+\]
+\[\dfrac
+{n\in r_R\cap\left(N_I\cup N_R\right)}
+{n\in\mu(n)}
+\]
+\[\dfrac
+{\func{e}_R(n)\neq\emptyset,
+ n'\in\mu(n)}
+{m\in\func{e}_M(n')}
+\]
+\[\dfrac
+{n\in r_R, n'\in\mu(n)}
+{\tuple{l,n'}\in I_M}
+\]
+
+\subsection{Evaluating a call-site monomorphically}
+
+First time: eval polymorphically, keeping unique nodes for
+parameters.  Thereafter, just add new edges from parameter nodes and
+to return value node and rerun inference rules to propagate implications.
+XXX: what do we need to do to keep companion edges accurate?
+
+\section{Random thoughts}
+It might be better to deal with analysis in two phases.  Phase 1,
+create a compositional points-to fragment for each method.  Phase 2,
+compose these (making decisions about polymorphism etc on the way).
+The result of Phase 1 would be trimmed, and must represent call-sites
+explicitly so that we don't have to refer back to the program
+representation in order to do the composition.  Split all processes
+into `` build'' and ``close'' phases.  As per million-lines-of-code,
+we close iteratively, and only for ``interesting'' variables.
+
+\section{Allocating Polymorphism}
+
+We evaluate sites polymorphically if they are factory methods, or
+contain unbalanced companion objects.  Otherwise, the site is
+evaluated monomorphically.
+
+(Roughly) If an allocated (internal?) node escapes via the return
+value, then this is a factory method.  Evaluate it polymorphically.
+If we have companion edges (including possible companions) from
+an outside node to an inside node (or vice-versa?) --- that is, we
+allocate a node internally which may be a companion of a node allocated
+externally --- then evaluate it polymorphically.%
+\footnote{Think hard about possible companion edges between an
+outside and an outside node.  This could be, for example, a
+link between two parameters of a method, both which would be
+conditionally singular.  We should probably evaluate these
+polymorphically, too?}
+Otherwise, evaluate it monomorphically.
+
+Possibly unify polymorphic allocation sites using a companion-based
+naming system.  For example; A-pointed-to-by-B instead of
+A-allocated-inside-foo().
+
+\section{Related Work}
+
+Bod{\'\i}k et al outlined a method for detecting infeasible paths
+in \cite{267921} which could be used to extend the set of statements
+we determine are mutually-singular (by enabling us to be less conservative).
+
+Altucher et al renamed allocation sites for better alias analysis
+precision on C programs with factory methods \cite{199466}.  They
+do not handle Java or companion objects.
+
+Collberg et al described a Java obfuscation technique that relies in
+part on the intractability of alias analysis \cite{268962}.  The
+analysis we describe is sufficient to break some of their predicates.
+This could be used to construct a deobfuscator.  (These techniques
+have been used in at least one commerical obfuscator \cite{humper02}.)
+
+Liang et al resort to ``user-provided models'' for precision in
+analyzing collections and maps in Java code \cite{379676}.
+
+\bibliography{harpoon}
+\end{document}

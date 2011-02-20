@@ -1,0 +1,46 @@
+MAGIC: an optimizing Java compiler using Static Single Information form
+
+X I. The compiler infrastructure (goals)
+X    A. Targets (why advances in compiler technology are needed for:)
+X      1. embedded systems
+X      2. hardware support
+X    B. Making compilers intelligent. (ways to)
+X      1. threading / synchronization?
+X      2. memory management.
+X    C. Use of advanced representations. (bridge)
+I. About IRs (useful for ____)
+  A. how to represent a program is important...
+  B. advances in IR translate to advances in...
+  C. this paper represents another advance...
+II. Static Single Information Form
+   A. Definition
+     1. Parallel to SSA form.
+        a) SSA for *forward* dataflow, SSI for symmetrical dataflow.
+        b) SSA sez info generated only at defs; SSI sez info generated
+           by branch direction, too.
+        c) SSI: one name per information unit.
+     2. what are sigma functions, where are they placed. (example)
+     3. Minimal SSI form. (TODO)
+   B. Theory and algorithms (based on cycle equivalence)
+     1. Linear placement.
+     2. Linear minimization.
+     -- present algorithms, prove correctness (TODO) --
+   C. Uses/applications
+     1. Analysis past branches
+        a) null-pointer checks
+        b) array-bounds checks.
+        c) bitwidth?
+     2. Reverse dataflow analyses.
+        a) Liveness (TODO)
+     3. Loop analyses (TODO)
+     4. constraint systems?
+     5. Connection to dataflow representations/hardware?
+III. Results.
+   A. Numbers showing SSI-generation linearity.
+   B. Numbers showing optimization algorithm linearity.
+   C. Numbers showing more optimization possible using SSI versus SSA.
+IV. Future work
+   A. Intelligent compiler
+   B. Java as HDL.
+V. Conclusions.
+   A. Scott is done.

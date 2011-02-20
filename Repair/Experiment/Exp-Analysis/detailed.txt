@@ -1,0 +1,570 @@
+User name: saroop
+Population: notool
+Experience: 14.5
+Correct solutions: 2
+Total time to fix: 0:37:25
+Total time to localize: 0:18:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: 0:29:21
+Time to fix program 4: 0:08:04
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: 0:13:00
+Time to localize bug 4: 0:05:00
+==========================================
+
+
+User name: nigham
+Population: tool
+Experience: 14.0
+Correct solutions: 4
+Total time to fix: 2:29:15
+Total time to localize: 1:00:00
+
+Time to fix program 1: 0:56:06
+Time to fix program 2: 0:16:20
+Time to fix program 3: 1:02:57
+Time to fix program 4: 0:13:52
+
+Time to localize bug 1: 0:20:00
+Time to localize bug 2: 0:01:00
+Time to localize bug 3: 0:35:00
+Time to localize bug 4: 0:04:00
+==========================================
+
+
+User name: sharad
+Population: tool
+Experience: 12.5
+Correct solutions: 1
+Total time to fix: 0:26:37
+Total time to localize: 0:15:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: Not solved
+Time to fix program 4: 0:26:37
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: Not solved
+Time to localize bug 4: 0:15:00
+==========================================
+
+
+User name: josekj
+Population: notool
+Experience: 12.0
+Correct solutions: 3
+Total time to fix: 2:19:45
+Total time to localize: 1:47:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: 0:21:48
+Time to fix program 3: 1:04:28
+Time to fix program 4: 0:53:29
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: 0:17:00
+Time to localize bug 3: 0:50:00
+Time to localize bug 4: 0:40:00
+==========================================
+
+
+User name: advait
+Population: notool
+Experience: 10.5
+Correct solutions: 4
+Total time to fix: 3:27:53
+Total time to localize: 2:14:00
+
+Time to fix program 1: 1:49:01
+Time to fix program 2: 0:21:30
+Time to fix program 3: 0:43:18
+Time to fix program 4: 0:34:04
+
+Time to localize bug 1: 1:14:00
+Time to localize bug 2: 0:15:00
+Time to localize bug 3: 0:28:00
+Time to localize bug 4: 0:17:00
+==========================================
+
+
+User name: joey6
+Population: tool
+Experience: 10.5
+Correct solutions: 3
+Total time to fix: 0:53:26
+Total time to localize: 0:10:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: 0:34:16
+Time to fix program 3: 0:07:45
+Time to fix program 4: 0:11:25
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not provided
+Time to localize bug 3: 0:10:00
+Time to localize bug 4: Not provided
+==========================================
+
+
+User name: xieyong
+Population: tool
+Experience: 9.5
+Correct solutions: 4
+Total time to fix: 4:17:35
+Total time to localize: 2:18:00
+
+Time to fix program 1: 2:43:06
+Time to fix program 2: 0:59:16
+Time to fix program 3: 0:20:53
+Time to fix program 4: 0:14:20
+
+Time to localize bug 1: 2:08:00
+Time to localize bug 2: Not provided
+Time to localize bug 3: 0:05:00
+Time to localize bug 4: 0:05:00
+==========================================
+
+
+User name: jiahui81
+Population: notool
+Experience: 9.25
+Correct solutions: 1
+Total time to fix: 0:41:47
+Total time to localize: 0:00:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: 0:41:47
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: Not provided
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: girish_k
+Population: notool
+Experience: 9.0
+Correct solutions: 1
+Total time to fix: 1:34:35
+Total time to localize: 0:45:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: 1:34:35
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: 0:45:00
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: catqueen
+Population: tool
+Experience: 8.5
+Correct solutions: 4
+Total time to fix: 2:38:01
+Total time to localize: 1:43:00
+
+Time to fix program 1: 1:08:48
+Time to fix program 2: 0:41:44
+Time to fix program 3: 0:10:51
+Time to fix program 4: 0:36:38
+
+Time to localize bug 1: 1:03:00
+Time to localize bug 2: 0:10:00
+Time to localize bug 3: 0:02:00
+Time to localize bug 4: 0:28:00
+==========================================
+
+
+User name: donnysoh
+Population: tool
+Experience: 8.0
+Correct solutions: 1
+Total time to fix: 3:14:51
+Total time to localize: 2:05:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: 3:14:51
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: 2:05:00
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: jingwei
+Population: notool
+Experience: 6.5
+Correct solutions: 3
+Total time to fix: 0:58:10
+Total time to localize: 0:49:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: 0:31:08
+Time to fix program 3: 0:11:39
+Time to fix program 4: 0:15:23
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: 0:20:00
+Time to localize bug 3: 0:09:00
+Time to localize bug 4: 0:20:00
+==========================================
+
+
+User name: neelu
+Population: tool
+Experience: 6.5
+Correct solutions: 1
+Total time to fix: 0:56:50
+Total time to localize: 0:35:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: 0:56:50
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: 0:35:00
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: anghk
+Population: notool
+Experience: 5.5
+Correct solutions: 1
+Total time to fix: 1:34:26
+Total time to localize: 0:00:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: 1:34:26
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: Not provided
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: chengxia
+Population: notool
+Experience: 5.5
+Correct solutions: 4
+Total time to fix: 2:48:40
+Total time to localize: 0:19:00
+
+Time to fix program 1: 1:55:44
+Time to fix program 2: 0:19:20
+Time to fix program 3: 0:14:05
+Time to fix program 4: 0:19:31
+
+Time to localize bug 1: Not provided
+Time to localize bug 2: 0:09:00
+Time to localize bug 3: 0:05:00
+Time to localize bug 4: 0:05:00
+==========================================
+
+
+User name: philipt
+Population: notool
+Experience: 5.5
+Correct solutions: 4
+Total time to fix: 2:59:56
+Total time to localize: 0:24:00
+
+Time to fix program 1: 1:17:43
+Time to fix program 2: 0:25:21
+Time to fix program 3: 0:56:06
+Time to fix program 4: 0:20:46
+
+Time to localize bug 1: Not provided
+Time to localize bug 2: 0:19:00
+Time to localize bug 3: 0:04:00
+Time to localize bug 4: 0:01:00
+==========================================
+
+
+User name: sajindra
+Population: tool
+Experience: 5.5
+Correct solutions: 4
+Total time to fix: 3:32:13
+Total time to localize: 0:48:00
+
+Time to fix program 1: 1:44:38
+Time to fix program 2: 0:48:09
+Time to fix program 3: 0:48:22
+Time to fix program 4: 0:11:04
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: 0:40:00
+Time to localize bug 3: 0:03:00
+Time to localize bug 4: 0:05:00
+==========================================
+
+
+User name: aakrosh
+Population: tool
+Experience: 5.0
+Correct solutions: 2
+Total time to fix: 3:12:03
+Total time to localize: 2:00:00
+
+Time to fix program 1: 0:38:04
+Time to fix program 2: Not solved
+Time to fix program 3: 2:33:59
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not provided
+Time to localize bug 2: Not solved
+Time to localize bug 3: 2:00:00
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: aiai
+Population: notool
+Experience: 4.5
+Correct solutions: 4
+Total time to fix: 2:46:34
+Total time to localize: 1:21:00
+
+Time to fix program 1: 0:20:04
+Time to fix program 2: 0:22:28
+Time to fix program 3: 1:44:04
+Time to fix program 4: 0:19:58
+
+Time to localize bug 1: 0:12:00
+Time to localize bug 2: 0:15:00
+Time to localize bug 3: 0:44:00
+Time to localize bug 4: 0:10:00
+==========================================
+
+
+User name: caixia
+Population: tool
+Experience: 4.5
+Correct solutions: 4
+Total time to fix: 2:47:08
+Total time to localize: 1:10:00
+
+Time to fix program 1: 1:50:02
+Time to fix program 2: 0:21:53
+Time to fix program 3: 0:14:25
+Time to fix program 4: 0:20:48
+
+Time to localize bug 1: 0:50:00
+Time to localize bug 2: 0:05:00
+Time to localize bug 3: 0:10:00
+Time to localize bug 4: 0:05:00
+==========================================
+
+
+User name: chenhui
+Population: tool
+Experience: 4.5
+Correct solutions: 4
+Total time to fix: 4:20:50
+Total time to localize: 1:47:00
+
+Time to fix program 1: 0:54:56
+Time to fix program 2: 0:38:25
+Time to fix program 3: 2:29:56
+Time to fix program 4: 0:17:33
+
+Time to localize bug 1: 0:47:00
+Time to localize bug 2: 0:34:00
+Time to localize bug 3: 0:04:00
+Time to localize bug 4: 0:22:00
+==========================================
+
+
+User name: namit_c
+Population: tool
+Experience: 4.5
+Correct solutions: 3
+Total time to fix: 2:53:15
+Total time to localize: 0:39:00
+
+Time to fix program 1: 1:23:40
+Time to fix program 2: 0:16:03
+Time to fix program 3: 1:13:32
+Time to fix program 4: Not solved
+
+Time to localize bug 1: 0:25:00
+Time to localize bug 2: 0:05:00
+Time to localize bug 3: 0:09:00
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: nelly
+Population: notool
+Experience: 4.5
+Correct solutions: 4
+Total time to fix: 2:45:08
+Total time to localize: 2:10:00
+
+Time to fix program 1: 0:30:18
+Time to fix program 2: 0:13:49
+Time to fix program 3: 1:41:40
+Time to fix program 4: 0:19:21
+
+Time to localize bug 1: 0:23:00
+Time to localize bug 2: 0:08:00
+Time to localize bug 3: 1:28:00
+Time to localize bug 4: 0:11:00
+==========================================
+
+
+User name: nguyenh2
+Population: notool
+Experience: 4.5
+Correct solutions: 3
+Total time to fix: 1:09:30
+Total time to localize: 0:53:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: 0:09:57
+Time to fix program 3: 0:53:21
+Time to fix program 4: 0:06:12
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: 0:12:00
+Time to localize bug 3: 0:38:00
+Time to localize bug 4: 0:03:00
+==========================================
+
+
+User name: ianhall
+Population: tool
+Experience: 4.4
+Correct solutions: 4
+Total time to fix: 2:58:16
+Total time to localize: 2:13:00
+
+Time to fix program 1: 0:39:51
+Time to fix program 2: 0:11:40
+Time to fix program 3: 1:45:25
+Time to fix program 4: 0:21:20
+
+Time to localize bug 1: 0:28:00
+Time to localize bug 2: 0:03:00
+Time to localize bug 3: 1:34:00
+Time to localize bug 4: 0:08:00
+==========================================
+
+
+User name: zhoulei
+Population: notool
+Experience: 4.25
+Correct solutions: 3
+Total time to fix: 1:21:48
+Total time to localize: 0:38:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: 0:11:17
+Time to fix program 3: 0:55:02
+Time to fix program 4: 0:15:29
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: 0:02:00
+Time to localize bug 3: 0:30:00
+Time to localize bug 4: 0:06:00
+==========================================
+
+
+User name: cpyee
+Population: notool
+Experience: 2.5
+Correct solutions: 0
+Total time to fix: 0:00:00
+Total time to localize: 0:00:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: Not solved
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: Not solved
+Time to localize bug 4: Not solved
+==========================================
+
+
+User name: daipeng
+Population: tool
+Experience: 1.16
+Correct solutions: 3
+Total time to fix: 1:33:23
+Total time to localize: 1:27:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: 0:15:07
+Time to fix program 3: 1:01:46
+Time to fix program 4: 0:16:30
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: 0:12:00
+Time to localize bug 3: 1:04:00
+Time to localize bug 4: 0:11:00
+==========================================
+
+
+User name: hamailan
+Population: tool
+Experience: 0.99
+Correct solutions: 3
+Total time to fix: 3:02:06
+Total time to localize: 1:49:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: 0:06:24
+Time to fix program 3: 2:46:44
+Time to fix program 4: 0:08:58
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: 0:03:00
+Time to localize bug 3: 1:44:00
+Time to localize bug 4: 0:02:00
+==========================================
+
+
+User name: xujin
+Population: notool
+Experience: 0.8
+Correct solutions: 1
+Total time to fix: 3:17:53
+Total time to localize: 1:00:00
+
+Time to fix program 1: Not solved
+Time to fix program 2: Not solved
+Time to fix program 3: 3:17:53
+Time to fix program 4: Not solved
+
+Time to localize bug 1: Not solved
+Time to localize bug 2: Not solved
+Time to localize bug 3: 1:00:00
+Time to localize bug 4: Not solved
+==========================================
+
+

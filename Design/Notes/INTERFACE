@@ -1,0 +1,69 @@
+Semantics one:
+  -- every signal change results in method call.
+This results in a logical *calling* convention:
+  set_output_level(false);
+  set_output_value(15);
+  set_output_level(true);
+but what do we do when called this way?
+[Also, what is the timing of the false->true transition look like?]
+[And what do I do if I want one clock tick between set_output_value() and 
+ set_output_level(true)?]
+Moreover, hardware and software responses to:
+  set_input(15);
+  set_input(15);
+will be different (no discernable 2nd 'call' in hardware).
+
+None of this matters for functions without side-effects.
+---
+Alternatively,
+  -- method calls have explicit 'go' signals.
+
+This puts phantom input wires into our model, but at least they're consistent.
+We can't easily modify their active level, though.
+Now the input function:
+  void compute();
+is only executed when the 'go' wire goes active.
+[how do we return values?]
+Awkward if multiple 'go' signals exist; ie, how do I handle
+a memory with multiple chip select signals that should be anded?
+Ideally I want to be able to write an expression *in java* that specifies 
+the 'go' signal for the method (like read & chip select 1 & chip select 2).
+What about return values.  Do we insist on asynchronous design/interfaces?
+What about pure-combinational circuits?
+How do I specify a read/write memory where *either* read data comes in *or* write data goes out a single dataport?  This is where call-by-reference args
+would come in---but java only has call by value!
+
+class dataport {
+ int io;
+ public dataport(int io) { this.io = io; }
+}
+
+...
+    CHIP.readwrite(global.dataport, true /* read */);
+    in = global.dataport.io;
+    ....
+    global.dataport.io = 97;
+    CHIP.readwrite(global.dataport, false /* write */);
+...
+
+(okay, but how to I specify that the function is clocked by bringing /CE low?)
+------------------
+option 3: no direct method calls.
+class interface {
+  int16 io; /* specify width how? */
+  boolean readWRITE;
+  boolean chip_select1;
+}
+  ...
+    interface.io = 15;
+    interface.readWRITE = true;
+    interface.chip_select1=false;
+    WAIT_FOR_CLOCK_TICK; /* how to implement?  while(0); ?? */
+    interface.chip_select1=true;
+  ...
+
+...and some independent parallel process checks for method go and
+invokes.  Pure java methods.
+I'm favoring this at the moment.
+-----------------------
+HOW DO SUN's JAVA CHIPS INTERFACE WITH THE OUTSIDE WORLD????

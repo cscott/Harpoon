@@ -1,0 +1,163 @@
+% -*- mode: latex; mode: auto-fill; mode: flyspell; -*-
+% $Id: v.tex,v 1.9 2006-11-14 20:38:31 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,notitlepage,twocolumn]{article}
+\usepackage{pdffonts} % PDF-friendly fonts
+\usepackage{xspace}
+\newcommand{\vlang}{\textsf{v}\xspace}
+\newcommand{\reasoning}{\par\textbf{Reasoning:}\xspace}
+\author{C.~Scott~Ananian}
+\title{\vlang: Rebuilding Java}
+\date{\today \\ $ $Revision: 1.9 $ $}
+
+\begin{document}
+\bibliographystyle{abbrv}
+\maketitle
+
+\section{Introduction}
+The Java language, in its ``version 5'' incarnation, is a huge and
+complex language, riddled with syntax and burdened with a baroque
+albeit extremely capable type system.  Guy Steele's now-famous talk
+``Growing a Language'' \cite{Steele99} argued convincingly that means
+for extension must be designed into a language at a very basic level;
+this goal was not achieved for the Java language, and so each new
+iteration of the language sprouts new orthogonal features out of its
+already-impressive ball of hair.
+
+The goal of this present work is to disassemble Java and discover a
+core language of complexity similar to that of the original Java
+1.0 specification.  To this core language we will add a flexible means
+of extension to create \vlang, our small base language.  We will then use
+our extension mechanism to recreate the full hair ball of Java 5.0,
+but this time built with a means to avoid further \emph{deus ex
+  machina} iterations of the language.  From our new language built on
+\vlang, we can add any new language feature we like, with or without the
+blessing of Sun.  A thousand flowers may bloom, some in particular
+niches, and the hardiest general ones may become blessed into
+``official'' Java.
+
+Our extension mechanism must encompass both the syntax of the
+language, as well its type system.  We propose to allow extension or
+replacement of \vlang's parser, and to handle types with abstract
+interpretation.  The boundary between compile-time and run-time will
+blur, and we propose to re-establish ``compile-time'' safety (and
+other software-engineering niceties) via aggressive partial
+evaluation, both of the program and of its abstractions.  We expect
+that partial evaluations of the ``standard'' language extensions will
+be cached and special optimizations made to enable reasonably
+efficient compilation of the ``standard'' language, without precluding
+the compilation and execution of arbitrarily modified extensions and
+variations of it.
+
+\section{Thoughts}
+\begin{itemize}
+\item Classes can be built on top of a prototype-based system, so we
+  expect \vlang to be prototype-based.  \reasoning the \texttt{assert}
+  statement extension to Java 1.0 requires new methods/fields of
+  \texttt{java.lang.Class}.  Extending pre-existing classes in this
+  way seems to be easier in a prototype system. Implementing this as a
+  \texttt{Class}$\to$field mapping makes such extensions second-class
+  citizens.  (Annotation and parameter information were also added to
+  \texttt{java.lang.Class} in Java 5.0.)
+\item Creating a full meta-object protocol for \vlang will allow arbitrary
+  extension of the object inheritance and other properties of the
+  class/type system.  Special optimizations will recreate the standard
+  table-based lookup in the cases where it applies.  \reasoning not required in
+  Java 5.0 (yet!) but looking ahead to the various multimethod proposals.
+\item Types are just an abstract interpretation of the program.  New
+  abstractions can be added to extend/modify the type system.  The
+  types may modify the static semantics of the language via rewriting;
+  method overloading (for example) is not a problem.  The \vlang language
+  does not include static overloading; it is implement as an extension which
+  renames method definitions and call sites according to the results
+  of a ``type analysis'' (which is really the execution of an abstract
+  version of the program).  Because the boundary between runtime and
+  compile-time is blurred, this renaming can even occur ``at
+  runtime'', although obviously the ability to generate compile-time
+  error messages about improper overloading will be sacrificed in this
+  case.  Instead the compiler may generate a warning that this
+  evaluation has been deferred to runtime (or, more precisely, that
+  the code generating the error message could not be completely
+  evaluated at compile-time).  \reasoning type system changes between
+  Java 1.0 and Java 5.0, including inner, and then later
+  parameterized, types.  Note that the lexical environment rules
+  changed as well with the introduction of inner classes.
+\item ``Grammars'' will probably be reified into the language, ala
+  Perl 6, to enable programmatic access to and modification of the
+  language.  Ideally this will be done via an integrated
+  pattern-matching system in \vlang.
+
+  The idea is that rules are methods, and grammars are classes.  There
+  is always one predefined grammar, \texttt{v.lang.Grammar}, which you
+  can subclass to override rules of.  Rules return a match object with
+  all sorts of fun properties---this would be the abstract syntax or
+  parse tree for \texttt{v.lang.Grammar}.  Rules may have parameters,
+  like methods have.
+
+  In Perl 6, subroutines may have the \texttt{is parsed(grm)} trait to
+  indicate that they should be parsed by rule \texttt{grm}.
+  Subroutines may also be declared as \texttt{macros}, which just
+  means they are executed at compile-time.  Any block may be executed
+  at compile-time, which is how modifications to the current grammar
+  are made.  These modifications are lexically-scoped.
+
+  \reasoning
+  Integrated support for the various syntax changes:
+  \texttt{strictfp}, for-each syntax.
+\item \vlang will probably appear as a funny type of dynamic language,
+  that happens to have a complicated macro system which lets people
+  program in a peculiar statically-typed syntax.  Most of the
+  runtime checks and dispatch mechanisms of a traditional dynamic
+  language will be optimized away.  It is not particularly
+  necessary to be able to directly extend the compiler to add
+  optimizations for new language extensions: the creation of
+  sophisticated compilers which efficiently execute common constructs
+  (read, common extensions to \vlang) will remain the domain of compiler
+  authors.   The programmer just needs to be able to define and
+  redefine their specific language; they don't always need it to run
+  fast (although we hope that general optimization techniques will
+  also allow the efficient execution of languages ``close enough'' to
+  those language variants specially targeted for optimization).
+\item What about continuations?  Currently Java has no easy way to
+  introduce them (and how ought they be compiled?).  Should these be
+  features of \vlang?
+\item Dynamic class loading and first-class class loaders are
+  essential features of Java.  How should this be supported?  Can we
+  dynamically translate bytecode in some manner?
+\item There are several \emph{interpretations} associated with the
+  program text, with one of these being the ``normal'' \emph{runtime
+  interpretation} and another being the \emph{type system
+  interpretation}.  There are portals between these; for example, the
+  macro system to implement method overloading can access the type
+  system interpretation via \texttt{type(o)} where o is some runtime
+  value.  Parts of the program text are ignored by particular
+  interpretations; for example, the runtime system completely ignores
+  the type specifications in the program text (except by explicitly
+  requesting the result of the type interpretation, which gives
+  a runtime object representing the type).  The syntax shouldn't look
+  like \texttt{type} (ie, like a non-extensible magic keyword); it
+  should look more similar to the way we invoke reflection.
+\item Craziness from Perl: in generally, \texttt{keyword name \{ BLOCK \}}
+  constructs can be stated as \texttt{keyword name;}, which in effect
+  causes the rest of the block or file to be treated as the \texttt{BLOCK}.
+  This removes at least one level of needless indentation from most
+  \vlang source files. (But this idea is not essential to the
+  language; should this be a sample syntax extension?)
+\item From Java closures stuff: syntax like ``if (foo) \{ \ldots \}'' is
+  just an invocation of a ``function taking a closure'' --- in this case,
+  \texttt{void if(boolean test, void(void) closure)}.  Perhaps parameterized
+  types are just types with closures, too?
+\item \texttt{if(test) \{ \ldots \} else \{ \ldots \}} -- is the name
+  of this method ``if else'' (note the space)? How can we make the
+  braces optional (as they are in Java)?
+\item What about \texttt{assert}?  Does the colon delimiter mean
+  ``make these arguments lazy''?
+\end{itemize}
+
+\section{Conclusion}
+
+\bibliography{harpoon}
+
+\end{document}
+
+% LocalWords:  reified programmatic

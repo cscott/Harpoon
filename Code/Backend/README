@@ -1,0 +1,2 @@
+The harpoon.Backend package is for backend-related code that (typically)
+isn't useful outside the backend of the compiler.

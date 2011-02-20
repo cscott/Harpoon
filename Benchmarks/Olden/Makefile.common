@@ -1,0 +1,25 @@
+
+DEST       := .
+DOCDEST    := .
+JAVAC      := javac
+JAVA       := java
+JAVAD      := javadoc
+DOCFLAGS   := -private
+RUNFLAGS   := -ms32m -mx128m 
+JAVAFLAGS  := -g
+SOURCES    := $(shell ls *.java)
+CLASSFILES := $(patsubst %.java,%.class,$(SOURCES))
+
+$(BMARK): $(CLASSFILES)
+
+run:
+	$(JAVA) $(RUNFLAGS) $(BMARK) $(PARMS)
+
+$(DEST)/%.class: %.java
+	$(JAVAC) $(JAVAFLAGS) $<
+
+doc:
+	$(JAVAD) -d $(DOCDEST) $(DOCFLAGS) *.java
+
+clean:
+	rm -rf $(DEST)/*.class $(DOCDEST)/*.html

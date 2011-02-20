@@ -1,0 +1,20 @@
+% data types for cycle-equivalency algorithm.
+Operations on nodes:
+\begin{tightdesc}
+\item[NodeUseful(n:node):~boolean]
+:	Whether the results of this node are ever used
+\item[Uses(n:node):~set of variables]
+:	Variables for which this node contains a use
+\end{tightdesc}
+
+Operations on variables:
+\begin{tightdesc}
+\item[VarUseful(v:variable):~boolean]
+:	Whether there is some \textbf{n} for which 
+        \textbf{Uses(n)} contains \textbf{v} and
+        \textbf{NodeUseful(n)} is \texttt{true}
+%:	$\exists n\in\domain{Nodes}\;.\;v\in\mbox{Uses}(n)\wedge\mbox{NodeUseful}(n)$
+%:	Whether the value of this variable is ever used
+\item[Definitions(v:variable):~set of nodes]
+:	Nodes which contain a definition for~\textbf{v}
+\end{tightdesc}

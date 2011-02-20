@@ -1,0 +1,335 @@
+% -*-latex-*- This is a LaTeX document.
+% $Id: design.tex,v 1.12 1999-07-14 11:28:21 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[11pt,notitlepage,twocolumn]{article}
+\usepackage{pdffonts} % PDF-friendly fonts
+\author{C.~Scott~Ananian}
+\title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
+\date{\today \\ $ $Revision: 1.12 $ $}
+
+% Outline:
+% ~~~~~~~
+% 0. Introduction. 
+%    A. Why Java?
+%       - simplicity, strong types, oo, threading
+%       - BUT no bitwide types, no real time, no i/o grammar
+%    B. Why hardware?
+%       - codesign, etc.
+% I. Java/Hardware semantics.
+%    A. The rules.
+%       1. Classes are objects.
+%       2. Allocations are static.
+%       3. Threads/Monitors model inherent parallelism.
+%       4. Method calls form hardware interfaces.
+%       5. Exceptions are?
+%          - just a means of transferring control.  An evil means.
+%       ** registers are just wires that cross a clock boundary.
+%    B. A grammar for Java--.
+%       (this is the implemented grammar, which might be more restrictive
+%        than absolutely necessary. We might implement floating-point, more
+%        powerful allocation analysis, etc, later).
+%       1. No 'new' except in constructors.
+%          (actually less draconian rule to guarantee A.2 above)
+%       2. Floating-point is verboten.
+%          (allowed, but not yet)
+%       3. Throw and catch are not permitted? [we'll do them, but not yet]
+%       4. Other features we don't care to implement?
+%    C. An interface description language.
+%       (more details on how methods map to chip pin-outs and timing)
+%       1. Formal parameters map to chip ports.
+%       2. Timing constraints on external events map to constraints on
+%          class methods and executable code.
+%       3. Syntax/Grammar/Examples.
+% II. Useful analyses (compiler stages)
+%    A. Static/Extended type analysis: not just type but which objs of the type
+%       - reference 'fast interprocedural class analysis' paper.
+%       - probably want to combine with SSA-based Conditional Constant
+%         Propagation algorithm.
+%    B. Static allocation.
+%    C. Analyzing methods for side-effects.
+%    D. Optimizations:
+%       1. Common subexpression, constant-folding/propagation/subexpression
+%       2. Partial Redundancy Elimination
+%       3. Strength reduction (divide->multiply, multiple->add/rotate)
+%          - see 'division by invariant integers using multiplication' paper.
+%       4. Exposing parallelism (removing control dependencies, loop analysis)
+%       5. Bit-width analysis (combine with type analysis?)
+%          - also, floating-point equivalent.
+%       ** do these optimizations concurrent with type analysis at front-end?
+%    E. Representation Transformations
+%       1. Java source -> bytecode (use javac for the foreseeable future)
+%       2. Java bytecode -> quads (remove stack abstraction)
+%       3. Quads -> SSA form? (best for optimizations?)
+%       4. SSA -> dataflow?  (get rid of control dependencies, more opts?)
+%       5. dataflow->logic functions (low-level hardware-(in)dependent stage)
+%          (``logic function'' is some form of BDD?)
+%       6. Logic function->Netlist (let others technology map, place and route)
+% III. More details on hardware synthesis.
+%      -- MAINTAIN HARDWARE MODULARITY/HIERARCHICAL STRUCTURE.
+%    A. Dataflow/SSA to hardware
+%       1. Branches become multiplexors. 
+%          (control condition becomes selector bit)
+%       2. State machines for iteration, recursion.
+%       3. No memory stores. Value driven data flow.
+%    B. Interface timing.
+%       1. Computing 'go' signals from input timing constraints.
+%       2. Synthesizing logic to adhere to an output timing constraint.
+%    C. Object-orientation and inheritance.
+%       1. Handling aliased classes and overloaded methods (type bits)
+%       2. Parameterized classes (compile-time constructor evaluation)
+% IV. Related Research (useful stuff from other people)
+%    A. Various Intermediate Representations
+%    B. Compiling Real-Time Programs
+%    C. Array Analysis Techniques.
+%    D. Loop analysis techniques.
+%    E. Logic Synthesis (technology-independent timing, etc)
+% V. Conclusion
+%    Lots of work to keep me very busy for quite a while.
+
+\begin{document}
+\bibliographystyle{abbrv}
+\maketitle
+
+\section{Introduction}
+This paper explores the design of a compiler for the Java
+programming language.  Unlike many compilers, the target is hardware,
+not bytecodes or machine instructions.
+Java's simplicity, object-orientation, and
+strong typing make it well suited to class-based hardware
+translation.  It is also possible to leverage Java's thread interfaces
+to model coarse-grain parallelism in hardware.  The goal is the
+efficient generation of hardware from a well-known general-purpose
+programming language.  The use of one specification language for both
+the hardware and software components of a system could also aid
+hardware-software codesign; this may be explored in future work.
+
+Java, as a general-purpose portable programming language, 
+presents obstacles to its use as a hardware specification language.
+The lack of integer types with parameterized bit-widths is a
+limitation that compiler technology can overcome.  It is not certain
+that Java's inability to specify real-time constraints on code or
+describe hardware interfaces at the wire and timing level can be
+similarly smoothed over.  This is a topic of research.
+
+\section{Java/Hardware Semantics}
+The hardware semantics we give Java are tied closely to its object model.
+As a general rule, every class instance corresponds to a hardware
+block, with the method call graph of the program dictating the wiring
+between blocks.  Fully dynamic allocation is not supported at this
+point, as it would involve dynamically reconfigurable logic.  Only
+static allocations can be synthesized into hardware; however, it is
+possible through intelligent analysis to convert most dynamic
+allocations into static ones.  This analysis is similar to 
+global allocation algorithms used
+for DSP targets \cite{DSP_targets} and is
+described further in \ref{sec:ext_type_analysis}.
+
+\subsection{Object semantics}
+Methods form the interfaces to the hardware generated for class
+instances.  The mapping is one-to-one: we associate a bus with
+every formal parameter to the method, and another with the return
+value.\footnote{Our IR actually represents calls as returning an
+optional exception object in addition to the usual return value; thus
+\textit{two} buses are actually associated with the return.}
+Our static allocation analysis transparently handles
+single-use return-value objects to allow methods to return multiple
+values.  Methods are treated as if they are inlined in the code; that
+is, their logic is typically replicated at every call.\footnote{The
+replicated code blocks should be specially tagged as potential targets
+for later optimization, however.  See also section
+\ref{sec:functional}.}  The exceptions are
+\texttt{synchronized} methods, where the synchronization primitives
+arbitrate method-logic sharing.  In cases where static analysis does
+not permit an exact determination of the object pointed to by
+a variable, multiplexers are inserted to perform method dispatches
+dynamically.
+
+Fields in a Java class are also translated as wiring directives,
+utilizing renaming as necessary.  Parallel field accesses should be
+protected in Java by monitors; the monitor synchronization process in
+Java is leveraged to provide access control to field values.
+
+Java threads are detected at compile time in the static allocation
+phase and compiled as parallel hardware.  This is a natural extension
+of the object semantics, as \texttt{java.lang.Thread} is a proper 
+object in the Java environment.
+
+Exception objects are supported, but they have no special meaning other than
+as a special type of method return value.  They are statically allocated
+like all other objects.
+
+Up to this point we have left unspecified issues of timing.
+
+\subsection{Timing semantics}
+The efficient implementation of Java in hardware entails a tight-rope walk
+between the usual sequential statement-execution semantics
+and a radically synchronous reading similar to the languages Esterel
+\cite{berry:esterel_primer}, Lucid \cite{missing_reference}, and
+SIGNAL \cite{amagbegnon95:signal}.  One option is to create an
+entirely asynchronous design \cite{emerson97:async_design}
+from a dataflow graph of the Java program
+that respects the original program's sequential order exactly.  Such a
+design has favorable power consumption and execution time
+characteristics, but suffers from high circuit complexity
+\cite{cheng97:diclasp, nanda97:universal}.
+% example here of multiple-emitter program
+% also, async semantics are not quite clear.
+Most silicon compilers instead generate synchronous circuits from
+their input programs, allowing us great flexibility in the assignment
+of clocked states to an compiled object.  It seems most reasonable to
+use a synchrony model a bit looser than the \textit{perfect synchrony
+hypothesis} used in Esterel, which Berry in
+\cite{berry92:hardware_esterel} credits to \cite{benveniste91:synchrony}.
+Instead of ``instantaneous broadcast'' we prefer a ``time plus delta''
+approach similar to that used by VHDL 
+\cite{one_of_the_books_i_used_for_the_silicon_c_paper} and formalized
+in \cite{gagne97:nonstandard} citing \cite{gagne96:nonstandard}.  The
+program should behave according to the standard sequential semantics,
+but externally-visible events will be synchronized to a clock.
+Conceptually, all statements take a finite but infinitesimal amount of
+time, excepting at points where we wait for the next clock tick.
+% multiple-emitter example, again.
+
+The external event clock synchronization should follow a clear timing model
+so that a programmer can easily understand and specify
+the clock-cycle-level behavior of a Java specification.  We use a
+variant of a scheme first proposed in
+\cite{galloway95:transmogrifier}:  back edges in a control flow graph
+correspond to cycle boundaries.  That is, any loop back to prior code
+will take one cycle.  Looping constructs are the only place where
+these back edges will be found, and they will take one clock cycle for
+every loop iteration.\footnote{An explicit ``pause for tick'' statement
+can be synthesized from a 2-iteration loop, although this will
+probably be wrapped in a library method to hide the implementation.}
+
+Note that only backwards control-flow-graph edges cause cycle
+boundaries.  The first loop iteration is executed in the same clock
+cycle as the code preceding it, and the last loop iteration occurs in
+the same clock as code following it.\footnote{This behavior can be
+changed by using the pause-for-tick statement, of course.}
+Zero- or one-iteration loops do not create clock cycle boundaries.
+
+Registers are inserted on any wires that cross clock cycle
+boundaries.  Although typically all object fields will become
+registers (in order to save state across cycle
+boundaries), certain short-lived fields will not be registered.  The
+short-lifetime objects used to return multiple values from a function
+are a good example of fields unlikely to be synthesized as registers.
+
+\subsection{Java language coverage}
+Our goal is to be able to synthesize any Java program without any
+restrictions.  However, the initial implementation will probably not
+support some language features.
+
+The first language restriction is on dynamic allocation, as
+previously discussed.  The first compiler implementation will require
+that all objects must be statically allocatable at compile time.
+Future work may lift this restriction through the use of dynamically
+reconfigurable hardware.
+
+Floating-point types will probably not be supported in the first
+compiler, as experience has shown that they are too expensive in silicon
+to be of much use to the hardware designer \cite{shirazi95:float}.  
+This is not an inherent limitation of the compiler; future work may
+add floating point support.
+
+All other language features are supported.
+
+\subsection{External interfacing}
+
+% FIXME FIXME FIXME
+The means by which a Java hardware specification will specify its
+chip-level external interfaces has not yet been determined.
+
+\section{Compiler analyses}
+This section will examine some of the analysis stages needed in a
+silicon compiler for Java.
+
+\subsection{Extended type analysis}
+\label{sec:ext_type_analysis}
+Static type information is essential to the compilation process, in
+order to enable operations and methods to be synthesized correctly.
+More information than just type is needed, however; we actually want
+to compile a static list of \textit{all allocated objects}, and
+associate sets of \textit{object instances} with variables, in
+addition to object types.  This allows us to wire a method invocation
+to the proper hardware representing the object instance, or add
+multiplexers if more than one instance could be represented.  The
+ideas presented in \cite{defouw98:classanal} are instructive, but the
+optimization techniques presented there are not applicable: speed is
+not an issue---for efficient hardware we want the most precise
+analysis possible.  The necessary analysis has much in common with
+the Wegman and Zadeck's Sparse Conditional Constant optimization
+\cite{wegman91:scc}, where the constants being propagated can be
+imagined as constant pointers to class instances.  Cliff Click's work
+on combining optimizations is instructive \cite{click95:combin}: the
+best extended type analysis is possible only in conjunction with
+standard constant-propagation and dead-code analysis.  The algorithm
+for this analysis pass will probably be based on Click's
+optimistic analysis described in \cite{click95:thesis}.
+
+The extended type analysis pass should produce a call-graph and
+list of static object instances in addition to the per-variable type
+and instance information.  If combined with traditional data flow
+analysis, it should identify constants and dead code, including
+boolean constants resulting from use of the Java \texttt{instanceof}
+operator.
+
+\subsection{Functional Methods}
+\label{sec:functional}
+When attempting to synchronize parallel threads using the Java monitor
+semantics, it will be useful to distinguish between
+\textit{functional} and what we shall call \textit{non-functional}
+methods.  Functional methods are defined to be those without
+side-effects, and non-functional methods are those that do have
+side-effects.  Synchronization can be avoided for functional methods,
+and the relevant logic simply replicated in parallel, but
+non-functional methods require access arbitration.
+
+Computing the ``functionality'' of a method is a simple matter of
+traversing the call graph, looking for expressions with
+side-effects---particularly code which assigns values to instance
+fields.
+
+\subsection{Optimization}
+Most of the standard software optimization passes will also optimize
+the hardware generated from a Java specification; we have already
+mentioned constant-propagation and dead-code elimination in section
+\ref{sec:ext_type_analysis}.  Strength reduction will prove very
+valuable, as multipliers are much more expensive in hardware than
+adders.  Granlund and Montgomery describe how to recode division as
+multiplication in \cite{granlund94:divopt}; the multipliers generated
+can often be subsequently decomposed as adders.  Certainly
+multiplication and division by powers of two should be optimized.
+
+A variety of parallelizing compiler optimizations can be utilized in addition
+to further expose parallelism in the specification.  In
+particular, it will be desirable to remove unnecessary control
+dependencies from the code, as well as unroll loops if the programmer
+so requests.  Code motion transformations can have a large impact on
+the critical path length through looping constructs.
+
+Most of these generic optimizations should precede the extended type
+analysis for best effect.
+
+\subsection{Bit-width analysis}
+It has been mentioned that one of Java's disadvantages as a hardware
+description language is its lack of parameterizable-width integer
+types.  In hardware design it is often desirable to specify exactly
+the width of datapaths, but Java only has 8, 16, and 32-bit wide
+signed integers.  In previous work, the author has shown that this
+disadvantage can be largely rectified by an intelligent bit-width
+analysis of the specification.  The compiler can extract
+a minimum-required bitwidth from the constants and expressions used.
+This is highly desirable for an efficient hardware implementation.
+
+\subsection{Representations}
+
+The intermediate format of the compiler is described in a separate paper.
+
+\section{Worked example}
+\section{Conclusion}
+
+\bibliography{harpoon}
+
+\end{document}

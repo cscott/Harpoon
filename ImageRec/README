@@ -1,0 +1,17 @@
+See paper/ for the paper and presentation that Steven Howard wrote for
+the original implementation of the image recognition program.
+
+The main documentation for this program is available through JavaDoc.
+Please type 'make doc' to generate the documentation.
+Then, point your browser to the doc/ directory.
+
+See CREDITS for acknowledgements of those who participated in the 
+development and helped make this program possible.
+
+See COPYING for the GPL v.2 license that covers all code in this package
+except contributed code located under contrib/.  See the appropriate
+license files under the contributed directories for more information.
+
+See BUILDING for instructions on building and running the distribution.
+
+This is release v. 1.33 of the Tank recognition program.

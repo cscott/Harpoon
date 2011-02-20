@@ -1,0 +1,2 @@
+export ACE_ROOT=/groups/pces/uav_oep/ming/ACE_wrappers
+export LD_LIBRARY_PATH=`pwd`/../contrib/lmdeps:$ACE_ROOT/ace:$ACE_ROOT/lib:$LD_LIBRARY_PATH

@@ -1,0 +1,41 @@
+//===================================================================
+/**
+ *  @file     SchedulerComm.idl
+ *
+ *  @author   Wes Beebee <wbeebee@mit.edu>
+ *
+ *  Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
+ *  Licensed under the terms of the GNU GPL; see COPYING for details.
+ */
+//===================================================================
+
+#ifndef SCHEDULERCOMM_IDL
+#define SCHEDULERCOMM_IDL
+
+/**
+ * @namespace javax.realtime
+ * @brief  Interface for Schedulers to communicate
+ *
+ */
+module javax {
+  module realtime {
+    typedef sequence<octet> Data;
+
+    /**
+     * @interface SchedulerComm
+     * @brief Control client/server.
+     */
+    interface SchedulerComm {
+
+      /**
+       * Generate event on other schedulers.
+       * @param name Name of sending scheduler
+       * @param messageID Message ID for dispatch
+       * @param data Optional data in the message
+       */
+      void handleDistributedEvent(in string name, 
+				  in unsigned long long messageID, 
+				  in Data data);
+    };
+  };
+};

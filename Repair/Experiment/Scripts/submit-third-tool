@@ -1,0 +1,21 @@
+cd $HOME
+#send email
+echo "To: cristic@mit.edu, bdemsky@mit.edu" >email.txt
+echo "From: Experiment <"$USER"@MIT.EDU>" >>email.txt
+echo "Subject: " $NAME "(tool) submitted program 3" >>email.txt
+
+echo >>email.txt
+echo "Participant: " $NAME >>email.txt
+echo "User name: " $USER >>email.txt
+echo "Population: 2 (tool)" >>email.txt
+echo "Action: submitted program 3" >>email.txt
+echo "Time: \c"  >>email.txt
+date +%T  >>email.txt
+
+echo >>email.txt
+echo "Source file:" >>email.txt
+cat $HOME/Experiment/Third/file3.cc >>email.txt
+
+send $HOME/email.txt
+
+rm -rf $HOME/Experiment

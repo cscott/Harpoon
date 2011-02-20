@@ -1,0 +1,1771 @@
+% CVSId: $Id: oqe.tex,v 1.16 2002-05-09 16:02:53 cananian Exp $
+\documentclass[%
+pdf,
+colorBG,
+slideColor,
+%nocolorBG,
+%slideBW,
+%%%%%%%%%%%%%%%%%%%%%
+nototal,
+%distiller,
+%%%%%%%%%%%%%%%%%%%%%
+%draft,
+oqe
+%frames
+%azure
+%contemporain
+%nuancegris
+%troispoints
+%lignesbleues
+%darkblue
+%alienglow
+%autumn
+]{prosper}
+\usepackage{amsmath}
+\usepackage{comdef}\newcommand{\figscale}{1.0}
+\usepackage{pst-node}
+\usepackage{verbatim}
+%\hypersetup{pdfpagemode=FullScreen}
+
+\title{Size Optimizations for Java Programs}
+%\author{\href{http://cscott.net}{C.~Scott~Ananian}}
+\author{C.~Scott~Ananian}
+\email{cananian@lcs.mit.edu}
+\institution{%
+Laboratory for Computer Science\\
+Massachusetts Institute of Technology}
+
+%\DefaultTransition{Wipe}
+\renewcommand{\yellow}{\colC}
+\ifDVItoPS\renewcommand{\white}{\black}\fi
+\newcommand{\betweenSlide}[3]{\fromSlide{#1}{\untilSlide{#2}{#3}}}
+\newenvironment{mysamplecode}{\small\bfseries\begin{samplecode}}{\end{samplecode}}
+% Meet symbol
+\newcommand{\meet}{\ensuremath{\sqcap}}
+% lattice inequalities
+\newcommand{\latlt}{\ensuremath{\sqsubset}}
+\newcommand{\latleq}{\ensuremath{\sqsubseteq}}
+
+%%%%% define new 'talknotes' environment that only shows up in PS mode.
+\ifDVItoPS
+\newenvironment{talknotes}{\begin{slide}{Notes}\tiny}{\end{slide}}
+\else
+% this redefinition of talknote to be == comment is from an example in
+% the verbatim package (where the comment environment comes from).
+\let\talknotes=\comment
+\let\endtalknotes=\endcomment
+\fi
+
+\begin{document}
+\maketitle
+
+\begin{talknotes}
+Nothing should be said on the title slide.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+% \begin{slide}{The quest for $\pi$}
+% \begin{itemize}
+% \item The following formula computes $8$ correct digits per iteration 
+%   (Ramanujan):
+% \end{itemize}
+%   \begin{small}
+%   \begin{equation*}
+%     \frac{1}{\pi}=\sum_{n=0}^\infty \frac{(\frac{1}{4})_n(\frac{2}{4})_n(\frac{3}{4})_n}{n!^3}\bigl(2\sqrt{2}(1103+26390n)\bigr)\frac{1}{(99^2)^{2n+1}}
+%   \end{equation*}
+%   \end{small}
+% \end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Our Goal}
+\begin{center}
+Reduce the memory consumption of object-oriented programs
+
+\vspace{0.5cm}
+\fontTitle{By}
+\vspace{0.5cm}
+
+Using program analysis to identify opportunities to reduce the space
+required to store objects,
+
+\vspace{0.5cm}
+\fontTitle{Then}
+\vspace{0.5cm}
+
+Applying transformations to reduce the memory consumption of the program.
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+This talk is about size optimizations for Java programs.  Our goal is
+to reduce the amount of memory used by object-oriented programs (in
+this case, Java) by using static whole-program analyses to identify
+opportunities and applying transformations to effect the reduction.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Structure of a Java Object}
+\begin{itemize}
+\item Typical of many O-O languages.
+\end{itemize}
+\begin{center}
+\includegraphics[scale=0.5]{Figures/Kontour/structure-bbox.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+Here's our starting point.  This is how most Java implementations lay
+out objects.  I want you to notice that there are three kinds of space
+in this layout, helpfully delineated with red lines.  The first
+section of the object usually consists of information required by
+the runtime implementation but not directly specified by the
+programmer.  This includes a claz pointer, which points to an
+external structure of information about the object's type, and
+some information to support the hashcode and locking semantics of
+Java.  Every object has a hashcode and can be locked upon, etc, etc.
+The second section of the object contains the fields declared by
+the programmer.  If this were a car object, these fields might
+indicate the color and model of the car.  The last section
+consists of padding which the runtime implementation will
+add to bring the various parts of the object to certain alignment
+boundaries.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Strategy}
+\fromSlide{2}{
+\begin{center}
+Push hard on all the bits.
+
+\vspace{0.5cm}
+\includegraphics[scale=0.5]{Figures/Kontour/strategy-bbox.eps}
+\end{center}
+}
+\end{slide}
+}
+
+\begin{talknotes}
+Our strategy is simple: @ we're going to push hard on all the bits,
+in the object header, in the fields of the object, and even on the
+padding bytes, in order to reduce the size of each object and thus
+the total allocated and live memory of the program.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\newrgbcolor{fieldcomp}{0 1 0}
+\newrgbcolor{fieldelim}{0 1 1}
+\newrgbcolor{headeropt}{1 0 1}
+
+\overlays{4}{
+\begin{slide}{How to compress objects}
+
+Three broad techniques:
+%
+\parbox[b]{2.5in}{%
+\fromSlide{2}{
+\begin{itemize}%
+\fieldcomp\renewcommand{\green}{\fieldcomp}% new bullet color
+\item Field compression
+\fromSlide{3}{
+\fieldelim\renewcommand{\green}{\fieldelim}% new bullet color
+\item Mostly-constant field elimination
+\fromSlide{4}{
+\headeropt\renewcommand{\green}{\headeropt}% new bullet color
+\item Header optimizations
+}}
+\renewcommand{\green}{\yellow} % restore yellow bullet color
+\end{itemize}
+}}%
+\parbox[b]{1.75in}{%
+\onlySlide*{1}{\hspace*{0.106in}\hspace*{0.261in}\includegraphics[scale=0.4]{Figures/Kontour/how-none-bbox.eps}}%
+\onlySlide*{2}{\hspace*{0.106in}\hspace*{0.261in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldcomp-bbox.eps}}%
+\onlySlide*{3}{\hspace*{0.106in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldelim-bbox.eps}}%
+\onlySlide*{4}{\includegraphics[scale=0.4]{Figures/Kontour/how-header-bbox.eps}}%
+}%
+
+\end{slide}
+}
+
+\begin{talknotes}
+There are three broad techniques we are going to use to effect our
+size reductions: @ field compression, which reduces the size of the
+programmer-declared fields, @ mostly-constant field
+elimination, to completely eliminate memory used to store common values,
+and @ header optimizations, which leverage more-efficient
+representations for the data needed by the runtime.  We will look at each
+of these in order, starting with\ldots
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{How to compress objects} % just the first one
+
+Three broad techniques:
+
+\parbox[b]{2.5in}{%
+\begin{itemize}%
+\fieldcomp\renewcommand{\green}{\fieldcomp}% new bullet color
+\item Field compression
+\lightgray\renewcommand{\green}{\lightgray}% new bullet color
+\item Mostly-constant field elimination
+\lightgray\renewcommand{\green}{\lightgray}% new bullet color
+\item Header optimizations
+\renewcommand{\green}{\yellow} % restore yellow bullet color
+\end{itemize}
+}%
+\parbox[b]{1.75in}{%
+\hspace*{0.106in}\hspace*{0.261in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldcomp-bbox.eps}%
+}%
+\end{slide}
+
+\begin{talknotes}
+\ldots field compression.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\newsavebox{\blbox}
+\overlays{6}{
+\begin{slide}{Field Compression}
+Reduce the space taken up by an object's fields.
+\begin{itemize}
+\fromSlide{2}{
+\item \bp{\yellow Sparse Predicated Typed Constant analysis} to
+  discover unread/unused/constant fields.
+\fromSlide{4}{
+\item \bp{\yellow Bitwidth analysis} to discover tight upper bounds on
+  field size.
+\fromSlide{6}{
+\item \bp{\yellow Field packing} into bytes or bits.
+}}}
+\end{itemize}
+
+\framebox{\parbox{2in}{%
+\begin{mysamplecode}%
+class Car \{\\
+\>int color;\\
+\>\ldots\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox{3in}{%
+\fromSlide{3}{\includegraphics[height=.8in]{Figures/Images/model-t-black.eps}}
+\fromSlide{5}{\includegraphics[height=.8in]{Figures/Images/model-t-redblue.eps}}\\
+\tt\bfseries%
+% the \sbox below would let us put black text on a white back if we
+% felt like it.
+~\fromSlide{3}{\sbox{\blbox}{BLACK=0}\white\usebox{\blbox}}%
+~\fromSlide{5}{{\red RED=1}~{\blue BLUE=2}}
+}%
+}
+
+\end{slide}
+}
+
+\begin{talknotes}
+Field compression targets the space directly allocated by the
+programmer.  In the sample class at the bottom of the slide, we
+define an object representing cars.  It's first field is a color,
+and it is declared an integer which allows the enumeration of up
+to $2^{32}$ different colors of cars.
+
+@ The first analysis we do is a standard sparse conditional constant
+propagation pass over the whole program to identify unused, unread,
+or constant fields.  @ Suppose we're building Ford Model-T's.
+Since they only come in black, this field will be constant and
+can be removed.
+
+@ The novel contribution is the next step, bitwidth analysis, which discovers
+tigher upper bounds on field sizes.  @  Actually, Model-T's were
+produced in several different colors before Ford started
+mass-production.  Our bitwidth analysis could determine that
+we really only need two bits to store colors, since our program
+only ever stores three different colors in a Car object.
+
+@ After we perform the analysis, we use the results to
+reduce the padding between fields.  We'll talk about this later.
+
+~%
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\part{How are these analyses performed?}
+\begin{talknotes}
+So how do we actually obtain the information we need to do field
+compression?
+
+We'll look first at a simple constant propagation analysis, and then
+see how, by a series of incremental extensions, we can obtain a
+powerful bitwidth analysis.
+
+~%
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{10}{
+\begin{slide}{Intraprocedural Analysis}
+\begin{center}%
+\parbox[c]{2in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\betweenSlide{4}{6}{\yellow}i=1;\\
+\>else\\
+\>\>\betweenSlide{7}{9}{\yellow}i=2;\\
+\>\onlySlide{10}{\yellow}if (i>0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.6in}{%
+\fromSlide{2}{%
+\begin{center}
+\renewcommand{\figscale}{0.6}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat1b}
+\end{center}
+}}
+
+\fromSlide{3}{\framebox{$\text{\tt\bfseries i} =
+    \untilSlide*{4}{\bot}%
+    \onlySlide*{5}{\bot\yellow\meet 1}%
+    \onlySlide*{6}{\yellow 1}%
+    \onlySlide*{7}{1}%
+    \onlySlide*{8}{1\yellow\meet 2}%
+    \fromSlide*{9}{1\meet 2\onlySlide{9}{\yellow}=\top}%
+    $}}
+
+\vspace{.5cm}
+\onlySlide*{6}{[Because $\bot \latleq 1$ and $1 \latleq 1$]}
+\fromSlide*{9}{[Because $1 \latleq \top$ and $2 \latleq \top$]}
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+Let's look at a quick example of how the Sparse Predicated Typed
+Constant analysis is done. @ We have this simple program, which
+assigns values to an integer variable {\tt i} and then tests the
+result.  @ When we perform the dataflow analysis, we will abstract the
+value domain of the program using this lattice of integer
+constants.  The $\bot$ value indicates that nothing is known about the
+value of a variable. @ At the start of the analysis, we know nothing
+about the value of {\tt i}. @ When the analysis finds that the first
+assignment to {\tt i} is executable, then @ it will perform a meet
+operation on the previous value ($\bot$) and the new value ($1$) to
+obtain @ $1$, because $1$ is the minimum element
+greater-than-or-equal-to both operands.  The analysis now knows that
+the variable {\tt i} can have the value $1$. @ Later, it finds that
+the second assignment to {\tt i} is executable, and @ it computes
+$1 \meet 2$, @ which yields the $\top$ element in the lattice.
+The $\top$ element usually means, ``I give up, I can't constrain
+this value any more, it could be anything.''  This example illustrates
+the limitations of the simplified SPTC lattice shown here, because @
+when we now look at the final if statement, the analysis can't tell
+that, one way or another, {\tt i} will always be positive and thus
+this comparison will always be true.  The $\top$ element means that
+\emph{any} value is possible for {\tt i}, which is a very conservative
+approximation.
+
+~% um, weird hack to force paragraph to be packed.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
+\begin{slide}{A signed integer lattice}
+\begin{center}
+\renewcommand{\figscale}{0.6}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat6c2}
+\end{center}
+
+\small
+An integer lattice for signed integers. A classification into
+negative (M), positive (P), or zero (Z) is grafted onto the standard
+flat integer constant domain.
+\end{slide}
+}
+
+\begin{talknotes}
+So let's see how we'd extend the lattice to make the analysis
+stronger.  Here we have a lattice that allows us to classify
+values as positive or negative, even if we don't know what the
+actual value will be. @ Here if we join $1$ and $2$ we get the
+element {\tt (\_\_P)}, which indicates ``any positive number''.
+If we then join that with a negative number, say, $-1$, @ we'll
+get {\tt (M\_P)}, or ``a non-zero number''.  If we later discover
+an assignment of zero, @ we finally get the $\top$ element.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{8}{
+\begin{slide}{Example, redux}
+\begin{center}%
+\parbox[c]{2in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\betweenSlide{2}{4}{\yellow}i=1;\\
+\>else\\
+\>\>\betweenSlide{5}{7}{\yellow}i=2;\\
+\>\onlySlide{8}{\yellow}if (i>0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.6in}{%
+\begin{center}
+\renewcommand{\figscale}{0.5}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat6c}
+\end{center}
+}
+
+\framebox{$\text{\tt\bfseries i} =
+    \untilSlide*{2}{\bot}%
+    \onlySlide*{3}{\bot\yellow\meet 1}%
+    \onlySlide*{4}{\yellow 1}%
+    \onlySlide*{5}{1}%
+    \onlySlide*{6}{1\yellow\meet 2}%
+    \fromSlide*{7}{1\meet 2\onlySlide{7}{\yellow}=\text{\tt\bfseries (\_\_P)}}%
+    $}
+
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+With the new lattice, we start at $\bot$ as before. @ Looking at {\tt
+  i=1}, @ we do a join with $1$ @ to get $1$.  But now, when we see
+{\tt i=2}, @ and join with $2$, @ we get {\tt (\_\_P)}, or ``a positive
+  integer.'' @ This time, when we get to the comparison, we can tell
+that {\tt i>0} will always be true.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Extending the lattice}
+Replace {\tt\bfseries M} and {\tt\bfseries P} in previous lattice
+entries with positive integers $m$ and $p$.  Encode zero as $m=p=0$.
+
+\FromSlide{2}
+\begin{displaymath}
+\begin{array}{c}
+\text{\tt\bfseries (\_\_P)} \Rightarrow \tuple{0,p} \\
+\text{\tt\bfseries (M\_\_)} \Rightarrow \tuple{m,0} \\
+\text{\tt\bfseries (\_Z\_)} \Rightarrow \tuple{0,0} \\
+\end{array}
+\end{displaymath}
+
+\FromSlide{3}
+\renewcommand{\arraystretch}{1.7}
+In lattice context: $
+\begin{array}{ccc}
+            &&\Rnode{tup5}{\tuple{0,31}}\\
+\pnode{old3}&&\Rnode{tup4}{\vdots}      \\
+\Rnode{old2}{\text{\tt\bfseries (\_\_P)}}&\Rightarrow&\Rnode{tup3}{\tuple{0,3}}\\
+\pnode{old1}&&\Rnode{tup2}{\tuple{0,2}} \\
+            &&\Rnode{tup1}{\tuple{0,1}} \\
+\end{array}
+$
+\ifDVItoPS\else\psset{linecolor=white}\fi
+\psset{nodesep=2pt}
+\ncline{old3}{old2}\ncline{old2}{old1}
+\ncline{tup1}{tup2}\ncline{tup2}{tup3}\ncline{tup3}{tup4}\ncline{tup4}{tup5}
+
+\end{slide}
+}
+
+\begin{talknotes}
+To perform bitwidth analysis, we need only extend this signed integer
+value lattice a little further.  We replace all the letters $M$ and
+$P$ in the previous lattice entries with positive integers $m$ and $p$
+indicating the \emph{bitwidths} of the negative and positive portions
+of the possible values.  @ We now represent these lattice entries as
+tuples \tuple{m,p}, and use the \tuple{0,0} tuple to represent zero ---
+what our previous lattice would have called {\tt (\_Z\_)}.  @ We can
+imagine expanding each node in our previous lattice with distinct
+tuples, with the ordering relations shown.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Bitwidth lattice detail}
+\begin{displaymath}
+\begin{array}{cccccc}
+\Rnode{t4}{\tuple{0,31}}\\ \\
+\Rnode{t3}{\vdots}\\ \\
+\Rnode{t2}{\tuple{0,2}}\\ \\
+\Rnode{t1}{\tuple{0,1}}\\ \\
+\Rnode{t0}{\begin{array}{c} 0 \\ \tuple{0,0} \end{array}} &
+\Rnode{n1}{1} &
+\Rnode{n2}{2} &
+\Rnode{n3}{3} &
+\Rnode{n4}{\cdots} &
+\Rnode{n5}{2^{32}-1} \\ \\
+\Rnode{bot}{\bot} \\
+\end{array}
+\end{displaymath}
+\ifDVItoPS\else\psset{linecolor=white}\fi
+\psset{nodesep=2pt}
+\ncline{t0}{t1}\ncline{t1}{t2}\ncline{t2}{t3}\ncline{t3}{t4}
+\psset{armA=0,armB=0,angleA=90,angleB=-90}
+\ncdiag{bot}{t0}
+\ncdiag{bot}{n1}\ncdiag{bot}{n2}\ncdiag{bot}{n3}\ncdiag{bot}{n5}
+\ncdiag{n1}{t1}\ncdiag{n2}{t2}\ncdiag{n3}{t2}\ncdiag{n5}{t4}
+
+\end{slide}
+
+\begin{talknotes}
+The picture is actually a little more complicated.  Here we see
+a small piece of the new expanded lattice.  We see that performing a
+join of any two positive integers will result in a tuple which
+accurately reflects the minimum bitwidth needed to represent both
+numbers.
+% Performing this expansion has actually only increased the
+% depth of the lattice 32-fold, since an ordering relation holds everywhere.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{8}{
+\begin{slide}{Example, redux redux}
+\begin{center}%
+\parbox[c]{2in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\betweenSlide{2}{4}{\yellow}i=1;\\
+\>else\\
+\>\>\betweenSlide{5}{7}{\yellow}i=2;\\
+\>\onlySlide{8}{\yellow}if (i>0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.6in}{%
+\begin{center}
+\renewcommand{\figscale}{0.5}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat6c}
+\end{center}
+}
+
+\framebox{$\text{\tt\bfseries i} =
+    \untilSlide*{2}{\bot}%
+    \onlySlide*{3}{\bot\yellow\meet 1}%
+    \onlySlide*{4}{\yellow 1}%
+    \onlySlide*{5}{1}%
+    \onlySlide*{6}{1\yellow\meet 2}%
+    \fromSlide*{7}{1\meet 2\onlySlide{7}{\yellow}=\tuple{0,2}}%
+    $}
+
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+Revisiting our example: we still start with $\text{\tt i}=\bot$.
+@ Looking at {\tt i=1}, @ we do a join with $1$ @ to get $1$.
+@ We look at {\tt i=2}, @ and join with $2$, @
+now we get the tuple \tuple{0,2}, indicating that {\tt i} can not be
+negative and that we only need two bits to store the positive portion.
+Note that we \emph{don't} recenter the range; we \emph{could} use only
+one bit if we offset the values stored.  @ We can still tell at the
+comparison point that {\tt i>0} will always be true, but the real
+value of this analysis will be the space reductions we obtain when we
+apply it to fields.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Bitwidth combination rules}
+\begin{eqnarray*}
+-\tuple{m,p} &=& \tuple{p,m}\\
+\tuple{m_l,p_l} + \tuple{m_r,p_r} &=& \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}\\
+%\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=& \langle\max(m_l+p_r,p_l+m_r),\\
+%                                       &&  \max(m_l+m_r,p_l+p_r)\rangle\\
+\tuple{m_l,p_l} \times \tuple{m_r,p_r} &=&
+\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
+                       \max(m_l+m_r,p_l+p_r)\end{array}}\\
+\tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
+\tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+\end{eqnarray*}
+
+Some combination rules for bit-width analysis.
+% The \code{Z}
+% element indicating whether zero is a possible value has been omitted.
+\end{slide}
+
+\begin{talknotes}
+For completeness: here are some of the combination rules we use to
+perform abstract evaluation of unary and binary operations using
+our bitwidth value domain.  The first entry simply says that negation
+exchanges the positive and negative bitwidths.  The second entry gives
+the rules for addition: we have to add one to the width to allow for
+carry out.  The rule for multiplication should remind you that we're
+operating in the log-domain.  The underlying numeric representation
+shows through in our rules for logical-AND: when anding two positive
+integers, the resulting bitwidth will match the smaller of the two
+inputs, since leading zeros will force zeros on the output.  But
+if negative numbers are possible, we must use a far more conservative
+rule to account for the leading ones in the twos-complement
+representation of negative numbers.  The $m$-component of the tuple
+roughly identifies the leftmost \emph{zero}, so clearly the largest
+$m$ will dictate where the leftmost zero can be in the result.
+The $p$ component identifies the leftmost \emph{one}, and since
+the all-ones value $-1$ is included in all negative ranges, the
+largest positive value input could emerge unchanged.  We cannot create
+a larger positive value because the AND operation cannot create ones
+anywhere there is a zero in the input.
+
+~%force rejust.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Interprocedural analysis}
+\newcommand{\myi}{\onlySlide*{1}{i}\fromSlide*{2}{this.f}}
+\begin{center}%
+\parbox[c]{2.3in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\myi =1;\\
+\>else\\
+\>\>\myi =2;\\
+\>if (\myi >0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.3in}{\fromSlide{3}{%
+\begin{mysamplecode}
+int foo() \{\\
+\>\myi =1;\\
+\}\\
+int bar() \{\\
+\>\myi =2;\\
+\}\\
+int bar() \{\\
+\>if (\myi >0)\\
+\>\>\ldots\\
+\}\\ 
+\end{mysamplecode}
+}}
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+Our examples have all been intraprocedural.  We use a
+\emph{field-based} technique to perform the analysis
+interprocedurally, maintaining a single analysis value for
+each distinct object field.  @  Instead of maintaining a value
+for {\tt i}, we maintain a value for field {\tt f}, @ and this
+works even when the various accesses take place in different methods.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{All cars are black}
+\begin{samplecode}
+void paint(int color) \{\\
+\>if (this.model == FORD)\\
+\>\>color = BLACK;\\
+\>this.color = color;\\
+\}\\
+\end{samplecode}
+\end{slide}
+
+\begin{talknotes}
+Returning to our car example, we can see how our initial Sparse
+Predicated Typed Constant analysis could determine that, if all cars'
+model is FORD, then all car's color will be BLACK.  Having determined
+this, we can simply substitute BLACK for the color wherever it appears
+and remove the field.  However, if there are non-FORD cars, we can
+still use our bitwidth analysis to determine a bound on how many
+bits we need to represent the various car colors that we see assigned
+to the color field.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Field compression using bitwidths}
+
+\begin{center}
+\vspace{1cm}
+\includegraphics[scale=0.5]{Figures/Kontour/bwfieldcomp-bbox.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+Once we've used our analysis to determine accurate widths for fields,
+we would like to shrink the objects' allocations to use only the space
+actually needed for each field.  So if we have less than 256 colors,
+we can use a single byte in the object structure to represent color.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+% \begin{slide}{Field packing}
+% \centering\small
+% \begin{tabular}{|l|}
+% \hline
+% Standard packing word-aligns the object and aligns each field to the
+% width of its type (4-byte data is 4-byte aligned):\\
+% \includegraphics[scale=0.7]{Figures/standardAlignment.eps}\\
+% ``Byte'' alignment byte-aligns the object and all fields:
+% \hfill\raisebox{-1ex}[0pt][0pt]{\parbox[t]{3in}{
+% \begin{samplecode}
+% class A \{\\
+% \>int x;  /* actual width 24 bits */\\
+% \>byte y; /* actual width 5 bits */\\
+% \>boolean z; /* actual width 1 bit */\\
+% \}\\
+% \end{samplecode}
+% }}\\
+% \includegraphics[scale=0.7]{Figures/byteAlignment.eps}\\
+% ``Bit'' alignment requires no alignment of objects or fields:\\
+% \includegraphics[scale=0.7]{Figures/bitAlignment.eps}\\
+% \hline
+% \end{tabular}
+
+% Object header omitted.
+% \end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Field packing}
+% converted with pngtopnm Figures/alignment.png | pnmtops -equalpixels -noturn > Figures/alignment.eps
+\begin{center}
+\vspace{0.75cm}
+%\includegraphics[scale=1.3]{Figures/alignment.eps}
+\includegraphics[scale=0.35]{Figures/alignment2.eps}
+%\includegraphics[scale=0.35]{Figures/alignment3.eps}
+
+\small Object header omitted.
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+The actual situtation is a little more complicated.  There is padding
+within and at the end of the object, required for various reasons.
+The heap allocator may prefer to have the chunks it returns aligned
+on certain boundaries, and the machine architecture may prefer to
+access, for example, word data aligned at word boundaries.  At
+some runtime cost, we can overcome these limitations.  At the top, is
+the standard ``Java'' object packing.  All fields are aligned to their
+natural size, so that, word-sized fields will always begin at word
+boundaries.  In this work we implemented a ``byte'' alignment
+strategy, where all fields are placed at the nearest \emph{byte}
+boundaries, irrespective of their preferred alignment.  One can also
+imagine a ``bit'' alignment strategy where each field uses
+\emph{exactly} the number of bits it requires.  At runtime we must
+then perform bit-masking and -extraction operations to access the
+fields.  We found very little additional space-savings potential from
+going to bit alignment, which is why the numbers we will present use
+``byte'' alignment.
+
+~%
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{How to compress objects} % just the second one
+
+Three broad techniques:
+
+\parbox[b]{2.5in}{%
+\begin{itemize}%
+\lightgray\renewcommand{\green}{\lightgray}% new bullet color
+\item Field compression
+\fieldelim\renewcommand{\green}{\fieldelim}% new bullet color
+\item Mostly-constant field elimination
+\lightgray\renewcommand{\green}{\lightgray}% new bullet color
+\item Header optimizations
+\renewcommand{\green}{\yellow} % restore yellow bullet color
+\end{itemize}
+}%
+\parbox[b]{1.75in}{%
+\hspace*{0.106in}\includegraphics[scale=0.4]{Figures/Kontour/how-fieldelim-bbox.eps}%
+}%
+\end{slide}
+
+\begin{talknotes}
+Let's return to our outline.  So far we have talked about field
+compression; using bitwidth analysis to reduce the static size of
+fields allocated in objects, and using field packing to reduce the
+amount of object padding.  Now we will talk about ``Mostly-constant
+field elimination,'' our second space-reduction technique.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{6}{
+\begin{slide}{Mostly-constant field elimination}
+\begin{itemize}
+ \item It's easy to remove {\yellow constant} fields.
+ \fromSlide{2}{
+ \item Key idea: remove \textit{\yellow mostly} constant fields.
+ \fromSlide{3}{
+ \begin{itemize}
+  \item \bp{\yellow Identify} fields which have a certain value ``most of
+        the time.''
+  \fromSlide{4}{
+  \begin{itemize}
+   \item \small Static analysis/profiling.
+  \end{itemize}
+  \fromSlide{5}{
+  \item \bp{\yellow Transform} objects to remove fields w/ the common
+        value.
+  \fromSlide{6}{
+  \begin{itemize}
+   \item \small Static specialization/externalization.
+  \end{itemize}
+  }}}
+ \end{itemize}
+ }}
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+It's easy to remove constant fields; we just replace the field
+reference with the appropriate constant.  @ But our key idea here is
+that it is also possible to replace \emph{mostly}-constant fields.
+@ We identify fields which have a certain value ``most of the time''
+using @ static analysis and profiling.  @ We can then transform the
+objects to remove fields with the common value, so that we only
+spend space on fields with unusual values.  @ Our techniques for doing
+this are called static specialization and externalization.
+The types of ``mostly-constant'' fields that can be removed are
+slightly different with the two techniques; we will look at static
+specialization first.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Specialization example:\\\small java.lang.String}
+\fontsize{9}{9}%
+\bfseries\begin{samplecode}%
+public final class String \{\\
+\>private final char value[];\\
+\>private final int offset;\\
+\>private final int count;\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[offset+1];\\
+\>\}\\
+\>public String substring(int start) \{\\
+\>\>int noff = offset + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(value, noff, ncnt);\\
+\>\}\\
+\}\\
+\end{samplecode}
+\end{slide}
+
+\begin{talknotes}
+We're going to jump right in with an example.  This is {\tt
+  java.lang.String} from the Java standard class library.  It has
+three fields: a character array and an integer length and offset.
+This representation was chosen to allow you to perform the substring
+operation in constant time; you don't have to copy the string, you
+just create a new string with a different offset and length and
+share the same character array.
+
+The interesting thing about {\tt java.lang.String} is that the {\tt
+  offset} field is almost \emph{always} zero.  Only strings created
+with the {\tt substring()} method have non-zero offset fields. 
+And the offset field is never changed after the object is created.
+These are the @ key properties needed to enable this optimization.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Key properties}
+To use static specialization we need:
+\begin{itemize}
+ \item A field with a frequently-occuring value.
+  \begin{itemize}\small
+   \item {\tt\bfseries String.offset} is almost always zero.
+  \end{itemize}
+ \item The value of the field must never be modified after the object
+       is created.
+\end{itemize}
+\end{slide}
+
+\begin{talknotes}
+In order to apply our technique, we need to find a ``mostly-constant''
+field, which in our example is {\tt String.offset}, with the value
+``mostly zero'', and, importantly, the value of that field cannot be
+modified after the object is created.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
+\begin{slide}{Transforming the class}
+We will split String into two classes:
+\begin{itemize}
+\item {\tt\bfseries\yellow SmallString} without the field.
+\item {\tt\bfseries\yellow BigString} with the field.
+\end{itemize}
+
+We will use {\tt\bfseries SmallString} for all instances where
+the offset field is zero (our ``mostly-constant'' value).
+
+\vspace{1cm}
+\FromSlide{2}
+{\yellow Problems:}
+\FromSlide{3}
+\begin{itemize}
+ \item The code could directly access the to-be-removed field.
+ \fromSlide{4}{%
+ \item Allocation sites directly instantiate the old class.
+ }
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+So, how are we going to save memory in {\tt java.lang.String}?
+We're going to split the class in two: there will be a {\tt
+  SmallString} class without the offset field, and a {\tt BigString}
+class that does have it.
+
+@ A couple of problems that come up:
+\begin{itemize}
+\item @ What happens to places in {\tt SmallString} where the removed
+offset field is referenced?
+\item @ And when we see an allocation of {\tt String}, do we change it
+to {\tt SmallString} or {\tt BigString}?
+\end{itemize}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Specialization example:\\\small java.lang.String}
+\fontsize{9}{9}%
+\newcommand{\myOffset}{\onlySlide*{1}{offset}\onlySlide*{2}{offset}%
+%{\makebox[0pt][l]{offset}}
+\onlySlide*{3}{{\yellow getOffset()}}}%
+\bfseries\begin{samplecode}%
+public final class \onlySlide*{1}{String}\fromSlide*{2}{\yellow SmallString} \{\\
+\>private final char value[];\\
+\pnode{offl}%
+\>private final int offset;%
+\pnode{offr}\\
+\>private final int count;\\
+\onlySlide{3}{\>\yellow protected int getOffset() \{ return 0; \}}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[\myOffset{}+1];\\
+\>\}\\
+\>public String substring(int start) \{\\
+\>\>int noff = \myOffset{} + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(value, noff, ncnt);\\
+\>\}\\
+\}\\
+\end{samplecode}
+\fromSlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl}{offr}}%
+\end{slide}
+}
+
+\begin{talknotes}
+Let's go back and see how this works.  We take the {\tt String} class,
+rename it @ {\tt SmallString} and remove the {\tt offset} field.
+But what do we do with the references to the now-deleted field?
+@ We solve this problem by \emph{virtualizing} the field: adding
+a {\tt getOffset()} accessor method (which always returns zero)
+and replacing references to {\tt offset} with calls to {\tt
+  getOffset()}.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Specialization example:\\\small java.lang.String}
+\fontsize{9}{9}%
+\bfseries\begin{samplecode}%
+public final class {\yellow SmallString} \{\\
+\>private final char value[];\\
+\>\\  
+\>private final int count;\\
+\>protected int getOffset() \{ return 0; \}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[getOffset()+i];\\
+\>\}\\
+\>\ldots\\
+\}\\
+public final class {\yellow BigString extends SmallString} \{\\
+\>private final int {\yellow offset};\\
+\>protected int {\yellow getOffset()} \{ return offset; \}\\
+\}\\
+\end{samplecode}
+\end{slide}
+
+\begin{talknotes}
+Now we create {\tt BigString} as an almost-trivial subclass of {\tt
+  SmallString}.  It shared all of the same functionality, except
+{\tt BigString} \emph{has} an offset field, and implements
+{\tt getOffset()} in the way you'd expect.  So any object which
+needs a non-zero offset can instatiate {\tt BigString} and things will
+work as expected.
+
+From our key properties, remember that there are no assignments
+\emph{to} the {\tt offset} field except in the constructor.
+But what do we do there?  And how do we tell if we're supposed
+to replace a call to the {\tt String} constructor with a
+{\tt SmallString} or a {\tt BigString}?
+
+It turns out there are three cases to worry about.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Transforming allocation sites}
+\newcommand{\myString}{\onlySlide*{1}{\makebox[0pt][l]{String}}%
+                       \onlySlide{2}{{\yellow SmallString}}}%
+Case 1: field is constant in constructor.
+
+\fontsize{10}{10}%
+\bfseries\begin{samplecode}
+\onlySlide*{2}{Small}String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
+\\
+\myString(char[] val) \{\\
+\>this.value = (char[]) val.clone();\\
+\onlySlide*{2}{\pnode{offl2}}%
+\>this.offset = 0;%
+\onlySlide*{2}{\pnode{offr2}}\\
+\>this.count = val.length;\\
+\}\\
+\end{samplecode}
+\onlySlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl2}{offr2}}%
+\end{slide}
+}
+
+\begin{talknotes}
+In the first case,  the field is constant in the constructor.  Every
+instantiation which uses this constructor will set {\tt offset} to zero.
+(And as we mentioned before, it is never reset after construction.)
+So  we juse @ remove the assignment to {\tt offset} and
+replace the instantiation of {\tt String} with that
+of {\tt SmallString}.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Transforming allocation sites}
+Case 2: field is simple function of constructor parameter.
+
+\fontsize{10}{10}%
+\bfseries\begin{samplecode}%
+\onlySlide*{1}{%
+String s = new String(new char[] \{'a', 'b', 'c'\},\\
+~~~~~~~~~~~~~~~~~~~~~~x, 1);\\
+\\
+String(char[] val, int offset, int length) \{\\
+\>this.value = (char[]) val.clone();\\
+\>this.offset = offset;\\
+\>this.count = length;\\
+\}\\
+}%
+\onlySlide*{2}{%
+SmallString s;\\
+\\
+if (x==0)\\
+\>s = new {\yellow SmallString}(new char[] \{'a', 'b', 'c'\}, x, 1);\\
+else\\
+\>s = new {\yellow BigString}(new char[] \{'a', 'b', 'c'\}, x, 1);\\
+}%
+\end{samplecode}
+\end{slide}
+}
+
+\begin{talknotes}
+But what if we have code like this, where we don't know what value
+{\tt x} will have when the {\tt String} is created?  This is
+essentially the case for the {\tt substring} method of {\tt String}.
+In this case,  the value of the offset field is a simple function of
+some parameter given to the constructor.  Here's our solution: @ we
+add a test around the allocation site, so that we can construct
+a Small or Big string depending on the value {\tt x} actually has
+at runtime.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Transforming allocation sites}
+\newcommand{\myString}{\onlySlide*{1}{\makebox[0pt][l]{String}}%
+                       \onlySlide{2}{{\yellow BigString}}}%
+Case 3: assignment to field is unknown.
+
+\fontsize{10}{10}%
+\bfseries\begin{samplecode}%
+\myString{} s = new \myString{}(s, o, l);\\
+\\
+\myString{}(char[] val, int offset, int length) \{\\
+\>this.value = (char[]) val.clone();\\
+\>while (length>0 \&\& value[offset]==' ') \{\\
+\>\>offset++; length--;\\
+\>\}\\
+\>this.offset = offset;\\
+\>this.count = length;\\
+\}\\
+\end{samplecode}
+\end{slide}
+}
+
+\begin{talknotes}
+But what about code such as this?  Here we know \emph{nothing} about
+the value of offset, as it is derived programmatically \emph{within
+  the constructor}.  There's no easy test we can do outside the
+constructor.  @  Here we must simply give up and always allocate an
+instance of {\tt BigString}.  Code such as this is not actually
+found in {\tt java.lang.String}, but this solution allows us to
+take advantage of frequently-constant fields in many cases with a
+fairly neutral (no cost, no gain) fallback in the worst case.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Static specialization}
+\begin{itemize}
+\item Split class implementations into ``field-less'' and
+  ``field-ful'' versions.
+\item Use virtual accessor functions to hide this split from users of
+  the class.
+\item Done at compile time, on fields which can be shown to be
+  compile-time constants, thus ``static.''
+\begin{itemize}
+\item Fields can not be mutated after the constructor completes.
+\end{itemize}
+\item Can be done recursively on multiple fields.
+\begin{itemize}
+\item Profiling guides splitting order if there are multiple candidates.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{talknotes}
+Let's review the static specialization transformation:  we split the
+target class into two parts, one of which has the field and one which
+doesn't, and use virtual accessor functions to hide this split from
+users of the class.  We have two constraints: the fields must be
+``mostly-constant'', and then cannot be modified after the completion
+of the constructor.
+We can do this recursively on multiple fields; we use profiling to
+determine the best splitting order in that case.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{2}{
+\begin{slide}{Key properties (revisited)}
+To use static specialization we need:
+\begin{itemize}
+ \item A field with a frequently-occuring value.
+  \begin{itemize}\small
+   \item {\tt\bfseries String.offset} is almost always zero.
+  \end{itemize}
+ \item \pnode{part2l}%
+       The value of the field must never be modified after the object
+       is created.\pnode{part2r}
+\end{itemize}
+\onlySlide*{2}{\ncline[linecolor=red,linewidth=4pt]{part2l}{part2r}}%
+\end{slide}
+}
+
+\begin{talknotes}
+Let's look again at the constraints on the static specialization
+technique.
+What if the first of these conditions hold, @ but the second doesn't?
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Creating external fields}
+\vspace{0.5cm}
+\begin{itemize}
+ \item Sometimes fields are \textit{\yellow run-time} constants (or nearly so)
+      but not \textit{\yellow compile-time} constants.
+ \FromSlide{2} 
+ \begin{itemize}
+  \item Examples: sparse matrices, ``two-input nodes'' in Jess expert
+        system, the ``next'' field in short linked lists.
+ \end{itemize}
+ \FromSlide{3}
+ \item \bp{\yellow Exploit field$\rightarrow$map duality} to reduce memory
+       overhead in the common case.
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+Sometimes fields are \emph{run-time} constants but not
+\emph{compile-time} constants. @ Some examples are sparse matrices, an
+example from the SPEC benchmark suite, and short linked lists.
+In graphics applications, the background color will typically be
+another example.  What are we going to do in this case?
+
+@ Our solution is to exploit the relationship between fields and maps
+to reduce memory overhead when we're storing the common value.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Fields and Maps}
+\begin{itemstep}
+\item Accessing an object field {\tt a.b} (where {\tt a} is the object
+  reference and {\tt b} is the field name) is equivalent to evaluating
+  a map from \tuple{a, b} to the value type.
+\item The mapping we will implement will be \textit{\yellow incomplete}.  We
+  define the result of accessing a non-existing mapping to be $\bot$.
+\item To achieve our storage savings, we map $\bot$ to the frequent
+  ``mostly-constant'' value.
+\end{itemstep}
+\end{slide}
+}
+
+\begin{talknotes}
+Read this slide.
+
+\ldots This means we don't actually have to store this value in the
+map; we can just remove the entry instead.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Externalization example:\\\small java.lang.String}
+\fontsize{9}{9}%
+\newcommand{\myOffset}{\onlySlide*{1}{offset}\onlySlide*{2}{offset}%
+%{\makebox[0pt][l]{offset}}
+\onlySlide*{3}{{\yellow getOffset()}}}%
+\bfseries\begin{samplecode}%
+public final class String \{~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\\
+\>private final char value[];\\
+\pnode{offl}%
+\>private final int offset;%
+\pnode{offr}\\
+\>private final int count;\\
+%\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[\myOffset{}+1];\\
+\>\}\\
+\>public String substring(int start) \{\\
+\>\>int noff = \myOffset{} + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(value, noff, ncnt);\\
+\>\}\\
+\onlySlide*{3}{%
+\yellow\>protected int getOffset() \{\\
+\yellow\>\>Integer i = External.map.get(this, "offset");\\
+\yellow\>\>if (i==null) return 0;\\
+\yellow\>\>else return i.intValue();\\
+\yellow\>\}\\
+}%
+\}\\
+\end{samplecode}
+\fromSlide*{2}{\ncline[linecolor=red,linewidth=2pt]{offl}{offr}}%
+\end{slide}
+}
+
+\begin{talknotes}
+Let's see how it would work if we took our static specialization
+example and externalized the field, instead.  @ Again, the field
+is deleted from the class.  But now, the @ {\tt getOffset()} method
+references an external map.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
+\begin{slide}{External map implementation}
+\centering
+\begin{minipage}[c]{0.4\textwidth}
+ \centering%
+ \vspace{0.5cm}%
+ \includegraphics[scale=0.5]{Figures/extmap1.eps}%
+ \vspace{0.5cm}%
+\end{minipage}%
+\begin{minipage}[c]{0.6\textwidth}
+ \begin{itemstep}
+  \item ``open addressed'' for low overhead.
+  \item load-factor of 2/3
+  \item two-word key and one-word values means break-even point is 82\%
+    \\ \fromSlide{4}{ \tiny (i.e. field may not differ from the
+ ``mostly-constant'' value in more than 18\% of objects.)}
+ \end{itemstep}
+\end{minipage}
+\end{slide}
+}
+
+\begin{talknotes}
+The efficiency of this external map crucially dictates how much space
+savings we are able to achieve with this scheme.  So let's look at
+implementation for a moment.  We choose an ``open-addressed'' hash
+table, to keep our overhead low.  The alternative is some sort of
+linked-bucket structure, and the links between buckets add crucially
+to our overhead. @ Every hash table needs to have some entries empty
+in order to have good performance; we assume a load-factor of 2/3,
+which means that 1/3 of the hashtable slots will be empty.  @
+We can do the math, and find that a two-word key and one-word values
+mean our break-even point is 82\%; @ that means that no more than 18\%
+of the fields can \emph{differ} from the ``mostly-constant'' value in
+order to attain any space savings at all.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
+\begin{slide}{We can do better!}
+\centering
+\begin{minipage}[c]{0.4\textwidth}
+ \centering%
+ \vspace{0.5cm}%
+ \includegraphics[scale=0.5]{Figures/extmap2.eps}%
+ \vspace{0.5cm}%
+\end{minipage}%
+\begin{minipage}[c]{0.6\textwidth}
+ \small
+ \begin{itemstep}
+  \item Use small integers to enumerate fields.
+  \item Offset the object pointer by the field index to get a 1-word key.
+  \item Limits the number of fields which may be externalized, based
+        on the size of the object.
+  \item One-word key and one-word value lowers break-even point to 66\%.
+ \end{itemstep}
+\end{minipage}
+\end{slide}
+}
+
+\begin{talknotes}
+We can do better than this, though:  since all we really need is a
+unique identifier for the object/field pair, we can simply @ offset the
+object pointer to obtain a one-word key.  Note that this is like using
+a pointer to the \emph{field} instead of a field ID and a pointer to
+the \emph{object}; the field we would like to point to is not actually
+present in the object, though.  This means that @ the scheme imposes a
+limit of the number of fields which may be externalized, based on the
+number of non-externalized fields remaining in the object.  @ This
+limitation is not onerous, however, and we lower our break-even point
+to 66\%.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Other details}
+\begin{itemstep}
+\item Use value profiling to identify classes where field
+  externalization will be worthwhile.
+\item In our experiments, looked for integer ``mostly-constant''
+  values in the range $[-5,5]$ for numeric types.  Only looked at {\tt
+    null} as a candidate for pointer types.
+\item $0$ and $1$ by far the most common.
+\end{itemstep}
+\end{slide}
+}
+
+\begin{talknotes}
+A few more details on how this is implemented:
+First, we use value profiling to identify where externalization will
+be worthwhile.  Remember, we need at least 2/3 of the values to be
+some constant.  @ When we did the profiling, we looked at integer
+constants from $-5$ to $5$ and at {\tt null} for pointer types.
+@ We could that $0$ and $1$ were by far the most common
+``mostly-constant'' values;  in a production implementation you
+could look only at these two and get most of our savings.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{How to compress objects} % just the third one
+
+Three broad techniques:
+
+\parbox[b]{2.5in}{%
+\begin{itemize}%
+\lightgray\renewcommand{\green}{\lightgray}% new bullet color
+\item Field compression
+\lightgray\renewcommand{\green}{\lightgray}% new bullet color
+\item Mostly-constant field elimination
+\headeropt\renewcommand{\green}{\headeropt}% new bullet color
+\item Header optimizations
+\renewcommand{\green}{\yellow} % restore yellow bullet color
+\end{itemize}
+}%
+\parbox[b]{1.75in}{%
+\includegraphics[scale=0.4]{Figures/Kontour/how-header-bbox.eps}%
+}%
+\end{slide}
+
+\begin{talknotes}
+Returning to our outline.  We talked about using bitwidth and constant
+analysis to compress fields, and at two different techniques for
+eliminating the space required to store ``mostly-constant'' values.
+Now we'll look at header optimizations, which reduce the amount of
+overhead needed by the runtime implementation.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Header optimizations:\\\small Hashcode/Lock compression}
+\begin{center}
+\vspace{.5cm}
+\includegraphics[scale=0.6]{Figures/Kontour/hashcomp-bbox.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+Of the two words in a typical object header, let's look at the
+hashcode/lock field first.  We were able to completely eliminate this
+field in a large proportion of our objects.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Header optimizations:\\\small Hashcode/Lock compression}
+\begin{itemize}
+ \item Implemented as a special case of field externalization.
+ \FromSlide{2}
+ \item The hashcode/lock field often unused because:
+   \begin{itemize}
+    \item Most objects do not use their built-in hashcode.
+    \item Most objects are not synchronization targets.
+   \end{itemize}
+ \FromSlide{3}
+ \item Could also use a static pointer analysis.
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+We implemented this as a special case of field externalization.
+@ Although we can't always tell at compile-time, in fact this field
+is very infrequently used.  Most object types either are never used as keys
+in a hashtable, or implement their own hashing method not based on the
+identity-based hash specified by the Java semantics.  Similarly, most
+programs are either not multi-threaded, or when they are, perform
+synchronization on only a small handful of their object types.
+Implementing it as an instance of externalization means that we
+allocate space as-needed in an external map; @ we could also use
+a static pointer analysis and techniques similar to static
+specialization to remove these fields from types where they
+are statically unused.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Header optimizations:\\\small claz compression}
+\begin{center}
+\includegraphics[scale=0.5]{Figures/Kontour/classcomp-bbox.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+And now looking at the second word: the claz pointer typically points
+directly to some structure with information about the object type.
+We can save space by imposing a level of indirection and using
+a small \emph{table-index} instead.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Header optimizations:\\\small claz compression}
+\begin{itemstep}
+\item replace {\tt claz} pointer with a (smaller) table index.
+\item With co-operation of GC, works in dynamic environments.
+\item Many applications use less than 256 object types.
+\end{itemstep}
+\end{slide}
+}
+
+\begin{talknotes}
+Our static analysis can tell how many \emph{instantiated} types are in
+the program, and thus bound the index size.  But this can even work in
+a dynamic environment, with a little co-operation from the GC.
+But how much space does this really save?  How many classes are in
+typical applications?
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Class statistics}
+Class statistics for applications in SPECjvm98 benchmark suite:
+\begin{center}
+\includegraphics[scale=0.5]{Figures/specclaz.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+Here are the class statistics, etc.
+Note that all but two are below 256 classes, or \emph{1 byte} of claz
+index.  I have never seen an application that required more than
+2 bytes of claz index.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\part{How well does it work?}
+
+\begin{talknotes}
+So how well does all this work?
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Reduction in total allocations}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-ttlalloc-color.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+This is the reduction in \emph{total number of bytes allocated} during
+the run of the programs.  The programs at the bottom are from the
+SPECjvm98 benchmark suite, and represent real, complete, Java
+applications.  Let me quickly step through them: here on the left is
+{\tt compress}, a gzip-compression program.  {\tt jess} in an expert
+system, {\tt raytrace} is a graphics rendering program --- {\tt mtrt}
+is actually the same program, but run in multi-threaded mode; the
+numbers are slightly different because (in theory) we can't do as much
+hash/lock externalization, because the locking capability of Java is
+being used.  In practice, you can see it doesn't have much effect.
+{\tt db} is a simple database, {\tt javac} is the Sun java compiler,
+{\tt mpegaudio} is an MP3 decoder, and {\tt jack} is a parser
+generator.
+
+But if you're paying attention, you'll realize that these aren't
+actually the \emph{really} interesting numbers.  A reduction in total
+allocated bytes is great, it reduces the amount of allocation work the
+garbage collector has to do, but what you'd really like to see is a
+reduction in the maximum \emph{live data} in the program.
+
+~%
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Reduction in total live data}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-ttllive-color.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+And that is what we see here.  You'll notice the numbers look roughly
+the same, but they improve a lot for javac; what this shows you is
+that the objects we target in javac are precisely the ones which are
+live the longest and stress the system the most.
+
+OK.  You no doubt have noticed by now that compress is getting no help
+at all by anything we are doing.  Why is that?
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Available reduction opportunities}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/spec-space-3.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+This graph shows the percent of total allocated bytes which consist of
+arrays (as opposed to objects), and pointer fields in objects.
+Our transformations are all object-oriented, and none of them
+currently target arrays.  In addition, the field compression
+techniques I've been describing are fundamentally integer-based;
+apart from sometimes being able to remove mostly-null fields,
+they are not terribly effective on fields of pointer type.  So the
+yellow bars show you how much of the program is \emph{left} for our
+stuff to optimize, after you take away the pointers and the arrays.
+Compress is \emph{all} array allocations; hence our poor performance
+should make sense now.  The thing to notice here is that we do a
+fantastic job with the portion of the program allocation that we're
+targetting.
+
+Indeed, if you want us to look good, you might consider how we do
+solely on the \emph{object} allocations in the program; discounting
+all array allocations.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Reduction in object allocations}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-objalloc-color.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+And that's what we show here.  There are very sizable reductions now.
+But they have to be taken with a grain of salt: we know already that
+compress has almost no object allocations, so even though we do well
+on those that are present, it doesn't ``really'' matter.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Moderate performance impact}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/oopsla-speed-color.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+We've talked about some transformations that impact performance;
+this graph shows you what that performance impact really is.
+One represents the speed of the program before we touch it.
+You'll notice that the first three transformations, which are
+claz/field compression and byte-packing, offer a moderate speed
+\emph{improvement} over the original code.  This is wholly due to
+better performance in the garbage collector as we shrink the
+objects.  The potential performance penalty for the claz indirection
+and the unaligned memory accesses are overwhelmed by the GC
+improvement.
+
+Static specialization, the white bar, gives back some of that
+performance gain.  This is due to the fact that we've virtualized
+field accesses, so where you previously had a simple memory access,
+you know have a method call and the overhead that goes with that.
+There are various techniques we could use to mitigate this.
+
+Field externalization costs a little more, because it's a more
+expensive form of field virtualization.  In mtrt and jack it seems we
+are probably externalizing too many fields, and we're getting
+significant performance penalties.  In jack, if you look at our live
+data numbers, you'll see that the space gain this is giving us is
+minimal; so our heuristics for choosing fields definitely need further
+tweaking.
+
+In four cases, the final step, hash/lock externalization, costs about
+30\% of our performance.  These are programs which lock extensively,
+although none of them strictly need to do \emph{any} locking.
+Static techniques for lock-removal will mitigate this cost greatly.
+
+~%
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{9}{
+\begin{slide}{How can we make this even better?}
+\fromSlide{2}{
+\begin{itemize}
+ \item Currently no array analysis/can't distinguish between different uses of a class.
+ \fromSlide{3}{
+ \begin{itemize} \yellow\small
+  \item Use pointer analysis to discriminate among objects from a
+    certain allocation-site; optimize each alloc site.
+ \end{itemize}
+ \fromSlide{4}{
+ \item We don't compress pointers at all.
+ \fromSlide{5}{
+ \begin{itemize} \yellow\small
+  \item Investigate region-based/enumerated approaches.
+ \end{itemize}
+ \fromSlide{6}{
+ \item The mostly-constant analysis requires profiling.
+ \fromSlide{7}{
+ \begin{itemize} \yellow\small
+  \item Investigate heuristic methods.
+ \end{itemize}
+ \fromSlide{8}{
+ \item We know nothing about ``field-like'' maps.
+ \fromSlide{9}{
+ \begin{itemize} \yellow\small
+  \item Enable \emph{internalization}.
+ \end{itemize}
+ }}}}}}}
+\end{itemize}
+}
+\end{slide}
+}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Conclusions}
+\begin{itemize}
+ \FromSlide{2}
+ \item We achieved substantial space savings on typical
+   object-oriented applications.
+ \FromSlide{3}
+ \begin{itemize}
+  \item In one case, over 40\% reduction in total live data.
+ \end{itemize}
+ \FromSlide{4}
+ \item Even more space reduction is possible!
+ \FromSlide{5}
+ \item Performance impact was acceptable.
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\part{The Graveyard Of Unused Slides follows this point.}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Available reduction opportunities}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/spec-space-2.eps}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
+This is the ``total bytes'' version of the slide.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Bitwidth analysis}
+Motivation:
+\begin{itemize}
+\item Tedious and error-prone for programmer to manually specify
+  widths.
+\end{itemize}
+
+\begin{tabular}{lll}%
+%\hspace*{0in}&% spacing
+\parbox[t]{1.3in}{\begin{mysamplecode}%
+\onlySlide*{3}{\pnode{tlx}}%
+struct foo \{\\
+\>int x:24;\\
+\>int y:5;\\
+\>int z:1;\\
+\};\\
+\onlySlide*{3}{\pnode{blx}}~
+\end{mysamplecode}
+}&%
+\parbox[t]{1.3in}{\fromSlide{2}{%
+\begin{mysamplecode}%
+void foo() \{\\
+\>int x:24;\\
+\>int y:5;\\
+\>int z:1;\\
+\>\ldots\\
+\}%
+\end{mysamplecode}
+}}&%
+\parbox[t]{1.3in}{\fromSlide{3}{\yellow\begin{mysamplecode}%
+\pnode{trx}%
+void foo() \{\\
+\>int x, y, z;\\
+\>\\
+\>\ldots\\
+\}\\
+\pnode{brx}%
+~
+\end{mysamplecode}
+}}\\
+\end{tabular}
+
+\fromSlide{3}{
+\begin{itemize}
+\item The compiler can do it for us!
+\end{itemize}
+\ncline[linecolor=red,linewidth=3pt]{tlx}{brx}%
+\ncline[linecolor=red,linewidth=3pt]{blx}{trx}%
+}
+\end{slide}
+}
+
+\begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+%\begin{slide}{Title here}
+%\end{slide}
+
+%\begin{talknotes}
+%\end{talknotes}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

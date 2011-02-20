@@ -1,0 +1,14 @@
+Why Java is good:
+ - you figure it out.  Strong type system.  Well-defined, but simple,
+   OO language.
+ - built-in threading.
+Why Java is bad:
+ - no bitwidth specs on types (solve with smart compiler)
+ - no real time specs (no timing info at all)
+ - no i/o grammar
+-----------------------
+Passes:
+ - extended type analysis
+ - bitwidth analysis
+-------
+MAINTAIN hierarchical/macroblock hardware structure.

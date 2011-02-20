@@ -1,0 +1,41 @@
+% data types for cycle-equivalency algorithm.
+Data type \texttt{BracketList}:
+\begin{tightdesc}
+\item[create():~BracketList]
+:	Make an empty BracketList structure
+\item[size(bl:BracketList):~integer]
+:	Number of elements in BracketList structure
+\item[push(bl:BracketList,~e:bracket):~BracketList]
+:	Push \textbf{e} on top of \textbf{bl}
+\item[top(bl:BracketList):~bracket]
+:	Topmost bracket in \textbf{bl}
+\item[delete(bl:BracketList,~e:bracket):~BracketList]
+:	Delete \textbf{e} from \textbf{bl}
+\item[concat(bl1,bl2:BracketList):~BracketList]
+:	Concatenate \textbf{bl1} and \textbf{bl2}
+\end{tightdesc}
+
+Operations on nodes:
+\begin{tightdesc}
+\item[Number(n:node):~integer]
+:	DFS preorder number of node
+\item[NQClass(n:node):~integer]
+:	Cycle-equivalency class of node
+\item[BList(n:node):~BracketList]
+:	List of brackets of node
+\item[Hi(n:node):~integer]
+:	Highest destination node of any edge originating from a
+	descendant of node \textbf{n}
+\end{tightdesc}
+
+Operations on edges:
+\begin{tightdesc}
+\item[EQClass(e:node):~integer]
+:	Cycle-equivalency class of edge
+\item[RecentSize(e:edge):~integer]
+:	Size of bracket set when \textbf{e} was most recently the
+	topmost bracket for a representative node
+\item[RecentClass(e:edge):~integer]
+:	Cycle-equivalency class number of representative node for
+	which \textbf{e} was most recently the topmost bracket.
+\end{tightdesc}

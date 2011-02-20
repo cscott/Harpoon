@@ -1,0 +1,41 @@
+Be consistent on "I" vs. "We".
+
+NO Don't go into 3 levels of hierarchy.  Two levels of hierarchy is
+almost too much. Three is definitely too much.  Consider Chapter 2:
+  intro par
+  2.1 four old things
+    Don't number the four old things as 2.1.1, 2.1.2, and so forth.
+  2.2 four new things
+  2.3 some (other) things
+(and page 31 talks about what will occur in Section
+4.4.4.  Bleah)
+SORTA I would try to get it down to no numbering within the chapter.  I
+would be happy if it went to only subsection numbers.  Use writing to
+do the rest of the organization.
+
+NO Come up with a better word than "things".  Something like "challenges"
+would be better.
+
+NO Chapter 3's title "Designing a Software Transaction System" makes no
+sense to me.  What about this chapter is about designing a system.
+This chapter is a mix of some measurements and some design choices.
+
+Chapter 5:  Topic paragraph needs work.  What is Chapter 5 about?
+
+NO Chapter 9:  I would flush it, and put all the content into the
+introduction.
+
+-------
+NO Abstract: "More bottom-line numbers" (CEL)
+
+Global search: "will", "we", "our".
+
+Need topic para at start of chapter 5. (CEL)
+
+make figure 5.7 bigger.
+
+Topic paragraph chapter 7. (CEL)
+
+-------------
+
+Fix array section to match microbenchmark? (figure 5.9, etc)

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# This scripts removes all unecessary files.
+
+rm -rf `\ls -Ad $TEMP_DIR/* | grep -v CVS`
+rm -rf `\ls -Ad $RESULTS_DIR/* | grep -v CVS`

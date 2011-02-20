@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+# unmunge.  Expects to find munged files on standard input.
+# Pipeline safe.  Don't write output file until everything's read.
+use File::Basename;
+use IO::Handle;
+
+sub dumpstored {
+    ($outfile, $contents)=@_;
+    $dirname = dirname($outfile);
+    system('mkdir -p ' . $dirname) unless -d $dirname;
+    open(FH, "> $outfile") or die "Can't open $outfile for writing.\n";
+    print FH $contents;
+    close FH;
+}
+
+$longest=0;
+STDOUT->autoflush(1);
+
+undef $outfile;
+$contents="";
+LINE: while (<>) {
+    if (/^---- CUT HERE ----/) {
+	dumpstored $outfile, $contents if defined($outfile);
+	$outfile = <>; # read next line.
+	chomp $outfile;
+	printf "% *s\r", -$longest, $outfile; # some pretty status printing
+	$longest=length $outfile if $longest < length $outfile;
+	$contents="";
+	next LINE;
+    }
+    s/^- /-/g;
+    $contents .= $_;
+}
+dumpstored $outfile, $contents if defined($outfile);
+# erase pretty status line.
+printf "% *s\r", $longest, " ";

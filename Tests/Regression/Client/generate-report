@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# This script generates reports for compilation and running of benchmarks, in case an error was thrown.
+
+# Beginning of script
+
+BENCHMARK=`echo $1 | sed "s|^.*/||g"`   # Getting the name of the benchmark/script
+COMPILE_RUNTIME_REPORT=compile   # By default, generate report for compilation
+LONG_REPORT=0   # By default, generate short reports (include only last $NUM_LINES_SHORT_REPORT lines of the input file)
+NUM_LINES_SHORT_REPORT=10
+
+shift
+
+while [ $# -gt 0 ]; do   # processing all parameters
+    case "$1" in
+	-compile)   # generating report from compiling output; default option
+	    COMPILE_RUNTIME_REPORT=compile;;
+	-run)   # generating report from runtime output
+	    COMPILE_RUNTIME_REPORT=runtime;;
+	-long)   # generating long reports
+	    LONG_REPORT=1;;
+	-short)   # generating short reports; default option
+	    LONG_REPORT=0;;
+	*)   # parameter not supported
+	    echo -e "./generate-report does not support parameter $1. Please check that you spelled it correctly." >> $ERROR_FILE
+	    echo >> $ERROR_FILE;;
+	esac
+
+    shift   # go to the next command-line parameter
+done
+
+# At this point, all parameters are processed and we are ready for generating the report.
+
+if [ "$COMPILE_RUNTIME_REPORT" == "compile" -a $LONG_REPORT -eq 0 ]; then   # short compiling-time report
+    echo "This is a short compiling-time report." >> $ERROR_FILE
+    echo >> $ERROR_FILE
+    if [ -f $COMPILING_RESULTS_FILE"_$BENCHMARK" ]; then   # the file $COMPILING_RESULTS_FILE"_$BENCHMARK" exists
+	tail -n $NUM_LINES_SHORT_REPORT $COMPILING_RESULTS_FILE"_$BENCHMARK" >> $ERROR_FILE
+    else
+	echo  File $COMPILING_RESULTS_FILE"_$BENCHMARK" needed for ./generate-reports missing. >> $ERROR_FILE
+    fi
+    echo >> $ERROR_FILE
+elif [ "$COMPILE_RUNTIME_REPORT" == "compile" -a $LONG_REPORT -eq 1 ]; then   # long compiling-time report
+    echo "This is a long compiling-time report." >> $ERROR_FILE
+    echo >> $ERROR_FILE
+    if [ -f $COMPILING_RESULTS_FILE"_$BENCHMARK" ]; then   # the file $COMPILING_RESULTS_FILE"_$BENCHMARK" exists
+	cat $COMPILING_RESULTS_FILE"_$BENCHMARK" >> $ERROR_FILE
+    else
+	echo  File $COMPILING_RESULTS_FILE"_$BENCHMARK" needed for ./generate-reports missing. >> $ERROR_FILE
+    fi
+    echo >> $ERROR_FILE
+elif [ "$COMPILE_RUNTIME_REPORT" == "runtime" -a $LONG_REPORT -eq 0 ]; then   # short run-time report
+    echo "This is a short run-time report." >> $ERROR_FILE
+    echo >> $ERROR_FILE
+    if [ -f $RUNNING_RESULTS_FILE"_$BENCHMARK" ]; then   # the file $COMPILING_RESULTS_FILE"_$BENCHMARK" exists
+	tail -n $NUM_LINES_SHORT_REPORT $RUNNING_RESULTS_FILE"_$BENCHMARK" >> $ERROR_FILE
+    else
+	echo  File $RUNNING_RESULTS_FILE"_$BENCHMARK" needed for ./generate-reports missing. >> $ERROR_FILE
+    fi
+    echo >> $ERROR_FILE
+else   # long run-time report
+    echo "This is a long run-time report." >> $ERROR_FILE
+    echo >> $ERROR_FILE
+    if [ -f $RUNNING_RESULTS_FILE"_$BENCHMARK" ]; then   # the file $COMPILING_RESULTS_FILE"_$BENCHMARK" exists
+	cat $RUNNING_RESULTS_FILE"_$BENCHMARK" >> $ERROR_FILE
+    else
+	echo  File $RUNNING_RESULTS_FILE"_$BENCHMARK" needed for ./generate-reports missing. >> $ERROR_FILE
+    fi
+    echo >> $ERROR_FILE
+    echo >> $ERROR_FILE
+fi
+
+# End of script

@@ -1,0 +1,3 @@
+structure Block {
+     reserved byte[d.s.blocksize];
+}

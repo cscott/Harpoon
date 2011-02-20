@@ -1,0 +1,11 @@
+cd ..
+xterm -title "Name Service" -e java -Xbootclasspath/p:ns-ZEN.jar -server -jar ns-ZEN.jar .jacorb &
+sleep 5
+
+xterm -hold -title "ALERT Server" -e java -Xbootclasspath/p:trackerStub-ZEN.jar -server -jar trackerStub-ZEN.jar "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+sleep 5
+
+xterm -hold -title "ATR" -e java -Xbootclasspath/p:ATR-ZEN.jar -server -jar ATR-ZEN.jar timer 3 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file:/`pwd`/.jacorb &
+sleep 5
+
+xterm -hold -title "Sending to ATR" -e java -Xbootclasspath/p:receiverStub-ZEN.jar -server -jar receiverStub-ZEN.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=file:/`pwd`/.jacorb &

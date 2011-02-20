@@ -1,0 +1,368 @@
+---- Jan-23-98
+FLEX native backend TODO:
+- implement OffsetMap:
+  - for reuseability, implement an abstract class on top of OffsetMap that
+    only implements the two label() functions, which are likely to be
+    portable even when field offsets may vary.  Use the Java Native Interface
+    standard for class/field mangling to come up with Label names:  see
+      http://www.javasoft.com/products/jdk/1.2/docs/guide/jni/
+    Specification section 2, "Resolving Native Method Names"
+  - The class_method_map MethodMap, which will order non-interface methods.
+    [I think Duncan is doing this?]
+  - The interface_method_map MethodMap, which orders interface methods.
+    [Felix is doing this]
+  - The ClassDepthMap, which I've all but written for y'all in
+    DefaultClassDepthMap.  Please use a Hashtable to cache the depth to
+    bring performance back to linear in the depth of the class hierarchy.
+    (DefaultClassDepthMap as written takes time proportional to the square
+     of the depth of the class hierarchy)
+  - The class_field_map FieldMap, which will be very similar to the
+    class_method_map MethodMap.
+  - Write OffsetMap to map all these orderings into byte offsets.  For
+    simplicity, you should have your field map take care of allocating two
+    entries for longs and doubles, so that offsetmap doesn't have to
+    figure out storage allocation itself.  You can also ignore the InlineMap
+    at this point, although you get bonus points if you write an OffsetMap
+    that takes the InlineMap into account (not that hard).
+- write garbage-collector in C.  Don't forget finalization and weak references.
+  Use the semi-depth-first copying algorithm from appel.
+  - write native method interface for garbage collector, so we can write
+    a more-or-less portable runtime library.  Use HANDLEs for pointers to
+    java objects, where HANDLE is defined as:
+      typedef struct handle_struct {
+         void *base_pointer;
+         struct handle_struct *next;
+      } *HANDLE;
+    HANDLEs are allocated either in an vector or (as in the above example)
+    a linked list.  The garbage collector holds the header node for the
+    HANDLE linked list and so can add HANDLEs to the live list and update
+    the pointers after gc correctly.  The C code is guaranteed that its
+    HANDLEs will remain valid, but any derived pointer based on the handle
+    must be recomputed from the base HANDLE after a potential gc-point.
+X write Quad-to-LowQuad translator [done]
+- extend LowQuad translator to return a valid TypeMap for LowQuad form.
+  Basically the same as the given type-map, with the temp-mappings taken into
+  account.  At your discretion you can either throw an exception or return
+  null if the TypeMap is given a Temp corresponding to a derived pointer
+  (which doesn't have a concrete type).  Any Temp handled in such a way should
+  have a valid Derivation (DList structure), however.
+- write Quad-with-explicit-initialization analysis/optimization.
+  the translation from Quad to LowQuad will create a corresponding
+  LowQuad-with-explicit-initialization form.
+- write encapsulated *SSA to *NoSSA translator.  If written properly will work
+  for both Quad and LowQuad form.
+- (highly optional) extend Interpret.Quads.Method to work with LowQuads.
+- write LowQuad-to-Tree translator.  Remember to preserve Derivation.
+  (see harpoon.IR.Properties.Deriviation)
+- (option) write Interpret/Tree methods to simulate Tree form for verification
+- write Tree-to-Instr pass (instruction selection)
+  should be in harpoon.Backend.<architecture>.InSel?
+  Scott will write an abstract superclass for this eventually.
+- do register allocation on Instrs (allocation, then construct stack frames,
+  then assignment)
+- tie everything together (write minimal native code libraries)
+---- Dec-31-98
+X Make TempMap in QuadNoSSA/QuadSSA consistent with QuadFactory.tempFactory();
+Reclaim INSTANCEOF optimization opportunities by adding NULL check ahead of it.
+X Implement method & memory profiling:
+X   M classname method descriptor start_count end_count
+X   N classname start_life end_life
+X Separate 'profile stream' pointer in static state. Hook into invoke() and
+X  ObjectRef.finalize() to output prof info.  Add System.gc()
+---- Dec-30-98
+X Fix INSTANCEOF implementation in harpoon.Interpret.Quads.Method.
+X Add CHECKCAST quad?
+---- Dec-20-98
+X MOVE collation for quad-with-try, within basic blocks.
+---- Dec-19-98
+X Fix ARRAYINIT constructor to behave properly with try blocks.
+X Implement translation of JSR/RET.
+X Optimize LCMP/DCMP/FCMP instructions.
+---- Dec-10-98
+Make Util.Set abstract and move the current implementation to Util.HashSet.
+ Add methods to abstract set to handle set union/intersection.
+ Write Util.*Set implementing other types.  ListSet, for example.
+Make HClassPtr, HMethodPtr and HFieldPtr types and change everything to use
+ them.  HMethodPtr and HFieldPtrs are generated by HClassPtr.
+ This allows operation of the compiler if full classes are not available.
+Move mutable methods to HClass.  Create HClassReadOnly and HClassReadWrite
+ hierarchy.  Everything else splits from that.  HClassPtr and friends
+ are read-only.
+X Rename interface: Quad rename(TempMap) returns a new Quad exactly like the
+X  receiver, only with all temps renamed according to TempMap.
+Check that harpoon.ClassFile package is not == comparing two HPointers.
+---- Dec-01-98
+Bring back the equals() method of HClass.  Needed for caching.
+X Write script to read javadoc and automagically insert links to
+X   classes mentioned inside <code></code> blocks.
+X Make LABEL superclass of PHI.
+X Add kind() method to Quad; new class QuadKind enumerates.
+---- Nov-30-98
+Add HInitializerSyn superclass of HInitializer.
+---- Nov-26-98
+X Fix unlimited-temp-during-phi-stack-merge problem.  (See today's ChangeLog
+X  messages).
+---- Nov-25-98
+X Make HClass demand-driven again: special 'caching' HClass that stores
+X  string reference to class and waits to load it until an accessor method
+X  is called.  Think hard about this.
+X Insert proper labels in quadSSA print() method to make it readable.
+---- Nov-20-98
+javac allows circular interface dependencies that could result in infinite
+ loops in our class reader code.  jikes disallows this.  think through
+ how this should work.
+---- Nov-11-98
+Write QuadSSA checker: verify edge links, no unreachable code, correct
+ format, correct args to each Quad, in SSA form, header and footer correct,
+ etc.
+X Audit code to ensure deterministic generation of quad-ssa form.
+X  In particular, quads and temp numbering should not depend on how many and
+X  which methods have been loading previously.  Need to make a TempFactory and
+X  a QuadFactory to generate numbers. (how do we handle insertion of new 
+X  quads/temps without breaking the numbering?)
+---- Oct-21-98
+X Implement clone() method for IR.Bytecode.Code so that we don't die if we
+X clone a method before doing getCode("quad-ssa") on it.
+---- Oct-13-98
+X Add gnu.getopt and gnu.bytecode to the Harpoon package.
+O Rewrite Bytecode IR and Nate's stuff to use the gnu.bytecode package.
+  -- Not at all certain this is a good idea.
+Add gnu.getopt to make a friendly command-line interface to Main.Graph, etc.
+Make a decent dependency system: JavaDep doesn't cut it, as it takes 35s
+ just to regenerate all the dependencies (which it does en-masse).
+---- Oct-09-98
+X Write copy-quadssa method. [called clone]
+---- Oct-04-98
+Target AIRE for backend.
+Write 'UndoRecursion' analysis/optimization pass.
+---- Sep-25-98
+O Undo peephole optimization and replace with a rule in SCCAnalysis that
+O  makes icmpeq on a one-bit (boolean) value into a MOVE instruction.
+O  Actually, since sense of result of icmpeq and boolean is different,
+O  this would entail switching all CJMPs that use boolean value and
+O  negative value in all other uses.  May be more complicated.
+O Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
+O  necessary at times.
+---- Sep-24-98
+Xfigure out what to do about related variables/induction variables in bitwidth.
+find induction variables and use this info in bitwidth.
+---- Sep-23-98, cont
+X Fix optimization bug exhibited by harpoon.Test.f!
+X Merge improvements to harpoon.Test.Graph over to std harpoon.Main.Graph class
+---- Sep-23-98
+Make sure common
+ if (i=N; i>=0; i--)
+construct lets i dip to -1 properly.
+---- Sep-21-98
+Finish bitwidth analysis in SCC.
+X Write move/const collation pass to remove unnecesssary quads and collate 
+  MOVEs. [const collation not done; MOVE collation in DeadCode now.]
+Figure out what to do about OutOfMemoryError. (explicit?)
+O VERIFY that, if Tnull is on Stack, phis are handled correctly.
+O Check merges of try: only constrain state to be equivalent.  Possibly
+O   we can more aggressively merge catch blocks?
+---- Sep-20-98
+Predicated interprocedural analysis.
+---- Sep-19-98
+X Remove Tnull, Tzero code from top of function.  It's increasing the
+X  phi/sigma count by a lot (some multiple of n, where n is the number of
+X  splits/joins). Note that peephole optimizations may need to change.
+---- Sep-18-98
+X Fix MONITOR handling.
+---- Sep-16-98
+O [cananian@lesser-magoo Code]$ time java -mx128m harpoon.Main.Main harpoon.IR.QuadSSA.Translate
+O java.lang.OutOfMemoryError: 
+O         at java.util.Hashtable.<init>(Hashtable.java)
+O         at java.util.Hashtable.<init>(Hashtable.java)
+O         at harpoon.Util.Set.<init>(Set.java:17)
+O         at harpoon.IR.QuadSSA.CleanUp$UsedTable.addDef(CleanUp.java:61)
+O         at harpoon.IR.QuadSSA.CleanUp.cleanupUnused(CleanUp.java:88)
+O         at harpoon.IR.QuadSSA.CleanUp.cleanup2(CleanUp.java:35)
+O         at harpoon.IR.QuadSSA.Code.<init>(Code.java:40)
+O         at harpoon.IR.QuadSSA.Code$1.convert(Code.java:57)
+O         at harpoon.ClassFile.HMethod.getCode(HMethod.java:83)
+O         at harpoon.Main.Main.main(Main.java:30)
+O 354.490u 2.850s 9:55.96 59.9%   0+0k 0+0io 20466pf+5635w
+---- Sep-15-98
+X Phi-placement analysis works, it just needs 'dead-code elimination'.
+X  Remove any phi function that defines a variable that is never used.
+---- Sep-14-98
+X Make sure Test/zeroopt.java is properly optimized.
+X SWITCH processing is still broken.
+X Check try/catch processing.  I don't think we're putting in the right
+X   PHI functions.
+X Maybe split phi/switch stuff into separate entities:
+X  QUESTION: what do we do about optimizing ( x+1 < y )
+---- Sep-14-98
+X Peephole optimizations on QuadSSA to normalize:
+X  1) instanceof -> icmp -> cjmp (or in general, boolean->icmp->cjmp)
+X     all boolean functions should feed a cjmp directly.
+X  2) lcmp,dcmp mess.  Look for CJMP whose test is def'd in a PHI statement,
+X     and remove the PHI, duplicating the CJMP.  May need to be a PHI->CJMP
+X     sequence. 
+O make sure cmpgt->cmpeq is properly translated to cmpge, too.
+---- Sep-13-98
+Write tool to print 'ConstantClass'es from bytecode files, and delete
+ .classes that depend on out-of-date classes. Then some other tool can
+ regenerate the missing classes.
+X Hierarchy goes:
+X  Top
+X  xClassNull extends Top -- classes; value could be 'null'
+X  xClass extends xClassNull -- a class; can *not* be null.
+X  xClassArray extends xClass -- an array class with constant length (not null)
+X  BitSize extends xClass -- a value of the specified bit-width.
+X                            <lowest set bit, highest set bit>
+O  Bounds extends BitSize -- a bounded value lowval <= v <= highval
+X  Constant               -- a particular constant value.
+X For fast analysis, can not raise Bounds to another instance of Bounds.
+X Bounds must be raised to BitSize if bounds proved invalid.
+---- Sep-12-98, cont
+X Massive SCC-based analysis can keep: array size, canbeNull, class sets, etc.
+X Move harpoon.ClassFile.Bytecode to harpoon.IR.Bytecode
+O Rename all *.Code classes to QuadCode, BytecodeCode, etc.
+X Make UseDef into map/general class
+X Remove SymTable package.
+---- Sep-12-98
+X Add 'assert' statements to HClass.forName and HClass.forDescriptor to protect
+X  against '/' and '.' mistakes.
+---- Sep-11-98, cont 2
+O Move TypeMap, ConstMap to harpoon.Analysis
+X -- moved to harpoon.Analysis.Maps
+X Make ExecMap with two methods: isExec(Edge e) and isExec(Quad q).
+X   this can be made to work whether the internal rep is Quads or Edges.
+X Make Optimization class that works given a ConstMap and an ExecMap.
+X [make dummy execmap and constmap classes that return 'not a const' and
+X  'is executable' for everything.]
+---- Sep-11-98, cont
+X Add SWITCH nodes to CJMP, SWITCH:
+X  call them sigma-functions.  <t1, t2, ...> = sigma(t0)
+X  return a tuple, given a temp (and a predicate?)
+X  reverse of phi functions.  translated the same way.
+X  There should be a sigma-function for variable a at node z of the flowgraph
+X  example when:
+X   1) block x contains a *use* of a
+X   2) block y contains a *use* of a
+X   3) there is a non-empty path Pxz of edges from z to x,
+X   4) there is a non-empty path Pyz of edges from z to y, and
+X   5) paths Pxz and Pyz do not have any node in common except z (that is,
+X      z is the first point of convergence of these paths).
+X QUESTION: are criteria 1 and 2 correct.  Maybe where 1 *or* 2 is true?
+X QUESTION: how do you make a predicated analysis based on this?
+X QUESTION: how does phi-function placement interact with sigma-function 
+X          placement?
+write analysis to remove unnecessary control dependencies.  PARALLEL quad?
+
+X Write registration routines for HMethod.
+X Make superclass 'Register' or 'Initialize' or 'Harpoon' or something
+X  that registers all necessary representations (extend to do-it-yourself).
+X  Standard interface for registration object.  Static method in HCode
+X  to return instance of registration object.
+---- Sep-11-98
+X Optimize INSTANCEOF and COMPONENTOF in SCC.
+X Update xClass to hold 'canbeNull' boolean.
+X Update OPER(acmpeq) to check canbeNull boolean.
+X Write optimization pass based on SCC analysis.
+X Rewrite SCC to use *edges* instead of *blocks* for executable analysis.
+X   ql is then set of all edge *targets*.  Doesn't have to be unique, but
+X   it'd be nice.
+X Rewrite SCC to use Visitor pattern.
+O Rewrite SCC to use *sets* of classes?
+---- Sep-10-98
+O Change PHI implementation to not make phi function entries for
+O  local variables that have not yet been defined.  Change State initialization
+O  to put 'null' in undefined local variables.
+X Write CleanUp class in IR.QuadSSA to:
+X   1) Remove phi functions that define a temp that is never used.
+X      (this will magically remove undefined temps as well).
+X   2) Shrink PHI functions that have phantom limbs (from impossible catches).
+---- Sep-09-98
+X Undo MONITOR block transform.  Make it a poor statement.
+X Change DCMPL/DCMPG/FCMPL/FCMPG bytecode operations to
+X conform to the integer standard: _CMPEQ, _CMPGE, _CMPGT.
+---- Sep-04-98
+X Add FOOTER block to allow reverse traversals.
+X Fix RET handling -- RET should return to source of JSR.
+X Fix the way the 'any exception' try is handled 
+X Check assumption that 'any' == Throwable in exception handler description.
+Make list of exception handling statements in translate phase so we can
+ strip them all out when regenerating java.  obviously try/catch block-related
+ statements must stay.
+X Make monitor blocks work.
+X Enclose synchronized methods in monitor blocks.
+X Runtime exception check on MONITOREXIT.
+---- Aug-25-98
+X Figure out if we really need JMP/NOP/LET quads.
+
+---- Aug-24-98
+X Test:
+X  method() {
+X    synchronized(new Object()) {
+X      synchronized(new Object()) {
+X      }
+X    }
+X  }
+O Test:
+O  method() {
+O   try {
+O    try {
+O     ;
+O    } catch (x) {
+O    }
+O   } catch (y) {
+O   }
+O  }
+
+---- Aug-21-98
+X Implement INSTANCEOF in the IR (special method? special Quad? subclass OPER?)
+X Implement CHECKCAST
+O Make Temps into Leafs in Quad rep.
+  [made Leafs into Temps...]
+
+---- Aug-7-98
+O Figure out how classes will be laid out in the JavaChip.
+X Figure out what we're doing about arrays.
+
+---- Aug-5-98
+X Fix munge/unmunge to be pipeline-safe
+
+---- Aug-3-98
+X Finish InCti class.
+
+---- Aug-2-98
+X Interface should have:
+X   convert method, to go from one form to another.
+X    (automagic chaining, if each form just knows one other source form&convers.)
+X  line number method.
+X  enumeration method.
+X  name method (of course) -- (change putCode)
+
+X Add new interface type for primitive types (simplify isPrimitive)
+O   only one method in interface: getDescriptor();
+O each type has value/add/sub/etc methods that are *not in interface*
+O   because return value is of the same primitive type (ie, not object)
+O   see java.lang.reflect rules for encapsulating return values.
+O   want to be able to specify that type is Z, not java.lang.Boolean obj.
+O   think this one over.
+O Easy.  Superclass basic java language type objects with our special
+O  'primary type' object.  Then we can easily tell which is which.
+O  (we can also add cool add/sub/etc functions while we're at it.)
+
+---- Aug-1-98
+X Make --CUTHERE-- file joiner/separator (perl?)
+X use above to search/replace <cananian...> with (cananian...)
+X write "getCode(String format)" method to HMethod, preload with byte[].
+X  -- find out whether interface methods have code attributes.
+X     NOPE!
+X write "print( )" methods to pretty-print a class file.
+X  -- separate ones for raw and HClass?
+X     -- HClass should pretty-print in java source form.
+X     -- Raw.* should pretty-print the exact class file contents.
+Xfigure out whether we are reporting methods of interfaces properly
+X  (can we have an abstract interface method that doesn't show up in
+X   the declaredMethods?)
+X   WE ARE.  YOU CAN'T.
+X add Java1.1 attributes (Synthetic and InnerClasses)
+X add accessor function for SourceFile attribute
+X add accessor function for localvariable attribute.
+X create an interface type for all code representations.
+X modify getCode to use it.

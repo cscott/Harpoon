@@ -1,0 +1,64 @@
+#! /usr/bin/perl
+# -*-Perl-*-
+#
+# don't allow any commits on the magic-2-0 branch or the java-1-5 branch.
+$ENTRIES       = "CVS/Entries";
+# parse command line arguments
+#
+while (@ARGV) {
+    $arg = shift @ARGV;
+
+    push(@files, $arg);
+}
+
+$directory = shift @files;
+
+# sometimes we just want to close the whole tree for some reason or other
+if (0) {
+    print STDERR "The FLEX CVS tree is closed.  It will reopen momentarily.\n".
+	"Email me if you've got questions.  --scott.\n";
+    exit(1);
+}
+
+# Suck in the CVS/Entries file
+#
+open(ENTRIES, $ENTRIES) || die("Cannot open $ENTRIES.\n");
+while (<ENTRIES>) {
+    local($filename, $version, $date, $unk, $tag) = split('/', substr($_, 1));
+    chomp $tag;
+    $cvsversion{$filename} = $version;
+    $cvstag{$filename} = $tag;
+}
+close(ENTRIES);
+
+# Now check each file name passed in.
+foreach $arg (@files) {
+    if ($cvstag{$arg} eq "Tmagic-2-0") {
+	print STDERR "The magic-2-0 branch of FLEX has been closed.\n".
+	    "Please update to the tip of the magic-2-0 branch with\n".
+	    "  cvs update -rmagic-2-0\n".
+	    "And then move your changes back to the HEAD branch with\n".
+	    "  cvs update -A\n".
+	    "You will then be able to commit your changes.\n".
+	    " (The first magic-2-0 file I saw in this commit was $arg)\n".
+	    "For more info, drop me an email. --scott\n";
+	exit(1);
+    }
+    if ($cvstag{$arg} eq "Tjava-1-5") {
+	print STDERR "The java-1-5 branch of FLEX has been closed.\n".
+	    "Please update to the tip of the java-1-5 branch with\n".
+	    "  cvs update -rjava-1-5\n".
+	    "And then move your changes back to the HEAD branch with\n".
+	    "  cvs update -A\n".
+	    "You will then be able to commit your changes.\n".
+	    " (The first java-1-5 file I saw in this commit was $arg)\n".
+	    "For more info, drop me an email. --scott\n";
+	exit(1);
+    }
+}
+
+# okay, I guess things were okay.  Fall back to std commit_prep script.
+$cp_path=`dirname $0`;
+chomp $cp_path;
+$cp_path.="/commit_prep";
+exec { $cp_path } 'commit_prep','-u','-r',$directory,@files;

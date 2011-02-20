@@ -1,0 +1,231 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>Getting Started</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.04Gold (X11; U; SunOS 5.5.1 sun4u) [Netscape]">
+   <META NAME="Author" CONTENT="Radu Rugina">
+   <BASE HREF="http://www.cag.lcs.mit.edu/~rugina/config-flex/">
+</HEAD>
+<BODY>
+
+<CENTER><P><B><FONT SIZE=+3>Getting Started With FLEX</FONT></B></P></CENTER>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<P>Here are the steps for setting the configuration files and having the
+Flex infrastructure running on your machine. There are instructions for
+using Flex sources or binaries downloaded from the web (<A HREF="http://www.flex-compiler.lcs.mit.edu/">Flex
+home page</A>), or for using the CVS archive on <code>lesser-magoo.lcs.mit.edu</code>.</P>
+
+<P>You can either download the highlighted files, or you can alternatively
+click the files, then cut and paste to the appropriate <code>.rc</code> file (for configuration
+files)&nbsp;or run the commands (for the checkout).</P>
+
+<P>
+<HR WIDTH="100%"></P>
+
+<P><B><FONT SIZE=+1>1. Using Flex sources/binaries downloaded from the
+web</FONT></B></P>
+
+<P>You can download either the Flex sources and compile them or you can
+directly download the compiled sources. Both Flex sources and binaries
+are available on the web from the <A HREF="http://www.flex-compiler.lcs.mit.edu/">Flex
+home page</A>.</P>
+
+<UL>
+<LI>If you <B>download the Flex binaries</B> (and not install the sources),
+add the downloaded <code>harpoon.jar</code> file to your <code>CLASSPATH</code> by including the
+following command to your <code>.cshrc</code> (or <code>.bashrc</code>): </LI>
+</UL>
+
+<UL>
+<UL>
+<P><B>For csh:</B>&nbsp; <CODE>setenv CLASSPATH harpoon.jar:$CLASSPATH <BR>
+</CODE><B>For bash:</B>&nbsp; <CODE>export CLASSPATH=harpoon.jar:$CLASSPATH</CODE></P>
+</UL>
+
+<P>Then skip to <B>step 5</B>. You will need JDK 1.2 for this to work.</P>
+
+<LI>If you <B>download the Flex source archive </B>(and not use CVS access),
+do: </LI>
+</UL>
+
+<UL>
+<UL>
+<P><B>Commands:</B>&nbsp;&nbsp;<CODE>mkdir -p Harpoon/Code<BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cd
+Harpoon/Code <BR>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tar
+xzvf harpoon.tgz </CODE></P>
+</UL>
+
+<P>Then skip to <B>step 4</B>.</P>
+</UL>
+
+<P><B><FONT SIZE=+1>2. Setting up the configuration files</FONT></B></P>
+
+<UL>
+<LI>(<I>required</I>)&nbsp;Append the <code>cshrc</code> (or <code>bashrc</code>) file to your <code>.cshrc</code>
+(or <code>.bashrc</code>), then source it in order to take changes into account:</LI>
+
+<UL>
+<P><B>For csh:</B>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<CODE>cat
+<A HREF="config/cshrc">cshrc</A>
+&gt;&gt;&nbsp;~/.cshrc</CODE></P>
+
+<UL>
+<UL>
+<P><CODE>source ~/.cshrc</CODE></P>
+</UL>
+</UL>
+
+<P><B>For bash:</B>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<CODE>cat <A HREF="config/bashrc">bashrc</A>
+&gt;&gt;&nbsp;~/.bashrc</CODE></P>
+
+<UL>
+<UL>
+<P><CODE>. ~/.bashrc</CODE></P>
+</UL>
+</UL>
+
+<P><B>Effects:</B>&nbsp;sets the CVS environment
+variables for remote shell and editor, and sets the
+<code>CLASSPATH</code> environment
+variable.</P>
+</UL>
+</UL>
+
+<UL>
+<LI>(<I>optional</I>) Append the <code>cvsrc</code> file to your <code>.cvsrc</code>:&nbsp; </LI>
+</UL>
+
+<UL>
+<UL>
+<P><B>Command:&nbsp;</B> <CODE>cat <A HREF="config/cvsrc">cvsrc</A>
+&gt;&gt;&nbsp;~/.cvsrc</CODE></P>
+
+<P><B>Effects:</B>&nbsp;Sets default flags
+for cvs commands.</P>
+</UL>
+
+<LI>(<I>optional, local LCS users</I>) Append the <code>emacsrc</code> file to your
+<code>.emacs</code>:&nbsp;</LI>
+
+<UL>
+<P><B>Command:&nbsp;</B> <CODE>cat <A HREF="config/emacsrc">emacsrc</A>
+&gt;&gt;&nbsp;~/.emacs</CODE></P>
+
+<P><B>Effects:</B>&nbsp;sets emacs modes
+and colors.</P>
+
+<P><B>Notes:</B>&nbsp;if you are not working on lesser-magoo, then you
+have to copy the directory
+<code>lm.lcs.mit.edu:/home/cananian/lib/emacs</code> to your machine
+on <code>~/lib/emacs</code>. Then modify the above
+<code>emacsrc</code> file by replacing the 3 references to Scott's
+<code>/lib/emacs</code> with references to your
+<code>/lib/emacs</code>.
+</p>
+<p>For the FLEX emacs JDE-mode customizations to work properly, the
+path to the harpoon sources must end with <code>Harpoon/Code</code>.
+If you follow our suggestion that your source be placed in
+<code>~/Harpoon/Code</code> you will have no problems.
+</P>
+</UL>
+</UL>
+
+<P><B><FONT SIZE=+1>3. Using Flex sources from the CVS archive on lesser-magoo</FONT></B></P>
+
+<UL>
+<LI><i>(Requires an account on lesser-magoo)</I>
+For <b>read/write access</b>,
+run the script <CODE>first-cvs-checkout</CODE> (or just run the few commands
+from it) to get the Flex sources:
+
+<UL>
+<P><B>Command:</B>&nbsp;<A HREF="config/first-checkout"><code>first-cvs-checkout</code></A></P>
+
+<P><B>Effects:</B>&nbsp;checks out the Flex
+distribution from <code>lesser-magoo.lcs.mit.edu</code> to your
+machine in <code>~/Harpoon</code>, with read-write access.
+</P>
+
+<P><B>Notes:&nbsp; </B>This will invoke <CODE>ssh</CODE> (since CVS_RSH is
+set to <CODE>ssh</CODE> in the previous step) to check out from a different
+machine. Also, if your username is different on the two machines, then
+go in the first-cvs-checkout file and replace<CODE><FONT SIZE=+1> </FONT>`:lm.lcs.mit.edu:'</CODE>&nbsp;with<CODE><FONT SIZE=+1>
+</FONT>`:yourname@lm.lcs.mit.edu:'</CODE>. Read <CODE>info cvs </CODE>-&gt; Repository
+-&gt; Remote Repositories for more information on how this works.</P>
+</UL>
+</LI>
+
+<LI>For <b>anonymous read-only</b> access to the source archive, run
+the script <A HREF="config/anon-checkout"><code>anon-checkout</code></A>
+to get the Flex sources:
+
+<UL>
+<P><B>Command:</B>&nbsp;<A HREF="config/anon-checkout"><code>anon-checkout</code></A></P>
+
+<P><B>Effects:</B>&nbsp;checks out the Flex
+distribution from <code>lesser-magoo.lcs.mit.edu</code> to your
+machine in <code>~/Harpoon</code>, with read-only access.
+</P>
+
+<P><B>Notes:</B>&nbsp;Use 'cvsguest' as your password when prompted;
+you should only have to enter this once.  The code is checked out
+using the <code>pserver</code> protocol, read-only.
+Read <CODE>info cvs</CODE> -&gt; Repository
+-&gt; Remote Repositories for more information on how this works.</P>
+</UL>
+</LI>
+
+</UL>
+
+<P><B><FONT SIZE=+1>4. Compiling the sources</FONT></B></P>
+
+<UL>
+Before going any further you might want to read <A
+HREF="alex_obs">Alex's observations</A> on installing FLEX. As the
+document itself says: "Reading this document can save you many hours
+of unpleasant work!"
+</UL>
+
+<UL>
+<LI>Run <CODE>gmake</CODE> from <code>~/Harpoon/Code</code> to build the class files:</LI>
+</UL>
+
+<UL>
+<UL>
+<P><B>Command:&nbsp;</B> <CODE>cd ~/Harpoon/Code &amp;&amp;&nbsp;gmake</CODE></P>
+
+<P><B>Effects:</B>&nbsp;Builds the class
+files in <code>~/Harpoon/Code/harpoon</code></P>
+
+<P><B>Notes: </B>Here you definitely need gmake (GNU make) version 3.77 or later, not some
+other make. Most machines have gmake aliased to make, but not all. 
+<COMMENT (version 3.77 of gmake is needed due to the use of target-specific variable values)>
+</P>
+</UL>
+</UL>
+
+<P><B><FONT SIZE=+1>5. Testing everything went Ok</FONT></B></P>
+
+<UL>
+<LI>Try to run something:</LI>
+</UL>
+
+<UL>
+<UL>
+<P><B>Command:&nbsp;</B> <CODE>java harpoon.Main.Main harpoon.Main.Main</CODE></P>
+
+<P><B>Effects: </B>Converts the harpoon.Main.Main class to the FLEX intermediate
+representation, and pretty-prints it.</P>
+</UL>
+</UL>
+
+<P>
+<HR WIDTH="100%"></P>
+
+</BODY>
+</HTML>

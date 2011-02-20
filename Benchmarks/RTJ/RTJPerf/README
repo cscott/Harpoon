@@ -1,0 +1,17 @@
+                     RTJPerf v0.1 alpha
+
+RTJPerf is a collection of test that are meant to measure the
+performances of any RTSJ compliant Real-Time Java JVM.
+
+Currently RTJPerf provide mostly time-efficiency test based on
+synthetic workload. The test present in the current version of RTJPerf
+are described in the document "Evaluating Real-Time Java Features and
+Performance for Real-Time Embedded Systems" which can be found at
+
+            http://tao.doc.wustl.edu/~corsaro/papers.html
+
+Please for comment, issues, feedback, or if you want to submit new
+test to be part of RTJPerf, send email to corsaro@ece.uci.edu
+
+Have Fun,
+  Angelo

@@ -1,0 +1,9 @@
+~/Harpoon/Runtime/runROLES
+cd as$1
+grep NI: pre > ../aspart.mem
+cd ..
+cat aspart.mem roletrace.mem > roleinfer.mem
+cp roleinfer.mem ~/Harpoon/Code/RoleInference/
+cd ~/Harpoon/Code/RoleInference/
+/usr/bin/netscape-navigator -no-irix-session-management http://deepthought.lcs.mit.edu:8081/ &
+init 8081 example/$1

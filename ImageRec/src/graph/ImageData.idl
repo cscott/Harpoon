@@ -1,0 +1,94 @@
+//====================================================================
+/**
+ *  @file    ImageData.idl
+ *
+ *  @author  Wes Beebee <wbeebee@mit.edu>
+ *
+ *  Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
+ *  Licensed under the terms of the GNU GPL; see COPYING for details.
+ */
+//====================================================================
+
+#ifndef IMAGEDATA_IDL
+#define IMAGEDATA_IDL
+
+
+#include "Image.idl"
+
+/**
+ * @namespace imagerec.graph
+ * @brief  Interface for sending data through MIT's ATR.
+ *
+ */
+module imagerec
+{
+  module graph {
+    struct ImageData {
+      sequence<octet> rvals;
+      sequence<octet> gvals;
+      sequence<octet> bvals;
+      long x;
+      long y;
+      long width;
+      long height;
+      unsigned long long time;
+      long id;
+      long command;
+      long receiverID;
+      float c1;
+      float c2;
+      float c3;
+      boolean lastImage;
+      octet labelID;
+      boolean conditional;
+      float angle;
+      /**
+       * Carries the higher blue threshold calculated by 
+       * {@link LabelBlue}. This field is not intended to
+       * be modified after it is set by {@link LabelBlue}.
+       */
+      long blueThreshold1;
+      /**
+       * Carries the higher blue threshold calculated by 
+       * {@link LabelBlue}. This field is not intended to
+       * be modified after it is set by {@link LabelBlue}.
+       */
+      long blueThreshold2;
+      /**
+       * Factor used to adjust for dynamic resolution changes.
+       * An object with a width of 100 pixels at one resolution
+       * could be the same actual size as an object with a width
+       * of 200 pixels at another resolution.<br><br>
+       *
+       */
+      float scaleFactor;
+      /**
+       * If this ImageData has been cropped around a particular
+       * object, and if tracking is being used, then this
+       * field contains the unique tracking ID of the object.
+       * Use this ID to obtain info about the tracked object
+       * from the designated ObjectTracker in CommonMemory.
+       */
+      long trackedObjectUniqueID;
+      /**
+       * This field stores the width of the original image
+       * before any cropping took place. It is not intended
+       * to be modified after it is set by a
+       * {@link SetOrigDimensions} node.
+       */
+      long origWidth;
+      /**
+       * This field stores the height of the original image
+       * before any cropping took place. It is not intended
+       * to be modified after it is set by a
+       * {@link SetOrigDimensions} node.
+       */
+      long origHeight;
+      /**
+       * This field ferries data for others through the pipeline.
+       */
+      ::Img::ImageHeader header;
+  };
+};
+};
+#endif

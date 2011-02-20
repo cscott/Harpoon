@@ -1,0 +1,94 @@
+Exceptions will be handled by a java-to-java translation; probably at
+the bytecode level, before the translation from ClassFile.Bytecode.
+
+
+  Object method() {
+    ...
+    throw new Exception();
+    ...
+    return obj;
+  }
+
+can be rewritten as
+ class MethodReturn {
+    Object o;
+    Exception e;
+    MethodReturn(Object o, Exception e) { this.o=o; this.e=e; }
+ }
+ MethodReturn method() {
+    ...
+    return new MethodReturn(null, new Exception());
+    ...
+    return new MethodReturn(obj, null);
+ }
+}
+
+The call site is similarly rewritten to dispatch exceptions to throw
+blocks:
+   try {
+     ...
+     Object o1 = method();
+     ...
+     Object o2 = method();
+     ...
+   } catch (Exception e) {
+     ...
+   } finally {
+     ...
+   }
+becomes
+   // try block
+   Exception thrownexception = null;
+   ...
+   MethodReturn m1 = method();
+   thrownexception = m1.e;
+   if (thrownexception==null) {
+     Object o1 = m1.o;
+     ...
+     MethodReturn m2 = method();
+     thrownexception = m2.e;
+     if (thrownexception==null) {
+       Object o2 = m2.o;
+       ...
+   }
+   // catch blocks.
+   if (thrownexception!=null) {
+     // or "thrownexception instanceof blah"
+     ...
+   }
+   // finally
+   {
+      ...
+   }
+   // leave if exception
+   if (thrownexception!=null) return ....;
+
+This gets hairy if we throw while loops & etc into the picture,
+but it's basically just a repeated test against thrownexception.
+Type/bitwidth analysis should report that thrownexception is
+a restricted typeclass, and allocate a few bits to it.
+
+The Java-to-java translated code should simulate perfectly well.
+Just keep those line numbers in the class files.
+
+----------------
+can also rewrite to simply eliminate try blocks except for trivial ones
+around method callsites.  throw then behaves like 'return'.
+don't like this as much.  makes things hairy all the way through.
+
+Write a function to take a method and rewrite it to return a 
+ (retval, exception) tuple. 
+(make 9 of these classes, one for each base type and one for Object?
+ or just one wrapper class, and cast to/from java.lang.BaseType as
+ appropriate....)
+Another function should rewrite callsites to handle rewritten method
+ ie
+   v = old_method(); // may throw
+to
+   Wrapper vw = old_method();
+   if (vw.e != null) throw e;
+   v = vw.v;
+
+Obviously this should be ordered... all the callsites should be rewritten
+first, and then the method itself rewritten (all the throws will be explicit 
+by then).

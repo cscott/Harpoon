@@ -1,0 +1,131 @@
+The harpoon.Backend.StrongARM package contains machine-dependent classes
+for the StrongARM backend. (Frame/CodeGen)
+
+Useful notes:
+
+StrongARM NATIVECALL Caller Convention (As Seen In (tm): gcc arm32-netbsd):
+	full, descending stack
+	pass parameters 1, 2, 3, 4 in r0, r1, r2, r3 respectively
+	after that, push arguments onto the stack (last argument first)
+	return value in r0
+
+	r11 = fp, r12 = ip, r13 = sp, r14 = lr, r15 = pc
+	callee clobbers r0,r1,r2,r3,ip,lr
+	callee saves r4-r11,r13
+	live on exit: fp, sp, pc  [actually only fp and pc]
+ [more details from CSA:]
+        'full' stack means that the stack pointer points at the last,
+        full location (instead of the next, empty, location).  The stack
+        grows down, towards lower addresses.  That means that a decrement
+        of sp is done *before* a store, and an increment of sp is done
+        *after* a load.  Thus the assembly mnemonic stmfd --- STore Multiple
+        Full Descending (stack) --- is equivalent to stmdb, STore Multiple
+        Decrement Before.  Likewise ldmfd is equivalent to ldmia, LoaD
+        Multiple Increment After.  The lowest register is always transferred
+        to the lowest address, so that means that, conceptually, r0 is
+        last pushed or first popped.  In actual practice addresses are
+        always generated in ascending order (yes, even for instructions
+	with 'decrement' in their mnemonic) so that r15
+	(the program counter) is always loaded/stored last.  This ensures
+        correct control tranfer, if that's what you're after.  So just
+	think "r0 at the bottom" and let the processor worry about
+	Doing The Right Thing when the program counter is being loaded.
+	If the program counter is included in a stm instruction, the
+	value stored will be the address of the stm plus 12.
+
+	The branch and link (bl) instruction transfers the return address
+	into the link register and transfers control.  The proper
+	fixup to the pc is done to allow for pipelining.
+
+	So, a typical procedure call is just
+		bl _foo
+	for functions with four or less arguments, all of which are
+	preloaded in r0-r3.  It is assumed that the called function
+	clobbers r0-r3,ip (and that the link register r14 is clobbered by
+	the bl itself) but that all other registers are left untouched.
+	A typical procedure header (according to gcc) is thus:
+		mov ip, sp
+		stmfd sp!, {fp, ip, lr, pc} @ stmfd == stmdb
+		sub fp, ip, #4
+		sub sp, sp, #16
+	and the return sequence is just
+		ldmea fp, {fp, sp, pc} @ ldmea == ldmdb
+
+	Let's go over this.  ip gets the old stack pointer; that is,
+	the (full) top of the caller's stack.  We then push, in this
+	order: pc, lr, ip, fp.  sp now points to the location where
+	fp is stored.  We make fp now point to the first word in
+	our stack, which is where pc is stored.  The pc is pretty useless,
+	actually: it points to the instruction after the 'sub' instruction
+	in the header sequence.  Not sure why gcc stores it.  Then
+	the stack pointer is further decremented by 4 words (16 bytes) --
+	that's the space to store r0, r1, r2, and r3 in, if we need to
+	call some other function.  Pretty bogus, too: most times this
+	space won't be used, but I guess if you're calling lots of functions
+	it makes sense to allocate this space early instead of adjusting
+	the stack pointer again before every call.  Note that all on-stack
+	addressing is done using fp, which stays constant throughout
+	the procedure; if we enter a scope with more variables (an
+	inner block, in C) the stack pointer might moved down to give us
+	more room, but the variable offsets from fp remain unchanged.
+	The stack pointer just tells any method we call how much stack
+	we're using and thus where they can begin their stack.
+
+	The return is funky: we load *decrementing from fp*, instead
+	of counting up from sp as you might expect.  This is probably
+	so that bits of the procedure with differing numbers of local
+	variables (and thus different values of sp) can share the
+	same exit code.  Lower numbered registers get loaded from
+	lower numbered addresses, so this all works right.  We load,
+	in order counting down, pc, sp, fp.  Remember that we stored
+	pc, lr, ip, fp, and that fp points to where pc is stored.
+	Since the return is pre-decrement, that means we load old-lr into
+	pc (effecting the return), old-ip (which was equal to old-sp at
+	the point of the save) into sp, and old-fp into fp.  Assuming
+	we didn't use any registers other than {r0,r1,r2,r3}, we've
+	restored all the state just as it was.
+	[if we need to use r4 and higher, than we just add them to
+	both the store and the load instructions.  all the stacking
+	still works out.  note that the 'mov ip, sp' instruction at
+	the beginning of the procedure header makes sense in this
+	context: it means we don't have to keep adjust the two
+	'sub' instructions following the 'stmfd' depending on how
+	many registers we push on the stack.]
+
+	Note that r0-r3, lr, and ip are clobbered by a call.
+
+For normal CALLs:
+	same calling convention, except that on an exceptional
+	return, we want to return some place other than where
+	lr pointed.  We use the old value of lr (the return address,
+	accessible at [fp, #-4] to index a sorted "fixup table",
+	which maps return addresses to exceptional return addresses.
+	We write the value we find back into [fp, #-4] and return
+	as usual... which will take us to the caller's exception
+	handler. [CSA]
+-----------------------------------------------------------------
+Alignment issues. [CSA]
+
+The StrongARM doesn't enforce any given pointer alignment.  However,
+the behavior on non-word aligned addresses may surprise you.
+
+LDR *rotates* the non-aligned address in order to put the address you
+requested in the LSB.  However, the high byte(s) will be the bytes
+*before* the address requested.  For example, if we store the string
+"Hello" starting at (word-aligned) address 0, like so:
+  0  1  2  3  4
+  H  e  l  l  o
+The a load from address 1 will return 'ellH', *not* 'ello' as you might
+expect.  [The official spec words it this way: "An address offset from a
+word boundary will cause the data to be rotated into the register so that
+the addressed byte occupies bits 0 to 7.]
+
+STR *ignores* the least-significant two bits of its address.  Storing
+'Jell' into address 1, 2, or 3 will produce 'Jello', just like a store
+into address 0 would.
+
+Byte loads and stores (ldrb, strb) do The Right Thing, as you'd expect
+them to.
+
+So -- be careful when reading/writing word-length data that your addresses
+are properly 4-byte aligned!
