@@ -1,0 +1,5 @@
+This is a merged git repository for all of FLEX.
+
+The different CVS modules are stored on different git branches, and the
+master branch contains a merged repo with each module in a separate
+directory.
